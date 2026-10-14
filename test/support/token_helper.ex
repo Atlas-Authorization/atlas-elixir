@@ -70,6 +70,49 @@ defmodule AtlasAuth.TokenHelper do
     compact
   end
 
+  @client_id "client_test_1"
+  def client_id, do: @client_id
+
+  @doc """
+  Mint a back-channel `logout_token`. `claims` overrides the defaults (a value
+  of `:delete` drops the claim); `opts[:header]` merges into the JOSE header
+  (default `typ: "logout+jwt"`; `:delete` drops a member), `opts[:jwk]` signs
+  with a different key.
+  """
+  def sign_logout(claims \\ %{}, opts \\ []) do
+    now = System.system_time(:second)
+
+    default = %{
+      "iss" => @issuer,
+      "aud" => @client_id,
+      "sub" => "user_2abc",
+      "sid" => "sess_2def",
+      "iat" => now,
+      "exp" => now + 120,
+      "jti" => "jti_#{System.unique_integer([:positive])}",
+      "events" => %{"http://schemas.openid.net/event/backchannel-logout" => %{}}
+    }
+
+    payload = drop_deleted(Map.merge(default, claims))
+
+    header =
+      drop_deleted(
+        Map.merge(
+          %{"alg" => "RS256", "kid" => @kid, "typ" => "logout+jwt"},
+          Keyword.get(opts, :header, %{})
+        )
+      )
+
+    {_mods, compact} =
+      Keyword.get(opts, :jwk, private_jwk())
+      |> JOSE.JWT.sign(header, payload)
+      |> JOSE.JWS.compact()
+
+    compact
+  end
+
+  defp drop_deleted(map), do: map |> Enum.reject(fn {_k, v} -> v == :delete end) |> Map.new()
+
   @doc "Default verifier options wired to the in-memory fetcher (no network)."
   def verify_opts(extra \\ []) do
     unique = System.unique_integer([:positive])

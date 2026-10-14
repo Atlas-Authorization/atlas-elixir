@@ -24,7 +24,7 @@ token-confusion guard.
 # mix.exs
 def deps do
   [
-    {:atlas_auth, "~> 0.1"}
+    {:atlas_auth, "~> 0.2"}
   ]
 end
 ```
@@ -123,6 +123,75 @@ clock skew; the §13.1 token-confusion guard (reject any token carrying
 `token_use` other than `"session"`, or an `aud` claim — an OP access/id token
 must never replay as a customer session); and, when configured, an `azp`
 allowlist check.
+
+## Back-channel logout
+
+If your app is registered with a back-channel logout URI, Atlas POSTs a signed
+`logout_token` there when a user signs out (or their session is ended), so you
+can end your own local session for them right away.
+
+### With Plug / Phoenix
+
+```elixir
+# lib/my_app_web/router.ex
+forward "/auth/backchannel-logout", AtlasAuth.Plug.BackchannelLogout,
+  jwks_url: "https://your-instance.atlas.example/.well-known/jwks.json",
+  issuer: "https://your-instance.atlas.example",
+  client_id: "your-client-id",
+  on_logout: &MyApp.Sessions.end_from_logout/1
+```
+
+```elixir
+defmodule MyApp.Sessions do
+  # claims = %{sub: "user_..." | nil, sid: "sess_..." | nil, jti: "...", iat: 1_700_000_000}
+  def end_from_logout(%{sid: sid, sub: sub}) do
+    cond do
+      sid -> delete_sessions_by_atlas_sid(sid)  # just that session
+      sub -> delete_sessions_by_atlas_user(sub) # every session of that user
+    end
+
+    :ok
+  end
+end
+```
+
+The plug answers `200` on success, `400` when the token is missing or invalid,
+and `501` if `on_logout` returns `{:error, reason}` — always with
+`Cache-Control: no-store`. It only accepts `POST`.
+
+### Any framework
+
+```elixir
+# body = the raw request body (application/x-www-form-urlencoded)
+token = URI.decode_query(body)["logout_token"]
+
+case AtlasAuth.verify_logout_token(token,
+       jwks_url: "https://your-instance.atlas.example/.well-known/jwks.json",
+       issuer: "https://your-instance.atlas.example",
+       client_id: "your-client-id") do
+  {:ok, %{sid: sid, sub: sub}} ->
+    # End the matching local session(s): by sid if present, else every session for sub.
+    end_sessions(sid: sid, sub: sub)
+    respond(200, headers: [{"cache-control", "no-store"}])
+
+  {:error, _reason} ->
+    respond(400, headers: [{"cache-control", "no-store"}])
+end
+```
+
+The verifier checks: RS256 signature against your instance keys, `typ` is
+`logout+jwt` (when present), `iss` matches, `aud` contains your client id, `iat`
+is present and not in the future, `exp` (when present) has not passed, `jti` is
+present, `events` contains `http://schemas.openid.net/event/backchannel-logout`
+with an object value, `sid` and/or `sub` is present, and there is no `nonce`.
+`:client_id` can also come from `config :atlas_auth, client_id: ...` or
+`ATLAS_CLIENT_ID`.
+
+**Replay protection.** Each logout token has a unique `jti`. Remember the `jti`
+of every token you accept (until its `exp`, or a few minutes) in a store all your
+app instances share — Redis, your database, or ETS on a single node — and ignore
+a token whose `jti` you have already seen. With the plug, do this check at the
+top of your `on_logout` function and return `:ok` for a repeat.
 
 ## License
 

@@ -108,11 +108,31 @@ defmodule AtlasAuth.Verifier do
 
   # --- internals -----------------------------------------------------------
 
-  defp do_verify(token, [header_b64, _payload_b64, _sig_b64] = _parts, opts) do
-    jwks_url = required(opts, :jwks_url, "ATLAS_JWKS_URL")
+  defp do_verify(token, parts, opts) do
     issuer = required(opts, :issuer, "ATLAS_ISSUER")
     authorized_parties = Keyword.get(opts, :authorized_parties, [])
     leeway = Keyword.get(opts, :leeway, @clock_skew_seconds)
+    now_ms = Keyword.get(opts, :now_ms, System.system_time(:millisecond))
+
+    with {:ok, _header, claims} <- verify_signed(token, parts, opts),
+         :ok <- check_issuer(claims, issuer),
+         :ok <- check_time(claims, div(now_ms, 1000), leeway),
+         :ok <- check_token_confusion(claims),
+         :ok <- check_azp(claims, authorized_parties) do
+      {:ok, Claims.from_map(claims)}
+    end
+  end
+
+  @doc false
+  # The shared front half of every Atlas JWT check: pin RS256, resolve the key
+  # from the cached JWKS by `kid`, and verify the signature. Returns the decoded
+  # JOSE header and the (signature-verified, otherwise unchecked) claims. Used by
+  # `verify/2` and by `AtlasAuth.BackchannelLogout`, so both token kinds share
+  # one key-handling path.
+  @spec verify_signed(String.t(), [String.t()], keyword()) ::
+          {:ok, map(), map()} | {:error, reason()}
+  def verify_signed(token, [header_b64, _payload_b64, _sig_b64], opts) do
+    jwks_url = required(opts, :jwks_url, "ATLAS_JWKS_URL")
     now_ms = Keyword.get(opts, :now_ms, System.system_time(:millisecond))
     cache = Keyword.get(opts, :cache, JWKSCache)
     fetcher = Keyword.get(opts, :fetcher, &default_fetch/1)
@@ -124,12 +144,8 @@ defmodule AtlasAuth.Verifier do
          {keys, _outcome} when is_list(keys) and keys != [] <-
            JWKSCache.get(cache, jwks_url, kid, fetcher, now_ms),
          {:ok, key_map} <- select_key(keys, kid),
-         {:ok, claims} <- verify_signature(key_map, token),
-         :ok <- check_issuer(claims, issuer),
-         :ok <- check_time(claims, div(now_ms, 1000), leeway),
-         :ok <- check_token_confusion(claims),
-         :ok <- check_azp(claims, authorized_parties) do
-      {:ok, Claims.from_map(claims)}
+         {:ok, claims} <- verify_signature(key_map, token) do
+      {:ok, header, claims}
     else
       {:error, reason} -> {:error, reason}
       # cache returned nil / empty keys
@@ -137,6 +153,8 @@ defmodule AtlasAuth.Verifier do
       {[], _} -> {:error, :no_keys}
     end
   end
+
+  def verify_signed(_token, _parts, _opts), do: {:error, :malformed}
 
   # Read the JOSE header without verifying anything, to learn `kid` and `alg`.
   # A JWT header is unpadded base64url, hence `padding: false`.
@@ -225,7 +243,8 @@ defmodule AtlasAuth.Verifier do
 
   # --- config resolution ---------------------------------------------------
 
-  defp required(opts, key, env_var) do
+  @doc false
+  def required(opts, key, env_var) do
     value = opts[key] || Application.get_env(:atlas_auth, key) || System.get_env(env_var)
 
     if value in [nil, ""] do

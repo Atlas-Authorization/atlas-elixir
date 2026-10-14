@@ -1,7 +1,7 @@
 defmodule AtlasAuth.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/Atlas-Authorization/atlas-elixir"
 
   def project do
@@ -58,7 +58,7 @@ defmodule AtlasAuth.MixProject do
       name: "atlas_auth",
       licenses: ["MIT"],
       maintainers: ["Atlas"],
-      files: ~w(lib mix.exs README.md LICENSE .formatter.exs),
+      files: ~w(lib mix.exs README.md CHANGELOG.md LICENSE .formatter.exs),
       links: %{
         "GitHub" => @source_url,
         "Atlas" => "https://atlasauth.net"
@@ -69,7 +69,7 @@ defmodule AtlasAuth.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: ["README.md", "CHANGELOG.md"],
       source_ref: "v#{@version}"
     ]
   end

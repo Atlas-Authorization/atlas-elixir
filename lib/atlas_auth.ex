@@ -7,7 +7,9 @@ defmodule AtlasAuth do
   JWKS, without calling Atlas on the request hot path. See `AtlasAuth.Verifier`
   for the verification rules, `AtlasAuth.Claims` for the decoded token, and
   `AtlasAuth.Plug` / `AtlasAuth.Plug.RequireAuth` for the Plug/Phoenix
-  integration.
+  integration. `AtlasAuth.BackchannelLogout` and
+  `AtlasAuth.Plug.BackchannelLogout` verify and serve OpenID Connect
+  back-channel logout requests.
 
   ## Quick start
 
@@ -28,6 +30,9 @@ defmodule AtlasAuth do
 
   @doc "Delegates to `AtlasAuth.Verifier.verify/2`."
   defdelegate verify(token, opts \\ []), to: AtlasAuth.Verifier
+
+  @doc "Delegates to `AtlasAuth.BackchannelLogout.verify/2`."
+  defdelegate verify_logout_token(token, opts \\ []), to: AtlasAuth.BackchannelLogout, as: :verify
 
   @doc "Delegates to `AtlasAuth.Verifier.authenticate_request/2`."
   defdelegate authenticate_request(headers, opts \\ []), to: AtlasAuth.Verifier
