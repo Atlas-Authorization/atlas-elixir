@@ -21,6 +21,8 @@ if Code.ensure_loaded?(Plug.Conn) do
       * `200` — the token verified and `:on_logout` returned anything other than
         `{:error, _}`;
       * `400` — the `logout_token` is missing or fails verification;
+      * `503` with `Retry-After: 30` — the issuer's keys could not be fetched
+        (`:no_keys`), so Atlas retries;
       * `501` — `:on_logout` returned `{:error, _}` (the logout could not be
         completed, so Atlas may retry);
       * `405` — any method other than `POST`.
@@ -65,8 +67,14 @@ if Code.ensure_loaded?(Plug.Conn) do
             _ -> respond(conn, 200, "")
           end
 
-        {:error, _reason} ->
-          respond(conn, 400, ~s({"error":"invalid_request"}))
+        {:error, reason} ->
+          if BackchannelLogout.retryable?(reason) do
+            conn
+            |> put_resp_header("retry-after", "30")
+            |> respond(503, ~s({"error":"temporarily_unavailable"}))
+          else
+            respond(conn, 400, ~s({"error":"invalid_request"}))
+          end
       end
     end
 

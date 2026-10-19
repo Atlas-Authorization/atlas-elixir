@@ -2,6 +2,17 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.3.0
+
+- **Back-channel logout, retryable failures.** `AtlasAuth.BackchannelLogout.retryable?/1` is true for
+  `:no_keys` (the issuer's keys could not be fetched). `AtlasAuth.Plug.BackchannelLogout` now answers
+  `503` with `Retry-After: 30` for it (was `400`), so Atlas retries the delivery; every other failure is
+  still `400`.
+- **Webhook verification.** `AtlasAuth.Webhook.verify/4` returns
+  `{:ok, %{event, delivery_id, timestamp}}` or `{:error, reason}` (`:missing_headers`,
+  `:malformed_signature`, `:stale_timestamp`, `:signature_mismatch`). `delivery_id` is the signed
+  `atlas-id` header, the same on every retry of one event: deduplicate on it.
+
 ## 0.2.0
 
 - **Back-channel logout verification.** `AtlasAuth.BackchannelLogout.verify/2`

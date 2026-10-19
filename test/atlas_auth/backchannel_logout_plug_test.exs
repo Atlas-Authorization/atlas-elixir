@@ -83,4 +83,23 @@ defmodule AtlasAuth.Plug.BackchannelLogoutTest do
   test "init requires :on_logout" do
     assert_raise ArgumentError, fn -> BackchannelLogout.init([]) end
   end
+
+  test "503 + Retry-After when the JWKS cannot be fetched (Atlas retries)", %{opts: opts} do
+    opts = Keyword.put(opts, :fetcher, fn _url -> {:error, :econnrefused} end)
+    opts = Keyword.put(opts, :jwks_url, "https://inst-test.atlas.example/jwks/down-#{System.unique_integer([:positive])}")
+    token = TokenHelper.sign_logout()
+    conn = post_form(URI.encode_query(%{"logout_token" => token}), opts)
+
+    assert conn.status == 503
+    assert get_resp_header(conn, "retry-after") == ["30"]
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    refute_received {:logged_out, _}
+  end
+
+  test "retryable?/1 is true only for :no_keys" do
+    assert AtlasAuth.BackchannelLogout.retryable?(:no_keys)
+    assert AtlasAuth.BackchannelLogout.retryable?({:error, :no_keys})
+    refute AtlasAuth.BackchannelLogout.retryable?(:invalid)
+    refute AtlasAuth.BackchannelLogout.retryable?(:malformed)
+  end
 end

@@ -62,6 +62,17 @@ defmodule AtlasAuth.BackchannelLogout do
 
   @type result :: {:ok, claims()} | {:error, Verifier.reason()}
 
+  @doc """
+  True when a failure is temporary and on your side: `:no_keys`, the issuer's
+  keys could not be fetched (a network error or a JWKS outage). Answer `503`
+  with `Retry-After` then, so Atlas retries the delivery, and `400` for every
+  other reason, which Atlas never retries.
+  """
+  @spec retryable?(term()) :: boolean()
+  def retryable?(:no_keys), do: true
+  def retryable?({:error, reason}), do: retryable?(reason)
+  def retryable?(_), do: false
+
   @doc "The `events` member that marks a back-channel logout token."
   def event, do: @backchannel_event
 
