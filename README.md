@@ -193,6 +193,22 @@ app instances share — Redis, your database, or ETS on a single node — and ig
 a token whose `jti` you have already seen. With the plug, do this check at the
 top of your `on_logout` function and return `:ok` for a repeat.
 
+## Webhooks
+
+`AtlasAuth.Webhook.verify/4` checks the signature on events Atlas sends to your webhook endpoints. Verify the
+raw body, before any JSON decode:
+
+```elixir
+case AtlasAuth.Webhook.verify(raw_body, conn.req_headers, secret) do
+  {:ok, %{delivery_id: id, event: event}} -> handle(id, event)
+  {:error, _reason} -> send_resp(conn, 400, "")
+end
+```
+
+The `atlas-signature` header can carry several signatures separated by spaces (`v1,<sig> v1,<sig>`). While an
+endpoint secret rotates, Atlas may sign each delivery with the old and the new secret; the delivery verifies
+when any one signature matches.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

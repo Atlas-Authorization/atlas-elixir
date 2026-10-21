@@ -6,7 +6,9 @@ defmodule AtlasAuth.Webhook do
   over `"<id>.<timestamp>.<raw body>"` keyed with the endpoint secret
   (`whsec_...`), sent with `atlas-id` and `atlas-timestamp` (epoch ms). A
   delivery more than five minutes from now, in either direction, is refused.
-  Verify the RAW body, before any JSON decode. Matches `verifyWebhook` in
+  The header may carry several space-separated `v1,<base64>` entries (one per
+  secret while a secret rotates with an overlap); the delivery verifies when
+  any one matches. Verify the RAW body, before any JSON decode. Matches `verifyWebhook` in
   `@atlasauth/backend`.
 
       case AtlasAuth.Webhook.verify(raw_body, conn.req_headers, secret) do
@@ -62,11 +64,21 @@ defmodule AtlasAuth.Webhook do
       else: {:ok, id, ts, sig}
   end
 
+  # One `v1,<base64>` entry, or several separated by spaces (while an endpoint
+  # secret rotates, Atlas signs with the old and the new secret). Entries of
+  # another version are skipped.
   defp parse_signature(signature) do
-    case String.split(signature, ",", parts: 2) do
-      ["v1", provided] when provided != "" -> {:ok, provided}
-      _ -> {:error, :malformed_signature}
-    end
+    provided =
+      signature
+      |> String.split()
+      |> Enum.flat_map(fn entry ->
+        case String.split(entry, ",", parts: 2) do
+          ["v1", value] when value != "" -> [value]
+          _ -> []
+        end
+      end)
+
+    if provided == [], do: {:error, :malformed_signature}, else: {:ok, provided}
   end
 
   defp parse_timestamp(raw, now, tolerance) do
@@ -81,9 +93,14 @@ defmodule AtlasAuth.Webhook do
       :crypto.mac(:hmac, :sha256, secret, [id, ".", Integer.to_string(timestamp), ".", body])
       |> Base.encode64()
 
-    if byte_size(expected) == byte_size(provided) and :crypto.hash_equals(expected, provided),
-      do: :ok,
-      else: {:error, :signature_mismatch}
+    # Compare every entry (no early exit), each in constant time.
+    matched =
+      Enum.reduce(provided, false, fn candidate, acc ->
+        same = byte_size(expected) == byte_size(candidate) and :crypto.hash_equals(expected, candidate)
+        acc or same
+      end)
+
+    if matched, do: :ok, else: {:error, :signature_mismatch}
   end
 
   defp header(headers, name) when is_map(headers), do: header(Map.to_list(headers), name)

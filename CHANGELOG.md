@@ -2,6 +2,13 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.4.0
+
+- **Webhooks, several signatures.** `AtlasAuth.Webhook.verify/4` accepts an `atlas-signature` header with
+  several space-separated `v1,<signature>` entries and verifies when any one matches (each compared in
+  constant time). This prepares for webhook secret rotation with an overlap. A single signature works as
+  before.
+
 ## 0.3.0
 
 - **Back-channel logout, retryable failures.** `AtlasAuth.BackchannelLogout.retryable?/1` is true for

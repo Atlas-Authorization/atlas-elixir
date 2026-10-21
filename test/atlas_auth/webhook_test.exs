@@ -42,4 +42,21 @@ defmodule AtlasAuth.WebhookTest do
     bad = List.keyreplace(headers, "atlas-signature", 0, {"atlas-signature", "v2,abc"})
     assert {:error, :malformed_signature} = Webhook.verify(@body, bad, @secret, now_ms: @now)
   end
+
+  test "several signatures verify when one matches" do
+    headers = sign("evt_1", @now, @body)
+    {"atlas-signature", fresh} = List.keyfind(headers, "atlas-signature", 0)
+    {"atlas-signature", stale} = List.keyfind(sign("evt_1", @now, @body, "whsec_old_secret"), "atlas-signature", 0)
+    with_sig = fn value -> List.keyreplace(headers, "atlas-signature", 0, {"atlas-signature", value}) end
+
+    for value <- ["#{stale} #{fresh}", "#{fresh} #{stale}", "v2,abc #{fresh}"] do
+      assert {:ok, _} = Webhook.verify(@body, with_sig.(value), @secret, now_ms: @now)
+    end
+
+    assert {:error, :signature_mismatch} =
+             Webhook.verify(@body, with_sig.("#{stale} #{stale}"), @secret, now_ms: @now)
+
+    assert {:error, :malformed_signature} =
+             Webhook.verify(@body, with_sig.("v2,abc v0,def"), @secret, now_ms: @now)
+  end
 end
