@@ -15,7 +15,11 @@ defmodule AtlasAuth.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      AtlasAuth.JWKSCache
+      AtlasAuth.JWKSCache,
+      # Owns the ETS table behind the default DPoP proof replay store.
+      AtlasAuth.DPoP.MemoryReplayStore,
+      # Owns the ETS table behind the opaque-token introspection cache.
+      AtlasAuth.Introspection
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: AtlasAuth.Supervisor)

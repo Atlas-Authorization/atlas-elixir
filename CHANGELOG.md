@@ -2,6 +2,33 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.6.0 — 2026-10-24
+
+### Added
+
+- **DPoP (RFC 9449) on the access-token verifier.** A DPoP-bound token (`cnf.jkt`) is
+  accepted only with the DPoP scheme and a valid proof (never as Bearer): `typ` `dpop+jwt`,
+  `AtlasAuth.DPoP.algs/0` (ES256/384/512, RS256/384/512, PS256/384/512, EdDSA), public
+  embedded JWK, signature, `htm`, normalised `htu` (`AtlasAuth.DPoP.normalize_htu/1`;
+  `:public_origin` for path-only URLs), `iat` window, `ath`, `jti` replay via an
+  `AtlasAuth.DPoP.ReplayStore` (`AtlasAuth.DPoP.MemoryReplayStore`, an ETS table under the
+  application, by default; or a 2-arity function), RFC 7638 `AtlasAuth.DPoP.jwk_thumbprint/1`
+  match. `:require_dpop` refuses unbound tokens; `:dpop_nonces`
+  (`AtlasAuth.DPoP.HmacNonce.new/2`) demands a server nonce (`use_dpop_nonce`, `dpop_nonce` in
+  the result for the `DPoP-Nonce` header). `verify/2` takes `:method`, `:url`, `:dpop`;
+  results carry `dpop_bound`. Challenges use the `DPoP` scheme with `algs`.
+  `AtlasAuth.Plug.RequireAccessToken` checks the proof against the conn and sets
+  `dpop-nonce`. `protected_resource_metadata/4` advertises
+  `dpop_signing_alg_values_supported` and takes `dpop_bound_access_tokens_required: true`.
+- **Opaque access tokens.** `AtlasAuth.AccessToken.verify/2` (and `AtlasAuth.Plug.RequireAccessToken`) take `introspection: [client_id:, client_secret:, ...]`: a token that is not a JWT is validated at Atlas's RFC 7662 endpoint with your API's client credentials, cached in a node-local ETS table by token hash (TTL, negative TTL, never past `exp`, bounded); `introspect_jwts: true` checks JWTs live too. `AtlasAuth.Introspection` (supervised by the application).
+- **Vercel BotID attestations.** `AtlasAuth.BotId.create_attestation(secret, is_bot, opts)` signs a verdict in Atlas's `atlas_botid.v1` format.
+- **Device sign-in approval.** `AtlasAuth.DeviceAuthorizations.lookup/2`, `approve/2`, `deny/2` call the Frontend API with a user's session token (`frontend_api:`, `session_token:`); `format_user_code/1`, `user_code_from_url/1`. A refusal is `{:error, %{status:, code:, message:}}` (`STEP_UP_REQUIRED` means re-authenticate first).
+- `AtlasAuth.Constants`: captcha providers (incl. `captchafox`, `vercel_botid`), account-linking trust levels, billing providers (incl. `chargebee`, `autumn`, `commet`), signing-key providers, the `session.updated` and `user.reactivated` webhook types and the `account_reactivated` email template.
+
+### Changed
+
+- Without `introspection`, a token that is not a JWT is refused with "configure `introspection` to accept opaque tokens" instead of "malformed".
+
 ## 0.5.0 — 2026-10-23
 
 - **ES256.** Session and logout-token verification accept ES256 as well as RS256
