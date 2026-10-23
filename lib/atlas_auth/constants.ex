@@ -24,6 +24,10 @@ defmodule AtlasAuth.Constants do
   def webhook_session_updated, do: "session.updated"
   def webhook_user_reactivated, do: "user.reactivated"
 
+  @doc "Webhook event types for policy acceptance: a user accepted a version; a version was published."
+  def webhook_user_policy_accepted, do: "user.policy_accepted"
+  def webhook_policy_version_published, do: "policy.version_published"
+
   @doc "The security notice sent when a dormant account signs in again."
   def email_template_account_reactivated, do: "account_reactivated"
 end

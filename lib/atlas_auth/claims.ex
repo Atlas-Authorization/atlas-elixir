@@ -102,6 +102,24 @@ defmodule AtlasAuth.Claims do
   def has_app_permission?(%__MODULE__{raw: raw}, permission),
     do: permission in string_list(raw["app_permissions"])
 
+  @doc """
+  The `pol` claim: the accepted version of every required policy, keyed by
+  policy key (for example `%{"tos" => "2026-10-24"}`). Present only when the
+  instance turned on the policy session claim; empty otherwise.
+  """
+  @spec pol(t()) :: %{String.t() => String.t()}
+  def pol(%__MODULE__{raw: raw}) do
+    case raw["pol"] do
+      %{} = map -> for {k, v} <- map, is_binary(v), into: %{}, do: {to_string(k), v}
+      _ -> %{}
+    end
+  end
+
+  @doc "True when the token records acceptance of `version` of the policy `key`."
+  @spec has_accepted_policy?(t(), String.t(), String.t()) :: boolean()
+  def has_accepted_policy?(%__MODULE__{} = claims, key, version),
+    do: Map.get(pol(claims), key) == version
+
   defp string_list(list) when is_list(list), do: Enum.filter(list, &is_binary/1)
   defp string_list(_), do: []
 

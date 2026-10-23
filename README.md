@@ -209,6 +209,30 @@ The `atlas-signature` header can carry several signatures separated by spaces (`
 endpoint secret rotates, Atlas may sign each delivery with the old and the new secret; the delivery verifies
 when any one signature matches.
 
+## Policy acceptance
+
+Terms of service and other policies are managed with the Backend API (another server SDK, the CLI or Terraform).
+This SDK carries the pieces that run in your application:
+
+* `AtlasAuth.Claims.pol(claims)` and `AtlasAuth.Claims.has_accepted_policy?(claims, "tos", "2026-10-24")` read the
+  `pol` session claim (the accepted version of every required policy), when the instance turned it on.
+* `AtlasAuth.Constants.webhook_user_policy_accepted()` and `webhook_policy_version_published()` name the two webhook events.
+* To serve policy text from your own system, `AtlasAuth.PolicySource.verify_feed_request/1` checks Atlas's signed
+  `GET {endpoint_url}/policies` request, and `AtlasAuth.PolicySource.sign_published/4` / `sign_retired/3` produce the
+  signed body and headers to POST to the source's `webhook_url`.
+
+```elixir
+case AtlasAuth.PolicySource.verify_feed_request(
+       method: conn.method,
+       path_and_query: conn.request_path <> "?" <> conn.query_string,
+       headers: conn.req_headers,
+       secret: secret
+     ) do
+  {:ok, %{key: key}} -> json(conn, build_feed(key))
+  {:error, _reason} -> send_resp(conn, 401, "")
+end
+```
+
 ## Migrate from Better Auth
 
 **No forced logout.** With the session bridge turned on for your instance (dashboard,

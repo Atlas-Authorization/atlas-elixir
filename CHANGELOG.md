@@ -2,6 +2,14 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.8.0 — 2026-10-24
+
+### Added
+
+- **Policy source protocol helpers.** `AtlasAuth.PolicySource.verify_feed_request/1` checks Atlas's signed `GET {endpoint_url}/policies` (`atlas-signature` `v1,<base64 HMAC-SHA256>` over `{id}.{timestamp}.GET\n{path+query}`, millisecond timestamps, several `v1` values accepted, 5-minute window; the result carries the `key` query parameter), and `sign_published/4` / `sign_retired/3` / `sign_event/2` / `sign_body/2` sign `policy.published` / `policy.retired` events for Atlas (Atlas-style headers). Cross-checked against the TypeScript reference vectors.
+- `AtlasAuth.Claims.pol/1` and `has_accepted_policy?/3` read the `pol` claim. `AtlasAuth.Constants.webhook_user_policy_accepted/0` (`user.policy_accepted`) and `webhook_policy_version_published/0` (`policy.version_published`).
+- The policy resources (`/v1/policies`, `policy_source`, `policy_settings`, a user's standing) are Backend API resources; this verifier-only SDK has no Backend API client, so they are not part of it (use the dashboard, the CLI, another server SDK or Terraform).
+
 ## 0.7.0 — 2026-10-24
 
 ### Added
