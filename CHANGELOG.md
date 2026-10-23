@@ -2,6 +2,20 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.5.0 — 2026-10-23
+
+- **ES256.** Session and logout-token verification accept ES256 as well as RS256
+  (`AtlasAuth.Verifier.signing_algs/0`), and nothing else; the token's `kid` selects one key whose
+  type fixes the algorithm (an RSA key verifies only RS256, a P-256 key only ES256).
+- **App roles.** `AtlasAuth.Claims.has_app_role?/2` and `has_app_permission?/2` read the
+  `app_roles` / `app_permissions` claims (no active organization needed).
+- **Access-token verification for your API.** `AtlasAuth.AccessToken.verify/2` checks an
+  Atlas-issued OAuth access token locally (issuer, expiry, `token_use`, audience, scopes) and
+  returns the RFC 6750 / RFC 9728 `WWW-Authenticate` challenge on refusal; the
+  `AtlasAuth.Plug.RequireAccessToken` plug; `build_www_authenticate/1`,
+  `protected_resource_metadata/3`, `protected_resource_metadata_path/1`. DPoP-bound tokens are
+  refused.
+
 ## 0.4.0
 
 - **Webhooks, several signatures.** `AtlasAuth.Webhook.verify/4` accepts an `atlas-signature` header with

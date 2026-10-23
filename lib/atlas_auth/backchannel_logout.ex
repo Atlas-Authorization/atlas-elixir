@@ -12,10 +12,10 @@ defmodule AtlasAuth.BackchannelLogout do
   The checks, in order:
 
     * shape — a non-empty, three-part JWT, else `:malformed`;
-    * algorithm — the header `alg` must be `"RS256"`;
+    * algorithm — the header `alg` must be `"RS256"` or `"ES256"`;
     * header `typ` — when present, must be `"logout+jwt"` (case-insensitive), so
       an ordinary ID token or session token can never be replayed as a logout;
-    * signature — RS256 against the JWKS key whose `kid` matches the header;
+    * signature — RS256 or ES256 against the JWKS key whose `kid` matches the header;
     * `iss` — must equal the configured issuer;
     * `aud` — must be (or contain) your `:client_id`;
     * `iat` — must be present and not in the future beyond the clock-skew leeway;

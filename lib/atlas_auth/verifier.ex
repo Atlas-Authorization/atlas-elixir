@@ -13,10 +13,10 @@ defmodule AtlasAuth.Verifier do
   The checks, in order — matching the other SDKs exactly:
 
     * shape — a non-empty, three-part JWT, else `:malformed`;
-    * algorithm — the header `alg` must be `"RS256"`. Pinning the algorithm is
+    * algorithm — the header `alg` must be `"RS256"` or `"ES256"`. Pinning the algorithm is
       what stops an `alg: none` token, or one that coerces the RSA public key
       into an HMAC secret, from ever verifying;
-    * signature — RS256 against the JWKS key whose `kid` matches the header;
+    * signature — RS256 or ES256 against the JWKS key whose `kid` matches the header;
     * `iss` — must equal the configured issuer. An unchecked issuer would accept
       *any* Atlas instance's tokens, so a missing issuer is a config error, not a
       soft default;
@@ -140,11 +140,11 @@ defmodule AtlasAuth.Verifier do
     header = decode_header(header_b64)
     kid = header && header["kid"]
 
-    with :ok <- check_alg(header),
+    with {:ok, alg} <- check_alg(header),
          {keys, _outcome} when is_list(keys) and keys != [] <-
            JWKSCache.get(cache, jwks_url, kid, fetcher, now_ms),
-         {:ok, key_map} <- select_key(keys, kid),
-         {:ok, claims} <- verify_signature(key_map, token) do
+         {:ok, key_map} <- select_key(keys, kid, alg),
+         {:ok, claims} <- verify_signature(key_map, alg, token) do
       {:ok, header, claims}
     else
       {:error, reason} -> {:error, reason}
@@ -167,15 +167,32 @@ defmodule AtlasAuth.Verifier do
     end
   end
 
-  # Pin RS256. This is the single most important line: without it a token whose
-  # header says `alg: none`, or one coercing the RSA key into HMAC, could verify.
-  defp check_alg(%{"alg" => "RS256"}), do: :ok
+  @doc """
+  The JWS algorithms Atlas signs tokens with: an instance key is RS256 (the
+  default) or ES256, and an API may use either. Every verifier here is pinned to
+  exactly this list.
+  """
+  @spec signing_algs() :: [String.t()]
+  def signing_algs, do: ["RS256", "ES256"]
+
+  # Pin RS256 / ES256. This is the single most important line: without it a token
+  # whose header says `alg: none`, or one coercing the key into HMAC, could verify.
+  defp check_alg(%{"alg" => alg}) when alg in ["RS256", "ES256"], do: {:ok, alg}
   defp check_alg(_), do: {:error, :invalid}
 
-  defp select_key(keys, kid) do
+  # The selected key's type must match the header: an RSA key verifies only
+  # RS256, a P-256 key only ES256 (and a key whose own `alg` disagrees, neither).
+  defp key_alg(%{"kty" => "RSA"} = k), do: declared(k, "RS256")
+  defp key_alg(%{"kty" => "EC", "crv" => "P-256"} = k), do: declared(k, "ES256")
+  defp key_alg(_), do: nil
+
+  defp declared(%{"alg" => a}, alg) when a != alg, do: nil
+  defp declared(_k, alg), do: alg
+
+  defp select_key(keys, kid, alg) do
     key =
       Enum.find(keys, fn k ->
-        is_map(k) and k["kty"] == "RSA" and (kid in [nil, ""] or k["kid"] == kid)
+        is_map(k) and key_alg(k) == alg and (kid in [nil, ""] or k["kid"] == kid)
       end)
 
     case key do
@@ -187,10 +204,10 @@ defmodule AtlasAuth.Verifier do
   # RS256 signature verification via JOSE. `verify_strict/3` pins the accepted
   # algorithms to our list, so the key material can never be used under a
   # different algorithm than we intend.
-  defp verify_signature(key_map, token) do
+  defp verify_signature(key_map, alg, token) do
     jwk = JOSE.JWK.from_map(key_map)
 
-    case JOSE.JWT.verify_strict(jwk, ["RS256"], token) do
+    case JOSE.JWT.verify_strict(jwk, [alg], token) do
       {true, %JOSE.JWT{fields: claims}, _jws} when is_map(claims) -> {:ok, claims}
       _ -> {:error, :invalid}
     end

@@ -84,6 +84,21 @@ defmodule AtlasAuth.Claims do
   def has_role?(%__MODULE__{org_role: role}, role) when is_binary(role), do: true
   def has_role?(%__MODULE__{}, _role), do: false
 
+  @doc """
+  True when the `app_roles` claim (the user's instance-wide app roles) contains
+  `role`. Needs no active organization.
+  """
+  @spec has_app_role?(t(), String.t()) :: boolean()
+  def has_app_role?(%__MODULE__{raw: raw}, role), do: role in string_list(raw["app_roles"])
+
+  @doc """
+  True when the `app_permissions` claim (the union of the user's app roles'
+  permissions) contains `permission`. Needs no active organization.
+  """
+  @spec has_app_permission?(t(), String.t()) :: boolean()
+  def has_app_permission?(%__MODULE__{raw: raw}, permission),
+    do: permission in string_list(raw["app_permissions"])
+
   defp string_list(list) when is_list(list), do: Enum.filter(list, &is_binary/1)
   defp string_list(_), do: []
 
