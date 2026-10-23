@@ -27,6 +27,13 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     Options are those of `AtlasAuth.Verifier.verify/2`; `:jwks_url` and `:issuer`
     may also come from application env / `ATLAS_JWKS_URL` / `ATLAS_ISSUER`.
+
+    Migrating from Better Auth: `better_auth_bridge: true` (or a keyword list of
+    `AtlasAuth.Plug.BetterAuthBridge` options, e.g. `[sign_in_url: "/sign-in"]`) runs
+    the session bridge first — a request carrying a Better Auth session cookie is
+    exchanged once and redirected with the Atlas session cookies set. The bridge
+    uses the plug's `:secret_key` (or `ATLAS_SECRET_KEY`). With `:legacy_issuers`,
+    Better Auth JWTs are accepted too until their window ends.
     """
     @behaviour Plug
 
@@ -39,6 +46,26 @@ if Code.ensure_loaded?(Plug.Conn) do
 
     @impl true
     def call(conn, opts) do
+      conn = bridge(conn, opts)
+      if conn.halted, do: conn, else: verify(conn, opts)
+    end
+
+    defp bridge(conn, opts) do
+      case Keyword.get(opts, :better_auth_bridge) do
+        nil ->
+          conn
+
+        false ->
+          conn
+
+        bridge_opts ->
+          bridge_opts = if bridge_opts == true, do: [], else: bridge_opts
+          inherited = Keyword.take(opts, [:secret_key, :api_url])
+          AtlasAuth.Plug.BetterAuthBridge.call(conn, Keyword.merge(inherited, bridge_opts))
+      end
+    end
+
+    defp verify(conn, opts) do
       case Verifier.authenticate_request(conn.req_headers, opts) do
         {:ok, claims} ->
           conn

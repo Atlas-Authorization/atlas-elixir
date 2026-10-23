@@ -29,6 +29,7 @@ defmodule AtlasAuth.Claims do
           org_slug: String.t() | nil,
           org_role: String.t() | nil,
           org_permissions: [String.t()],
+          external_id: String.t() | nil,
           raw: map()
         }
 
@@ -45,6 +46,7 @@ defmodule AtlasAuth.Claims do
             org_slug: nil,
             org_role: nil,
             org_permissions: [],
+            external_id: nil,
             raw: %{}
 
   @doc """
@@ -67,6 +69,7 @@ defmodule AtlasAuth.Claims do
       org_slug: raw["org_slug"],
       org_role: raw["org_role"],
       org_permissions: string_list(raw["org_permissions"]),
+      external_id: if(is_binary(raw["external_id"]), do: raw["external_id"]),
       raw: raw
     }
   end

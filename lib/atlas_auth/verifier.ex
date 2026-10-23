@@ -53,9 +53,15 @@ defmodule AtlasAuth.Verifier do
       own to avoid the network entirely, as the tests do.
     * `:cache` — the `AtlasAuth.JWKSCache` server (default the app-started one).
     * `:now_ms` — clock override in milliseconds, for tests.
+    * `:legacy_issuers` — cutover from Better Auth: ALSO accept JWTs from these old
+      issuers until each one's `:until`, verified against that issuer's own keys,
+      with `sub` mapped to the Atlas user id. See `AtlasAuth.LegacyIssuers`.
+    * `:secret_key` / `:api_url` — the instance secret key and Backend API origin the
+      default `:legacy_issuers` subject lookup uses (`:secret_key` falls back to
+      `config :atlas_auth, :secret_key` and `ATLAS_SECRET_KEY`).
   """
 
-  alias AtlasAuth.{Claims, JWKSCache}
+  alias AtlasAuth.{Claims, JWKSCache, LegacyIssuers}
 
   @clock_skew_seconds 5
 
@@ -111,6 +117,46 @@ defmodule AtlasAuth.Verifier do
   defp do_verify(token, parts, opts) do
     issuer = required(opts, :issuer, "ATLAS_ISSUER")
     authorized_parties = Keyword.get(opts, :authorized_parties, [])
+
+    case legacy(token, issuer, opts) do
+      :skip -> do_verify_atlas(token, parts, opts, issuer, authorized_parties)
+      {:ok, claims} -> legacy_azp(claims, authorized_parties)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # A token from a configured legacy issuer (inside its window) is verified against
+  # THAT issuer's keys only — never the Atlas keys; the unverified `iss` routes, the
+  # signature decides.
+  defp legacy(token, issuer, opts) do
+    case Keyword.get(opts, :legacy_issuers) do
+      entries when is_list(entries) and entries != [] ->
+        secret =
+          opts[:secret_key] || Application.get_env(:atlas_auth, :secret_key) ||
+            System.get_env("ATLAS_SECRET_KEY")
+
+        LegacyIssuers.verify(
+          token,
+          entries,
+          Keyword.merge(opts, issuer: issuer, secret_key: secret)
+        )
+
+      _ ->
+        :skip
+    end
+  end
+
+  defp legacy_azp(claims, parties) do
+    case claims["azp"] do
+      azp when is_binary(azp) and parties != [] ->
+        if azp in parties, do: {:ok, Claims.from_map(claims)}, else: {:error, :unauthorized_party}
+
+      _ ->
+        {:ok, Claims.from_map(claims)}
+    end
+  end
+
+  defp do_verify_atlas(token, parts, opts, issuer, authorized_parties) do
     leeway = Keyword.get(opts, :leeway, @clock_skew_seconds)
     now_ms = Keyword.get(opts, :now_ms, System.system_time(:millisecond))
 

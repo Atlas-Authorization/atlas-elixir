@@ -19,7 +19,9 @@ defmodule AtlasAuth.Application do
       # Owns the ETS table behind the default DPoP proof replay store.
       AtlasAuth.DPoP.MemoryReplayStore,
       # Owns the ETS table behind the opaque-token introspection cache.
-      AtlasAuth.Introspection
+      AtlasAuth.Introspection,
+      # Owns the ETS table behind the legacy-issuer subject cache.
+      AtlasAuth.LegacyIssuers
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: AtlasAuth.Supervisor)

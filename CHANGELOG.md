@@ -2,6 +2,14 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.7.0 — 2026-10-24
+
+### Added
+
+- **Better Auth session bridge.** `AtlasAuth.Plug.BetterAuthBridge` (and the `better_auth_bridge:` option of `AtlasAuth.Plug`, which runs it first): a `GET` / `HEAD` carrying a Better Auth session cookie is exchanged once through the Backend API (`POST /v1/migrations/better_auth/exchange`, secret key, forwarding the end user's IP and user agent as `X-Atlas-Client-IP` / `X-Atlas-Client-User-Agent`) and answered with a `307` to the same URL, the Atlas session cookies set and the Better Auth cookies cleared; a user who still owes a second factor goes to `:sign_in_url` with `__atlas_attempt` / `__atlas_status`. `AtlasAuth.BetterAuth`: `exchange/2`, the classified `exchange_session/2` (`{:session, _}`, `{:needs_mfa, _}`, `{:refused, outcome, status}`), the framework-neutral `decide/2`, `cookie_names/1`, `read_session_cookie/2`, `serialize_cookie/1`, `continuation_url/3`, `client_ip_from_headers/1`. Better Auth cookies are cleared only on final refusals.
+- **Better Auth JWTs during the cutover.** `AtlasAuth.Verifier.verify/2` (and so `AtlasAuth.Plug`) takes `legacy_issuers:`: a token whose `iss` is an old issuer, inside its `:until` window, is verified against that issuer's own keys only (`:jwks` or `:jwks_url`, cached like the Atlas JWKS), must carry `exp`, and has its `sub` mapped to the Atlas user — by `:resolve_subject`, or by an `external_id` lookup through the Backend API with `:secret_key` (cached five minutes in a supervised ETS table, `AtlasAuth.LegacyIssuers`). EdDSA, ES256, ES512, RS256 and PS256. `%AtlasAuth.Claims{}` gains `external_id`; `raw["legacy"]` names the old issuer and subject.
+- The bundle import and the bridge settings are Backend API resources; this verifier-only SDK has no Backend API client, so they are not part of it (use the dashboard, the CLI, another server SDK or Terraform).
+
 ## 0.6.0 — 2026-10-24
 
 ### Added

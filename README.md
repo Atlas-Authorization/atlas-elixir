@@ -209,6 +209,49 @@ The `atlas-signature` header can carry several signatures separated by spaces (`
 endpoint secret rotates, Atlas may sign each delivery with the old and the new secret; the delivery verifies
 when any one signature matches.
 
+## Migrate from Better Auth
+
+**No forced logout.** With the session bridge turned on for your instance (dashboard,
+Atlas CLI, a server SDK or the Terraform `atlas_better_auth_bridge` resource), put the
+bridge in front of your pipeline. A returning user's Better Auth session cookie is
+exchanged once — server to server with your secret key, forwarding the user's IP and
+user agent — for the Atlas session cookies, and the browser is redirected (`307`) to
+the same URL:
+
+```elixir
+plug AtlasAuth.Plug.BetterAuthBridge,
+  secret_key: System.fetch_env!("ATLAS_SECRET_KEY"),
+  sign_in_url: "/sign-in"   # where a user who still owes a second factor finishes
+
+# or as an option of the session plug, which runs it first:
+plug AtlasAuth.Plug, jwks_url: ..., issuer: ..., secret_key: ..., better_auth_bridge: [sign_in_url: "/sign-in"]
+```
+
+Options: `:cookie_prefix` (Better Auth's `advanced.cookiePrefix`), `:cookie_name`,
+`:cookie_domain` (so the old cookies clear), `:secure`, `:trust_forwarded_for`. The
+Better Auth cookies are cleared only when the refusal is final, so a closed bridge, a
+429 or an outage retries on a later request. Outside Plug, use
+`AtlasAuth.BetterAuth.decide/2`, or `AtlasAuth.BetterAuth.exchange_session/2` for the
+classified exchange.
+
+**Better Auth JWTs** your API clients still hold can be accepted until a cutover date:
+
+```elixir
+AtlasAuth.Verifier.verify(token,
+  jwks_url: "...", issuer: "...",
+  secret_key: System.fetch_env!("ATLAS_SECRET_KEY"),   # maps sub -> Atlas user via external_id
+  legacy_issuers: [
+    [issuer: "https://app.example.com", until: ~U[2026-12-31 00:00:00Z],
+     jwks_url: "https://app.example.com/api/auth/jwks"]
+  ]
+)
+```
+
+The claims then carry `sub` (the Atlas id), `external_id` (the Better Auth id) and
+`raw["legacy"]`. EdDSA, ES256, ES512, RS256 and PS256 are accepted; a token without
+`exp` is refused. Importing the Better Auth data and the bridge settings are Backend
+API resources; this verifier-only SDK has no client for them.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
