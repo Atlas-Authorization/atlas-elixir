@@ -30,4 +30,20 @@ defmodule AtlasAuth.Constants do
 
   @doc "The security notice sent when a dormant account signs in again."
   def email_template_account_reactivated, do: "account_reactivated"
+
+  @doc "Scope that lets a key reveal webhook signing secrets."
+  def scope_webhooks_reveal, do: "webhooks:reveal"
+
+  @doc "Referral provider ids; `referally` is the former spelling of `referalli` and is accepted too."
+  def referral_provider, do: "referalli"
+  def referral_provider_aliases, do: ["referalli", "referally"]
+
+  @doc "Webhook delivery signature versions an endpoint can enable (`v2` also covers the URL)."
+  def webhook_signature_versions, do: ~w(v1 v2)
+
+  @doc "Webhook event naming modes of an endpoint."
+  def webhook_event_namings, do: ~w(canonical legacy)
+
+  @doc "Webhook destination types."
+  def webhook_destination_types, do: ~w(https aws_eventbridge gcp_pubsub cloudflare_queue)
 end

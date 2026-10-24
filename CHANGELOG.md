@@ -2,6 +2,23 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.9.0 — 2026-10-24
+
+### Added
+
+- **Key formats.** `AtlasAuth.KeyFormat` (`parse/1`, `secret_key?/1`, `platform_key?/1`, `publishable_key?/1`, `webhook_secret?/1`, `partner_link_secret?/1`, `access_token?/1`) accepts the suite format `atlas_<live|test>_<kind>_...` alongside `sk_` / `pk_` / `psk_` / `whsec_` / `dsk_`. Webhook verification is unchanged: the whole secret string is the HMAC key.
+- **Webhook signature v2.** `AtlasAuth.Webhook.verify_url/5` verifies deliveries from endpoints with `signature_versions` including `v2` (HMAC-SHA256 over `id.timestamp.url.body`, so a captured delivery cannot be replayed to another URL). It accepts any matching `v1` or `v2` entry, ignores unknown versions and takes `require_v2: true`. `verify/4` is unchanged and still ignores `v2` entries.
+- **Event names.** `AtlasAuth.WebhookEvents`: the deprecated-alias table (`aliases/0`, `deprecated?/1`, `canonical/1`, `spellings/1`) and constants for the endpoint-health, delivery-target, secret-key (`secret_key.expiring` / `secret_key.revoked`), status-incident (`status.incident.*`), `webhook.test` and privacy (`privacy_request.updated` / `.completed`, `user.deletion_scheduled` / `.canceled`) events.
+- **Data-rights receiver.** `AtlasAuth.Privacy.verify_call/4` verifies the signed case calls Atlas makes to an orchestrator and the `privacy_request.*` events, returns the delivery id (the `Idempotency-Key`), the body, the event and the `traceparent`; `request_from_event/1`, request types, statuses and the `privacy:execute` / `privacy:grants:revoke` scopes.
+- **Trace context.** `AtlasAuth.Trace`: `new/0`, `parse/1`, `from_headers/1` for the W3C `traceparent` header.
+- **Errors.** `AtlasAuth.Errors`: `INSUFFICIENT_SCOPE` (the former `SCOPE_MISSING` is still tolerated by `insufficient_scope?/1`), `STEP_UP_REQUIRED`, `ROUTE_NOT_FOUND`, `NOT_A_LIVE_INSTANCE`, `TEST_MODE_ONLY`, `TESTING_UNAVAILABLE`, `PARTNER_LINK_UNAVAILABLE`, `ORIGIN_NOT_ALLOWED`, and `parse/1` for an error body (`required_scope`, `did_you_mean`, `allowed_methods`, `docs_url`).
+- **Claims.** `%AtlasAuth.Claims{}` gains `orgs` and `sso_connection_id` / `sso_tenant_id` / `sso_issuer` / `sso_domain`. `AtlasAuth.Constants`: `webhooks:reveal` scope, webhook signature versions, event naming modes, destination types and the referral provider id `referalli` (`referally` accepted as the former spelling).
+
+### Not included
+
+- The Backend API resources of this release (secret keys, whoami, partner links, token exchange, integrations, privacy executor client, webhook endpoint health / replay / destinations, status, audit exports, notices, advisories and the rest) need a Backend API client, which this verifier-only SDK does not have; use another server SDK, the CLI or Terraform.
+- Opening a sealed secret (`secretRecipient`) needs a libsodium `crypto_box_seal_open`, which OTP `:crypto` does not provide; no dependency was added for it.
+
 ## 0.8.0 — 2026-10-24
 
 ### Added

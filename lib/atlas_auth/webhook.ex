@@ -54,6 +54,73 @@ defmodule AtlasAuth.Webhook do
     end
   end
 
+  @doc """
+  Verify a delivery that may carry a v2 signature.
+
+  An endpoint whose `signature_versions` include `v2` signs HMAC-SHA256 over
+  `"<id>.<timestamp>.<url>.<body>"`, where `url` is the exact URL Atlas POSTed
+  to (your endpoint's `url`), so a captured delivery cannot be replayed to
+  another URL. A delivery verifies when any `v1` entry (over
+  `id.timestamp.body`) or any `v2` entry matches; entries of unknown versions
+  are ignored. With `require_v2: true` only a `v2` entry is accepted.
+
+  Options: those of `verify/4` plus `:require_v2` (default `false`).
+  """
+  @spec verify_url(binary(), [{String.t(), String.t()}] | map(), String.t(), String.t(), keyword()) ::
+          {:ok, verified()} | {:error, reason()}
+  def verify_url(body, headers, secret, endpoint_url, opts \\ [])
+      when is_binary(body) and is_binary(secret) and is_binary(endpoint_url) do
+    now = Keyword.get_lazy(opts, :now_ms, fn -> System.system_time(:millisecond) end)
+    tolerance = Keyword.get(opts, :tolerance_ms, @replay_tolerance_ms)
+    require_v2 = Keyword.get(opts, :require_v2, false)
+
+    with {:ok, id, ts_raw, signature} <- read_headers(headers),
+         v1 = if(require_v2, do: [], else: signatures_of(signature, "v1")),
+         v2 = signatures_of(signature, "v2"),
+         :ok <- if(v1 == [] and v2 == [], do: {:error, :malformed_signature}, else: :ok),
+         {:ok, timestamp} <- parse_timestamp(ts_raw, now, tolerance),
+         :ok <- check_v1_v2(secret, id, timestamp, endpoint_url, body, v1, v2) do
+      {:ok, %{event: decode_event(body), delivery_id: id, timestamp: timestamp}}
+    end
+  end
+
+  defp check_v1_v2(secret, id, timestamp, url, body, v1, v2) do
+    ts = Integer.to_string(timestamp)
+    e1 = mac(secret, [id, ".", ts, ".", body])
+    e2 = mac(secret, [id, ".", ts, ".", url, ".", body])
+
+    matched =
+      Enum.reduce(v1, false, fn c, acc -> same?(e1, c) or acc end) or
+        Enum.reduce(v2, false, fn c, acc -> same?(e2, c) or acc end)
+
+    if matched, do: :ok, else: {:error, :signature_mismatch}
+  end
+
+  defp decode_event(body) do
+    case Jason.decode(body) do
+      {:ok, map} when is_map(map) -> map
+      _ -> nil
+    end
+  end
+
+  defp mac(secret, data), do: :crypto.mac(:hmac, :sha256, secret, data) |> Base.encode64()
+
+  defp same?(expected, candidate),
+    do: byte_size(expected) == byte_size(candidate) and :crypto.hash_equals(expected, candidate)
+
+  # The `<base64>` values of every entry of one version in an
+  # `atlas-signature` header (`v1,<b64> v2,<b64>`).
+  defp signatures_of(signature, version) do
+    signature
+    |> String.split()
+    |> Enum.flat_map(fn entry ->
+      case String.split(entry, ",", parts: 2) do
+        [^version, value] when value != "" -> [value]
+        _ -> []
+      end
+    end)
+  end
+
   defp read_headers(headers) do
     id = header(headers, "atlas-id")
     ts = header(headers, "atlas-timestamp")

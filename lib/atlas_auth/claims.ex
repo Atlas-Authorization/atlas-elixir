@@ -30,6 +30,11 @@ defmodule AtlasAuth.Claims do
           org_role: String.t() | nil,
           org_permissions: [String.t()],
           external_id: String.t() | nil,
+          orgs: [map()],
+          sso_connection_id: String.t() | nil,
+          sso_tenant_id: String.t() | nil,
+          sso_issuer: String.t() | nil,
+          sso_domain: String.t() | nil,
           raw: map()
         }
 
@@ -47,6 +52,11 @@ defmodule AtlasAuth.Claims do
             org_role: nil,
             org_permissions: [],
             external_id: nil,
+            orgs: [],
+            sso_connection_id: nil,
+            sso_tenant_id: nil,
+            sso_issuer: nil,
+            sso_domain: nil,
             raw: %{}
 
   @doc """
@@ -70,6 +80,11 @@ defmodule AtlasAuth.Claims do
       org_role: raw["org_role"],
       org_permissions: string_list(raw["org_permissions"]),
       external_id: if(is_binary(raw["external_id"]), do: raw["external_id"]),
+      orgs: if(is_list(raw["orgs"]), do: Enum.filter(raw["orgs"], &is_map/1), else: []),
+      sso_connection_id: str(raw["sso_connection_id"]),
+      sso_tenant_id: str(raw["sso_tenant_id"]),
+      sso_issuer: str(raw["sso_issuer"]),
+      sso_domain: str(raw["sso_domain"]),
       raw: raw
     }
   end
@@ -119,6 +134,9 @@ defmodule AtlasAuth.Claims do
   @spec has_accepted_policy?(t(), String.t(), String.t()) :: boolean()
   def has_accepted_policy?(%__MODULE__{} = claims, key, version),
     do: Map.get(pol(claims), key) == version
+
+  defp str(v) when is_binary(v), do: v
+  defp str(_), do: nil
 
   defp string_list(list) when is_list(list), do: Enum.filter(list, &is_binary/1)
   defp string_list(_), do: []

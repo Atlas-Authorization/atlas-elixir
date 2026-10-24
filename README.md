@@ -209,6 +209,32 @@ The `atlas-signature` header can carry several signatures separated by spaces (`
 endpoint secret rotates, Atlas may sign each delivery with the old and the new secret; the delivery verifies
 when any one signature matches.
 
+## Integrator platform (0.9)
+
+```elixir
+# Key prefixes: the suite format (atlas_live_sk_...) and the legacy one (sk_live_...)
+AtlasAuth.KeyFormat.secret_key?("atlas_live_sk_abc")   #=> true
+AtlasAuth.KeyFormat.parse("pk_live_abc")                #=> {:ok, %{kind: :publishable, environment: "live", suite: false}}
+
+# Webhook signature v2 (URL-bound); v1 entries still verify unless require_v2: true
+AtlasAuth.Webhook.verify_url(raw_body, conn.req_headers, secret, "https://app.example.com/hooks/atlas", require_v2: true)
+
+# Event spellings: handle the canonical name whichever one was subscribed
+AtlasAuth.WebhookEvents.canonical("organizationMembership.created") #=> "organization_membership.created"
+
+# Data-rights receiver: signed case calls and privacy_request.* events
+{:ok, %{delivery_id: id, traceparent: tp, event: event}} =
+  AtlasAuth.Privacy.verify_call(raw_body, conn.req_headers, secret)
+
+# W3C traceparent
+AtlasAuth.Trace.new()
+```
+
+`AtlasAuth.Errors` names the error codes (`INSUFFICIENT_SCOPE`, with `SCOPE_MISSING` still tolerated, `STEP_UP_REQUIRED`,
+`ROUTE_NOT_FOUND`, ...) and reads an error body. Session claims gain `orgs` and the `sso_*` fields.
+The Backend API resources are not part of this verifier-only SDK, and opening sealed secrets is left out (OTP has no
+`crypto_box_seal_open`).
+
 ## Policy acceptance
 
 Terms of service and other policies are managed with the Backend API (another server SDK, the CLI or Terraform).
