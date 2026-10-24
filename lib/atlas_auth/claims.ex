@@ -32,6 +32,8 @@ defmodule AtlasAuth.Claims do
           external_id: String.t() | nil,
           orgs: [map()],
           sso_connection_id: String.t() | nil,
+          sso_organization_id: String.t() | nil,
+          sso_connection_type: String.t() | nil,
           sso_tenant_id: String.t() | nil,
           sso_issuer: String.t() | nil,
           sso_domain: String.t() | nil,
@@ -54,6 +56,8 @@ defmodule AtlasAuth.Claims do
             external_id: nil,
             orgs: [],
             sso_connection_id: nil,
+            sso_organization_id: nil,
+            sso_connection_type: nil,
             sso_tenant_id: nil,
             sso_issuer: nil,
             sso_domain: nil,
@@ -82,6 +86,8 @@ defmodule AtlasAuth.Claims do
       external_id: if(is_binary(raw["external_id"]), do: raw["external_id"]),
       orgs: if(is_list(raw["orgs"]), do: Enum.filter(raw["orgs"], &is_map/1), else: []),
       sso_connection_id: str(raw["sso_connection_id"]),
+      sso_organization_id: str(raw["sso_organization_id"]),
+      sso_connection_type: sso_type(raw["sso_connection_type"]),
       sso_tenant_id: str(raw["sso_tenant_id"]),
       sso_issuer: str(raw["sso_issuer"]),
       sso_domain: str(raw["sso_domain"]),
@@ -137,6 +143,9 @@ defmodule AtlasAuth.Claims do
 
   defp str(v) when is_binary(v), do: v
   defp str(_), do: nil
+
+  defp sso_type(t) when t in ["saml", "oidc"], do: t
+  defp sso_type(_), do: nil
 
   defp string_list(list) when is_list(list), do: Enum.filter(list, &is_binary/1)
   defp string_list(_), do: []

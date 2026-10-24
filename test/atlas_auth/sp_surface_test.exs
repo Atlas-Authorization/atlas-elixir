@@ -217,6 +217,8 @@ defmodule AtlasAuth.SpSurfaceTest do
           "sub" => "u1",
           "orgs" => [%{"id" => "org_1", "role" => "admin"}, "junk"],
           "sso_connection_id" => "sso_1",
+          "sso_organization_id" => "org_1",
+          "sso_connection_type" => "saml",
           "sso_tenant_id" => "t1",
           "sso_issuer" => "https://idp.example",
           "sso_domain" => "example.com"
@@ -224,6 +226,8 @@ defmodule AtlasAuth.SpSurfaceTest do
 
       assert claims.orgs == [%{"id" => "org_1", "role" => "admin"}]
       assert claims.sso_connection_id == "sso_1"
+      assert claims.sso_organization_id == "org_1"
+      assert claims.sso_connection_type == "saml"
       assert claims.sso_tenant_id == "t1"
       assert claims.sso_issuer == "https://idp.example"
       assert claims.sso_domain == "example.com"
@@ -232,6 +236,12 @@ defmodule AtlasAuth.SpSurfaceTest do
     test "defaults are empty" do
       claims = Claims.from_map(%{"sub" => "u1"})
       assert claims.orgs == [] and claims.sso_connection_id == nil
+      assert claims.sso_organization_id == nil and claims.sso_connection_type == nil
+    end
+
+    test "an unknown sso_connection_type is dropped" do
+      claims = Claims.from_map(%{"sub" => "u1", "sso_connection_id" => "s", "sso_connection_type" => "ldap"})
+      assert claims.sso_connection_type == nil
     end
   end
 end

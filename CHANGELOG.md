@@ -2,6 +2,14 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.10.0 — 2026-10-24
+
+### Added
+
+- **Enterprise SSO claims.** `AtlasAuth.Claims` gains `sso_organization_id` (the Atlas organization that owns the SSO connection, `nil` for an instance-wide one, independent of `org_id`) and `sso_connection_type` (`"saml"` | `"oidc"`, anything else is `nil`), read from verified session, ID-token and userinfo claims. Scope a per-organization "require SSO" rule on `sso_organization_id`, never on "signed in via SSO".
+
+This package has no Backend API client, so the app adoption, preflight, dry-run and sealed-secret surfaces do not apply to it.
+
 ## 0.9.0 — 2026-10-24
 
 ### Added
