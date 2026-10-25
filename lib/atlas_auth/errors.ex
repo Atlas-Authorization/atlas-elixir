@@ -17,11 +17,14 @@ defmodule AtlasAuth.Errors do
   def testing_unavailable, do: "TESTING_UNAVAILABLE"
   def partner_link_unavailable, do: "PARTNER_LINK_UNAVAILABLE"
   def origin_not_allowed, do: "ORIGIN_NOT_ALLOWED"
+  @doc "422: managed WAF provision or deprovision on an instance with no WAF configuration saved (`meta.action`, see `parse/1`)."
+  def managed_waf_not_configured, do: "MANAGED_WAF_NOT_CONFIGURED"
 
   @doc """
   Pull the first error item out of a decoded error body (`%{"errors" => [..]}`
   or a bare item map). Returns a map with `:code`, `:message`, and, when
-  present, `:required_scope`, `:did_you_mean`, `:allowed_methods`, `:docs_url`;
+  present, `:required_scope`, `:did_you_mean`, `:allowed_methods`, `:docs_url`, `:action`
+  (`meta.action`, set on `MANAGED_WAF_NOT_CONFIGURED`);
   `nil` when the body has no error item.
   """
   @spec parse(term()) :: map() | nil
@@ -34,6 +37,7 @@ defmodule AtlasAuth.Errors do
       code: code,
       message: item["message"],
       required_scope: meta["required_scope"],
+      action: meta["action"],
       did_you_mean: list(item["did_you_mean"] || meta["did_you_mean"]),
       allowed_methods: list(item["allowed_methods"] || meta["allowed_methods"]),
       docs_url: item["docs_url"]

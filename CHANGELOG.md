@@ -2,6 +2,14 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.11.0 — 2026-10-25
+
+### Added
+
+- **Error codes.** `AtlasAuth.Errors.managed_waf_not_configured/0` (`"MANAGED_WAF_NOT_CONFIGURED"`, HTTP 422); `AtlasAuth.Errors.parse/1` also returns `:action` from `meta.action`.
+
+This package has no Backend API client, so the partner platform, per-call audience, orchestrator and users-list surfaces do not apply to it.
+
 ## 0.10.0 — 2026-10-24
 
 ### Added
