@@ -1,7 +1,7 @@
 defmodule AtlasAuth.MixProject do
   use Mix.Project
 
-  @version "0.11.0"
+  @version "0.12.0"
   @source_url "https://github.com/Atlas-Authorization/atlas-elixir"
 
   def project do

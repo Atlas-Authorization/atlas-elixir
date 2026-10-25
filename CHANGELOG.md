@@ -2,6 +2,14 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.12.0 — 2026-10-25
+
+### Added
+
+- **Error codes.** `AtlasAuth.Errors.test_account_restricted/0` (`"TEST_ACCOUNT_RESTRICTED"`, HTTP 403), `AtlasAuth.Errors.provisioned_account_limit_reached/0` (`"PROVISIONED_ACCOUNT_LIMIT_REACHED"`, HTTP 409) and `AtlasAuth.Errors.domain_not_verified/0` (`"DOMAIN_NOT_VERIFIED"`, HTTP 422).
+
+This package has no Backend API client, so the provisioned-account and domain surfaces do not apply to it.
+
 ## 0.11.0 — 2026-10-25
 
 ### Added

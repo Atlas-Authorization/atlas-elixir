@@ -19,6 +19,12 @@ defmodule AtlasAuth.Errors do
   def origin_not_allowed, do: "ORIGIN_NOT_ALLOWED"
   @doc "422: managed WAF provision or deprovision on an instance with no WAF configuration saved (`meta.action`, see `parse/1`)."
   def managed_waf_not_configured, do: "MANAGED_WAF_NOT_CONFIGURED"
+  @doc "403: a Sign in with Atlas test or review account used outside the app it was made for."
+  def test_account_restricted, do: "TEST_ACCOUNT_RESTRICTED"
+  @doc "409: the account already holds its maximum number of test and review accounts (`meta.limit`)."
+  def provisioned_account_limit_reached, do: "PROVISIONED_ACCOUNT_LIMIT_REACHED"
+  @doc "422: the setting or address needs a domain the account has verified, and this one is not."
+  def domain_not_verified, do: "DOMAIN_NOT_VERIFIED"
 
   @doc """
   Pull the first error item out of a decoded error body (`%{"errors" => [..]}`

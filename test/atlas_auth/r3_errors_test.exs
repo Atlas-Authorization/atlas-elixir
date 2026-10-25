@@ -17,4 +17,13 @@ defmodule AtlasAuth.R3ErrorsTest do
     assert err.action == "provision"
     assert Errors.parse(%{"code" => "NOT_FOUND"}).action == nil
   end
+
+  test "provisioned account and domain error codes" do
+    assert Errors.test_account_restricted() == "TEST_ACCOUNT_RESTRICTED"
+    assert Errors.provisioned_account_limit_reached() == "PROVISIONED_ACCOUNT_LIMIT_REACHED"
+    assert Errors.domain_not_verified() == "DOMAIN_NOT_VERIFIED"
+
+    err = Errors.parse(%{"errors" => [%{"code" => "DOMAIN_NOT_VERIFIED", "message" => "m"}]})
+    assert err.code == Errors.domain_not_verified()
+  end
 end
