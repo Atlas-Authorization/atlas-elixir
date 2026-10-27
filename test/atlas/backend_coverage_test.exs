@@ -27,14 +27,14 @@ defmodule Atlas.BackendCoverageTest do
     assert MapSet.size(expected) >= 1000
 
     declared =
-      for mod <- Atlas.Resources.all(), {_fun, method, path, _n, _b, _p} <- mod.__operations__(), into: MapSet.new() do
+      for mod <- Atlas.ResourceIndex.all(), {_fun, method, path, _n, _b, _p} <- mod.__operations__(), into: MapSet.new() do
         String.upcase(to_string(method)) <> " " <> path
       end
 
     assert MapSet.difference(expected, declared) == MapSet.new()
     assert MapSet.difference(declared, expected) == MapSet.new()
 
-    for mod <- Atlas.Resources.all(), {fun, method, path, n, body, paginated} <- mod.__operations__() do
+    for mod <- Atlas.ResourceIndex.all(), {fun, method, path, n, body, paginated} <- mod.__operations__() do
       Agent.update(agent, fn _ -> [] end)
       args = [client] ++ List.duplicate("p1", n) ++ body_args(body)
       assert {:ok, _} = apply(mod, fun, args), "#{mod}.#{fun} failed"
