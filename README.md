@@ -1,7 +1,9 @@
 # atlas_auth
 
-The official **Elixir** backend SDK for **Atlas** — local RS256 session-token
-verification against the instance JWKS, with a **Plug/Phoenix** integration. It
+The official **Elixir** backend SDK for **Atlas** — the full **Backend API
+client** (every public operation, one module per resource), plus local RS256
+session-token verification against the instance JWKS, with a **Plug/Phoenix**
+integration. It
 is the Elixir peer of the Go, PHP, Rust and other Atlas server SDKs: the same
 verification rules, the same coarse failure reasons, the same §13.1
 token-confusion guard.
@@ -29,8 +31,37 @@ def deps do
 end
 ```
 
-Requires Elixir ~> 1.14. Pulls in `jose` (RS256/JWKS) and `jason` (JSON). `plug`
+Requires Elixir ~> 1.14. Pulls in `jose` (RS256/JWKS), `jason` (JSON) and `req` (HTTP). `plug`
 is optional — add it (most Phoenix apps already have it) to use the plugs.
+
+## Backend API client
+
+```elixir
+client = Atlas.new(System.fetch_env!("ATLAS_SECRET_KEY"))
+
+{:ok, page} = Atlas.Users.list(client, params: [limit: 20])
+{:ok, user} = Atlas.Users.get(client, "user_123")
+{:ok, user} = Atlas.Users.update(client, "user_123", %{first_name: "Ada"})
+
+# New records take an idempotency key, so a retried create cannot duplicate.
+{:ok, _} = Atlas.Users.create(client, %{email_address: "a@example.com"}, idempotency_key: "signup-42")
+
+# Cursor-paginated lists are lazy streams.
+client |> Atlas.Users.stream_list() |> Stream.take(500) |> Enum.to_list()
+
+case Atlas.Organizations.get(client, "org_1") do
+  {:ok, org} -> org
+  {:error, %Atlas.Error{status: 403, code: "INSUFFICIENT_SCOPE", required_scope: scope}} -> {:needs, scope}
+  {:error, %Atlas.Error{} = error} -> {:failed, error.code, error.message, error.request_id}
+end
+```
+
+Every function returns `{:ok, decoded_json}` or `{:error, %Atlas.Error{}}`
+(an HTTP error response, or `code: "TRANSPORT_ERROR"` with no `status`). The
+`stream_*` functions raise `Atlas.Error` if a page fails. Path values are
+percent-encoded. Options on every call: `:params` (query string), `:headers`,
+`:idempotency_key`. `Atlas.new/2` takes `:base_url` and `:req_options` (passed
+to `Req`, e.g. `retry: false`).
 
 ## Phoenix / Plug
 

@@ -1,7 +1,7 @@
 defmodule AtlasAuth.MixProject do
   use Mix.Project
 
-  @version "0.12.0"
+  @version "0.13.0"
   @source_url "https://github.com/Atlas-Authorization/atlas-elixir"
 
   def project do
@@ -43,13 +43,15 @@ defmodule AtlasAuth.MixProject do
       # app, so it is optional: a consumer who only wants the verifier never
       # pulls it in, while this library still compiles its plugs against it.
       {:plug, "~> 1.14", optional: true},
+      # HTTP client for the Backend API (`Atlas.*` resource modules).
+      {:req, "~> 0.5"},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]
   end
 
   defp description do
-    "The official Elixir backend SDK for Atlas — local RS256 session-token " <>
-      "verification against the instance JWKS, with a Plug/Phoenix integration. " <>
+    "The official Elixir backend SDK for Atlas — the full Backend API client, plus " <>
+      "local RS256 session-token verification against the instance JWKS, with a Plug/Phoenix integration. " <>
       "The Elixir peer of the Go, PHP, Rust and other Atlas server SDKs."
   end
 

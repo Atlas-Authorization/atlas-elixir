@@ -2,6 +2,15 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.13.0 — 2026-10-27
+
+### Added
+
+- **Backend API client.** `Atlas.new/2` builds a client and one module per resource (`Atlas.Users`, `Atlas.Organizations`, `Atlas.Sessions`, and so on) covers every public Backend API operation. Calls return `{:ok, body}` or `{:error, %Atlas.Error{}}`; cursor-paginated lists also come as lazy `stream_*` functions; writes accept an `:idempotency_key`.
+- `Atlas.Error` carries the HTTP status, the Atlas error code, the message, the required scope, the docs link and the request id.
+
+The session-token verifier API is unchanged. New dependency: `req`.
+
 ## 0.12.0 — 2026-10-25
 
 ### Added
