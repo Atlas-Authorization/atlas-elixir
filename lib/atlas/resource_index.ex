@@ -163,7 +163,10 @@ defmodule Atlas.ResourceIndex do
     Atlas.RateLimitPolicy,
     Atlas.ManagedWaf,
     Atlas.IntegrationHealth,
-    Atlas.Integrations
+    Atlas.Integrations,
+    Atlas.AppEventTypes,
+    Atlas.AppEvents,
+    Atlas.Testing
   ]
 
   @doc "All resource modules."

@@ -821,6 +821,77 @@ defmodule Atlas.Instance do
   def post_integrations_atlas_id_tokens(client, product, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", %{"product" => product}, body, opts)
 
+  @doc ~S"""
+  Whether the "Sign in with Atlas" button is on: `enabled`, the connection it uses and how it came to be (`managed_via`: `instance_toggle` or `linked`), `connection_status`, `available`, the Atlas `issuer`, and `candidates` (your active connections to that issuer that could be used).
+
+  `GET /v1/instance/sign_in_with_atlas`. Required scope: `instance:read`.
+  """
+  def get_sign_in_with_atlas(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/sign_in_with_atlas", %{}, nil, opts)
+
+  @doc ~S"""
+  Turn "Sign in with Atlas" on or off: `%{"enabled" => true}` (optionally with `"connection_id"` of an active OIDC connection to the Atlas issuer; 409 when another is already used) or `%{"enabled" => false}`. Returns the same object as GET.
+
+  `PATCH /v1/instance/sign_in_with_atlas`. Required scope: `instance:write`.
+  """
+  def update_sign_in_with_atlas(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/instance/sign_in_with_atlas", %{}, body, opts)
+
+  @doc ~S"""
+  Your own sign-in, sign-up and account page URLs (`sign_in_url`, `sign_up_url`, `user_url`), when set: the hosted pages then answer 302 to them. null = Atlas's hosted page is served. `hosted` lists the Atlas page URLs these apply to.
+
+  `GET /v1/instance/hosted_pages`. Required scope: `instance:read`.
+  """
+  def get_hosted_pages(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/hosted_pages", %{}, nil, opts)
+
+  @doc ~S"""
+  Send the hosted pages to your own: `sign_in_url`, `sign_up_url`, `user_url` (https on one of the instance's allowed origins; null clears one). Returns the same object as GET.
+
+  `PATCH /v1/instance/hosted_pages`. Required scope: `instance:write`.
+  """
+  def update_hosted_pages(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/instance/hosted_pages", %{}, body, opts)
+
+  @doc ~S"""
+  Everything a privacy integration wires, in one view: `cookie_consent`, `privacy_orchestrator`, `dsr_webhook` and `executor_key` (never its secret). `connected` is true when all four are in place. Needs `instance:read` and `secret_keys:read`.
+
+  `GET /v1/instance/privacy_integrations`. Required scope: `instance:read`.
+  """
+  def get_privacy_integrations(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/privacy_integrations", %{}, nil, opts)
+
+  @doc ~S"""
+  Wire a consent manager / data-rights orchestrator to the instance both ways in one call (`preset`, `site_id`, `cookie_consent`, `orchestrator`, `completion_webhook_url`, `key`). Mints a `privacy:*`-only executor key whose `executor_key.secret` is shown once; a re-run updates the same settings and returns the key without its secret (`idempotent_replay: true`). `warnings` lists anything to check. 201 when the orchestrator or the key was created, else 200.
+
+  `POST /v1/instance/privacy_integrations/connect`. Required scope: `instance:write`.
+  """
+  def post_privacy_integrations_connect(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/privacy_integrations/connect", %{}, body, opts)
+
+  @doc ~S"""
+  Alias of `GET /v1/secret_keys` (`Atlas.SecretKeys.list/2`).
+
+  `GET /v1/instance/secret_keys`. Required scope: `secret_keys:read`.
+  """
+  def get_secret_keys(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/secret_keys", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_secret_keys/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_secret_keys(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/secret_keys", %{}, opts)
+
+  @doc ~S"""
+  Alias of `POST /v1/secret_keys` (`Atlas.SecretKeys.create/3`). The secret is returned once.
+
+  `POST /v1/instance/secret_keys`. Required scope: `secret_keys:write`.
+  """
+  def post_secret_keys(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/secret_keys", %{}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:get_design, :get, "/v1/instance/design", 0, false, false},
@@ -913,6 +984,14 @@ defmodule Atlas.Instance do
     {:get_integrations_deliveries, :get, "/v1/instance/integrations/{product}/deliveries", 1, false, true},
     {:post_integrations_events_secret, :post, "/v1/instance/integrations/{product}/events_secret", 1, false, false},
     {:post_integrations_events_secret_rotate, :post, "/v1/instance/integrations/{product}/events_secret/rotate", 1, true, false},
-    {:post_integrations_atlas_id_tokens, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", 1, true, false}
+    {:post_integrations_atlas_id_tokens, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", 1, true, false},
+    {:get_sign_in_with_atlas, :get, "/v1/instance/sign_in_with_atlas", 0, false, false},
+    {:update_sign_in_with_atlas, :patch, "/v1/instance/sign_in_with_atlas", 0, true, false},
+    {:get_hosted_pages, :get, "/v1/instance/hosted_pages", 0, false, false},
+    {:update_hosted_pages, :patch, "/v1/instance/hosted_pages", 0, true, false},
+    {:get_privacy_integrations, :get, "/v1/instance/privacy_integrations", 0, false, false},
+    {:post_privacy_integrations_connect, :post, "/v1/instance/privacy_integrations/connect", 0, true, false},
+    {:get_secret_keys, :get, "/v1/instance/secret_keys", 0, false, true},
+    {:post_secret_keys, :post, "/v1/instance/secret_keys", 0, true, false}
   ]
 end

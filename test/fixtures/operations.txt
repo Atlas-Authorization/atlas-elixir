@@ -10,6 +10,7 @@ DELETE /v1/allowlist_identifiers/{id}
 DELETE /v1/analytics/alert_rules/{id}
 DELETE /v1/api_keys/{id}
 DELETE /v1/app_catalog/installed/{id}
+DELETE /v1/app_event_types/{id}
 DELETE /v1/app_roles/{id}
 DELETE /v1/atlas_id_apps/{id}/grants/{grantId}
 DELETE /v1/attack_protection/app_attestation_secret
@@ -94,6 +95,7 @@ DELETE /v1/org_ldap_connections/{id}
 DELETE /v1/org_role_grants/{id}
 DELETE /v1/org_role_grants/{id}/delegations/{delegationId}
 DELETE /v1/organizations/{id}
+DELETE /v1/organizations/{id}/app_webhook_endpoints/{endpointId}
 DELETE /v1/organizations/{id}/audit_streams/{streamId}
 DELETE /v1/organizations/{id}/connected_apps/{grantId}
 DELETE /v1/organizations/{id}/domains/{domainId}
@@ -200,6 +202,10 @@ GET /v1/api_keys/{id}
 GET /v1/api_keys/{id}/usage
 GET /v1/app_catalog
 GET /v1/app_catalog/installed
+GET /v1/app_event_types
+GET /v1/app_event_types/{id}
+GET /v1/app_events
+GET /v1/app_events/{id}
 GET /v1/app_roles
 GET /v1/app_roles/{id}
 GET /v1/app_roles/{id}/users
@@ -312,6 +318,7 @@ GET /v1/instance/cookie_consent
 GET /v1/instance/design
 GET /v1/instance/hooks/before_user_create
 GET /v1/instance/hooks/before_user_create/calls
+GET /v1/instance/hosted_pages
 GET /v1/instance/integrations
 GET /v1/instance/integrations/{product}
 GET /v1/instance/integrations/{product}/deliveries
@@ -322,13 +329,16 @@ GET /v1/instance/policy_settings
 GET /v1/instance/policy_source
 GET /v1/instance/policy_source/deliveries
 GET /v1/instance/preflight
+GET /v1/instance/privacy_integrations
 GET /v1/instance/privacy_orchestrator
 GET /v1/instance/proxy_secret
 GET /v1/instance/referrals
 GET /v1/instance/referrals/backfill/{id}
 GET /v1/instance/referrals/calls
 GET /v1/instance/referrals/calls/{id}
+GET /v1/instance/secret_keys
 GET /v1/instance/security
+GET /v1/instance/sign_in_with_atlas
 GET /v1/instance/signing_key_provider
 GET /v1/instance/signing_keys
 GET /v1/instance/status_dependencies
@@ -427,6 +437,10 @@ GET /v1/organizations
 GET /v1/organizations/by_slug/{slug}
 GET /v1/organizations/check_slug
 GET /v1/organizations/{id}
+GET /v1/organizations/{id}/app_event_types
+GET /v1/organizations/{id}/app_webhook_endpoints
+GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}
+GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries
 GET /v1/organizations/{id}/audit_streams
 GET /v1/organizations/{id}/branding
 GET /v1/organizations/{id}/connected_apps
@@ -574,6 +588,7 @@ PATCH /v1/actions/{id}
 PATCH /v1/analytics/alert_rules/{id}
 PATCH /v1/api_keys/{id}
 PATCH /v1/app_catalog/installed/{id}
+PATCH /v1/app_event_types/{id}
 PATCH /v1/app_roles/{id}
 PATCH /v1/attack_protection
 PATCH /v1/audit_event_schemas/{id}
@@ -596,9 +611,11 @@ PATCH /v1/iga/sod_rules/{id}
 PATCH /v1/instance
 PATCH /v1/instance/design
 PATCH /v1/instance/hooks/before_user_create
+PATCH /v1/instance/hosted_pages
 PATCH /v1/instance/policy_settings
 PATCH /v1/instance/referrals
 PATCH /v1/instance/security
+PATCH /v1/instance/sign_in_with_atlas
 PATCH /v1/instance/status_dependencies/{id}
 PATCH /v1/jwt_templates/{id}
 PATCH /v1/ldap_server_clients/{id}
@@ -617,6 +634,7 @@ PATCH /v1/oauth_clients/{id}/app_settings
 PATCH /v1/org_ldap_connections/{id}
 PATCH /v1/org_role_grants/{id}
 PATCH /v1/organizations/{id}
+PATCH /v1/organizations/{id}/app_webhook_endpoints/{endpointId}
 PATCH /v1/organizations/{id}/design
 PATCH /v1/organizations/{id}/memberships/{userId}
 PATCH /v1/organizations/{id}/policy
@@ -687,6 +705,8 @@ POST /v1/api_keys/token
 POST /v1/api_keys/verify
 POST /v1/api_keys/{id}/usage
 POST /v1/app_catalog/{id}/install
+POST /v1/app_event_types
+POST /v1/app_events
 POST /v1/app_roles
 POST /v1/audit_event_schemas
 POST /v1/audit_events
@@ -811,6 +831,7 @@ POST /v1/instance/page_templates/{page}/preview
 POST /v1/instance/page_templates/{page}/promote
 POST /v1/instance/policy_source/sync
 POST /v1/instance/policy_source/test
+POST /v1/instance/privacy_integrations/connect
 POST /v1/instance/proxy_secret
 POST /v1/instance/referrals/backfill
 POST /v1/instance/referrals/calls/retry_failed
@@ -818,6 +839,7 @@ POST /v1/instance/referrals/calls/{id}/retry
 POST /v1/instance/referrals/simulate
 POST /v1/instance/referrals/test
 POST /v1/instance/referrals/{preset}/install
+POST /v1/instance/secret_keys
 POST /v1/instance/signing_keys/rotate
 POST /v1/instance/status_dependencies
 POST /v1/instance/status_dependencies/{id}/refresh
@@ -892,6 +914,12 @@ POST /v1/org_role_grants
 POST /v1/org_role_grants/{id}/delegations
 POST /v1/organization_settings_schema
 POST /v1/organizations
+POST /v1/organizations/{id}/app_webhook_endpoints
+POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver
+POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay
+POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret
+POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret
+POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test
 POST /v1/organizations/{id}/audit_streams
 POST /v1/organizations/{id}/domains
 POST /v1/organizations/{id}/domains/{domainId}/verify
@@ -982,6 +1010,7 @@ POST /v1/sso_onboarding_profiles/{id}/tickets
 POST /v1/sso_onboarding_tickets/{id}/revoke
 POST /v1/test_instance
 POST /v1/test_users/purge
+POST /v1/testing/sign_in_url
 POST /v1/testing_tokens
 POST /v1/tickets
 POST /v1/tickets/redeem

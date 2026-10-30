@@ -14,6 +14,7 @@ defmodule Atlas.SignInTokens do
 
   `POST /v1/sign_in_tokens`. Required scope: `sign_in_tokens:write`.
   """
+  @doc deprecated: "Use Atlas.Sessions.create/3 with mode browser_ticket"
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sign_in_tokens", %{}, body, opts)
 
@@ -22,6 +23,7 @@ defmodule Atlas.SignInTokens do
 
   `POST /v1/sign_in_tokens/{id}/revoke`. Required scope: `sign_in_tokens:write`.
   """
+  @doc deprecated: "Use Atlas.Sessions.create/3 with mode browser_ticket"
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sign_in_tokens/{id}/revoke", %{"id" => id}, nil, opts)
 
