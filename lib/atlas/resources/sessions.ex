@@ -25,7 +25,7 @@ defmodule Atlas.Sessions do
     do: Atlas.Client.stream(client, "/v1/sessions", %{}, opts)
 
   @doc ~S"""
-  Establish a session for a user in one call — returns jwt + refresh_token, audited as a first-party sign-in (not impersonation unless actor.sub is set). Pass set_cookies:true (+ optional cookie_domain) to also get the ready-to-set Set-Cookie strings, so a backend can relay one response to establish a real browser session for a known reader. Bypasses the sign-in gate.
+  Establish a session for a user in one call — returns jwt + refresh_token, audited as a first-party sign-in (not impersonation unless actor.sub is set). Pass set_cookies:true (+ optional cookie_domain) to also get the ready-to-set Set-Cookie strings, so a backend can relay one response to establish a real browser session for a known reader. Bypasses the sign-in gate. With `"mode" => "browser_ticket"` (plus `user_id`, optional `redirect_url` and `expires_in_seconds`) it returns a one-time browser ticket instead: `{object: "browser_ticket", id, user_id, ticket, url, redirect_url, expires_in, expires_at}`; open `url` in the browser to sign it in. This replaces the deprecated `/v1/sign_in_tokens`.
 
   `POST /v1/sessions`. Required scope: `sessions:write`.
   """

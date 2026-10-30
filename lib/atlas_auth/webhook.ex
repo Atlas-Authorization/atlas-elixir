@@ -84,6 +84,63 @@ defmodule AtlasAuth.Webhook do
     end
   end
 
+  @doc """
+  Verify a Standard Webhooks delivery: an application webhook (an event your
+  app published with `POST /v1/app_events`) as your customer receives it.
+
+  Headers `webhook-id`, `webhook-timestamp` (epoch seconds) and
+  `webhook-signature` (space-separated `v1,<base64>` entries; any one may
+  match, so a rotating secret verifies). The signature is HMAC-SHA256 over
+  `"<id>.<timestamp>.<raw body>"` keyed with the base64-decoded part of the
+  secret after `whsec_`. Matches `verifyStandardWebhook` in `@atlasauth/backend`.
+
+  Options: `:now_ms` (override the clock), `:tolerance_ms` (default 300_000).
+  The returned `timestamp` is the signed `webhook-timestamp` in seconds.
+  """
+  @spec verify_standard(binary(), [{String.t(), String.t()}] | map(), String.t(), keyword()) ::
+          {:ok, verified()} | {:error, reason()}
+  def verify_standard(body, headers, secret, opts \\ []) when is_binary(body) and is_binary(secret) do
+    now_s = div(Keyword.get_lazy(opts, :now_ms, fn -> System.system_time(:millisecond) end), 1000)
+    tolerance_s = div(Keyword.get(opts, :tolerance_ms, @replay_tolerance_ms), 1000)
+
+    with {:ok, id, ts_raw, signature} <-
+           read_headers(headers, "webhook-id", "webhook-timestamp", "webhook-signature"),
+         {:ok, provided} <- parse_signature(signature),
+         {:ok, timestamp} <- parse_seconds(ts_raw, now_s, tolerance_s),
+         :ok <- check_standard_mac(secret, id, timestamp, body, provided) do
+      {:ok, %{event: decode_event(body), delivery_id: id, timestamp: timestamp}}
+    end
+  end
+
+  defp parse_seconds(raw, now_s, tolerance_s) do
+    with true <- Regex.match?(~r/\A\d+\z/, raw),
+         ts = String.to_integer(raw),
+         true <- abs(now_s - ts) <= tolerance_s do
+      {:ok, ts}
+    else
+      _ -> {:error, :stale_timestamp}
+    end
+  end
+
+  defp check_standard_mac(secret, id, timestamp, body, provided) do
+    encoded = String.replace_prefix(secret, "whsec_", "")
+
+    # A key that is not base64 can never have produced a valid signature.
+    decoded =
+      with :error <- Base.decode64(encoded), do: Base.decode64(encoded, padding: false)
+
+    case decoded do
+      {:ok, key} ->
+        expected = :crypto.mac(:hmac, :sha256, key, [id, ".", Integer.to_string(timestamp), ".", body]) |> Base.encode64()
+        if Enum.reduce(provided, false, fn c, acc -> same?(expected, c) or acc end),
+          do: :ok,
+          else: {:error, :signature_mismatch}
+
+      :error ->
+        {:error, :signature_mismatch}
+    end
+  end
+
   defp check_v1_v2(secret, id, timestamp, url, body, v1, v2) do
     ts = Integer.to_string(timestamp)
     e1 = mac(secret, [id, ".", ts, ".", body])
@@ -121,10 +178,10 @@ defmodule AtlasAuth.Webhook do
     end)
   end
 
-  defp read_headers(headers) do
-    id = header(headers, "atlas-id")
-    ts = header(headers, "atlas-timestamp")
-    sig = header(headers, "atlas-signature")
+  defp read_headers(headers, id_name \\ "atlas-id", ts_name \\ "atlas-timestamp", sig_name \\ "atlas-signature") do
+    id = header(headers, id_name)
+    ts = header(headers, ts_name)
+    sig = header(headers, sig_name)
 
     if blank?(id) or blank?(ts) or blank?(sig),
       do: {:error, :missing_headers},

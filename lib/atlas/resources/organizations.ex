@@ -636,6 +636,123 @@ defmodule Atlas.Organizations do
   def update_settings(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
 
+  @doc ~S"""
+  List the organization's application webhook endpoints (the app's own events, published with POST /v1/app_events), with delivery health. Backend API. Never returns a secret.
+
+  `GET /v1/organizations/{id}/app_webhook_endpoints`. Required scope: `webhooks:read`.
+  """
+  def get_by_id_app_webhook_endpoints(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_by_id_app_webhook_endpoints/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_by_id_app_webhook_endpoints(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/app_webhook_endpoints", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Register an endpoint that receives the app's own events for this organization (`url`, `enabled_events` from the app event catalog or `["*"]`, `description`, `active`). Deliveries are signed with Standard Webhooks headers (verify with `AtlasAuth.Webhook.verify_standard/4`). The whsec_ secret is returned in this response only. At most 20 per organization; https only.
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints`. Required scope: `webhooks:write`.
+  """
+  def post_app_webhook_endpoints(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Retrieve one of the organization's application webhook endpoints, with its delivery health (failing_since, disabled_at, auto_disable rule).
+
+  `GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}`. Required scope: `webhooks:read`.
+  """
+  def get_by_id_app_webhook_endpoints_by_endpoint_id(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Update the url, subscribed app event types, description or active flag. Setting active: true on an auto-disabled endpoint re-enables it; replay then re-sends what it missed.
+
+  `PATCH /v1/organizations/{id}/app_webhook_endpoints/{endpointId}`. Required scope: `webhooks:write`.
+  """
+  def update_app_webhook_endpoints(client, id, endpoint_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, body, opts)
+
+  @doc ~S"""
+  Delete an application webhook endpoint and its delivery log. An id from another organization is a 404.
+
+  `DELETE /v1/organizations/{id}/app_webhook_endpoints/{endpointId}`. Required scope: `webhooks:write`.
+  """
+  def delete_app_webhook_endpoints(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Rotate the whsec_ signing secret. The previous secret keeps signing alongside the new one (a second v1 entry in webhook-signature) for 24 hours. Returns `secret`, `overlap_seconds` and `previous_secret_expires_at`.
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret`. Required scope: `webhooks:write`.
+  """
+  def post_app_webhook_endpoints_rotate_secret(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Show the current whsec_ signing secret again. Audited.
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret`. Required scope: `webhooks:reveal`.
+  """
+  def post_app_webhook_endpoints_reveal_secret(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Send a signed webhook.test event to this endpoint only. With `params: [wait: "10s"]` the attempt is made now and its result returned; otherwise it is queued (201).
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test`. Required scope: `webhooks:write`.
+  """
+  def post_app_webhook_endpoints_test(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  The endpoint's delivery log: payload, response and retry state for each attempt, filterable by status, app event type and time.
+
+  `GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries`. Required scope: `webhooks:read`.
+  """
+  def get_app_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_app_webhook_endpoints_deliveries/4`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_app_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, opts)
+
+  @doc ~S"""
+  Redeliver one past delivery as a fresh attempt (same event id). 409 when the event has passed its 90-day retention; a delivery of another endpoint is a 404.
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver`. Required scope: `webhooks:write`.
+  """
+  def post_app_webhook_endpoints_deliveries_redeliver(client, id, endpoint_id, delivery_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", %{"id" => id, "endpointId" => endpoint_id, "deliveryId" => delivery_id}, nil, opts)
+
+  @doc ~S"""
+  Re-send every event of this organization since `since` (or since=failing_since) that the endpoint subscribes to and has not received, including events published while it was disabled (`since`, `until`, `event_type`). At most 1,000 per call; running it again queues nothing new. 409 if the endpoint is disabled.
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay`. Required scope: `webhooks:write`.
+  """
+  def post_app_webhook_endpoints_replay(client, id, endpoint_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay", %{"id" => id, "endpointId" => endpoint_id}, body, opts)
+
+  @doc ~S"""
+  The app's event catalog for the endpoint picker (deprecated types left out).
+
+  `GET /v1/organizations/{id}/app_event_types`. Required scope: `webhooks:read`.
+  """
+  def get_app_event_types(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_event_types", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_app_event_types/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_app_event_types(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/app_event_types", %{"id" => id}, opts)
+
   @doc false
   def __operations__, do: [
     {:get_design, :get, "/v1/organizations/{id}/design", 1, false, false},
@@ -704,6 +821,18 @@ defmodule Atlas.Organizations do
     {:get_connections_secret, :get, "/v1/organizations/{id}/connections/{connectionId}/secret", 2, false, false},
     {:get_settings, :get, "/v1/organizations/{id}/settings", 1, false, false},
     {:put_settings, :put, "/v1/organizations/{id}/settings", 1, true, false},
-    {:update_settings, :patch, "/v1/organizations/{id}/settings", 1, true, false}
+    {:update_settings, :patch, "/v1/organizations/{id}/settings", 1, true, false},
+    {:get_by_id_app_webhook_endpoints, :get, "/v1/organizations/{id}/app_webhook_endpoints", 1, false, true},
+    {:post_app_webhook_endpoints, :post, "/v1/organizations/{id}/app_webhook_endpoints", 1, true, false},
+    {:get_by_id_app_webhook_endpoints_by_endpoint_id, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, false, false},
+    {:update_app_webhook_endpoints, :patch, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, true, false},
+    {:delete_app_webhook_endpoints, :delete, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, false, false},
+    {:post_app_webhook_endpoints_rotate_secret, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret", 2, false, false},
+    {:post_app_webhook_endpoints_reveal_secret, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret", 2, false, false},
+    {:post_app_webhook_endpoints_test, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test", 2, false, false},
+    {:get_app_webhook_endpoints_deliveries, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", 2, false, true},
+    {:post_app_webhook_endpoints_deliveries_redeliver, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", 3, false, false},
+    {:post_app_webhook_endpoints_replay, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay", 2, true, false},
+    {:get_app_event_types, :get, "/v1/organizations/{id}/app_event_types", 1, false, true}
   ]
 end

@@ -63,6 +63,24 @@ percent-encoded. Options on every call: `:params` (query string), `:headers`,
 `:idempotency_key`. `Atlas.new/2` takes `:base_url` and `:req_options` (passed
 to `Req`, e.g. `retry: false`).
 
+### Application webhooks, browser tickets and test sign-in URLs
+
+```elixir
+# Your app's own events, delivered to the endpoints your customers (organizations) register.
+{:ok, _} = Atlas.AppEventTypes.create(client, %{type: "call.completed", description: "A call finished."})
+{:ok, _} = Atlas.Organizations.post_app_webhook_endpoints(client, "org_1", %{url: "https://hooks.example.com/atlas", enabled_events: ["call.completed"]})
+{:ok, _} = Atlas.AppEvents.create(client, %{organization_id: "org_1", type: "call.completed", data: %{call_id: "c1"}}, idempotency_key: "c1")
+
+# A one-time ticket that signs a browser in as the user (replaces Atlas.SignInTokens).
+{:ok, %{"url" => url}} = Atlas.Sessions.create(client, %{user_id: "user_123", mode: "browser_ticket", redirect_url: "https://app.example.com/"})
+
+# Development instances only: a ready sign-in URL for end-to-end tests.
+{:ok, %{"url" => url}} = Atlas.Testing.post_sign_in_url(client, %{user_id: "user_123", redirect_url: "http://localhost:3000/"})
+```
+
+A ticket is single-use. On development instances only, a repeat exchange of the same ticket from
+the same client within 10 seconds returns the first answer.
+
 ## Phoenix / Plug
 
 ```elixir
@@ -239,6 +257,14 @@ end
 The `atlas-signature` header can carry several signatures separated by spaces (`v1,<sig> v1,<sig>`). While an
 endpoint secret rotates, Atlas may sign each delivery with the old and the new secret; the delivery verifies
 when any one signature matches.
+
+Application webhooks (the events your app publishes with `Atlas.AppEvents.create/3`) use Standard Webhooks
+headers (`webhook-id`, `webhook-timestamp` in seconds, `webhook-signature`) and a `whsec_<base64>` secret.
+Your customers verify them with `AtlasAuth.Webhook.verify_standard/4`, or any Standard Webhooks library:
+
+```elixir
+{:ok, %{delivery_id: id, event: event}} = AtlasAuth.Webhook.verify_standard(raw_body, conn.req_headers, "whsec_...")
+```
 
 ## Integrator platform (0.9)
 

@@ -16,6 +16,8 @@ else:
     spec = json.load(open(src))
 METHODS = ("get", "post", "put", "patch", "delete")
 VERB = {"get": "get", "post": "post", "put": "put", "patch": "update", "delete": "delete"}
+# Resources whose functions carry `@doc deprecated:` (shown in docs; no compile warning).
+DEPRECATED = {"sign_in_tokens": "Use Atlas.Sessions.create/3 with mode browser_ticket"}
 
 
 def snake(s):
@@ -153,6 +155,7 @@ for res, rops in by_res.items():
         sc = f" Required scope: `{o['scope']}`." if o["scope"] else ""
         out += [f'  @doc ~S"""', f"  {o['summary'] or o['name']}", "",
                 f"  `{o['method'].upper()} {o['path']}`.{sc}", '  """',
+                *([f'  @doc deprecated: "{DEPRECATED[res]}"'] if res in DEPRECATED else []),
                 f"  def {o['name']}({', '.join(sig_args)}),",
                 f'    do: Atlas.Client.request(client, :{o["method"]}, "{o["path"]}", {bind}, {call_body}, {opts_expr})',
                 ""]

@@ -2,6 +2,20 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.14.0 — 2026-10-30
+
+### Added
+
+- **Application webhooks.** `Atlas.AppEvents` (`create` publishes, `list`, `get`), `Atlas.AppEventTypes` (the event catalog: `list`, `create`, `get`, `update`, `delete`, by `aet_` id or type name) and, on `Atlas.Organizations`, one organization's endpoints (`*_app_webhook_endpoints*`: list, create, get, update, delete, rotate and reveal secret, test, deliveries, redeliver, replay) plus the event-type picker `get_app_event_types/2`.
+- **Standard Webhooks verifier.** `AtlasAuth.Webhook.verify_standard/4` for application webhooks (`webhook-id`, `webhook-timestamp`, `webhook-signature`, `whsec_` base64 key).
+- **Sign-in URL for tests.** `Atlas.Testing.post_sign_in_url/3` (`POST /v1/testing/sign_in_url`, development instances only).
+- **Sign in with Atlas, hosted pages, privacy integration.** `Atlas.Instance.get_sign_in_with_atlas/2`, `update_sign_in_with_atlas/3`, `get_hosted_pages/2`, `update_hosted_pages/3`, `get_privacy_integrations/2`, `post_privacy_integrations_connect/3`, and the `/v1/instance/secret_keys` alias (`get_secret_keys/2`, `post_secret_keys/3`).
+- Documented: `Atlas.Sessions.create/3` with `mode: "browser_ticket"` (`redirect_url`, `expires_in_seconds`) returns a one-time browser ticket. The API also gained (and these maps now carry): `warnings` on instance and referral updates, `design.source` on appearance, API key limit periods `second` and `minute` and `effective_scopes` on verify, user `image_url` (alias `profile_image_url`) and `external_accounts`, webhook endpoint `active` on create, and managed email 202 with `dns.status`, `last_error`, `attempts`, `next_check_at`, `started_at`, `feedback_webhook_id` and `feedback_webhook_error`.
+
+### Deprecated
+
+- `Atlas.SignInTokens.create` and `post_revoke` (sunset 2027-04-01): use `Atlas.Sessions.create/3` with `mode: "browser_ticket"`.
+
 ## 0.13.0 — 2026-10-27
 
 ### Added
