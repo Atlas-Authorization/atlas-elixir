@@ -2,6 +2,17 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.15.0 — 2026-11-01
+
+### Added
+
+- **Trusted-JWT connections.** `Atlas.JwtConnections` (`list`, `create`, `get`, `update`, `delete`): your system signs a short-lived JWT and sends the person to the connection's `login_url`.
+- **Organizations.** `Atlas.Organizations.get_by_domain/3` (a domain or an email address; `include_unverified` as a param), `get_policy/3`, and `post_domains_verification_email/5`; `post_domains_verify/5` now takes an optional body before the options (a keyword list in fourth place is still read as options) (`method`: `dns_txt`, `well_known` or `email`, plus `code`). `list` filters by `external_id` and `metadata[key]` params.
+- **Platform.** `Atlas.PlatformApps.reveal_initial_secret/3` (`POST /v1/platform/apps/{id}/initial_secret/reveal`, `dry_run` as a param).
+- **Previous issuers.** `AtlasAuth.Verifier` takes `:previous_issuers`: `iss` may equal the configured issuer or one of these, nothing else.
+- **Webhook events.** `AtlasAuth.WebhookEvents` gains `sso_connection_activated`, `sso_onboarding_ticket_completed` and the `scim_group_*` events (`created`, `updated`, `deleted`, `member_added`, `member_removed`).
+- Documented: organization `external_id`, `public_metadata` / `private_metadata`, `owner_email` (`owner_invitation` in the response), `role_mappings`, optional `created_by`, and `sso` on a fetch; domain `verification_methods`; SCIM token `scim_base_url` and `warnings`; SSO `saml_acs_path` and `github_access`; LDAP `group_role_mappings`; SSO onboarding `return_url`, `expires_in_seconds` and `?name=`; webhook endpoint `active` and `secret` on create, `secret` on rotate, and the full test result (`event_id`, `event_type`, `error_kind`, `will_retry`); users and imports `password_hash_algorithm` / `password_hash_params`; referral `partner_portal_url` and `report_linked_atlas_id_signups`; cookie consent `host_aliases`; branding `accountPortal`; custom domains `method: "path"` with `hostname` and `base_path`.
+
 ## 0.14.0 — 2026-10-30
 
 ### Added

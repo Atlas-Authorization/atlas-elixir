@@ -25,7 +25,7 @@ defmodule Atlas.OrgLdapConnections do
     do: Atlas.Client.stream(client, "/v1/org_ldap_connections", %{}, opts)
 
   @doc ~S"""
-  Create an organization-owned LDAP / AD connection (url, bind_dn, base_dn, user_filter, attributes). The service-account bind_password is write-only; one connection per organization.
+  Create an organization-owned LDAP / AD connection (url, bind_dn, base_dn, user_filter, attributes). The service-account bind_password is write-only; one connection per organization. Optional `group_role_mappings` (`[%{"group" => group_dn, "role" => role_key}]`, at most 50): a newly seated member gets the role of the first mapping whose group is in their groups attribute.
 
   `POST /v1/org_ldap_connections`. Required scope: `sso_connections:write`.
   """
@@ -41,7 +41,7 @@ defmodule Atlas.OrgLdapConnections do
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an organization-owned LDAP connection. The bind password is only re-encrypted when a new one is supplied.
+  Update an organization-owned LDAP connection. The bind password is only re-encrypted when a new one is supplied. Accepts `group_role_mappings` as on create.
 
   `PATCH /v1/org_ldap_connections/{id}`. Required scope: `sso_connections:write`.
   """

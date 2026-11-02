@@ -17,7 +17,7 @@ defmodule AtlasAuth.Verifier do
       what stops an `alg: none` token, or one that coerces the RSA public key
       into an HMAC secret, from ever verifying;
     * signature — RS256 or ES256 against the JWKS key whose `kid` matches the header;
-    * `iss` — must equal the configured issuer. An unchecked issuer would accept
+    * `iss` — must equal the configured issuer (or one of `:previous_issuers`). An unchecked issuer would accept
       *any* Atlas instance's tokens, so a missing issuer is a config error, not a
       soft default;
     * `exp` / `nbf` / `iat` — with ~5s of clock skew either side, matching the
@@ -46,6 +46,11 @@ defmodule AtlasAuth.Verifier do
       `Application.get_env(:atlas_auth, :jwks_url)` then `ATLAS_JWKS_URL`.
     * `:issuer` — the expected `iss`. Falls back to
       `Application.get_env(:atlas_auth, :issuer)` then `ATLAS_ISSUER`.
+    * `:previous_issuers` — earlier issuers of THIS instance, also accepted (a list
+      of strings): its old sign-in host while it moves to a new one (a custom domain
+      or a path mount going active). The keys are the instance's own, so nothing else
+      changes. The discovery document lists them in `atlas_previous_issuers` with an
+      `accepted_until`; remove them after that.
     * `:authorized_parties` — optional `azp` allowlist (list of strings).
     * `:leeway` — clock-skew tolerance in seconds (default `5`).
     * `:fetcher` — a `(url -> {:ok, [key_map]} | {:error, term})` function. The
@@ -161,7 +166,7 @@ defmodule AtlasAuth.Verifier do
     now_ms = Keyword.get(opts, :now_ms, System.system_time(:millisecond))
 
     with {:ok, _header, claims} <- verify_signed(token, parts, opts),
-         :ok <- check_issuer(claims, issuer),
+         :ok <- check_issuer(claims, [issuer | (Keyword.get(opts, :previous_issuers) || [])]),
          :ok <- check_time(claims, div(now_ms, 1000), leeway),
          :ok <- check_token_confusion(claims),
          :ok <- check_azp(claims, authorized_parties) do
@@ -261,8 +266,8 @@ defmodule AtlasAuth.Verifier do
     _ -> {:error, :invalid}
   end
 
-  defp check_issuer(%{"iss" => iss}, issuer) when iss == issuer, do: :ok
-  defp check_issuer(_claims, _issuer), do: {:error, :invalid}
+  defp check_issuer(%{"iss" => iss}, issuers) when is_binary(iss), do: if(iss in issuers, do: :ok, else: {:error, :invalid})
+  defp check_issuer(_claims, _issuers), do: {:error, :invalid}
 
   defp check_time(claims, now_sec, leeway) do
     exp = num(claims["exp"])

@@ -25,7 +25,7 @@ defmodule Atlas.WebhookEndpoints do
     do: Atlas.Client.stream(client, "/v1/webhook_endpoints", %{}, opts)
 
   @doc ~S"""
-  Register a webhook endpoint: an HTTPS url (any receiver), or an event destination (AWS EventBridge, Google Cloud Pub/Sub, Cloudflare Queues) with your own credentials. Omit enabled_events for "*". The signing secret is returned in this response only. Send Idempotency-Key to make a retried create return the first result. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value).
+  Register a webhook endpoint: an HTTPS url (any receiver), or an event destination (AWS EventBridge, Google Cloud Pub/Sub, Cloudflare Queues) with your own credentials. Omit enabled_events for "*". `active: false` creates it switched off: nothing is delivered until PATCH { active: true }, and POST /v1/webhook_endpoints/{id}/test still works on it. `secret` sets your own signing secret (whsec_ + at least 32 characters; 422 otherwise); without it Atlas generates one. The signing secret is returned in this response only. Send Idempotency-Key to make a retried create return the first result. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value).
 
   `POST /v1/webhook_endpoints`. Required scope: `webhooks:write`.
   """
@@ -88,7 +88,7 @@ defmodule Atlas.WebhookEndpoints do
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/reveal_secret", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Rotate the endpoint signing secret. The new secret is revealed exactly once. By default (`overlap_seconds` 0) the old secret stops signing at once. With `overlap_seconds` (at most 604800 = 7 days) every delivery carries two signatures in `atlas-signature` (`v1,<new> v1,<old>`, the new one first), so a verifier holding either secret passes while you deploy the new one; after that only the new secret signs. Set an overlap only once every receiver verifies with an SDK that accepts several signatures (@atlasauth/backend 0.9.1+, Python/Ruby/PHP/Go 0.7.0+, Java 1.5.0+, .NET 1.6.0+, Rust 0.13.0+, Elixir 0.4.0+) or a verifier that splits the header on spaces: a verifier that splits it on ',' rejects every delivery for the whole overlap, even with the new secret. `previous_secret_expires_at` says when the old secret stops signing (epoch ms), or null when it already has; endpoint reads show it too while the overlap is open.
+  Rotate the endpoint signing secret. The new secret is revealed exactly once. By default (`overlap_seconds` 0) the old secret stops signing at once. With `overlap_seconds` (at most 604800 = 7 days) every delivery carries two signatures in `atlas-signature` (`v1,<new> v1,<old>`, the new one first), so a verifier holding either secret passes while you deploy the new one; after that only the new secret signs. Set an overlap only once every receiver verifies with an SDK that accepts several signatures (@atlasauth/backend 0.9.1+, Python/Ruby/PHP/Go 0.7.0+, Java 1.5.0+, .NET 1.6.0+, Rust 0.13.0+, Elixir 0.4.0+) or a verifier that splits the header on spaces: a verifier that splits it on ',' rejects every delivery for the whole overlap, even with the new secret. `previous_secret_expires_at` says when the old secret stops signing (epoch ms), or null when it already has; endpoint reads show it too while the overlap is open. Send `secret` to rotate to a secret you chose (whsec_ + at least 32 characters, different from the current one; 422 otherwise).
 
   `POST /v1/webhook_endpoints/{id}/rotate_secret`. Required scope: `webhooks:write`.
   """
@@ -120,7 +120,7 @@ defmodule Atlas.WebhookEndpoints do
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/replay", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Send a synthetic webhook.test event to this endpoint only (never fanned out). With ?wait=10s the attempt is made now and the result returned: delivery_id, status, http_status, latency_ms, response_snippet, error and signature_header_sent. Without it the delivery is queued (201).
+  Send a synthetic webhook.test event to this endpoint only (never fanned out), also when the endpoint is switched off (active: false). It is signed exactly like a real delivery, with the endpoint's own signing secret (both secrets during a rotation overlap). With ?wait=10s the attempt is made now and the result returned (200): delivery_id, event_id, event_type (webhook.test), status (success | failed), http_status, latency_ms, response_snippet (first 1 KB), error (the delivery-log code), error_kind (non_2xx, redirect, timeout, tls, dns, connection_refused, network, url_blocked; null on success), signature_header_sent and will_retry. Without it the delivery is queued (201).
 
   `POST /v1/webhook_endpoints/{id}/test`. Required scope: `webhooks:write`.
   """

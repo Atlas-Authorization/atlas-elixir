@@ -18,7 +18,7 @@ defmodule Atlas.Branding do
     do: Atlas.Client.request(client, :get, "/v1/branding", %{}, nil, opts)
 
   @doc ~S"""
-  Change branding with a PARTIAL merge (unlike auth_config full-replace), validated the way the renderer resolves it — a value it would drop is refused, not silently ignored. Top-level fields replace; socialButtons merges one level deeper: its per-provider maps (labels, displayNames, icons, modes, styles) merge per provider key, and a null value deletes that key.
+  Change branding with a PARTIAL merge (unlike auth_config full-replace), validated the way the renderer resolves it — a value it would drop is refused, not silently ignored. Top-level fields replace; socialButtons merges one level deeper: its per-provider maps (labels, displayNames, icons, modes, styles) merge per provider key, and a null value deletes that key. URLs: legal.termsUrl and legal.privacyUrl must be https:// on every instance, development included (a localhost policy page is refused with 422 VALIDATION_FAILED, param branding.legal.privacyUrl); logoUrl is https or a raster data: URI. The same fields cannot be sent as auth_config.branding on PATCH /v1/instance (strict writes refuse them with 422 UNKNOWN_FIELD and meta.hint naming this endpoint). `accountPortal` (alias `account_portal`) `{panels: {<panel> => false}}` hides panels of the hosted account page (profile, email_addresses, password, passkeys, mfa, sessions, linked_accounts, connected_apps, shared_resources, ciba, referrals, delete_account); merged per panel, null removes a key.
 
   `PATCH /v1/branding`. Required scope: `branding:write`.
   """

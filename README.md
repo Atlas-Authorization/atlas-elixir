@@ -81,6 +81,23 @@ to `Req`, e.g. `retry: false`).
 A ticket is single-use. On development instances only, a repeat exchange of the same ticket from
 the same client within 10 seconds returns the first answer.
 
+### Organizations by your ids and domains, trusted-JWT sign-in
+
+```elixir
+{:ok, org} = Atlas.Organizations.create(client, %{name: "Acme", slug: "acme", external_id: "cus_42", owner_email: "it@acme.com"})
+{:ok, _} = Atlas.Organizations.list(client, params: [{"external_id", "cus_42"}, {"metadata[plan]", "pro"}])
+{:ok, %{"domain" => _}} = Atlas.Organizations.get_by_domain(client, "jane@acme.com")
+{:ok, _} = Atlas.Organizations.post_domains_verification_email(client, org["id"], "dom_1", %{address: "admin"})
+{:ok, _} = Atlas.Organizations.post_domains_verify(client, org["id"], "dom_1", %{method: "email", code: "123456"})
+
+# Your system signs a short-lived JWT and sends the person to login_url?token=...&redirect_url=...
+{:ok, %{"login_url" => _}} = Atlas.JwtConnections.create(client, %{organization_id: org["id"], status: "active",
+  jwks_uri: "https://idp.example.com/jwks", issuer: "https://idp.example.com", audience: "atlas"})
+
+# Platform key: fetch a new app's secret once more within 10 minutes of creating it.
+{:ok, _} = Atlas.PlatformApps.reveal_initial_secret(Atlas.new("psk_..."), "app_1")
+```
+
 ## Phoenix / Plug
 
 ```elixir
@@ -159,7 +176,9 @@ config :atlas_auth,
 ```
 
 They also fall back to the `ATLAS_JWKS_URL` / `ATLAS_ISSUER` environment
-variables. Other options: `:authorized_parties` (an `azp` allowlist), `:leeway`
+variables. Other options: `:previous_issuers` (earlier issuers of the same instance,
+also accepted while it moves to a new sign-in host; see `atlas_previous_issuers` in its
+discovery document), `:authorized_parties` (an `azp` allowlist), `:leeway`
 (clock skew in seconds, default `5`), and `:fetcher` (inject your own JWKS
 fetcher — the default uses `:httpc`, no extra dependency).
 

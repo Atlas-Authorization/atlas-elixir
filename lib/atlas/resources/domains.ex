@@ -25,7 +25,7 @@ defmodule Atlas.Domains do
     do: Atlas.Client.stream(client, "/v1/domains", %{}, opts)
 
   @doc ~S"""
-  Claim a custom domain (fapi or accounts). Returns 201 with the full custom_domain object — including its `id` (dom_…), which you pass to POST /v1/domains/{id}/verify once DNS is published — plus the CNAME `instructions` to follow (or a `note` for a platform subdomain, which is live immediately). Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the CNAME itself: it finds the zone, creates the record DNS-only (never proxied; `dns.proxied: true` is refused), waits briefly for it to resolve and verifies, so the domain can go from nothing to active in one call (`verified` in the response; otherwise call verify later). The token is stored encrypted and is never readable back (the response shows only `dns.provider` and `token_set`). An existing record that points elsewhere is not overwritten unless `dns.overwrite` is true (409 DNS_RECORD_CONFLICT); a rejected token is 422 DNS_TOKEN_REJECTED; no visible zone is 422 DNS_ZONE_NOT_FOUND.
+  Claim a custom domain (fapi or accounts). Returns 201 with the full custom_domain object — including its `id` (dom_…), which you pass to POST /v1/domains/{id}/verify once DNS is published — plus the CNAME `instructions` to follow (or a `note` for a platform subdomain, which is live immediately). Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the CNAME itself: it finds the zone, creates the record DNS-only (never proxied; `dns.proxied: true` is refused), waits briefly for it to resolve and verifies, so the domain can go from nothing to active in one call (`verified` in the response; otherwise call verify later). The token is stored encrypted and is never readable back (the response shows only `dns.provider` and `token_set`). An existing record that points elsewhere is not overwritten unless `dns.overwrite` is true (409 DNS_RECORD_CONFLICT); a rejected token is 422 DNS_TOKEN_REJECTED; no visible zone is 422 DNS_ZONE_NOT_FOUND. With `method: "path"` (and `hostname`, alias of `host`, and `base_path`, default `/__atlas`) the Frontend API is served under that prefix on a host you already run, with no DNS record: the response carries `verification` (method https_file: url, token, content, instructions), `frontend_api_url`, `routing` and `instructions`; `cname_target` is null.
 
   `POST /v1/domains`. Required scope: `domains:write`.
   """
@@ -33,7 +33,7 @@ defmodule Atlas.Domains do
     do: Atlas.Client.request(client, :post, "/v1/domains", %{}, body, opts)
 
   @doc ~S"""
-  Check the domain's CNAME now; a verified fapi host is written onto the instance. With DNS automation, a missing record is written again first.
+  Check the domain's CNAME now (a path mount: fetch its https verification file); a verified fapi host is written onto the instance. With DNS automation, a missing record is written again first.
 
   `POST /v1/domains/{id}/verify`. Required scope: `domains:write`.
   """

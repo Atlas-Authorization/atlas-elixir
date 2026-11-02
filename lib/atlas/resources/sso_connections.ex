@@ -25,7 +25,7 @@ defmodule Atlas.SsoConnections do
     do: Atlas.Client.stream(client, "/v1/sso_connections", %{}, opts)
 
   @doc ~S"""
-  Create an enterprise SSO connection. The IdP client secret is write-only.
+  Create an enterprise SSO connection. The IdP client secret is write-only. Optional `saml_acs_path` (keep the ACS path your IdP already posts to, on your custom frontend API domain; null = the standard one) and `github_access` (`allowed_organizations`, `allowed_teams`: GitHub as an oidc connection's identity provider).
 
   `POST /v1/sso_connections`. Required scope: `sso_connections:write`.
   """
@@ -41,7 +41,7 @@ defmodule Atlas.SsoConnections do
     do: Atlas.Client.request(client, :get, "/v1/sso_connections/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an SSO connection. A secret is only re-encrypted when a new one is supplied.
+  Update an SSO connection. A secret is only re-encrypted when a new one is supplied. Accepts `saml_acs_path` and `github_access` as on create.
 
   `PATCH /v1/sso_connections/{id}`. Required scope: `sso_connections:write`.
   """

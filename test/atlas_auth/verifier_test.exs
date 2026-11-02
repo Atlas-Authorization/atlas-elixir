@@ -27,6 +27,13 @@ defmodule AtlasAuth.VerifierTest do
     assert {:error, :invalid} = Verifier.verify(token, opts)
   end
 
+  test "previous_issuers: a listed earlier issuer is accepted, any other still rejected" do
+    opts = TokenHelper.verify_opts(previous_issuers: ["https://old.example.com"])
+    assert {:ok, %Claims{}} = Verifier.verify(TokenHelper.sign(%{"iss" => "https://old.example.com"}), opts)
+    assert {:ok, %Claims{}} = Verifier.verify(TokenHelper.sign(), opts)
+    assert {:error, :invalid} = Verifier.verify(TokenHelper.sign(%{"iss" => "https://evil.example"}), opts)
+  end
+
   test "an expired token is rejected", %{opts: opts} do
     past = System.system_time(:second) - 3600
     token = TokenHelper.sign(%{"iat" => past - 60, "nbf" => past - 60, "exp" => past})

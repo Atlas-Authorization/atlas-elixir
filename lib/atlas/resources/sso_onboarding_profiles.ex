@@ -10,7 +10,7 @@ defmodule Atlas.SsoOnboardingProfiles do
   """
 
   @doc ~S"""
-  List self-service SSO onboarding profiles (the templates tickets are issued from).
+  List self-service SSO onboarding profiles (the templates tickets are issued from). ?name= returns only the profiles with exactly that name.
 
   `GET /v1/sso_onboarding_profiles`. Required scope: `sso_connections:read`.
   """
@@ -25,7 +25,7 @@ defmodule Atlas.SsoOnboardingProfiles do
     do: Atlas.Client.stream(client, "/v1/sso_onboarding_profiles", %{}, opts)
 
   @doc ~S"""
-  Create a self-service SSO onboarding profile: allowed connection types and an optional bound organization.
+  Create a self-service SSO onboarding profile: allowed connection types, an optional bound organization, and an optional `return_url` (where "Finish" on the hosted setup page sends the admin; https on one of your allowed origins).
 
   `POST /v1/sso_onboarding_profiles`. Required scope: `sso_connections:write`.
   """
@@ -49,7 +49,7 @@ defmodule Atlas.SsoOnboardingProfiles do
     do: Atlas.Client.request(client, :delete, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Issue a scoped, one-time, expiring onboarding ticket for one organization. Returns the token and hosted URL exactly once.
+  Issue a scoped, one-time, expiring onboarding ticket for one organization. Returns the token and hosted URL exactly once. `expires_in_seconds` defaults to 259200 (3 days) and is clamped into [300, 2592000] (5 minutes to 30 days); `expires_in` says what was granted. `return_url` overrides the profile's for this ticket.
 
   `POST /v1/sso_onboarding_profiles/{id}/tickets`. Required scope: `sso_connections:write`.
   """

@@ -61,6 +61,7 @@ DELETE /v1/instance/smart_card_secret
 DELETE /v1/instance/status_dependencies/{id}
 DELETE /v1/instance/status_subscription
 DELETE /v1/instance/yubico_secret
+DELETE /v1/jwt_connections/{id}
 DELETE /v1/jwt_templates/{id}
 DELETE /v1/ldap_server_clients/{id}
 DELETE /v1/leads/{id}
@@ -354,6 +355,8 @@ GET /v1/invitations
 GET /v1/jobs
 GET /v1/jobs/{id}
 GET /v1/jobs/{id}/errors
+GET /v1/jwt_connections
+GET /v1/jwt_connections/{id}
 GET /v1/jwt_templates
 GET /v1/jwt_templates/{id}
 GET /v1/keys
@@ -434,6 +437,7 @@ GET /v1/org_role_grants/{id}
 GET /v1/org_role_grants/{id}/delegations
 GET /v1/organization_settings_schema
 GET /v1/organizations
+GET /v1/organizations/by_domain/{domain}
 GET /v1/organizations/by_slug/{slug}
 GET /v1/organizations/check_slug
 GET /v1/organizations/{id}
@@ -451,6 +455,7 @@ GET /v1/organizations/{id}/entitlements
 GET /v1/organizations/{id}/hierarchy
 GET /v1/organizations/{id}/invitations
 GET /v1/organizations/{id}/memberships
+GET /v1/organizations/{id}/policy
 GET /v1/organizations/{id}/roles
 GET /v1/organizations/{id}/settings
 GET /v1/organizations/{id}/teams
@@ -617,6 +622,7 @@ PATCH /v1/instance/referrals
 PATCH /v1/instance/security
 PATCH /v1/instance/sign_in_with_atlas
 PATCH /v1/instance/status_dependencies/{id}
+PATCH /v1/jwt_connections/{id}
 PATCH /v1/jwt_templates/{id}
 PATCH /v1/ldap_server_clients/{id}
 PATCH /v1/localizations/{id}
@@ -849,6 +855,7 @@ POST /v1/integrations/{integration}/card/actions/{action}
 POST /v1/invitations
 POST /v1/invitations/bulk
 POST /v1/invitations/{id}/revoke
+POST /v1/jwt_connections
 POST /v1/jwt_templates
 POST /v1/ldap_server_clients
 POST /v1/ldap_server_clients/{id}/rotate_secret
@@ -922,6 +929,7 @@ POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret
 POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test
 POST /v1/organizations/{id}/audit_streams
 POST /v1/organizations/{id}/domains
+POST /v1/organizations/{id}/domains/{domainId}/verification_email
 POST /v1/organizations/{id}/domains/{domainId}/verify
 POST /v1/organizations/{id}/invitations
 POST /v1/organizations/{id}/invitations/{invitationId}/resend

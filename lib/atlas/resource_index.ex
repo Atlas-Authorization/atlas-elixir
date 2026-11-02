@@ -32,6 +32,7 @@ defmodule Atlas.ResourceIndex do
     Atlas.ActorTokens,
     Atlas.Invitations,
     Atlas.JwtTemplates,
+    Atlas.JwtConnections,
     Atlas.OauthInitialAccessTokens,
     Atlas.Sessions,
     Atlas.Yubikeys,

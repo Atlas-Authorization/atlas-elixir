@@ -82,4 +82,55 @@ defmodule Atlas.ClientTest do
 
     assert {:ok, <<31, 139, 8>>} = Atlas.Users.get(client(:raw), "u1")
   end
+
+  # Records {method, path, query, body} of each request and answers {}.
+  defp capture(name) do
+    me = self()
+
+    Req.Test.stub(name, fn conn ->
+      {:ok, raw, conn} = Plug.Conn.read_body(conn)
+      send(me, {:req, conn.method, conn.request_path, URI.decode_query(conn.query_string), if(raw == "", do: nil, else: Jason.decode!(raw))})
+      Req.Test.json(conn, %{})
+    end)
+
+    client(name)
+  end
+
+  test "2026-11-01 operations send the documented method, path, query and body" do
+    c = capture(:cal)
+
+    assert {:ok, _} = Atlas.Organizations.get_by_domain(c, "a@acme.com", params: [include_unverified: true])
+    assert_received {:req, "GET", "/v1/organizations/by_domain/a%40acme.com", %{"include_unverified" => "true"}, nil}
+
+    assert {:ok, _} = Atlas.Organizations.list(c, params: [{"external_id", "cus_1"}, {"metadata[plan]", "pro"}])
+    assert_received {:req, "GET", "/v1/organizations", %{"external_id" => "cus_1", "metadata[plan]" => "pro"}, nil}
+
+    assert {:ok, _} = Atlas.Organizations.get_policy(c, "org_1")
+    assert_received {:req, "GET", "/v1/organizations/org_1/policy", _, nil}
+
+    assert {:ok, _} = Atlas.Organizations.post_domains_verification_email(c, "org_1", "dom_1", %{"address" => "hostmaster"})
+    assert_received {:req, "POST", "/v1/organizations/org_1/domains/dom_1/verification_email", _, %{"address" => "hostmaster"}}
+
+    assert {:ok, _} = Atlas.Organizations.post_domains_verify(c, "org_1", "dom_1", %{"method" => "email", "code" => "123456"})
+    assert_received {:req, "POST", "/v1/organizations/org_1/domains/dom_1/verify", _, %{"method" => "email", "code" => "123456"}}
+
+    assert {:ok, _} = Atlas.Organizations.post_domains_verify(c, "org_1", "dom_1")
+    assert_received {:req, "POST", "/v1/organizations/org_1/domains/dom_1/verify", _, %{}}
+
+    jwt = %{"organization_id" => "org_1", "status" => "active", "jwks_uri" => "https://idp.example.com/jwks", "issuer" => "https://idp.example.com", "audience" => "atlas"}
+    assert {:ok, _} = Atlas.JwtConnections.create(c, jwt, idempotency_key: "j1")
+    assert_received {:req, "POST", "/v1/jwt_connections", _, ^jwt}
+
+    assert {:ok, _} = Atlas.JwtConnections.update(c, "jwtc_1", %{"max_age_seconds" => 60})
+    assert_received {:req, "PATCH", "/v1/jwt_connections/jwtc_1", _, %{"max_age_seconds" => 60}}
+
+    assert {:ok, _} = Atlas.JwtConnections.list(c)
+    assert_received {:req, "GET", "/v1/jwt_connections", _, nil}
+
+    assert {:ok, _} = Atlas.JwtConnections.delete(c, "jwtc_1")
+    assert_received {:req, "DELETE", "/v1/jwt_connections/jwtc_1", _, nil}
+
+    assert {:ok, _} = Atlas.PlatformApps.reveal_initial_secret(c, "app_1", params: [dry_run: true])
+    assert_received {:req, "POST", "/v1/platform/apps/app_1/initial_secret/reveal", %{"dry_run" => "true"}, nil}
+  end
 end

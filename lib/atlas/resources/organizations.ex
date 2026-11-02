@@ -34,7 +34,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/design", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  List organizations, cursor-paginated.
+  List organizations, cursor-paginated. Filter with ?external_id= (your own id for the customer) and ?metadata[key]=value (public_metadata equality; repeat for AND).
 
   `GET /v1/organizations`. Required scope: `organizations:read`.
   """
@@ -49,7 +49,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.stream(client, "/v1/organizations", %{}, opts)
 
   @doc ~S"""
-  Create an organization. Body: `name` (required), `slug` (required), `created_by` (required — an Atlas user id, seated as the org admin so the org is never created without one), and optional `max_allowed_memberships`. Emits organization.created.
+  Create an organization. Body: `name` and `slug` (required); `created_by` (optional: an Atlas user id seated with the creator role; omit or null for an organization created by your backend, which then has no members yet); `external_id` (your id for the customer, unique per instance; 409 when taken); `public_metadata` / `private_metadata`; `owner_email` (invites that address with the creator role, org:admin by default; the invitation is in `owner_invitation`); `role_mappings` (role key → your product's name for it, echoed as the `org_role_mapped` token claim); `max_allowed_memberships`. Emits organization.created.
 
   `POST /v1/organizations`. Required scope: `organizations:write`.
   """
@@ -65,6 +65,14 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/by_slug/{slug}", %{"slug" => slug}, nil, opts)
 
   @doc ~S"""
+  Find the organization that owns an email domain (or an email address: its domain is used). Only VERIFIED domains match unless ?include_unverified=true. 404 when none. Returns the organization plus the matched `domain` (id, status, verified_at).
+
+  `GET /v1/organizations/by_domain/{domain}`. Required scope: `organizations:read`.
+  """
+  def get_by_domain(client, domain, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/by_domain/{domain}", %{"domain" => domain}, nil, opts)
+
+  @doc ~S"""
   Check whether a slug is valid and free, for a create-organization form.
 
   `GET /v1/organizations/check_slug`. Required scope: `organizations:read`.
@@ -73,7 +81,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/check_slug", %{}, nil, opts)
 
   @doc ~S"""
-  Fetch an organization. Never includes private_metadata.
+  Fetch an organization. Never includes private_metadata. Includes `sso`: its SSO connections (id, type, status) and `scim_base_url`, the SCIM 2.0 base URL to give its identity provider.
 
   `GET /v1/organizations/{id}`. Required scope: `organizations:read`.
   """
@@ -81,7 +89,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an organization name, slug, image, seat cap or metadata. Emits organization.updated.
+  Update an organization name, slug, image, seat cap or metadata, `external_id` or `role_mappings`. Emits organization.updated.
 
   `PATCH /v1/organizations/{id}`. Required scope: `organizations:write`.
   """
@@ -95,6 +103,14 @@ defmodule Atlas.Organizations do
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Read an organization's security policy (the same object PATCH …/policy writes and returns).
+
+  `GET /v1/organizations/{id}/policy`. Required scope: `organizations:read`.
+  """
+  def get_policy(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/policy", %{"id" => id}, nil, opts)
 
   @doc ~S"""
   Update the org policy as a partial merge (requireMfa, ssoRequired, sessionIdleOverrideMs, allowedSignInMethods, ipAllowlist, maxSessionAgeSeconds, entitlementPlan, entitlementOverrides, endUserPool); null clears a key.
@@ -254,7 +270,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/domains", %{"id" => id}, opts)
 
   @doc ~S"""
-  Claim an email domain for auto-join. Returns the DNS TXT record to publish.
+  Claim an email domain for auto-join. Returns the DNS TXT record to publish; the domain object carries `verification_methods` (dns_txt, well_known, email), `verification_method` and `status` (pending, verified, failed).
 
   `POST /v1/organizations/{id}/domains`. Required scope: `organizations:write`.
   """
@@ -262,12 +278,26 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Check the DNS TXT record now and mark the domain verified.
+  Verify a claimed domain now. `method`: dns_txt (default; the TXT record in verification_methods.dns_txt), well_known (the token served as the whole body of verification_methods.well_known.url, fetched over https with no redirects followed), or email (the `code` from POST …/verification_email). A failed DNS or file check sets status failed; a wrong code only counts an attempt (5 per code).
 
   `POST /v1/organizations/{id}/domains/{domainId}/verify`. Required scope: `organizations:write`.
   """
-  def post_domains_verify(client, id, domain_id, opts \\ []),
-    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains/{domainId}/verify", %{"id" => id, "domainId" => domain_id}, nil, opts)
+  def post_domains_verify(client, id, domain_id, body \\ %{}, opts \\ [])
+
+  # Callers before the body existed passed opts 4th; a keyword list there is still opts (DNS check).
+  def post_domains_verify(client, id, domain_id, opts, []) when is_list(opts),
+    do: post_domains_verify(client, id, domain_id, %{}, opts)
+
+  def post_domains_verify(client, id, domain_id, body, opts),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains/{domainId}/verify", %{"id" => id, "domainId" => domain_id}, body, opts)
+
+  @doc ~S"""
+  Email a 6-digit verification code to an administrative mailbox at the domain (`address`: admin (default), administrator, hostmaster, postmaster or webmaster). Sent only through your instance's own email provider; 422 email_delivery_not_configured when there is none. The code lasts 30 minutes; enter it with POST …/verify {"method":"email","code":"…"}. At most one code a minute.
+
+  `POST /v1/organizations/{id}/domains/{domainId}/verification_email`. Required scope: `organizations:write`.
+  """
+  def post_domains_verification_email(client, id, domain_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains/{domainId}/verification_email", %{"id" => id, "domainId" => domain_id}, body, opts)
 
   @doc ~S"""
   Remove a claimed email domain.
@@ -761,10 +791,12 @@ defmodule Atlas.Organizations do
     {:list, :get, "/v1/organizations", 0, false, true},
     {:create, :post, "/v1/organizations", 0, true, false},
     {:get_by_slug, :get, "/v1/organizations/by_slug/{slug}", 1, false, false},
+    {:get_by_domain, :get, "/v1/organizations/by_domain/{domain}", 1, false, false},
     {:get_check_slug, :get, "/v1/organizations/check_slug", 0, false, false},
     {:get, :get, "/v1/organizations/{id}", 1, false, false},
     {:update, :patch, "/v1/organizations/{id}", 1, true, false},
     {:delete, :delete, "/v1/organizations/{id}", 1, false, false},
+    {:get_policy, :get, "/v1/organizations/{id}/policy", 1, false, false},
     {:update_policy, :patch, "/v1/organizations/{id}/policy", 1, true, false},
     {:put_metadata, :put, "/v1/organizations/{id}/metadata", 1, true, false},
     {:get_memberships, :get, "/v1/organizations/{id}/memberships", 1, false, true},
@@ -783,7 +815,8 @@ defmodule Atlas.Organizations do
     {:delete_groups_roles, :delete, "/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}", 3, false, false},
     {:get_domains, :get, "/v1/organizations/{id}/domains", 1, false, true},
     {:post_domains, :post, "/v1/organizations/{id}/domains", 1, true, false},
-    {:post_domains_verify, :post, "/v1/organizations/{id}/domains/{domainId}/verify", 2, false, false},
+    {:post_domains_verify, :post, "/v1/organizations/{id}/domains/{domainId}/verify", 2, true, false},
+    {:post_domains_verification_email, :post, "/v1/organizations/{id}/domains/{domainId}/verification_email", 2, true, false},
     {:delete_domains, :delete, "/v1/organizations/{id}/domains/{domainId}", 2, false, false},
     {:get_by_id_teams, :get, "/v1/organizations/{id}/teams", 1, false, true},
     {:post_teams, :post, "/v1/organizations/{id}/teams", 1, true, false},
