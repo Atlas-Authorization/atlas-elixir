@@ -54,6 +54,7 @@ DELETE /v1/instance/kerberos_secret
 DELETE /v1/instance/ldap_connections/{connectionId}/bind_password
 DELETE /v1/instance/page_templates/{page}
 DELETE /v1/instance/policy_source
+DELETE /v1/instance/preflight/acks/{code}
 DELETE /v1/instance/privacy_orchestrator
 DELETE /v1/instance/proxy_secret
 DELETE /v1/instance/signing_key_provider
@@ -330,6 +331,7 @@ GET /v1/instance/policy_settings
 GET /v1/instance/policy_source
 GET /v1/instance/policy_source/deliveries
 GET /v1/instance/preflight
+GET /v1/instance/preflight/acks
 GET /v1/instance/privacy_integrations
 GET /v1/instance/privacy_orchestrator
 GET /v1/instance/proxy_secret
@@ -899,7 +901,9 @@ POST /v1/oauth_clients
 POST /v1/oauth_clients/import
 POST /v1/oauth_clients/{clientId}/grants
 POST /v1/oauth_clients/{id}/backchannel_logout/test
+POST /v1/oauth_clients/{id}/logout
 POST /v1/oauth_clients/{id}/rotate_secret
+POST /v1/oauth_clients/{id}/secret/reveal
 POST /v1/oauth_clients/{id}/trusted_issuers
 POST /v1/oauth_initial_access_tokens
 POST /v1/oauth_providers/{provider}/enabled
@@ -1109,6 +1113,7 @@ PUT /v1/instance/kerberos_secret
 PUT /v1/instance/ldap_connections/{connectionId}/bind_password
 PUT /v1/instance/page_templates/{page}
 PUT /v1/instance/policy_source
+PUT /v1/instance/preflight/acks/{code}
 PUT /v1/instance/privacy_orchestrator
 PUT /v1/instance/signing_key_provider
 PUT /v1/instance/smart_card_secret

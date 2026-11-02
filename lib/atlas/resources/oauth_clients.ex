@@ -56,7 +56,7 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.stream(client, "/v1/oauth_clients", %{}, opts)
 
   @doc ~S"""
-  Register an OAuth client (confidential or public PKCE). A confidential client's secret is revealed exactly once. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value).
+  Register an OAuth client (confidential or public PKCE). A confidential client's secret is revealed exactly once; send your own `client_secret` (32-256 random printable characters) or let Atlas generate one, in which case `client_secret_reveal` {path, expires_at} says where it can be fetched once more (`post_secret_reveal/3`). `require_verified_email: true` issues no authorization code for a user whose primary email is not verified. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value).
 
   `POST /v1/oauth_clients`. Required scope: `oauth_clients:write`.
   """
@@ -72,7 +72,7 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an OAuth client's registration (name, redirect_uris, scopes). The secret is immutable here. Accepts `metadata` (replaces the provisioning tags).
+  Update an OAuth client's registration (name, redirect_uris, scopes). The secret is immutable here. Accepts `require_verified_email` and `metadata` (replaces the provisioning tags).
 
   `PATCH /v1/oauth_clients/{id}`. Required scope: `oauth_clients:write`.
   """
@@ -88,12 +88,20 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Rotate a confidential client's secret; the new one is revealed exactly once. The previous secret keeps working for `overlap_seconds` (default 86400 = 24 hours, at most 604800 = 7 days) so you can deploy the new one without downtime; pass `overlap_seconds: 0` to revoke it now (for example after a leak). `previous_secret_expires_at` says when the old secret stops working (epoch ms), or null when it already has. 409 for a public client.
+  Rotate a confidential client's secret; the new one is revealed exactly once (and `client_secret_reveal` {path, expires_at} allows one more look within 10 minutes). The previous secret keeps working for `overlap_seconds` (default 86400 = 24 hours, at most 604800 = 7 days) so you can deploy the new one without downtime; pass `overlap_seconds: 0` to revoke it now (for example after a leak). `previous_secret_expires_at` says when the old secret stops working (epoch ms), or null when it already has. 409 for a public client.
 
   `POST /v1/oauth_clients/{id}/rotate_secret`. Required scope: `oauth_clients:write`.
   """
   def post_rotate_secret(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/rotate_secret", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The secret the latest create or rotate generated, once more: within 10 minutes, a single time, while it is still current (410 afterwards: rotate instead). Answers `%{"object" => "oauth_client_secret", "id", "client_id", "client_secret", "secret_prefix", "client_secret_expires_at", "note"}`. A caller-chosen secret is never revealable.
+
+  `POST /v1/oauth_clients/{id}/secret/reveal`. Required scope: `oauth_clients:write`.
+  """
+  def post_secret_reveal(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/secret/reveal", %{"id" => id}, nil, opts)
 
   @doc ~S"""
   Bulk-import OAuth clients for a migration, optionally with a pre-hashed client secret. Idempotent per client_id.
@@ -125,6 +133,14 @@ defmodule Atlas.OauthClients do
   """
   def post_backchannel_logout_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/backchannel_logout/test", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Sign a user out of this app and of Atlas in one server-side call. The path takes the client id (`oac_...`) or its public `client_id`. Body `sid` = the `sid` claim of the id_token Atlas issued to this client. Revokes every refresh grant this client holds under the sid (offline_access included) and forgets its ID-token-only sign-in; revokes the Atlas session itself exactly like POST /v1/sessions/{id}/revoke (session.revoked webhook, back-channel logout to every other app signed in through it); and sends this client a back-channel logout so its other servers hear it. Afterwards the Atlas cookie in the browser points at a dead session, so no redirect to /oauth2/logout is needed (it remains available when you want a post_logout_redirect_uri). Needs BOTH `oauth_clients:write` and `sessions:write` on the key. 404 when the client or the session is not in this instance; 403 when that session never signed in to this client (use POST /v1/sessions/{id}/revoke for any session). A session that had already ended answers `session: "already_ended"` and still has the grants of this client under it revoked. Supports `?dry_run=true`.
+
+  `POST /v1/oauth_clients/{id}/logout`. Required scope: `oauth_clients:write`.
+  """
+  def post_logout(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/logout", %{"id" => id}, body, opts)
 
   @doc ~S"""
   The per-application settings of an OAuth client: allowed sign-in methods, hosted-page branding, the user-claim allow-list for ID tokens and userinfo, and the traits a session from this app may write. Null = no restriction.
@@ -224,9 +240,11 @@ defmodule Atlas.OauthClients do
     {:update, :patch, "/v1/oauth_clients/{id}", 1, true, false},
     {:delete, :delete, "/v1/oauth_clients/{id}", 1, false, false},
     {:post_rotate_secret, :post, "/v1/oauth_clients/{id}/rotate_secret", 1, true, false},
+    {:post_secret_reveal, :post, "/v1/oauth_clients/{id}/secret/reveal", 1, false, false},
     {:post_import, :post, "/v1/oauth_clients/import", 0, true, false},
     {:get_backchannel_deliveries, :get, "/v1/oauth_clients/{id}/backchannel_deliveries", 1, false, true},
     {:post_backchannel_logout_test, :post, "/v1/oauth_clients/{id}/backchannel_logout/test", 1, false, false},
+    {:post_logout, :post, "/v1/oauth_clients/{id}/logout", 1, true, false},
     {:get_app_settings, :get, "/v1/oauth_clients/{id}/app_settings", 1, false, false},
     {:update_app_settings, :patch, "/v1/oauth_clients/{id}/app_settings", 1, true, false},
     {:get_trusted_issuers, :get, "/v1/oauth_clients/{id}/trusted_issuers", 1, false, true},

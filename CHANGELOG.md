@@ -2,6 +2,19 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.16.0 — 2026-11-02
+
+### Added
+
+- **Back-channel sign-out from your backend.** `Atlas.OauthClients.post_logout/4` (`POST /v1/oauth_clients/{id}/logout`, body `%{sid: ...}`) signs the user out of your app and of Atlas in one call; the answer has `session` (`revoked` / `already_ended`), `grants_revoked` and `backchannel_logouts`.
+- OAuth clients take `refresh_touches_session` (first-party; a refresh keeps the Atlas session alive and fails once it has ended) and the write-only `add_redirect_origins` on `create` / `update`; responses carry `refresh_touches_session` and, on writes, `added_origins`.
+- `Atlas.Instance.put_captcha_secret/3` accepts `site_key`: storing the secret and switching `auth_config.captcha` to that provider happen in one atomic write; the answer has `switched` and `captcha`.
+- **Preflight acknowledgements.** `Atlas.Instance.get_preflight_acks/2`, `put_preflight_acks/4` (`%{reason: ..., expires_at: ...}`, `dry_run` as a param) and `delete_preflight_acks/3`: an accepted warning or info finding stays listed in `get_preflight` with `acknowledged` (`reason`, `by`, `at`, `expires_at`) and stops counting. A code that can be an error is refused (422).
+- **OAuth client secrets.** `Atlas.OauthClients.post_secret_reveal/3` (`POST /v1/oauth_clients/{id}/secret/reveal`): the secret the latest create or rotate generated, once more within 10 minutes; create and rotate answers carry `client_secret_reveal` (`path`, `expires_at`). `create` accepts your own `client_secret`; `require_verified_email` on create, update and read.
+- **Webhook events.** `AtlasAuth.WebhookEvents.session_expired/0` (`data.reason` `idle_expired` / `expired`), `invitation_created/0`, `invitation_accepted/0`, `invitation_revoked/0`. User reads and `user.*` payloads carry `status` (`active` / `suspended` / `banned`).
+- `Atlas.PlatformApps.list/2` (`GET /v1/platform/apps`): `name`, `name_prefix`, `external_ref`, `tag`, archive and metadata filters, `limit` / `starting_after` paging.
+- `Atlas.Invitations.create` takes `expires_at` or `expires_in_days`; the before_user_create hook takes `fail_closed` (and may deny a sign-up); password imports accept `password_hash_algorithm` `scrypt_node` / `scrypt_django` and the scrypt `salt_encoding` param; the webhook endpoint test result names its `url`; a messaging provider test answers `accepted`, `provider` and `provider_message_id`.
+
 ## 0.15.0 — 2026-11-01
 
 ### Added

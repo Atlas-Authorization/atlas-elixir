@@ -201,7 +201,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :patch, "/v1/instance/security", %{}, body, opts)
 
   @doc ~S"""
-  Store a captcha provider secret (write-only, encrypted; never read back). Captcha always runs on your own provider keys, so store the secret first: `provider` names the provider it belongs to (default: the configured auth_config.captcha.provider), so it can be stored before the captcha is turned on. Without a provider in the body or the config, the call is refused.
+  Store a captcha provider secret (write-only, encrypted; never read back). Captcha always runs on your own provider keys, so store the secret first: `provider` names the provider it belongs to (default: the configured auth_config.captcha.provider), so it can be stored before the captcha is turned on. Without a provider in the body or the config, the call is refused. Key-only switch: send `site_key` too and the same call sets auth_config.captcha.provider and siteKey in one atomic write, so moving from the built-in atlas captcha to Turnstile is { provider: "turnstile", secret, site_key } (the same CAPTCHA_KEYS_REQUIRED and validation checks as PATCH /v1/instance apply; `switched: true` and the stored `captcha` come back). Flows or actions that name their own provider keep it. The two-step path (this call, then PATCH /v1/instance) still works.
 
   `PUT /v1/instance/captcha_secret`. Required scope: `instance:write`.
   """
@@ -296,12 +296,36 @@ defmodule Atlas.Instance do
     do: Atlas.Client.stream(client, "/v1/instance/unknown_fields_report", %{}, opts)
 
   @doc ~S"""
-  Check your setup in one call. Lists findings about configuration the server can see is broken or worth knowing — no sign-in method enabled, a social provider enabled without credentials, OAuth clients without redirect or post-logout URIs, a first-party client origin missing from allowed_origins, an allowed https origin that login readiness would fail (CORS or session cookie), sign-up that new users cannot complete, custom domains not serving yet, email or SMS sign-in without a provider, a Cookie Munch site that does not match the sign-in host, an OAuth client whose back-channel logout URI is failing (oauth_client_backchannel_failing: 3 consecutive failed deliveries, or one answered with a redirect, which Atlas never follows), a webhook endpoint whose last delivery was redirected (webhook_endpoint_redirecting), a webhook endpoint that is failing (webhook_endpoint_failing: a failure streak is running), switched off after repeated failures (webhook_endpoint_disabled: an error when it carries session or account events) or on a host that is not one of the instance origins or redirect hosts (webhook_endpoint_off_origin, unless it is marked external), a first-party client without a back-channel logout URI (oauth_client_no_backchannel_logout_uri), and the security posture group (group: security_posture — pkce_not_required, passkey_without_uv, auto_link_unverified) — each with a severity, a stable code, a plain message and the fix. A finding that does not apply to how the instance integrates (the embedded-component checks on an origin Atlas is confident signs in through the hosted redirect) is listed under suppressed with the reason, not in findings; integrations shows how each allowed origin was judged. ok is true when there are no errors. ok covers configuration; to confirm a browser can sign in on a given origin, use GET /v1/diagnostics/login_readiness?origin=… for each production origin. Every code is listed by GET /v1/instance/preflight/codes. Read-only.
+  Check your setup in one call. Lists findings about configuration the server can see is broken or worth knowing — no sign-in method enabled, a social provider enabled without credentials, OAuth clients without redirect or post-logout URIs, a first-party client origin missing from allowed_origins, an allowed https origin that login readiness would fail (CORS or session cookie), sign-up that new users cannot complete, custom domains not serving yet, email or SMS sign-in without a provider, a Cookie Munch site that does not match the sign-in host, an OAuth client whose back-channel logout URI is failing (oauth_client_backchannel_failing: 3 consecutive failed deliveries, or one answered with a redirect, which Atlas never follows), a webhook endpoint whose last delivery was redirected (webhook_endpoint_redirecting), a webhook endpoint that is failing (webhook_endpoint_failing: a failure streak is running), switched off after repeated failures (webhook_endpoint_disabled: an error when it carries session or account events) or on a host that is not one of the instance origins or redirect hosts (webhook_endpoint_off_origin, unless it is marked external), a first-party client without a back-channel logout URI (oauth_client_no_backchannel_logout_uri), and the security posture group (group: security_posture — pkce_not_required, passkey_without_uv, auto_link_unverified) — each with a severity, a stable code, a plain message and the fix. A finding that does not apply to how the instance integrates (the embedded-component checks on an origin Atlas is confident signs in through the hosted redirect) is listed under suppressed with the reason, not in findings; integrations shows how each allowed origin was judged. ok is true when there are no errors. ok covers configuration; to confirm a browser can sign in on a given origin, use GET /v1/diagnostics/login_readiness?origin=… for each production origin. Every code is listed by GET /v1/instance/preflight/codes. A warning or info finding you have acknowledged (PUT /v1/instance/preflight/acks/{code}) is still listed, with acknowledged: { reason, by, at, expires_at }; count only the findings without it. Errors are never acknowledged. Read-only.
 
   `GET /v1/instance/preflight`. Required scope: `diagnostics:read`.
   """
   def get_preflight(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/preflight", %{}, nil, opts)
+
+  @doc ~S"""
+  Every preflight acknowledgement on the instance, lapsed ones included (active: false). An acknowledgement marks every finding with its code as known and accepted.
+
+  `GET /v1/instance/preflight/acks`. Required scope: `diagnostics:read`.
+  """
+  def get_preflight_acks(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/preflight/acks", %{}, nil, opts)
+
+  @doc ~S"""
+  Acknowledge a preflight finding you know about and accept, with a reason (body `reason`, at most 500 characters; optional `expires_at`, epoch ms or ISO 8601 in the future, omit or null for no expiry): GET /v1/instance/preflight still lists every finding with this code, marked acknowledged: { reason, by, at, expires_at }, and it no longer counts as something to fix. Replaces any earlier acknowledgement of the code. A code that can be an error-severity finding is refused with 422 VALIDATION_FAILED (meta.reason error_severity_not_acknowledgeable); an unknown code is 400. Supports `?dry_run=true`.
+
+  `PUT /v1/instance/preflight/acks/{code}`. Required scope: `instance:write`.
+  """
+  def put_preflight_acks(client, code, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/preflight/acks/{code}", %{"code" => code}, body, opts)
+
+  @doc ~S"""
+  Remove an acknowledgement: the findings with this code count again. 404 when the code has none.
+
+  `DELETE /v1/instance/preflight/acks/{code}`. Required scope: `instance:write`.
+  """
+  def delete_preflight_acks(client, code, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/preflight/acks/{code}", %{"code" => code}, nil, opts)
 
   @doc ~S"""
   Behaviour changes that affect THIS instance: each with its date, type (behavior_change | deprecation | new), tags (breaking | behaviour | security), what it changes, a sentence about this instance (`detail`, and `count` when countable), when it was first seen, when the owners were emailed and whether it was acknowledged. Deprecated routes or fields your integration still calls appear here as `deprecated:<id>` notices. ?all=true lists every recent notice, including ones that do not apply (applies: false).
@@ -689,7 +713,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance/hooks/before_user_create", %{}, nil, opts)
 
   @doc ~S"""
-  Update the before_user_create hook. Only the fields you send change; null clears. The hook is called (signed like a webhook) after the user id is assigned and before user.created, the referral call and any session. It may answer {external_id, public_metadata, private_metadata, unsafe_metadata}. A slow or failing hook never blocks the sign-up.
+  Update the before_user_create hook. Only the fields you send change; null clears. The hook is called (signed like a webhook) after the user id is assigned and before user.created, the referral call and any session. It may answer {external_id, public_metadata, private_metadata, unsafe_metadata}, or refuse the sign-up with {deny: true, reason} (or HTTP 403): the person gets 403 SIGN_UP_DENIED. A slow or failing hook does not block the sign-up unless `fail_closed: true` is set, which refuses the sign-up when the hook times out, errors or answers badly.
 
   `PATCH /v1/instance/hooks/before_user_create`. Required scope: `instance:write`.
   """
@@ -929,6 +953,9 @@ defmodule Atlas.Instance do
     {:delete_proxy_secret, :delete, "/v1/instance/proxy_secret", 0, false, false},
     {:get_unknown_fields_report, :get, "/v1/instance/unknown_fields_report", 0, false, true},
     {:get_preflight, :get, "/v1/instance/preflight", 0, false, false},
+    {:get_preflight_acks, :get, "/v1/instance/preflight/acks", 0, false, false},
+    {:put_preflight_acks, :put, "/v1/instance/preflight/acks/{code}", 1, true, false},
+    {:delete_preflight_acks, :delete, "/v1/instance/preflight/acks/{code}", 1, false, false},
     {:get_notices, :get, "/v1/instance/notices", 0, false, true},
     {:post_notices_acknowledge, :post, "/v1/instance/notices/{id}/acknowledge", 1, false, false},
     {:get_sub_processors, :get, "/v1/instance/sub_processors", 0, false, false},

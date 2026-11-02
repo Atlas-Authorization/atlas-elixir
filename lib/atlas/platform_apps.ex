@@ -6,6 +6,18 @@ defmodule Atlas.PlatformApps do
   """
 
   @doc ~S"""
+  List the apps (instances) this platform owns, newest first; never any secret. Filter with
+  `params:` `name` (exact, ignoring case), `name_prefix`, `external_ref` (the ref given at create:
+  zero or one item), `tag`, `archived`, `include_archived` or `{"metadata[key]", value}`. Without
+  `limit` every match is returned (`has_more: false`); pass `limit` (up to 500) and
+  `starting_after` = the previous page's `next_cursor` to page.
+
+  `GET /v1/platform/apps`. Required scope: `platform:apps:read`.
+  """
+  def list(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/platform/apps", %{}, nil, opts)
+
+  @doc ~S"""
   Show a newly created app's secret keys once more: for a script that crashed between
   the create response (`initial_secret_reveal` gives the path and deadline) and saving
   the secret. Works once, within 10 minutes of the create, for the platform that created

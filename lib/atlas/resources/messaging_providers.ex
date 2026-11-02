@@ -50,7 +50,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/sms", %{}, body, opts)
 
   @doc ~S"""
-  Send a clearly-marked test message to a destination to verify the configured email or SMS provider delivers, without triggering a real auth flow. Rate-limited; 422 when nothing is configured.
+  Send a clearly-marked test message to a destination to verify the configured email or SMS provider delivers, without triggering a real auth flow. Rate-limited; 422 when nothing is configured. Success answers ok, accepted, provider (the transport that accepted it: resend, smtp, twilio, ...), provider_message_id and, for SMTP, provider_response (the server reply line); a provider refusal is a 502 whose error meta says what the provider answered.
 
   `POST /v1/messaging_providers/{channel}/test`. Required scope: `messaging:write`.
   """

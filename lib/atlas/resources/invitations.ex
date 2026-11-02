@@ -25,7 +25,7 @@ defmodule Atlas.Invitations do
     do: Atlas.Client.stream(client, "/v1/invitations", %{}, opts)
 
   @doc ~S"""
-  Create an instance-level invitation. On matching-email sign-up its public_metadata is copied onto the new user. Expires in 7 days.
+  Create an instance-level invitation. On matching-email sign-up its public_metadata is copied onto the new user. Expires in 7 days unless the body sets `expires_at` (epoch ms or ISO 8601, at most 365 days ahead) or `expires_in_days` (1-365); send one or the other. Emits invitation.created.
 
   `POST /v1/invitations`. Required scope: `invitations:write`.
   """

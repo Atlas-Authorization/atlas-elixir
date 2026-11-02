@@ -116,4 +116,15 @@ defmodule AtlasAuth.WebhookEvents do
   def scim_group_deleted, do: "scim_group.deleted"
   def scim_group_member_added, do: "scim_group.member_added"
   def scim_group_member_removed, do: "scim_group.member_removed"
+
+  # A session that idled out (`data.reason` = `idle_expired`) or reached its absolute
+  # lifetime (`expired`), sent once per session. End the matching session in your product.
+  def session_expired, do: "session.expired"
+
+  # Instance (whole-application) invitations from `Atlas.Invitations`. Data carries `id`,
+  # `email_address`, `status`, `public_metadata`, `user_id` (set on accepted), `expires_at`,
+  # `accepted_at` and `created_at`.
+  def invitation_created, do: "invitation.created"
+  def invitation_accepted, do: "invitation.accepted"
+  def invitation_revoked, do: "invitation.revoked"
 end

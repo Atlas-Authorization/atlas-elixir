@@ -120,7 +120,7 @@ defmodule Atlas.WebhookEndpoints do
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/replay", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Send a synthetic webhook.test event to this endpoint only (never fanned out), also when the endpoint is switched off (active: false). It is signed exactly like a real delivery, with the endpoint's own signing secret (both secrets during a rotation overlap). With ?wait=10s the attempt is made now and the result returned (200): delivery_id, event_id, event_type (webhook.test), status (success | failed), http_status, latency_ms, response_snippet (first 1 KB), error (the delivery-log code), error_kind (non_2xx, redirect, timeout, tls, dns, connection_refused, network, url_blocked; null on success), signature_header_sent and will_retry. Without it the delivery is queued (201).
+  Send a synthetic webhook.test event to this endpoint only (never fanned out), also when the endpoint is switched off (active: false). It is signed exactly like a real delivery, with the endpoint's own signing secret (both secrets during a rotation overlap). With ?wait=10s the attempt is made now and the result returned (200): delivery_id, event_id, url (the exact URL the attempt was POSTed to), event_type (webhook.test), status (success | failed), http_status, latency_ms, response_snippet (first 1 KB), error (the delivery-log code), error_kind (non_2xx, redirect, timeout, tls, dns, connection_refused, network, url_blocked; null on success), signature_header_sent and will_retry. Without it the delivery is queued (201, with the `url` the worker will POST to). Treat any 2xx as success.
 
   `POST /v1/webhook_endpoints/{id}/test`. Required scope: `webhooks:write`.
   """

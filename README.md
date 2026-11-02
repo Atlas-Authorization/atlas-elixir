@@ -98,6 +98,42 @@ the same client within 10 seconds returns the first answer.
 {:ok, _} = Atlas.PlatformApps.reveal_initial_secret(Atlas.new("psk_..."), "app_1")
 ```
 
+### Sign a user out of your app and Atlas
+
+`Atlas.OauthClients.post_logout/4` ends the user's Atlas session from your backend (`sid` is
+the id_token's `sid`): it revokes the client's grants under that sid, ends the session and
+queues a back-channel logout to every other app signed in through it. No browser redirect to
+`/oauth2/logout` is needed. The key needs `oauth_clients:write` and `sessions:write`.
+
+```elixir
+{:ok, %{"session" => session}} = Atlas.OauthClients.post_logout(client, "oac_1", %{sid: claims["sid"]})
+# session is "revoked" or "already_ended"
+
+# First-party: each refresh keeps the Atlas session alive and fails once it has ended;
+# add_redirect_origins also adds the redirect URIs' origins to allowed_origins (see added_origins).
+{:ok, %{"added_origins" => _}} = Atlas.OauthClients.update(client, "oac_1", %{refresh_touches_session: true, add_redirect_origins: true})
+
+# Store the Turnstile secret and switch the instance to Turnstile in one atomic write.
+{:ok, %{"switched" => true}} = Atlas.Instance.put_captcha_secret(client, %{provider: "turnstile", secret: "0x4AAA...", site_key: "0x4BBB..."})
+```
+
+### Preflight acknowledgements, client secrets, platform app lookup
+
+```elixir
+# Accept a warning you know about: it stays listed with "acknowledged" and stops counting.
+{:ok, _} = Atlas.Instance.put_preflight_acks(client, "pkce_not_required", %{reason: "legacy SPA, tracked", expires_at: "2027-01-01T00:00:00Z"})
+{:ok, %{"data" => acks}} = Atlas.Instance.get_preflight_acks(client)
+
+# A script that crashed before saving a generated client secret gets one more look (10 minutes, once).
+{:ok, %{"client_secret" => secret}} = Atlas.OauthClients.post_secret_reveal(client, "oac_1")
+
+# Find one app by the external_ref given at create.
+{:ok, %{"data" => [app]}} = Atlas.PlatformApps.list(Atlas.new("psk_..."), params: [external_ref: "acme/prod"])
+```
+
+`AtlasAuth.WebhookEvents.session_expired()` names the event sent once when a session idles out or reaches its
+absolute lifetime; `invitation_created()`, `invitation_accepted()` and `invitation_revoked()` cover instance invitations.
+
 ## Phoenix / Plug
 
 ```elixir
