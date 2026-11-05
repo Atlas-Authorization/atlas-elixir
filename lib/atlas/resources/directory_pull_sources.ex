@@ -25,7 +25,7 @@ defmodule Atlas.DirectoryPullSources do
     do: Atlas.Client.stream(client, "/v1/directory_pull_sources", %{}, opts)
 
   @doc ~S"""
-  Create a pull source for an organization: provider (entra, google_workspace, bamboohr, hibob, personio, csv, rest_json), config, write-only credentials and settings (schedule, role mappings, disable on removal).
+  Create a pull source for an organization: provider (entra, google_workspace, bamboohr, hibob, personio, workday, successfactors, gusto, csv, rest_json), config, write-only credentials and settings (schedule, role mappings, disable on removal).
 
   `POST /v1/directory_pull_sources`. Required scope: `directory_pull:write`.
   """

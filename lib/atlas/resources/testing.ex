@@ -10,7 +10,7 @@ defmodule Atlas.Testing do
   """
 
   @doc ~S"""
-  Development instances only: a ready one-time URL that signs a browser in as a user (`user_id`, `redirect_url`, optional `expires_in_seconds`). Open it in the browser under test; it lands on `redirect_url` with a real session. Refused on a production instance (403 TESTING_UNAVAILABLE): use `Atlas.Sessions.create/3` with `"mode" => "browser_ticket"` there. Audited as sign_in_ticket.created.
+  Development instances only: a ready one-time URL that signs a browser in as a user. Open it in the browser under test (Playwright, Cypress, WebDriver); it redeems a one-time ticket and lands on redirect_url with a real session, through the same ticket exchange as every sign-in. redirect_url must be one of the instance's allowed origins or a localhost origin. Refused on a production instance (403 TESTING_UNAVAILABLE): use POST /v1/sessions with mode browser_ticket there. @atlasauth/testing wraps it as signInAs(page, userId). Audited as sign_in_ticket.created.
 
   `POST /v1/testing/sign_in_url`. Required scope: `sessions:write`.
   """

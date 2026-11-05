@@ -10,7 +10,7 @@ defmodule Atlas.Workflows do
   """
 
   @doc ~S"""
-  List lifecycle workflows: a trigger (cron, user created, inactive for N days, membership age, trial end, webhook event) plus ordered steps, run by the worker.
+  List lifecycle workflows: a trigger (cron, user created, inactive for N days, membership age, trial end, webhook event, manual) plus steps, run by the worker. Steps can branch (`if`, `switch`), loop (`for_each`), wait, retry, call connectors and HTTP endpoints, open tickets, request or revoke governed access, and pause for an approval.
 
   `GET /v1/workflows`. Required scope: `actions:read`.
   """
@@ -25,7 +25,7 @@ defmodule Atlas.Workflows do
     do: Atlas.Client.stream(client, "/v1/workflows", %{}, opts)
 
   @doc ~S"""
-  Create a lifecycle workflow. Steps are notify, disable, delete, invite, add_to_org, remove_from_org, add_to_team, remove_from_team, add_to_group, remove_from_group (an instance group by id or slug) and call_action (an Action with the `workflow_step` trigger, which may be an `http` Action). Each subject runs once per workflow; the first failing step stops the run.
+  Create a lifecycle workflow. Steps are notify, disable, delete, invite, add_to_org, remove_from_org, add_to_team, remove_from_team, add_to_group, remove_from_group (an instance group by id or slug) and call_action (an Action with the `workflow_step` trigger, which may be an `http` Action), plus the graph steps: if, switch, for_each, wait, set_variable, http_request, call_connector, create_ticket, create_iga_request, start_campaign, revoke_grant, approval and kv. Expressions use `{{ user.email }}`, `event.*`, `input.*`, `vars.*` and `steps.<id>.output`. Each subject runs once per workflow; the first failing step stops the run unless it sets `on_error: continue` or a `retry`.
 
   `POST /v1/workflows`. Required scope: `actions:write`.
   """
@@ -77,15 +77,78 @@ defmodule Atlas.Workflows do
 
   `GET /v1/workflows/{id}/runs`. Required scope: `actions:read`.
   """
-  def get_runs(client, id, opts \\ []),
+  def get_by_id_runs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflows/{id}/runs", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_runs/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_runs/2`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
-  def stream_get_runs(client, id, opts \\ []),
+  def stream_get_by_id_runs(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/workflows/{id}/runs", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Create a workflow from a starter template. It is created disabled unless `enabled` is true, so you can look it over first.
+
+  `POST /v1/workflows/from_template`. Required scope: `actions:write`.
+  """
+  def post_from_template(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/workflows/from_template", %{}, body, opts)
+
+  @doc ~S"""
+  Start a workflow whose trigger is `manual` with an `input` object (read as `input.*` in steps). Runs until it finishes or parks on a wait, retry or approval; the returned run says which.
+
+  `POST /v1/workflows/{id}/invoke`. Required scope: `actions:write`.
+  """
+  def post_invoke(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/invoke", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  One run with its per-step log: each step's path, status, attempt, detail and output.
+
+  `GET /v1/workflows/{id}/runs/{runId}`. Required scope: `actions:read`.
+  """
+  def get_by_id_runs_by_run_id(client, id, run_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/workflows/{id}/runs/{runId}", %{"id" => id, "runId" => run_id}, nil, opts)
+
+  @doc ~S"""
+  Retry a failed run from the step that failed, keeping its variables and earlier outputs.
+
+  `POST /v1/workflows/{id}/runs/{runId}/resume`. Required scope: `actions:write`.
+  """
+  def post_runs_resume(client, id, run_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/runs/{runId}/resume", %{"id" => id, "runId" => run_id}, nil, opts)
+
+  @doc ~S"""
+  The workflow's key-value table (what `kv` steps read and write).
+
+  `GET /v1/workflows/{id}/kv`. Required scope: `actions:read`.
+  """
+  def get_kv(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/workflows/{id}/kv", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_kv/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_kv(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/workflows/{id}/kv", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Set a key in the workflow key-value table.
+
+  `PUT /v1/workflows/{id}/kv/{key}`. Required scope: `actions:write`.
+  """
+  def put_kv(client, id, key, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/workflows/{id}/kv/{key}", %{"id" => id, "key" => key}, body, opts)
+
+  @doc ~S"""
+  Delete a key from the workflow key-value table.
+
+  `DELETE /v1/workflows/{id}/kv/{key}`. Required scope: `actions:write`.
+  """
+  def delete_kv(client, id, key, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/workflows/{id}/kv/{key}", %{"id" => id, "key" => key}, nil, opts)
 
   @doc false
   def __operations__, do: [
@@ -96,6 +159,13 @@ defmodule Atlas.Workflows do
     {:delete, :delete, "/v1/workflows/{id}", 1, false, false},
     {:post_dry_run, :post, "/v1/workflows/{id}/dry_run", 1, true, false},
     {:post_run, :post, "/v1/workflows/{id}/run", 1, true, false},
-    {:get_runs, :get, "/v1/workflows/{id}/runs", 1, false, true}
+    {:get_by_id_runs, :get, "/v1/workflows/{id}/runs", 1, false, true},
+    {:post_from_template, :post, "/v1/workflows/from_template", 0, true, false},
+    {:post_invoke, :post, "/v1/workflows/{id}/invoke", 1, true, false},
+    {:get_by_id_runs_by_run_id, :get, "/v1/workflows/{id}/runs/{runId}", 2, false, false},
+    {:post_runs_resume, :post, "/v1/workflows/{id}/runs/{runId}/resume", 2, false, false},
+    {:get_kv, :get, "/v1/workflows/{id}/kv", 1, false, true},
+    {:put_kv, :put, "/v1/workflows/{id}/kv/{key}", 2, true, false},
+    {:delete_kv, :delete, "/v1/workflows/{id}/kv/{key}", 2, false, false}
   ]
 end

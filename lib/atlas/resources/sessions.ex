@@ -10,7 +10,7 @@ defmodule Atlas.Sessions do
   """
 
   @doc ~S"""
-  List a user's active sessions. Requires a user_id query parameter.
+  List a user's active sessions, or with status=ended the 50 most recently ended ones (each with revoked_reason). Requires a user_id query parameter.
 
   `GET /v1/sessions`. Required scope: `sessions:read`.
   """
@@ -25,7 +25,7 @@ defmodule Atlas.Sessions do
     do: Atlas.Client.stream(client, "/v1/sessions", %{}, opts)
 
   @doc ~S"""
-  Establish a session for a user in one call — returns jwt + refresh_token, audited as a first-party sign-in (not impersonation unless actor.sub is set). Pass set_cookies:true (+ optional cookie_domain) to also get the ready-to-set Set-Cookie strings, so a backend can relay one response to establish a real browser session for a known reader. Bypasses the sign-in gate. With `"mode" => "browser_ticket"` (plus `user_id`, optional `redirect_url` and `expires_in_seconds`) it returns a one-time browser ticket instead: `{object: "browser_ticket", id, user_id, ticket, url, redirect_url, expires_in, expires_at}`; open `url` in the browser to sign it in. This replaces the deprecated `/v1/sign_in_tokens`.
+  Establish a session for a user in one call — returns jwt + refresh_token, audited as a first-party sign-in (not impersonation unless actor.sub is set). Pass set_cookies:true (+ optional cookie_domain) to also get the ready-to-set Set-Cookie strings, so a backend can relay one response to establish a real browser session for a known reader. Bypasses the sign-in gate. With mode "browser_ticket" no session is minted here: the response is a one-time ticket (60 s by default, single use, this instance only) that a browser redeems with POST /v1/client/sign_ins {strategy:"ticket"}, plus, when you pass redirect_url (an allowed origin), a ready `url` that signs the browser in and lands on redirect_url. This is the successor of the deprecated POST /v1/sign_in_tokens for support handoffs and end-to-end tests; audited as sign_in_ticket.created.
 
   `POST /v1/sessions`. Required scope: `sessions:write`.
   """
@@ -39,6 +39,14 @@ defmodule Atlas.Sessions do
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sessions/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Cheap session-freshness check for a relying party: `{ id, status, user_id, expires_at, last_active_at? }`, where status is active, expired, revoked or ended. `:id` is the session id or the `sid` claim of an ID token (a device or CIBA sign-in answers from its grant, without last_active_at). Sent with `Cache-Control: private, max-age=5` and an ETag; `If-None-Match` answers 304. Another instance session is 404, never 403. A banned user session is revoked at once and the back-channel logout is sent in the same request.
+
+  `GET /v1/sessions/{id}/status`. Required scope: `sessions:read`.
+  """
+  def get_status(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/{id}/status", %{"id" => id}, nil, opts)
 
   @doc ~S"""
   Replace the session's custom data with `custom_data` (a JSON object of at most 2 KB; null clears it). Only an active session can be changed (409 SESSION_REVOKED otherwise). The data is returned on the session object and on the Frontend API client session, and — when the instance sets session.customData.inToken — in the next session token under session.customData.claim, so it never shadows a reserved claim. Not for secrets: the signed-in user can read it.
@@ -93,6 +101,7 @@ defmodule Atlas.Sessions do
     {:list, :get, "/v1/sessions", 0, false, true},
     {:create, :post, "/v1/sessions", 0, true, false},
     {:get, :get, "/v1/sessions/{id}", 1, false, false},
+    {:get_status, :get, "/v1/sessions/{id}/status", 1, false, false},
     {:put_custom_data, :put, "/v1/sessions/{id}/custom_data", 1, true, false},
     {:update_custom_data, :patch, "/v1/sessions/{id}/custom_data", 1, true, false},
     {:post_revoke, :post, "/v1/sessions/{id}/revoke", 1, false, false},

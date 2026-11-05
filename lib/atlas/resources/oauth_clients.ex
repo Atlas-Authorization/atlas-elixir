@@ -56,7 +56,7 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.stream(client, "/v1/oauth_clients", %{}, opts)
 
   @doc ~S"""
-  Register an OAuth client (confidential or public PKCE). A confidential client's secret is revealed exactly once; send your own `client_secret` (32-256 random printable characters) or let Atlas generate one, in which case `client_secret_reveal` {path, expires_at} says where it can be fetched once more (`post_secret_reveal/3`). `require_verified_email: true` issues no authorization code for a user whose primary email is not verified. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value).
+  Register an OAuth client (confidential or public PKCE). A confidential client's secret is in the response; a generated one can be fetched once more within 10 minutes with POST /v1/oauth_clients/{id}/secret/reveal (`client_secret_reveal` gives the path and deadline). Send `client_secret` to choose the secret yourself (32-256 random printable characters), so a provisioning script can re-run safely. `require_verified_email: true` makes /oauth2/authorize refuse users whose primary email is not verified. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value). `add_redirect_origins: true` also adds the redirect URIs' origins to allowed_origins (append only; listed in added_origins); a client that a connected integration signs users in with (its oauth_client_id, or tagged metadata product=<integration id>) gets them automatically.
 
   `POST /v1/oauth_clients`. Required scope: `oauth_clients:write`.
   """
@@ -72,7 +72,7 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an OAuth client's registration (name, redirect_uris, scopes). The secret is immutable here. Accepts `require_verified_email` and `metadata` (replaces the provisioning tags).
+  Update an OAuth client's registration (name, redirect_uris, scopes). The secret is immutable here. Accepts `metadata` (replaces the provisioning tags) and `add_redirect_origins` (adds the redirect URIs' origins to allowed_origins, append only; listed in added_origins, automatic for an integration's sign-in client).
 
   `PATCH /v1/oauth_clients/{id}`. Required scope: `oauth_clients:write`.
   """
@@ -88,7 +88,7 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Rotate a confidential client's secret; the new one is revealed exactly once (and `client_secret_reveal` {path, expires_at} allows one more look within 10 minutes). The previous secret keeps working for `overlap_seconds` (default 86400 = 24 hours, at most 604800 = 7 days) so you can deploy the new one without downtime; pass `overlap_seconds: 0` to revoke it now (for example after a leak). `previous_secret_expires_at` says when the old secret stops working (epoch ms), or null when it already has. 409 for a public client.
+  Rotate a confidential client's secret; the new one is in the response and can be fetched once more within 10 minutes with POST /v1/oauth_clients/{id}/secret/reveal. The previous secret keeps working for `overlap_seconds` (default 86400 = 24 hours, at most 604800 = 7 days) so you can deploy the new one without downtime; pass `overlap_seconds: 0` to revoke it now (for example after a leak). `previous_secret_expires_at` says when the old secret stops working (epoch ms), or null when it already has. 409 for a public client.
 
   `POST /v1/oauth_clients/{id}/rotate_secret`. Required scope: `oauth_clients:write`.
   """
@@ -96,7 +96,7 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/rotate_secret", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  The secret the latest create or rotate generated, once more: within 10 minutes, a single time, while it is still current (410 afterwards: rotate instead). Answers `%{"object" => "oauth_client_secret", "id", "client_id", "client_secret", "secret_prefix", "client_secret_expires_at", "note"}`. A caller-chosen secret is never revealable.
+  Show a confidential client's secret once more: for a script that crashed between the create (or rotate) response and saving the secret. Works once, within 10 minutes of the POST /v1/oauth_clients or POST /v1/oauth_clients/{id}/rotate_secret that generated it, and only while that secret is still the client's current one. The secret is kept encrypted for that window only and is cleared by this call, so a second call, a call after the window, a secret you chose yourself, or one rotated away since is 410 and the answer is to rotate. Audited (oauth_client.secret_revealed / oauth_client.secret_reveal_refused). An operator token needs a recent MFA. With `?dry_run=true` nothing is consumed: the response says whether the reveal is still available and until when. Unknown client is 404.
 
   `POST /v1/oauth_clients/{id}/secret/reveal`. Required scope: `oauth_clients:write`.
   """
@@ -190,6 +190,45 @@ defmodule Atlas.OauthClients do
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}/trusted_issuers/{issuerId}", %{"id" => id, "issuerId" => issuer_id}, nil, opts)
 
   @doc ~S"""
+  List the custom subject_token_type URIs an OAuth client may present to the token-exchange grant.
+
+  `GET /v1/oauth_clients/{id}/token_exchange_profiles`. Required scope: `oauth_clients:read`.
+  """
+  def get_token_exchange_profiles(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/token_exchange_profiles", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_token_exchange_profiles/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_token_exchange_profiles(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/oauth_clients/{id}/token_exchange_profiles", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Register a custom subject_token_type (a urn: or https URI that is not a standard Atlas or IETF token type) for a confidential client. An exchange with it runs your `custom_token_exchange` Action, which validates the token and names the user to issue tokens for.
+
+  `POST /v1/oauth_clients/{id}/token_exchange_profiles`. Required scope: `oauth_clients:write`.
+  """
+  def post_token_exchange_profiles(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/token_exchange_profiles", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Rename or enable / disable a token exchange profile.
+
+  `PATCH /v1/oauth_clients/{id}/token_exchange_profiles/{profileId}`. Required scope: `oauth_clients:write`.
+  """
+  def update_token_exchange_profiles(client, id, profile_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/oauth_clients/{id}/token_exchange_profiles/{profileId}", %{"id" => id, "profileId" => profile_id}, body, opts)
+
+  @doc ~S"""
+  Remove a token exchange profile.
+
+  `DELETE /v1/oauth_clients/{id}/token_exchange_profiles/{profileId}`. Required scope: `oauth_clients:write`.
+  """
+  def delete_token_exchange_profiles(client, id, profile_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}/token_exchange_profiles/{profileId}", %{"id" => id, "profileId" => profile_id}, nil, opts)
+
+  @doc ~S"""
   Read the token-exchange policy of an OAuth client (the defaults, with configured=false, when none is set).
 
   `GET /v1/oauth_clients/{id}/exchange_policy`. Required scope: `oauth_clients:read`.
@@ -229,6 +268,29 @@ defmodule Atlas.OauthClients do
   def put_delegated_ui(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/delegated_ui", %{"id" => id}, body, opts)
 
+  @doc ~S"""
+  The organizations that have access to an application, with the application's access mode.
+
+  `GET /v1/oauth_clients/{id}/organizations`. Required scope: `oauth_clients:read`.
+  """
+  def get_organizations(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/organizations", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_organizations/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_organizations(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/oauth_clients/{id}/organizations", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Set who may use an application. `open` (default): any organization. `restricted`: only organizations granted access (and, when a grant lists roles, members holding them); a sign-in outside an entitled organization is refused with `access_denied` at the authorize endpoint.
+
+  `PUT /v1/oauth_clients/{id}/organization_access`. Required scope: `oauth_clients:write`.
+  """
+  def put_organization_access(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/organization_access", %{"id" => id}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:get_grants, :get, "/v1/oauth_clients/{clientId}/grants", 1, false, true},
@@ -250,10 +312,16 @@ defmodule Atlas.OauthClients do
     {:get_trusted_issuers, :get, "/v1/oauth_clients/{id}/trusted_issuers", 1, false, true},
     {:post_trusted_issuers, :post, "/v1/oauth_clients/{id}/trusted_issuers", 1, true, false},
     {:delete_trusted_issuers, :delete, "/v1/oauth_clients/{id}/trusted_issuers/{issuerId}", 2, false, false},
+    {:get_token_exchange_profiles, :get, "/v1/oauth_clients/{id}/token_exchange_profiles", 1, false, true},
+    {:post_token_exchange_profiles, :post, "/v1/oauth_clients/{id}/token_exchange_profiles", 1, true, false},
+    {:update_token_exchange_profiles, :patch, "/v1/oauth_clients/{id}/token_exchange_profiles/{profileId}", 2, true, false},
+    {:delete_token_exchange_profiles, :delete, "/v1/oauth_clients/{id}/token_exchange_profiles/{profileId}", 2, false, false},
     {:get_exchange_policy, :get, "/v1/oauth_clients/{id}/exchange_policy", 1, false, false},
     {:put_exchange_policy, :put, "/v1/oauth_clients/{id}/exchange_policy", 1, true, false},
     {:delete_exchange_policy, :delete, "/v1/oauth_clients/{id}/exchange_policy", 1, false, false},
     {:put_profile, :put, "/v1/oauth_clients/{id}/profile", 1, true, false},
-    {:put_delegated_ui, :put, "/v1/oauth_clients/{id}/delegated_ui", 1, true, false}
+    {:put_delegated_ui, :put, "/v1/oauth_clients/{id}/delegated_ui", 1, true, false},
+    {:get_organizations, :get, "/v1/oauth_clients/{id}/organizations", 1, false, true},
+    {:put_organization_access, :put, "/v1/oauth_clients/{id}/organization_access", 1, true, false}
   ]
 end

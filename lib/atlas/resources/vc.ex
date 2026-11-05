@@ -57,6 +57,37 @@ defmodule Atlas.Vc do
     do: Atlas.Client.request(client, :post, "/v1/vc/offers", %{}, body, opts)
 
   @doc ~S"""
+  List deferred issuances waiting for an operator decision.
+
+  `GET /v1/vc/deferred`. Required scope: `vc:read`.
+  """
+  def get_deferred(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/vc/deferred", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_deferred/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_deferred(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/vc/deferred", %{}, opts)
+
+  @doc ~S"""
+  Approve a deferred issuance; the wallet receives the credential at the deferred credential endpoint.
+
+  `POST /v1/vc/deferred/{id}/approve`. Required scope: `vc:write`.
+  """
+  def post_deferred_approve(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/vc/deferred/{id}/approve", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Deny a deferred issuance; the wallet is told issuance was refused.
+
+  `POST /v1/vc/deferred/{id}/deny`. Required scope: `vc:write`.
+  """
+  def post_deferred_deny(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/vc/deferred/{id}/deny", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   List issued credentials (most recent 200), optionally for one user.
 
   `GET /v1/vc/credentials`. Required scope: `vc:read`.
@@ -88,6 +119,14 @@ defmodule Atlas.Vc do
     do: Atlas.Client.request(client, :post, "/v1/vc/presentation_requests", %{}, body, opts)
 
   @doc ~S"""
+  The OpenID4VP request for the Digital Credentials API (navigator.credentials.get), for a presentation request with expected_origins.
+
+  `GET /v1/vc/presentation_requests/{id}/dc_api_request`. Required scope: `vc:read`.
+  """
+  def get_presentation_requests_dc_api_request(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/vc/presentation_requests/{id}/dc_api_request", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Read a presentation request and its outcome.
 
   `GET /v1/vc/presentation_requests/{id}`. Required scope: `vc:read`.
@@ -102,9 +141,13 @@ defmodule Atlas.Vc do
     {:get_credential_types_by_id, :get, "/v1/vc/credential_types/{id}", 1, false, false},
     {:delete_credential_types, :delete, "/v1/vc/credential_types/{id}", 1, false, false},
     {:post_offers, :post, "/v1/vc/offers", 0, true, false},
+    {:get_deferred, :get, "/v1/vc/deferred", 0, false, true},
+    {:post_deferred_approve, :post, "/v1/vc/deferred/{id}/approve", 1, true, false},
+    {:post_deferred_deny, :post, "/v1/vc/deferred/{id}/deny", 1, true, false},
     {:get_credentials, :get, "/v1/vc/credentials", 0, false, true},
     {:post_credentials_revoke, :post, "/v1/vc/credentials/{id}/revoke", 1, true, false},
     {:post_presentation_requests, :post, "/v1/vc/presentation_requests", 0, true, false},
+    {:get_presentation_requests_dc_api_request, :get, "/v1/vc/presentation_requests/{id}/dc_api_request", 1, false, false},
     {:get_presentation_requests, :get, "/v1/vc/presentation_requests/{id}", 1, false, false}
   ]
 end

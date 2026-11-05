@@ -191,6 +191,84 @@ defmodule Atlas.Billing do
     do: Atlas.Client.request(client, :post, "/v1/billing/providers/{provider}/test", %{"provider" => provider}, nil, opts)
 
   @doc ~S"""
+  List the discount codes you offer.
+
+  `GET /v1/billing/coupons`. Required scope: `billing:read`.
+  """
+  def get_coupons(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/coupons", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_coupons/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_coupons(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/billing/coupons", %{}, opts)
+
+  @doc ~S"""
+  Create a discount code. Set exactly one of `percent_off` or `amount_off` (+ `currency`). It is created on your own Stripe account as a coupon and promotion code, so Stripe enforces and applies it; a provider without discount support refuses with 422.
+
+  `POST /v1/billing/coupons`. Required scope: `billing:write`.
+  """
+  def post_coupons(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/coupons", %{}, body, opts)
+
+  @doc ~S"""
+  Read one discount code.
+
+  `GET /v1/billing/coupons/{id}`. Required scope: `billing:read`.
+  """
+  def get_coupons_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/coupons/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Deactivate or reactivate a code, rename it, or change its redemption cap. The discount itself cannot change; create a new code for that.
+
+  `PATCH /v1/billing/coupons/{id}`. Required scope: `billing:write`.
+  """
+  def update_coupons(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/billing/coupons/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Delete a code and stop it being used. Subscriptions that already have the discount keep it.
+
+  `DELETE /v1/billing/coupons/{id}`. Required scope: `billing:write`.
+  """
+  def delete_coupons(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/billing/coupons/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Would this code work for this subject and plan? `reason`: unknown, inactive, expired, exhausted, plan_not_eligible, first_time_only or already_used.
+
+  `POST /v1/billing/coupons/validate`. Required scope: `billing:read`.
+  """
+  def post_coupons_validate(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/coupons/validate", %{}, body, opts)
+
+  @doc ~S"""
+  A subject's account-credit ledger and its balance per currency.
+
+  `GET /v1/billing/credits`. Required scope: `billing:read`.
+  """
+  def get_credits(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/credits", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_credits/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_credits(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/billing/credits", %{}, opts)
+
+  @doc ~S"""
+  Post account credit (or a negative adjustment) to a subject. Idempotent on `idempotency_key`. Once the subject has a customer on the provider the credit lands on their balance and is applied to their next invoices; before that it waits for their first completed checkout.
+
+  `POST /v1/billing/credits`. Required scope: `billing:write`.
+  """
+  def post_credits(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/credits", %{}, body, opts)
+
+  @doc ~S"""
   Report metered usage for a subject (idempotent on idempotency_key). Mirrored to the provider's meter when the plan is metered and configured (a Stripe meter event, or a usage record on the Chargebee subscription for the metered item price, deduplicated on idempotency_key), or — with `feature` — to that provider feature (an Autumn feature id / Commet feature code). `subscription_id` attributes it to one of several subscriptions.
 
   `POST /v1/billing/usage`. Required scope: `billing:write`.
@@ -228,6 +306,14 @@ defmodule Atlas.Billing do
     {:put_providers, :put, "/v1/billing/providers/{provider}", 1, true, false},
     {:delete_providers, :delete, "/v1/billing/providers/{provider}", 1, false, false},
     {:post_providers_test, :post, "/v1/billing/providers/{provider}/test", 1, false, false},
+    {:get_coupons, :get, "/v1/billing/coupons", 0, false, true},
+    {:post_coupons, :post, "/v1/billing/coupons", 0, true, false},
+    {:get_coupons_by_id, :get, "/v1/billing/coupons/{id}", 1, false, false},
+    {:update_coupons, :patch, "/v1/billing/coupons/{id}", 1, true, false},
+    {:delete_coupons, :delete, "/v1/billing/coupons/{id}", 1, false, false},
+    {:post_coupons_validate, :post, "/v1/billing/coupons/validate", 0, true, false},
+    {:get_credits, :get, "/v1/billing/credits", 0, false, true},
+    {:post_credits, :post, "/v1/billing/credits", 0, true, false},
     {:post_usage, :post, "/v1/billing/usage", 0, true, false},
     {:post_subjects_sync_seats, :post, "/v1/billing/subjects/{type}/{id}/sync_seats", 2, false, false}
   ]

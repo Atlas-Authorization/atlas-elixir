@@ -66,6 +66,22 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :delete, "/v1/instance/privacy_orchestrator", %{}, nil, opts)
 
   @doc ~S"""
+  Everything a privacy integration wires, in one view: the hosted-page consent manager (`cookie_consent`, as GET /v1/instance/cookie_consent answers it), the data-rights orchestrator (`privacy_orchestrator`), the DSR completion webhook to the orchestrator (`dsr_webhook`) and the narrow executor key the connect minted (`executor_key`, never its secret). `connected` is true when all four are in place. Needs `instance:read` and `secret_keys:read`.
+
+  `GET /v1/instance/privacy_integrations`. Required scope: `instance:read`.
+  """
+  def get_privacy_integrations(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/privacy_integrations", %{}, nil, opts)
+
+  @doc ~S"""
+  Wire a consent manager / data-rights orchestrator to the instance both ways in one call. `preset` is an orchestrator preset (`cookiemunch` fills the banner script, CSP origins and case URLs from `site_id`) or `custom` (send `cookie_consent.script_url` and `orchestrator.name` / `case_url` yourself). Sets the hosted-page CMP, the orchestrator Atlas opens cases with (`api_key` or `partner_link_id`), the DSR completion webhook to the orchestrator's executor connection (`completion_webhook_url`, or with preset cookiemunch `executor_connection_id`: Atlas reads that connection's `webhookUrl` from Cookie Munch and `dsr_webhook.secret_destination` says where its signing secret goes), and mints a secret key with `privacy:*` scopes and `cookie_consent:read` only (default `privacy:execute` + `privacy:grants:revoke` + `cookie_consent:read`) for the orchestrator to call the executor protocol with, or uses the one it already holds (`key.id`). `executor_key.action` says which: `minted`, `kept`, `upgraded` (a re-run added requested scopes the key lacked; secret unchanged) or `adopted`. `warnings` says when a new key is minted. Idempotent: a re-run updates the same settings and returns the same key without its secret (`idempotent_replay: true`); rotate it with POST /v1/secret_keys/{id}/rotate. The body is validated in full before anything is written; errors name the nested field (`cookie_consent.script_url`, `key.scopes.0`). Needs `instance:write` and `secret_keys:write` (and recent MFA for an operator token on first mint). → 201 when the orchestrator or the key was created, else 200.
+
+  `POST /v1/instance/privacy_integrations/connect`. Required scope: `instance:write`.
+  """
+  def post_privacy_integrations_connect(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/privacy_integrations/connect", %{}, body, opts)
+
+  @doc ~S"""
   Read instance configuration. Returns both the raw auth_config patch and auth_config_resolved — the EFFECTIVE config with defaults expanded (enabled first factors, password policy, session, MFA), so you can inspect live auth behaviour and learn the exact shape to PATCH. Never returns the private signing key.
 
   `GET /v1/instance`. Required scope: `instance:read`.
@@ -74,7 +90,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance", %{}, nil, opts)
 
   @doc ~S"""
-  Update allowed origins and auth_config (a partial, validated, merged patch — not a replace). Open or public-suffix wildcard origins refused (a single-label https://*.your-domain.com is accepted; shared hosts like *.vercel.app on development instances only); an invalid auth_config returns 422. A method that needs email (email code, email link, password sign-up that verifies by email) is accepted even when the instance has no email provider yet (email is bring-your-own; Terraform or config import may add the provider later in the same apply): the response lists it under inactive_methods, users are not offered it, and it becomes active on its own once a provider is configured (PUT /v1/messaging_providers/email). Captcha always runs on your own provider keys: turning a captcha ON for a flow (or changing its provider) before both the provider site key (auth_config.captcha.siteKey) and its secret (PUT /v1/instance/captcha_secret) are set returns 422 CAPTCHA_KEYS_REQUIRED with param naming the missing one — store the secret first, then enable. Removing the site key while a flow uses it returns 409 CAPTCHA_IN_USE unless force=true, which also turns the captcha off on those flows. Setting the retired raw branding fields (branding.customCss / customHtmlHeader / customHtmlFooter) returns 422 naming the field — use the design settings (PUT /v1/instance/design) instead; clearing them (null or "") is accepted. The response echoes auth_config_resolved so you can confirm the change took effect, and `warnings`: an origin_still_referenced entry for every removed origin that webhook endpoints (not marked external) or OAuth client URIs still point at, naming each one and the POST /v1/instance/move_origin call that moves them. Strict writes: auth_config.strictRequestBodies (true on instances created from 2026-10 on) refuses unknown body fields with 422 UNKNOWN_FIELD on every Backend API write; set it to opt in or out, or send Atlas-Strict: true | false on one request.
+  Update allowed origins and auth_config (a partial, validated, merged patch — not a replace). Open or public-suffix wildcard origins refused (a single-label https://*.your-domain.com is accepted; shared hosts like *.vercel.app on development instances only); an invalid auth_config returns 422. A method that needs email (email code, email link, password sign-up that verifies by email) is accepted even when the instance has no email provider yet (email is bring-your-own; Terraform or config import may add the provider later in the same apply): the response lists it under inactive_methods, users are not offered it, and it becomes active on its own once a provider is configured (PUT /v1/messaging_providers/email). Captcha always runs on your own provider keys: turning a captcha ON for a flow (or changing its provider) before both the provider site key (auth_config.captcha.siteKey) and its secret (PUT /v1/instance/captcha_secret) are set returns 422 CAPTCHA_KEYS_REQUIRED with param naming the missing one — store the secret first, then enable. Removing the site key while a flow uses it returns 409 CAPTCHA_IN_USE unless force=true, which also turns the captcha off on those flows. Setting the retired raw branding fields (branding.customCss / customHtmlHeader / customHtmlFooter) returns 422 naming the field — use the design settings (PUT /v1/instance/design) instead; clearing them (null or "") is accepted. The response echoes auth_config_resolved so you can confirm the change took effect, and `warnings`: an origin_still_referenced entry for every removed origin that webhook endpoints (not marked external) or OAuth client URIs still point at, naming each one and the POST /v1/instance/move_origin call that moves them. Strict writes: auth_config.strictRequestBodies (true on instances created from 2026-10 on) refuses unknown body fields with 422 UNKNOWN_FIELD on every Backend API write; set it to opt in or out, or send Atlas-Strict: true | false on one request. Every auth_config key is checked at every depth against the auth_config schema: strict, an unknown or moved key is 422 UNKNOWN_FIELD with param naming its full path (auth_config.strategies.atlasId), meta.did_you_mean when a real key is close, and meta.hint naming the endpoint for a setting that has its own (auth_config.branding → PATCH /v1/branding, design → PUT /v1/instance/design, hostedPages → PATCH /v1/instance/hosted_pages, …); lenient, the key is dropped (never stored) and listed in warnings as unknown_field and in the Atlas-Unknown-Fields header. A null on any key and an unchanged echo of a stored section (the raw auth_config GET returns, sent back as is) are always accepted.
 
   `PATCH /v1/instance`. Required scope: `instance:write`.
   """
@@ -97,12 +113,36 @@ defmodule Atlas.Instance do
     do: Atlas.Client.stream(client, "/v1/instance/signing_keys", %{}, opts)
 
   @doc ~S"""
-  Rotate the instance signing key, optionally switching its algorithm (`alg`: RS256 or ES256; RS256 is the default for new instances). A new key signs from now on, and a secondary key (for APIs set to the other algorithm) rotates with it; the previous public key stays in the JWKS for `grace_period_seconds` (default 86400, at most 2592000) so issued tokens and relying-party JWKS caches keep verifying. A second rotation inside a running grace window is a 409 unless `emergency: true`, which publishes ONLY the new key (every token signed by the old one stops verifying at once — for a suspected compromise). Audited as signing_key.rotated.
+  Rotate the instance signing key, optionally switching its algorithm (`alg`: RS256 or ES256; RS256 is the default for new instances). A new key signs from now on, and a secondary key (for APIs set to the other algorithm) rotates with it; the previous public key stays in the JWKS for `grace_period_seconds` (default 86400, at most 2592000) so issued tokens and relying-party JWKS caches keep verifying. A second rotation inside a running grace window is a 409 unless `emergency: true`, which publishes ONLY the new key (every token signed by the old one stops verifying at once — for a suspected compromise) and discards a staged key. Audited as signing_key.rotated. `staged: true` (or the `prepublish_days` policy) instead pre-publishes: the new key goes into the JWKS after the current keys and starts signing at `activates_at`, when the old key becomes previous for 24 hours; listed as `status: next`, cancelled with DELETE /v1/instance/signing_keys/next, audited and sent as signing_key.staged, then signing_key.activated.
 
   `POST /v1/instance/signing_keys/rotate`. Required scope: `instance:write`.
   """
   def post_signing_keys_rotate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/signing_keys/rotate", %{}, body, opts)
+
+  @doc ~S"""
+  Cancel a staged rotation: the staged key leaves the JWKS and never signs. 404 when none is staged. Audited as signing_key.staged_canceled.
+
+  `DELETE /v1/instance/signing_keys/next`. Required scope: `instance:write`.
+  """
+  def delete_signing_keys_next(client, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/signing_keys/next", %{}, nil, opts)
+
+  @doc ~S"""
+  The staged-rotation policy: `prepublish_days` (null = off).
+
+  `GET /v1/instance/signing_key_policy`. Required scope: `instance:read`.
+  """
+  def get_signing_key_policy(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/signing_key_policy", %{}, nil, opts)
+
+  @doc ~S"""
+  Set the staged-rotation policy. With `prepublish_days` (1..90) every ordinary rotation is staged that many days ahead (its key published now, signing from then) unless the rotate call passes `staged: false`; null or 0 turns it off. Emergency rotations are never staged. Audited as signing_key.policy_updated.
+
+  `PATCH /v1/instance/signing_key_policy`. Required scope: `instance:write`.
+  """
+  def update_signing_key_policy(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/instance/signing_key_policy", %{}, body, opts)
 
   @doc ~S"""
   The key management service the instance's token-signing key lives in: `local` (held by Atlas), or AWS KMS, Google Cloud KMS or Azure Key Vault with its non-secret settings and the key version in use. Credentials are never returned.
@@ -127,6 +167,29 @@ defmodule Atlas.Instance do
   """
   def delete_signing_key_provider(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/signing_key_provider", %{}, body, opts)
+
+  @doc ~S"""
+  The OpenID provider keys beyond the instance signing key: PS256, ES384 and EdDSA signing keys and the RSA-OAEP-256 / ECDH-ES keys request objects are encrypted to, with their status.
+
+  `GET /v1/instance/op_keys`. Required scope: `instance:read`.
+  """
+  def get_op_keys(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/op_keys", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_op_keys/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_op_keys(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/op_keys", %{}, opts)
+
+  @doc ~S"""
+  Rotate the key of one algorithm (`alg`). The previous public key stays published for `grace_period_seconds` (default 24 h) so tokens it signed keep verifying.
+
+  `POST /v1/instance/op_keys/rotate`. Required scope: `instance:write`.
+  """
+  def post_op_keys_rotate(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/op_keys/rotate", %{}, body, opts)
 
   @doc ~S"""
   Store (write-only, encrypted) the Yubico cloud API secret key (base64, from upgrade.yubico.com/getapikey). The client id is mfa.yubikey.clientId. Used when mfa.yubikey.mode is "cloud".
@@ -257,6 +320,38 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :delete, "/v1/instance/ldap_connections/{connectionId}/bind_password", %{"connectionId" => connection_id}, nil, opts)
 
   @doc ~S"""
+  Whether the "Sign in with Atlas" button is on: enabled (what GET /v1/appearance reports, which is when the embedded <SignIn> and the hosted page draw "Continue with Atlas"), the connection it uses and how it came to be (managed_via: instance_toggle, provisioned by Atlas; linked, one of your own OIDC connections to the Atlas issuer), the Atlas issuer, and candidates: your active connections to that issuer that could be used.
+
+  `GET /v1/instance/sign_in_with_atlas`. Required scope: `instance:read`.
+  """
+  def get_sign_in_with_atlas(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/sign_in_with_atlas", %{}, nil, opts)
+
+  @doc ~S"""
+  Turn "Sign in with Atlas" on or off: the API for the dashboard toggle. enabled: true with connection_id links that connection (an active OIDC SSO connection of this instance to the Atlas issuer; 409 when another is already used). enabled: true alone keeps the connection in use, else links your one active connection to the Atlas issuer whose Atlas ID app this instance manages (its own or adopted with PUT /v1/platform/atlas_id_apps/{id}/managed_by), else provisions an Atlas ID app and a connection (503 when the deployment has no Atlas ID). enabled: false turns it off: a linked connection is only unmarked (never deleted, and not linked again on its own), a provisioned one is removed with its app. An active connection to the Atlas issuer whose app this instance manages is linked on its own when nothing is in use. Returns the same object as GET.
+
+  `PATCH /v1/instance/sign_in_with_atlas`. Required scope: `instance:write`.
+  """
+  def update_sign_in_with_atlas(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/instance/sign_in_with_atlas", %{}, body, opts)
+
+  @doc ~S"""
+  Your own sign-in, sign-up and account page URLs, when set: /hosted/sign-in, /hosted/sign-up and /hosted/user then answer 302 to them (see PATCH). null = Atlas's hosted page is served. hosted lists the Atlas page URLs these apply to.
+
+  `GET /v1/instance/hosted_pages`. Required scope: `instance:read`.
+  """
+  def get_hosted_pages(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/hosted_pages", %{}, nil, opts)
+
+  @doc ~S"""
+  Send the hosted pages to your own: with sign_in_url set, /hosted/sign-in answers 302 to it (sign_up_url: /hosted/sign-up, user_url: /hosted/user), carrying redirect_url (when it is on an allowed origin), ref and every ref_* parameter, and locale. Each URL must be https (http only for localhost on a development instance) on one of the instance's allowed origins, without credentials or a fragment; null clears it. The hosted page is still served whenever it is part of a flow Atlas is running, so these keep working: OAuth and SAML callbacks and email links returning to the page (__atlas_* parameters), /oauth2/authorize, device, SAML IdP, FedCM and Sign in with Atlas flows (a redirect_url on the Atlas host), delegated login (login_challenge) and template previews. The Frontend API, the sign-out pages and the email verification routes are not affected. A URL whose origin later leaves allowed_origins is ignored (the hosted page is served) until fixed.
+
+  `PATCH /v1/instance/hosted_pages`. Required scope: `instance:write`.
+  """
+  def update_hosted_pages(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/instance/hosted_pages", %{}, body, opts)
+
+  @doc ~S"""
   Whether this instance has a trusted reverse proxy secret, when it was created, and until when the previous one still works after a rotation. Never returns the secret.
 
   `GET /v1/instance/proxy_secret`. Required scope: `instance:read`.
@@ -296,14 +391,6 @@ defmodule Atlas.Instance do
     do: Atlas.Client.stream(client, "/v1/instance/unknown_fields_report", %{}, opts)
 
   @doc ~S"""
-  Check your setup in one call. Lists findings about configuration the server can see is broken or worth knowing — no sign-in method enabled, a social provider enabled without credentials, OAuth clients without redirect or post-logout URIs, a first-party client origin missing from allowed_origins, an allowed https origin that login readiness would fail (CORS or session cookie), sign-up that new users cannot complete, custom domains not serving yet, email or SMS sign-in without a provider, a Cookie Munch site that does not match the sign-in host, an OAuth client whose back-channel logout URI is failing (oauth_client_backchannel_failing: 3 consecutive failed deliveries, or one answered with a redirect, which Atlas never follows), a webhook endpoint whose last delivery was redirected (webhook_endpoint_redirecting), a webhook endpoint that is failing (webhook_endpoint_failing: a failure streak is running), switched off after repeated failures (webhook_endpoint_disabled: an error when it carries session or account events) or on a host that is not one of the instance origins or redirect hosts (webhook_endpoint_off_origin, unless it is marked external), a first-party client without a back-channel logout URI (oauth_client_no_backchannel_logout_uri), and the security posture group (group: security_posture — pkce_not_required, passkey_without_uv, auto_link_unverified) — each with a severity, a stable code, a plain message and the fix. A finding that does not apply to how the instance integrates (the embedded-component checks on an origin Atlas is confident signs in through the hosted redirect) is listed under suppressed with the reason, not in findings; integrations shows how each allowed origin was judged. ok is true when there are no errors. ok covers configuration; to confirm a browser can sign in on a given origin, use GET /v1/diagnostics/login_readiness?origin=… for each production origin. Every code is listed by GET /v1/instance/preflight/codes. A warning or info finding you have acknowledged (PUT /v1/instance/preflight/acks/{code}) is still listed, with acknowledged: { reason, by, at, expires_at }; count only the findings without it. Errors are never acknowledged. Read-only.
-
-  `GET /v1/instance/preflight`. Required scope: `diagnostics:read`.
-  """
-  def get_preflight(client, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/instance/preflight", %{}, nil, opts)
-
-  @doc ~S"""
   Every preflight acknowledgement on the instance, lapsed ones included (active: false). An acknowledgement marks every finding with its code as known and accepted.
 
   `GET /v1/instance/preflight/acks`. Required scope: `diagnostics:read`.
@@ -312,7 +399,14 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance/preflight/acks", %{}, nil, opts)
 
   @doc ~S"""
-  Acknowledge a preflight finding you know about and accept, with a reason (body `reason`, at most 500 characters; optional `expires_at`, epoch ms or ISO 8601 in the future, omit or null for no expiry): GET /v1/instance/preflight still lists every finding with this code, marked acknowledged: { reason, by, at, expires_at }, and it no longer counts as something to fix. Replaces any earlier acknowledgement of the code. A code that can be an error-severity finding is refused with 422 VALIDATION_FAILED (meta.reason error_severity_not_acknowledgeable); an unknown code is 400. Supports `?dry_run=true`.
+  Lazy stream over every item of `get_preflight_acks/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_preflight_acks(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/preflight/acks", %{}, opts)
+
+  @doc ~S"""
+  Acknowledge a preflight finding you know about and accept, with a reason: GET /v1/instance/preflight still lists every finding with this code, marked acknowledged: { reason, by, at, expires_at }, and it no longer counts as something to fix (the dashboard and atlas preflight --fail-on warning skip it). Replaces any earlier acknowledgement of the code. expires_at (epoch ms or ISO 8601, in the future; omit or null for no expiry) makes it lapse, after which the finding counts again. A code that can be an error-severity finding is refused with 422 VALIDATION_FAILED (param code, meta.reason error_severity_not_acknowledgeable): errors are fixed, never acknowledged. An unknown code is 400. Each change is a config-changelog entry (preflight_ack.saved). dry_run=true validates without saving.
 
   `PUT /v1/instance/preflight/acks/{code}`. Required scope: `instance:write`.
   """
@@ -320,12 +414,20 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :put, "/v1/instance/preflight/acks/{code}", %{"code" => code}, body, opts)
 
   @doc ~S"""
-  Remove an acknowledgement: the findings with this code count again. 404 when the code has none.
+  Remove an acknowledgement: the findings with this code count again. 404 when the code has none. A config-changelog entry (preflight_ack.removed).
 
   `DELETE /v1/instance/preflight/acks/{code}`. Required scope: `instance:write`.
   """
   def delete_preflight_acks(client, code, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/preflight/acks/{code}", %{"code" => code}, nil, opts)
+
+  @doc ~S"""
+  Check your setup in one call. Lists findings about configuration the server can see is broken or worth knowing — no sign-in method enabled, a social provider enabled without credentials, OAuth clients without redirect or post-logout URIs, a first-party client origin missing from allowed_origins, an allowed https origin that login readiness would fail (CORS or session cookie), sign-up that new users cannot complete, custom domains not serving yet, email or SMS sign-in without a provider, a Cookie Munch site that does not match the sign-in host, an OAuth client whose back-channel logout URI is failing (oauth_client_backchannel_failing: 3 consecutive failed deliveries, or one answered with a redirect, which Atlas never follows), a webhook endpoint whose last delivery was redirected (webhook_endpoint_redirecting), a webhook endpoint that is failing (webhook_endpoint_failing: a failure streak is running), switched off after repeated failures (webhook_endpoint_disabled: an error when it carries session or account events) or on a host that is not one of the instance origins or redirect hosts (webhook_endpoint_off_origin, unless it is marked external), a first-party client without a back-channel logout URI (oauth_client_no_backchannel_logout_uri), and the security posture group (group: security_posture — pkce_not_required, passkey_without_uv, auto_link_unverified) — each with a severity, a stable code, a plain message and the fix. A finding that does not apply to how the instance integrates (the embedded-component checks on an origin Atlas is confident signs in through the hosted redirect) is listed under suppressed with the reason, not in findings; integrations shows how each allowed origin was judged. ok is true when there are no errors. ok covers configuration; to confirm a browser can sign in on a given origin, use GET /v1/diagnostics/login_readiness?origin=… for each production origin. Every code is listed by GET /v1/instance/preflight/codes. A warning or info finding you have acknowledged (PUT /v1/instance/preflight/acks/{code}) is still listed, with acknowledged: { reason, by, at, expires_at }; count only the findings without it. Errors are never acknowledged. Read-only.
+
+  `GET /v1/instance/preflight`. Required scope: `diagnostics:read`.
+  """
+  def get_preflight(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/preflight", %{}, nil, opts)
 
   @doc ~S"""
   Behaviour changes that affect THIS instance: each with its date, type (behavior_change | deprecation | new), tags (breaking | behaviour | security), what it changes, a sentence about this instance (`detail`, and `count` when countable), when it was first seen, when the owners were emailed and whether it was acknowledged. Deprecated routes or fields your integration still calls appear here as `deprecated:<id>` notices. ?all=true lists every recent notice, including ones that do not apply (applies: false).
@@ -445,7 +547,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance/referrals", %{}, nil, opts)
 
   @doc ~S"""
-  Update the referral attribution settings. Only the fields you send change; null clears. signing_secret, api_key and inbound_secret are write-only. Enabling requires what the provider needs (422 REFERRALS_NOT_CONFIGURED, meta.missing). A body field this route does not know, top level or inside security, is 422 UNKNOWN_FIELD with param naming it, and nothing is saved; a known field with a bad value is 400 VALIDATION_FAILED with param. Every change is audit-logged without secret values. `warnings` says what was stored differently from what was sent: renamed (a retired provider spelling such as referally stored as referalli, in provider or browser_sources[i], with from and to; the write also carries Deprecation and Sunset headers) and defaulted (a newly picked platform's tracking cookies filled into context_cookies because the body named none). `partner_portal_url` (https, or null to remove) links the partner portal from the hosted "Refer a friend" panel; `report_linked_atlas_id_signups: true` reports the first Sign in with Atlas sign-in to an app this instance manages as a sign-up (answered as user.referral_attributed with source sign_in_with_atlas).
+  Update the referral attribution settings. Only the fields you send change; null clears. signing_secret, api_key and inbound_secret are write-only. Enabling requires what the provider needs (422 REFERRALS_NOT_CONFIGURED, meta.missing). A body field this route does not know, top level or inside security, is 422 UNKNOWN_FIELD with param naming it, and nothing is saved; a known field with a bad value is 400 VALIDATION_FAILED with param. Every change is audit-logged without secret values. `warnings` says what was stored differently from what was sent: renamed (a retired provider spelling such as referally stored as referalli, in provider or browser_sources[i], with from and to; the write also carries Deprecation and Sunset headers) and defaulted (a newly picked platform's tracking cookies filled into context_cookies because the body named none).
 
   `PATCH /v1/instance/referrals`. Required scope: `instance:write`.
   """
@@ -477,12 +579,20 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/simulate", %{}, body, opts)
 
   @doc ~S"""
-  Backfill: queue sign-up calls for existing users created since a date, each with its real sign-up time, so the platform dates the referrals correctly and replays the payments since. Codes come from `codes` or a metadata path; users with no code are reported only when auto_enroll_users is on; users already reported are skipped. Calls go out at about 10 per second. Up to 10,000 users per request. Requires referrals to be on (422 REFERRALS_NOT_CONFIGURED).
+  Backfill: queue sign-up calls for existing users created since a date, each with its real sign-up time, so the platform dates the referrals correctly and replays the payments since. Codes come from `codes` or a metadata path; users with no code are reported only when auto_enroll_users is on; users already reported are skipped unless `force` is set. `user_ids` limits the job to those users (`since` is then optional). Calls go out at about 10 per second. Up to 10,000 users per request. Requires referrals to be on (422 REFERRALS_NOT_CONFIGURED).
 
   `POST /v1/instance/referrals/backfill`. Required scope: `instance:write`.
   """
   def post_referrals_backfill(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/backfill", %{}, body, opts)
+
+  @doc ~S"""
+  Send every organization's owner to the referral platform once (an `accounts` call per organization: accountRef = the organization's external_id, else its id; ownerCustomerRef = the owner's customerRef). The owner is the organization's creator while they hold the creator role or org:admin, else the longest-standing member holding one of those roles; organizations with no such member are counted in organizations_without_owner and skipped. Calls go out at about 10 per second through the delivery log (kind `accounts`), oldest first, up to 10,000 organizations per request (continue with `starting_after` = `next_starting_after`); the platform treats a repeat as a no-op. Atlas already sends these on its own when an organization is created, its external_id changes or its owner changes, and once when the platform first advertises `accounts`: use this after restoring data or to be sure. Requires referrals to be on and the platform to advertise `accounts` (422 REFERRALS_NOT_CONFIGURED otherwise).
+
+  `POST /v1/instance/referrals/accounts/resync`. Required scope: `instance:write`.
+  """
+  def post_referrals_accounts_resync(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/referrals/accounts/resync", %{}, body, opts)
 
   @doc ~S"""
   A backfill and the live progress of its calls.
@@ -524,7 +634,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance/referrals/calls/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Retry a failed, retrying or skipped call now. A late sign-up answer emits user.referral_attributed.
+  Retry a failed, retrying or skipped call now. A late sign-up answer emits user.referral_attributed. A succeeded sign-up whose answer names a since-fixable condition (reasoning code enroll_email_taken or no_email_for_enroll) can be retried too; any other succeeded call is a 409 that points at POST /v1/users/{id}/referral/resync.
 
   `POST /v1/instance/referrals/calls/{id}/retry`. Required scope: `instance:write`.
   """
@@ -713,7 +823,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance/hooks/before_user_create", %{}, nil, opts)
 
   @doc ~S"""
-  Update the before_user_create hook. Only the fields you send change; null clears. The hook is called (signed like a webhook) after the user id is assigned and before user.created, the referral call and any session. It may answer {external_id, public_metadata, private_metadata, unsafe_metadata}, or refuse the sign-up with {deny: true, reason} (or HTTP 403): the person gets 403 SIGN_UP_DENIED. A slow or failing hook does not block the sign-up unless `fail_closed: true` is set, which refuses the sign-up when the hook times out, errors or answers badly.
+  Update the before_user_create hook. Only the fields you send change; null clears. The hook is called (signed like a webhook) after the user id is assigned and before user.created, the referral call and any session. It may answer {external_id, public_metadata, private_metadata, unsafe_metadata}, or deny the sign-up with {"deny": true, "reason": "..."} or HTTP 403: the person gets 403 SIGN_UP_DENIED with your reason, no user is kept and no user.created is sent. A slow or failing hook does not block the sign-up unless fail_closed is true. The body carries data.user, data.strategy, data.referral, data.request ({client_id, app_context, login_hint} of the authorize request, nulls when absent) and data.invitation (the pending instance invitation for the address, or null) and data.organization ({id, external_id, role, role_mapped, via: sso | domain} when the sign-up comes through an organization SSO connection or a captured auto-join domain, else null). Turning the hook on, or changing the url or signing_secret of a fail_closed enabled one (or turning fail_closed on for it), first sends the signed test call: unless it returns a valid answer (an answer object, possibly empty, or a deny) the change is refused with 409 HOOK_TEST_FAILED (meta: url, status, the first 200 bytes of the response body, outcome) and the hook stays as it was. ?force=true (or force in the body) skips the test and is audit-logged. A dry run (?dry_run=true) makes the same test call and changes nothing: it answers would_return (the hook exactly as the PATCH would leave it, e.g. enabled: true) and changes [{section, before, after}] with would_return_status 200, or would_return_status 409 with the refusal. An enabled hook that is not fail_closed is not re-tested when its url or secret changes.
 
   `PATCH /v1/instance/hooks/before_user_create`. Required scope: `instance:write`.
   """
@@ -721,7 +831,15 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :patch, "/v1/instance/hooks/before_user_create", %{}, body, opts)
 
   @doc ~S"""
-  Send a sample sign-up (a user that does not exist) to the hook and report its answer. Nothing is stored on any user; the call appears in the delivery log flagged test, and does not change last_call. The call says it is a test: `"test": true` in the body (real calls send false) and an `atlas-test: 1` header, so the hook answers without reserving an id or creating anything.
+  Turn the before_user_create hook off and clear its url and signing secret, the same as PATCH with {enabled:false, url:null, signing_secret:null}. Audited. Idempotent: a hook that is already clear answers 200 the same way. timeout_ms and fail_closed are kept.
+
+  `DELETE /v1/instance/hooks/before_user_create`. Required scope: `instance:write`.
+  """
+  def delete_hooks_before_user_create(client, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/hooks/before_user_create", %{}, nil, opts)
+
+  @doc ~S"""
+  Send a sample sign-up (a user that does not exist) to the hook and report its answer. Nothing is stored on any user; the call appears in the delivery log flagged test, and does not change last_call. The call says it is a test: `"test": true` in the body (real calls send false) and an `atlas-test: 1` header, so the hook answers without reserving an id or creating anything. Answers with the shared test-call fields ok, status (success | failed), http_status and latency_ms (the same four a webhook endpoint test returns), plus answer or error.
 
   `POST /v1/instance/hooks/before_user_create/test`. Required scope: `instance:write`.
   """
@@ -744,9 +862,88 @@ defmodule Atlas.Instance do
     do: Atlas.Client.stream(client, "/v1/instance/hooks/before_user_create/calls", %{}, opts)
 
   @doc ~S"""
-  Read the cookie-consent CMP injected into the hosted sign-in, sign-up and account pages (enabled:false when none) and where it comes from (source: a stored setting, an integration, or a consent manager's partner link), plus declared_cookies: every cookie and storage key Atlas writes for this instance, with the domain it lives on, ready to declare in the CMP as strictly necessary.
+  Alias of GET /v1/secret_keys. List this instance's secret keys with scopes, owner, expiry, last use, last-used IP and provisioning tags. Revoked keys stay listed. Filter by tag with ?metadata[key]=value.
 
-  `GET /v1/instance/cookie_consent`. Required scope: `instance:read`.
+  `GET /v1/instance/secret_keys`. Required scope: `secret_keys:read`.
+  """
+  def get_secret_keys(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/secret_keys", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_secret_keys/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_secret_keys(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/secret_keys", %{}, opts)
+
+  @doc ~S"""
+  Alias of POST /v1/secret_keys. Create a scoped secret key: `name`, `scopes[]` (refused when unknown, or when the calling key does not hold them; presets `read_only`, `privacy:execute`, `privacy:grants:revoke`), `expires_at` (at most a year; default one year; "never" is refused), `allowed_ips` (CIDRs), `allowed_origins` (browser origins; a request with another Origin gets 403 ORIGIN_NOT_ALLOWED), `owner` (default: the creating person or key), `external_ref` (idempotent create: a repeat returns the existing key, 200, idempotent_replay, no secret), `metadata` (tags; filter the list with ?metadata[key]=value) and `key_format` (`atlas`, the default `atlas_<env>_sk_…`, or `legacy` `sk_<env>_…`). The secret is returned once. Minting with an operator token needs multi-factor sign-in within 5 minutes (403 STEP_UP_REQUIRED). Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext. Example: a data-rights tool's key, { "name": "DSAR executor", "scopes": ["privacy:execute", "privacy:grants:revoke"], "expires_at": "2027-04-01" }.
+
+  `POST /v1/instance/secret_keys`. Required scope: `secret_keys:write`.
+  """
+  def post_secret_keys(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/secret_keys", %{}, body, opts)
+
+  @doc ~S"""
+  Customer-managed encryption status: whether it is on, the key provider, the data key versions, the last health check and how long a revoked key keeps working before Atlas fails closed.
+
+  `GET /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+  """
+  def get_data_key_provider(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/data_key_provider", %{}, nil, opts)
+
+  @doc ~S"""
+  Turn on customer-managed encryption. A random data key is created, wrapped by the KMS key set with PUT /v1/vault/key_provider (AWS KMS, Google Cloud KMS or Azure Key Vault) and proved by an unwrap before anything depends on it. From then on everything Atlas encrypts for the instance depends on that KMS key; values written earlier stay readable until the re-encryption sweep has moved them. If the key is later disabled, deleted or its access removed, requests that need the instance data fail with 503 CUSTOMER_KEY_UNAVAILABLE within five minutes; nothing falls back to a platform key.
+
+  `POST /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+  """
+  def post_data_key_provider(client, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/data_key_provider", %{}, nil, opts)
+
+  @doc ~S"""
+  Set the cache window: how long Atlas may use a loaded data key without your KMS confirming it, which is how long a revoked key keeps working (60 to 3,600 seconds, default 300). Shorter revokes faster but depends on the KMS being reachable more tightly: Atlas re-confirms every 20 seconds, so a KMS outage longer than the window takes the instance down.
+
+  `PUT /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+  """
+  def put_data_key_provider(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/data_key_provider", %{}, body, opts)
+
+  @doc ~S"""
+  Remove customer-managed encryption by deleting the wrapped data keys. This crypto-shreds everything encrypted under them and cannot be undone; send { "confirm": "shred" }.
+
+  `DELETE /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+  """
+  def delete_data_key_provider(client, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/data_key_provider", %{}, nil, opts)
+
+  @doc ~S"""
+  Create a new data key version. New data uses it; earlier versions stay until a re-encryption sweep reports none left on them.
+
+  `POST /v1/instance/data_key_provider/rotate`. Required scope: `vault:manage`.
+  """
+  def post_data_key_provider_rotate(client, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/data_key_provider/rotate", %{}, nil, opts)
+
+  @doc ~S"""
+  Re-wrap data keys and vault versions wrapped by an earlier KMS key under the provider as configured now. Pass `previous` (provider, config, credentials) when the old key is no longer the configured one. Only small keys are unwrapped and wrapped again; no data is re-encrypted, and it is safe to repeat.
+
+  `POST /v1/instance/data_key_provider/rewrap`. Required scope: `vault:manage`.
+  """
+  def post_data_key_provider_rewrap(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/data_key_provider/rewrap", %{}, body, opts)
+
+  @doc ~S"""
+  Check the customer key now: wrap and unwrap a random key through it and open the current data keys. `reason` names a failure: key_disabled, key_not_found, access_denied, unreachable or invalid_config.
+
+  `POST /v1/instance/data_key_provider/check`. Required scope: `vault:manage`.
+  """
+  def post_data_key_provider_check(client, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/data_key_provider/check", %{}, nil, opts)
+
+  @doc ~S"""
+  Read the cookie-consent CMP injected into the hosted sign-in, sign-up and account pages (enabled:false when none) and where it comes from (source: a stored setting, an integration, or a consent manager's partner link), plus declared_cookies: every cookie and storage key Atlas writes for this instance, with the domain it lives on, ready to declare in the CMP as strictly necessary. Needs only cookie_consent:read (instance:read includes it), so a consent manager's privacy:* executor key can hold it. Without a key, the same declared_cookies are public: GET /v1/cookie_consent on the Frontend API host.
+
+  `GET /v1/instance/cookie_consent`. Required scope: `cookie_consent:read`.
   """
   def get_cookie_consent(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/cookie_consent", %{}, nil, opts)
@@ -766,6 +963,14 @@ defmodule Atlas.Instance do
   """
   def delete_cookie_consent(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/cookie_consent", %{}, nil, opts)
+
+  @doc ~S"""
+  Every cookie and browser-storage key the hosted pages set for this instance as a CMP-neutral declaration (name, provider, domain, category, type cookie or localStorage, duration, description), with the domain computed from your sign-in host and cross-subdomain setting. A consent manager imports it once; no manual rows. Needs only cookie_consent:read. Without a key the same list is public: GET /v1/storage_declaration on the Frontend API host.
+
+  `GET /v1/instance/storage_declaration`. Required scope: `cookie_consent:read`.
+  """
+  def get_storage_declaration(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/storage_declaration", %{}, nil, opts)
 
   @doc ~S"""
   Every identity integration: the four presets (chatly, forumulate, cookiemunch, referalli; connected or not) and every custom integration, each with its health — last mint, mints and reported verify errors in the last 24 hours, the last verify error, and the event and back-channel logout receivers (state, failing_since, consecutive failures, 24-hour success rate).
@@ -791,7 +996,7 @@ defmodule Atlas.Instance do
     do: Atlas.Client.request(client, :get, "/v1/instance/integrations/{product}", %{"product" => product}, nil, opts)
 
   @doc ~S"""
-  Connect (or replace) an identity integration: any service that verifies a user with a JWT. getToken({ for: '<id>' }) then mints a token of at most 120 s with aud = audience, sub (the Atlas user id), ext (external_id), principal (the branding audience the user signed in under), sid, email, email_verified, name and locale, verifiable against the instance JWKS. Atlas also delivers user.updated / user.banned / user.unbanned / user.deleted / session.revoked to events_url and an OIDC Back-Channel Logout token to backchannel_logout_url on every session end. ?dry_run=true validates in full and answers { object: 'dry_run', changes, would_return } without saving. Also accepts metadata tags and external_ref. The integration id: a preset (chatly, forumulate, cookiemunch, referalli) or a custom integration id (2-40 lowercase letters, digits, "_" or "-", starting with a letter).
+  Connect (or replace) an identity integration: any service that verifies a user with a JWT. getToken({ for: '<id>' }) then mints a token of at most 120 s with aud = audience, sub (the Atlas user id), ext (external_id), principal (the branding audience the user signed in under), sid, email, email_verified, name and locale, verifiable against the instance JWKS. Atlas also delivers user.updated / user.banned / user.unbanned / user.deleted / session.revoked to events_url and an OIDC Back-Channel Logout token to backchannel_logout_url on every session end. ?dry_run=true validates in full and answers { object: 'dry_run', changes, would_return } without saving. Also accepts metadata tags and external_ref. The OAuth client the service signs users in with (oauth_client_id, else the client tagged product=<integration id>) gets its https redirect-URI origins added to allowed_origins (append only, recorded in the config changelog); the response lists them in added_origins. For forumulate, warnings says when Forumulate already sends readers elsewhere (existing_sign_in_url_overrides: an org-level signInUrl; atlas_reader_provider_missing), read from its public reader sign-in settings. With replace_existing: true and forumulate_api_key (a Forumulate org admin's API key, used for this call only and never stored) Atlas clears the org-level signInUrl and removes every non-Atlas reader provider in Forumulate, and answers replaced. forumulate_api_key alone also reads each space's reader addresses, so spaces[].redeem_url is on the host its readers read. The integration id: a preset (chatly, forumulate, cookiemunch, referalli) or a custom integration id (2-40 lowercase letters, digits, "_" or "-", starting with a letter).
 
   `PUT /v1/instance/integrations/{product}`. Required scope: `instance:write`.
   """
@@ -822,7 +1027,15 @@ defmodule Atlas.Instance do
     do: Atlas.Client.stream(client, "/v1/instance/integrations/{product}/deliveries", %{"product" => product}, opts)
 
   @doc ~S"""
-  Reveal the signing secret of the integration's event receiver, so the service can verify the Atlas-Signature of each delivery. Audited. 404 when the integration has no event receiver.
+  Re-send what the integration's event receiver never got: every event since `since` with no successful delivery and no retry still scheduled, including events recorded while the receiver was disabled. Each goes out signed and addressed as of now, with its original event id. Switches a disabled receiver back on. At most 1,000 events per call (`has_more` + `next_since` to continue). Running it again queues nothing new, including two calls at once with no Idempotency-Key. 409 when `since` is older than the 90-day event retention; past the 30-day delivery log Atlas cannot tell what was delivered, so an older `since` can re-send delivered events. 404 when the integration has no event receiver. Honours Idempotency-Key.
+
+  `POST /v1/instance/integrations/{product}/deliveries/redeliver`. Required scope: `instance:write`.
+  """
+  def post_integrations_deliveries_redeliver(client, product, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/deliveries/redeliver", %{"product" => product}, body, opts)
+
+  @doc ~S"""
+  Reveal the signing secret of the integration's event receiver, so the service can verify the signature of each delivery. Forumulate's default receiver: a key that strict Standard Webhooks verifiers cannot read, and that no delivery has proven, is replaced here. Audited. 404 when the integration has no event receiver.
 
   `POST /v1/instance/integrations/{product}/events_secret`. Required scope: `instance:write`.
   """
@@ -845,77 +1058,6 @@ defmodule Atlas.Instance do
   def post_integrations_atlas_id_tokens(client, product, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", %{"product" => product}, body, opts)
 
-  @doc ~S"""
-  Whether the "Sign in with Atlas" button is on: `enabled`, the connection it uses and how it came to be (`managed_via`: `instance_toggle` or `linked`), `connection_status`, `available`, the Atlas `issuer`, and `candidates` (your active connections to that issuer that could be used).
-
-  `GET /v1/instance/sign_in_with_atlas`. Required scope: `instance:read`.
-  """
-  def get_sign_in_with_atlas(client, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/instance/sign_in_with_atlas", %{}, nil, opts)
-
-  @doc ~S"""
-  Turn "Sign in with Atlas" on or off: `%{"enabled" => true}` (optionally with `"connection_id"` of an active OIDC connection to the Atlas issuer; 409 when another is already used) or `%{"enabled" => false}`. Returns the same object as GET.
-
-  `PATCH /v1/instance/sign_in_with_atlas`. Required scope: `instance:write`.
-  """
-  def update_sign_in_with_atlas(client, body, opts \\ []),
-    do: Atlas.Client.request(client, :patch, "/v1/instance/sign_in_with_atlas", %{}, body, opts)
-
-  @doc ~S"""
-  Your own sign-in, sign-up and account page URLs (`sign_in_url`, `sign_up_url`, `user_url`), when set: the hosted pages then answer 302 to them. null = Atlas's hosted page is served. `hosted` lists the Atlas page URLs these apply to.
-
-  `GET /v1/instance/hosted_pages`. Required scope: `instance:read`.
-  """
-  def get_hosted_pages(client, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/instance/hosted_pages", %{}, nil, opts)
-
-  @doc ~S"""
-  Send the hosted pages to your own: `sign_in_url`, `sign_up_url`, `user_url` (https on one of the instance's allowed origins; null clears one). Returns the same object as GET.
-
-  `PATCH /v1/instance/hosted_pages`. Required scope: `instance:write`.
-  """
-  def update_hosted_pages(client, body, opts \\ []),
-    do: Atlas.Client.request(client, :patch, "/v1/instance/hosted_pages", %{}, body, opts)
-
-  @doc ~S"""
-  Everything a privacy integration wires, in one view: `cookie_consent`, `privacy_orchestrator`, `dsr_webhook` and `executor_key` (never its secret). `connected` is true when all four are in place. Needs `instance:read` and `secret_keys:read`.
-
-  `GET /v1/instance/privacy_integrations`. Required scope: `instance:read`.
-  """
-  def get_privacy_integrations(client, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/instance/privacy_integrations", %{}, nil, opts)
-
-  @doc ~S"""
-  Wire a consent manager / data-rights orchestrator to the instance both ways in one call (`preset`, `site_id`, `cookie_consent`, `orchestrator`, `completion_webhook_url`, `key`). Mints a `privacy:*`-only executor key whose `executor_key.secret` is shown once; a re-run updates the same settings and returns the key without its secret (`idempotent_replay: true`). `warnings` lists anything to check. 201 when the orchestrator or the key was created, else 200.
-
-  `POST /v1/instance/privacy_integrations/connect`. Required scope: `instance:write`.
-  """
-  def post_privacy_integrations_connect(client, body, opts \\ []),
-    do: Atlas.Client.request(client, :post, "/v1/instance/privacy_integrations/connect", %{}, body, opts)
-
-  @doc ~S"""
-  Alias of `GET /v1/secret_keys` (`Atlas.SecretKeys.list/2`).
-
-  `GET /v1/instance/secret_keys`. Required scope: `secret_keys:read`.
-  """
-  def get_secret_keys(client, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/instance/secret_keys", %{}, nil, opts)
-
-  @doc ~S"""
-  Lazy stream over every item of `get_secret_keys/2`, following the cursor page by page.
-  Raises `Atlas.Error` if a page request fails.
-  """
-  def stream_get_secret_keys(client, opts \\ []),
-    do: Atlas.Client.stream(client, "/v1/instance/secret_keys", %{}, opts)
-
-  @doc ~S"""
-  Alias of `POST /v1/secret_keys` (`Atlas.SecretKeys.create/3`). The secret is returned once.
-
-  `POST /v1/instance/secret_keys`. Required scope: `secret_keys:write`.
-  """
-  def post_secret_keys(client, body, opts \\ []),
-    do: Atlas.Client.request(client, :post, "/v1/instance/secret_keys", %{}, body, opts)
-
   @doc false
   def __operations__, do: [
     {:get_design, :get, "/v1/instance/design", 0, false, false},
@@ -925,13 +1067,20 @@ defmodule Atlas.Instance do
     {:get_privacy_orchestrator, :get, "/v1/instance/privacy_orchestrator", 0, false, false},
     {:put_privacy_orchestrator, :put, "/v1/instance/privacy_orchestrator", 0, true, false},
     {:delete_privacy_orchestrator, :delete, "/v1/instance/privacy_orchestrator", 0, false, false},
+    {:get_privacy_integrations, :get, "/v1/instance/privacy_integrations", 0, false, false},
+    {:post_privacy_integrations_connect, :post, "/v1/instance/privacy_integrations/connect", 0, true, false},
     {:list, :get, "/v1/instance", 0, false, false},
     {:update, :patch, "/v1/instance", 0, true, false},
     {:get_signing_keys, :get, "/v1/instance/signing_keys", 0, false, true},
     {:post_signing_keys_rotate, :post, "/v1/instance/signing_keys/rotate", 0, true, false},
+    {:delete_signing_keys_next, :delete, "/v1/instance/signing_keys/next", 0, false, false},
+    {:get_signing_key_policy, :get, "/v1/instance/signing_key_policy", 0, false, false},
+    {:update_signing_key_policy, :patch, "/v1/instance/signing_key_policy", 0, true, false},
     {:get_signing_key_provider, :get, "/v1/instance/signing_key_provider", 0, false, false},
     {:put_signing_key_provider, :put, "/v1/instance/signing_key_provider", 0, true, false},
     {:delete_signing_key_provider, :delete, "/v1/instance/signing_key_provider", 0, true, false},
+    {:get_op_keys, :get, "/v1/instance/op_keys", 0, false, true},
+    {:post_op_keys_rotate, :post, "/v1/instance/op_keys/rotate", 0, true, false},
     {:put_yubico_secret, :put, "/v1/instance/yubico_secret", 0, true, false},
     {:delete_yubico_secret, :delete, "/v1/instance/yubico_secret", 0, false, false},
     {:put_duo_secret, :put, "/v1/instance/duo_secret", 0, true, false},
@@ -948,14 +1097,18 @@ defmodule Atlas.Instance do
     {:delete_kerberos_secret, :delete, "/v1/instance/kerberos_secret", 0, false, false},
     {:put_ldap_connections_bind_password, :put, "/v1/instance/ldap_connections/{connectionId}/bind_password", 1, true, false},
     {:delete_ldap_connections_bind_password, :delete, "/v1/instance/ldap_connections/{connectionId}/bind_password", 1, false, false},
+    {:get_sign_in_with_atlas, :get, "/v1/instance/sign_in_with_atlas", 0, false, false},
+    {:update_sign_in_with_atlas, :patch, "/v1/instance/sign_in_with_atlas", 0, true, false},
+    {:get_hosted_pages, :get, "/v1/instance/hosted_pages", 0, false, false},
+    {:update_hosted_pages, :patch, "/v1/instance/hosted_pages", 0, true, false},
     {:get_proxy_secret, :get, "/v1/instance/proxy_secret", 0, false, false},
     {:post_proxy_secret, :post, "/v1/instance/proxy_secret", 0, true, false},
     {:delete_proxy_secret, :delete, "/v1/instance/proxy_secret", 0, false, false},
     {:get_unknown_fields_report, :get, "/v1/instance/unknown_fields_report", 0, false, true},
-    {:get_preflight, :get, "/v1/instance/preflight", 0, false, false},
-    {:get_preflight_acks, :get, "/v1/instance/preflight/acks", 0, false, false},
+    {:get_preflight_acks, :get, "/v1/instance/preflight/acks", 0, false, true},
     {:put_preflight_acks, :put, "/v1/instance/preflight/acks/{code}", 1, true, false},
     {:delete_preflight_acks, :delete, "/v1/instance/preflight/acks/{code}", 1, false, false},
+    {:get_preflight, :get, "/v1/instance/preflight", 0, false, false},
     {:get_notices, :get, "/v1/instance/notices", 0, false, true},
     {:post_notices_acknowledge, :post, "/v1/instance/notices/{id}/acknowledge", 1, false, false},
     {:get_sub_processors, :get, "/v1/instance/sub_processors", 0, false, false},
@@ -973,6 +1126,7 @@ defmodule Atlas.Instance do
     {:post_referrals_test, :post, "/v1/instance/referrals/test", 0, false, false},
     {:post_referrals_simulate, :post, "/v1/instance/referrals/simulate", 0, true, false},
     {:post_referrals_backfill, :post, "/v1/instance/referrals/backfill", 0, true, false},
+    {:post_referrals_accounts_resync, :post, "/v1/instance/referrals/accounts/resync", 0, true, false},
     {:get_referrals_backfill, :get, "/v1/instance/referrals/backfill/{id}", 1, false, false},
     {:post_referrals_calls_retry_failed, :post, "/v1/instance/referrals/calls/retry_failed", 0, true, false},
     {:get_referrals_calls, :get, "/v1/instance/referrals/calls", 0, false, true},
@@ -999,26 +1153,30 @@ defmodule Atlas.Instance do
     {:post_status_dependencies_refresh, :post, "/v1/instance/status_dependencies/{id}/refresh", 1, false, false},
     {:get_hooks_before_user_create, :get, "/v1/instance/hooks/before_user_create", 0, false, false},
     {:update_hooks_before_user_create, :patch, "/v1/instance/hooks/before_user_create", 0, true, false},
+    {:delete_hooks_before_user_create, :delete, "/v1/instance/hooks/before_user_create", 0, false, false},
     {:post_hooks_before_user_create_test, :post, "/v1/instance/hooks/before_user_create/test", 0, false, false},
     {:get_hooks_before_user_create_calls, :get, "/v1/instance/hooks/before_user_create/calls", 0, false, true},
+    {:get_secret_keys, :get, "/v1/instance/secret_keys", 0, false, true},
+    {:post_secret_keys, :post, "/v1/instance/secret_keys", 0, true, false},
+    {:get_data_key_provider, :get, "/v1/instance/data_key_provider", 0, false, false},
+    {:post_data_key_provider, :post, "/v1/instance/data_key_provider", 0, false, false},
+    {:put_data_key_provider, :put, "/v1/instance/data_key_provider", 0, true, false},
+    {:delete_data_key_provider, :delete, "/v1/instance/data_key_provider", 0, false, false},
+    {:post_data_key_provider_rotate, :post, "/v1/instance/data_key_provider/rotate", 0, false, false},
+    {:post_data_key_provider_rewrap, :post, "/v1/instance/data_key_provider/rewrap", 0, true, false},
+    {:post_data_key_provider_check, :post, "/v1/instance/data_key_provider/check", 0, false, false},
     {:get_cookie_consent, :get, "/v1/instance/cookie_consent", 0, false, false},
     {:put_cookie_consent, :put, "/v1/instance/cookie_consent", 0, true, false},
     {:delete_cookie_consent, :delete, "/v1/instance/cookie_consent", 0, false, false},
+    {:get_storage_declaration, :get, "/v1/instance/storage_declaration", 0, false, false},
     {:get_integrations, :get, "/v1/instance/integrations", 0, false, true},
     {:get_integrations_by_product, :get, "/v1/instance/integrations/{product}", 1, false, false},
     {:put_integrations, :put, "/v1/instance/integrations/{product}", 1, true, false},
     {:delete_integrations, :delete, "/v1/instance/integrations/{product}", 1, false, false},
     {:get_integrations_deliveries, :get, "/v1/instance/integrations/{product}/deliveries", 1, false, true},
+    {:post_integrations_deliveries_redeliver, :post, "/v1/instance/integrations/{product}/deliveries/redeliver", 1, true, false},
     {:post_integrations_events_secret, :post, "/v1/instance/integrations/{product}/events_secret", 1, false, false},
     {:post_integrations_events_secret_rotate, :post, "/v1/instance/integrations/{product}/events_secret/rotate", 1, true, false},
-    {:post_integrations_atlas_id_tokens, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", 1, true, false},
-    {:get_sign_in_with_atlas, :get, "/v1/instance/sign_in_with_atlas", 0, false, false},
-    {:update_sign_in_with_atlas, :patch, "/v1/instance/sign_in_with_atlas", 0, true, false},
-    {:get_hosted_pages, :get, "/v1/instance/hosted_pages", 0, false, false},
-    {:update_hosted_pages, :patch, "/v1/instance/hosted_pages", 0, true, false},
-    {:get_privacy_integrations, :get, "/v1/instance/privacy_integrations", 0, false, false},
-    {:post_privacy_integrations_connect, :post, "/v1/instance/privacy_integrations/connect", 0, true, false},
-    {:get_secret_keys, :get, "/v1/instance/secret_keys", 0, false, true},
-    {:post_secret_keys, :post, "/v1/instance/secret_keys", 0, true, false}
+    {:post_integrations_atlas_id_tokens, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", 1, true, false}
   ]
 end

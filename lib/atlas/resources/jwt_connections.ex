@@ -18,7 +18,14 @@ defmodule Atlas.JwtConnections do
     do: Atlas.Client.request(client, :get, "/v1/jwt_connections", %{}, nil, opts)
 
   @doc ~S"""
-  Add a trusted-JWT connection: your system signs a short-lived JWT for a person and sends them to login_url?token=…&redirect_url=…. Atlas checks the signature against jwks_uri, iss, aud, exp, the max age, and that the jti was never used before, then signs them in and seats them in organization_id. An active connection needs jwks_uri, issuer and audience. Body: `organization_id`, `status` (draft, active, disabled), `jwks_uri`, `issuer`, `audience`, `email_claim` (default email), `max_age_seconds` (30–3600, default 300), `default_role_id`.
+  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_list(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/jwt_connections", %{}, opts)
+
+  @doc ~S"""
+  Add a trusted-JWT connection: your system signs a short-lived JWT for a person and sends them to login_url?token=…&redirect_url=…. Atlas checks the signature against jwks_uri, iss, aud, exp, the max age, and that the jti was never used before, then signs them in and seats them in organization_id. An active connection needs jwks_uri, issuer and audience.
 
   `POST /v1/jwt_connections`. Required scope: `sso_connections:write`.
   """
@@ -51,7 +58,7 @@ defmodule Atlas.JwtConnections do
 
   @doc false
   def __operations__, do: [
-    {:list, :get, "/v1/jwt_connections", 0, false, false},
+    {:list, :get, "/v1/jwt_connections", 0, false, true},
     {:create, :post, "/v1/jwt_connections", 0, true, false},
     {:get, :get, "/v1/jwt_connections/{id}", 1, false, false},
     {:update, :patch, "/v1/jwt_connections/{id}", 1, true, false},

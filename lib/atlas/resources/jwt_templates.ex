@@ -25,7 +25,7 @@ defmodule Atlas.JwtTemplates do
     do: Atlas.Client.stream(client, "/v1/jwt_templates", %{}, opts)
 
   @doc ~S"""
-  Define a named custom-claims JWT template. These are minted ON DEMAND via POST /v1/sessions/{id}/tokens/{template} (Clerk getToken({template}) parity) — they do NOT alter the session cookie. To shape the session token itself, use auth_config (entitlements → `pla`/`fea`, identityTraits) and public_metadata (`progression`/`tier`/`flair`); see session-tokens-and-claims. Claims resolve per session at mint time (`{{org.id}}`, `{{org.membership_id}}`, `{{org.role}}` follow the session's active organization). Optional `settings.lifetime_seconds` (10–86400, default 60) sets the token lifetime. Reserved claims and private fields are refused.
+  Define a named custom-claims JWT template. These are minted ON DEMAND via POST /v1/sessions/{id}/tokens/{template} (Clerk getToken({template}) parity) — they do NOT alter the session cookie. To shape the session token itself, use auth_config (entitlements → `pla`/`fea`, identityTraits) and public_metadata (`progression`/`tier`/`flair`); see session-tokens-and-claims. Claims resolve per session at mint time (`{{org.id}}`, `{{org.membership_id}}`, `{{org.role}}` follow the session's active organization). Optional `settings.lifetime_seconds` (10–86400, default 60) sets the token lifetime. `preset` starts from a starter template (supabase, hasura, organization_membership, chatly-visitor, firebase). Every template token carries Atlas's own `anon` (true for a guest account) and `token_use: "template"`, which a template can never set. Reserved claims and private fields are refused.
 
   `POST /v1/jwt_templates`. Required scope: `instance:write`.
   """

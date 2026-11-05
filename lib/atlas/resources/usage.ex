@@ -17,8 +17,24 @@ defmodule Atlas.Usage do
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/usage", %{}, nil, opts)
 
+  @doc ~S"""
+  Usage records for connections: relay calls, action runs, agent token and action use, and MCP gateway calls, counted from the audit trail over a range of up to 92 days. Never reads what was sent or received.
+
+  `GET /v1/usage/connections`. Required scope: `organizations:read`.
+  """
+  def get_connections(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/usage/connections", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_connections/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_connections(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/usage/connections", %{}, opts)
+
   @doc false
   def __operations__, do: [
-    {:list, :get, "/v1/usage", 0, false, false}
+    {:list, :get, "/v1/usage", 0, false, false},
+    {:get_connections, :get, "/v1/usage/connections", 0, false, true}
   ]
 end

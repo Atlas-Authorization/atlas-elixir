@@ -49,7 +49,7 @@ defmodule Atlas.Machines do
     do: Atlas.Client.request(client, :patch, "/v1/machines/{id}", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Delete a machine identity.
+  Delete a machine identity. Sends machine_membership.deleted for each organization membership it held.
 
   `DELETE /v1/machines/{id}`. Required scope: `machines:write`.
   """
@@ -57,7 +57,7 @@ defmodule Atlas.Machines do
     do: Atlas.Client.request(client, :delete, "/v1/machines/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  List the organizations a machine belongs to with the org's resolved plan and the enrolment time — the machine-token counterpart of the user organization_memberships route. A machine belongs to at most one org, so this returns zero or one entry. Cursor-paginated.
+  List the organizations a machine belongs to, with the org's resolved plan: the org that owns it and every org it is a member of. The machine-token counterpart of the user organization_memberships route. Cursor-paginated.
 
   `GET /v1/machines/{id}/organization_memberships`. Required scope: `organizations:read`.
   """
@@ -111,6 +111,37 @@ defmodule Atlas.Machines do
   def post_rotate_key(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines/{id}/rotate_key", %{"id" => id}, body, opts)
 
+  @doc ~S"""
+  List the resource servers a machine may obtain tokens for, and up to which scopes.
+
+  `GET /v1/machines/{id}/grants`. Required scope: `machines:read`.
+  """
+  def get_grants(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/machines/{id}/grants", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_grants/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_grants(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/machines/{id}/grants", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Authorize a machine for a resource server and its scopes. 409 if it already has a grant there.
+
+  `POST /v1/machines/{id}/grants`. Required scope: `machines:write`.
+  """
+  def post_grants(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/machines/{id}/grants", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Revoke a machine's grant. No new tokens for that resource server; a token already issued lasts until it expires.
+
+  `DELETE /v1/machines/{id}/grants/{grantId}`. Required scope: `machines:write`.
+  """
+  def delete_grants(client, id, grant_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/machines/{id}/grants/{grantId}", %{"id" => id, "grantId" => grant_id}, nil, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/machines", 0, false, true},
@@ -123,6 +154,9 @@ defmodule Atlas.Machines do
     {:post_approve, :post, "/v1/machines/{id}/approve", 1, false, false},
     {:post_revoke, :post, "/v1/machines/{id}/revoke", 1, false, false},
     {:post_rotate_secret, :post, "/v1/machines/{id}/rotate_secret", 1, true, false},
-    {:post_rotate_key, :post, "/v1/machines/{id}/rotate_key", 1, true, false}
+    {:post_rotate_key, :post, "/v1/machines/{id}/rotate_key", 1, true, false},
+    {:get_grants, :get, "/v1/machines/{id}/grants", 1, false, true},
+    {:post_grants, :post, "/v1/machines/{id}/grants", 1, true, false},
+    {:delete_grants, :delete, "/v1/machines/{id}/grants/{grantId}", 2, false, false}
   ]
 end

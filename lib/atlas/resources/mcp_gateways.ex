@@ -104,6 +104,139 @@ defmodule Atlas.McpGateways do
   def get_budgets_usage(client, id, budget_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/budgets/{budgetId}/usage", %{"id" => id, "budgetId" => budget_id}, nil, opts)
 
+  @doc ~S"""
+  The upstreams of a gateway: MCP servers and OpenAPI-described APIs, each exposed under its namespace.
+
+  `GET /v1/mcp_gateways/{id}/upstreams`. Required scope: `machines:read`.
+  """
+  def get_by_id_upstreams(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/upstreams", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_by_id_upstreams/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_by_id_upstreams(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/mcp_gateways/{id}/upstreams", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Add an upstream. An mcp upstream's tools are re-served as `<namespace>__<tool>`; an openapi upstream turns each operation of the document into a tool and calls the API itself (through a connection's relay when auth_kind is connection). At most 20 per gateway.
+
+  `POST /v1/mcp_gateways/{id}/upstreams`. Required scope: `machines:write`.
+  """
+  def post_upstreams(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/upstreams", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Read one upstream of an MCP gateway.
+
+  `GET /v1/mcp_gateways/{id}/upstreams/{upstreamId}`. Required scope: `machines:read`.
+  """
+  def get_by_id_upstreams_by_upstream_id(client, id, upstream_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", %{"id" => id, "upstreamId" => upstream_id}, nil, opts)
+
+  @doc ~S"""
+  Change an upstream. Omitted fields keep their value; sending `openapi` recompiles the tools.
+
+  `PATCH /v1/mcp_gateways/{id}/upstreams/{upstreamId}`. Required scope: `machines:write`.
+  """
+  def update_upstreams(client, id, upstream_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", %{"id" => id, "upstreamId" => upstream_id}, body, opts)
+
+  @doc ~S"""
+  Remove an upstream and its tools from the gateway.
+
+  `DELETE /v1/mcp_gateways/{id}/upstreams/{upstreamId}`. Required scope: `machines:write`.
+  """
+  def delete_upstreams(client, id, upstream_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", %{"id" => id, "upstreamId" => upstream_id}, nil, opts)
+
+  @doc ~S"""
+  Reach the upstream with its own auth and list the tools it would add to the gateway. Never fails the request: `ok` is false with an `error` instead.
+
+  `POST /v1/mcp_gateways/{id}/upstreams/{upstreamId}/test`. Required scope: `machines:write`.
+  """
+  def post_upstreams_test(client, id, upstream_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}/test", %{"id" => id, "upstreamId" => upstream_id}, nil, opts)
+
+  @doc ~S"""
+  The tool packs of a gateway: named tool sets assigned to agents, organizations or groups.
+
+  `GET /v1/mcp_gateways/{id}/packs`. Required scope: `machines:read`.
+  """
+  def get_by_id_packs(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/packs", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_by_id_packs/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_by_id_packs(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/mcp_gateways/{id}/packs", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Create a tool pack. With the gateway's `packs_enforced` on, a caller sees and may call only the tools of packs assigned to them.
+
+  `POST /v1/mcp_gateways/{id}/packs`. Required scope: `machines:write`.
+  """
+  def post_packs(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/packs", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Read one tool pack of an MCP gateway.
+
+  `GET /v1/mcp_gateways/{id}/packs/{packId}`. Required scope: `machines:read`.
+  """
+  def get_by_id_packs_by_pack_id(client, id, pack_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/packs/{packId}", %{"id" => id, "packId" => pack_id}, nil, opts)
+
+  @doc ~S"""
+  Change a tool pack; omitted fields keep their value.
+
+  `PATCH /v1/mcp_gateways/{id}/packs/{packId}`. Required scope: `machines:write`.
+  """
+  def update_packs(client, id, pack_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/mcp_gateways/{id}/packs/{packId}", %{"id" => id, "packId" => pack_id}, body, opts)
+
+  @doc ~S"""
+  Delete a tool pack from an MCP gateway.
+
+  `DELETE /v1/mcp_gateways/{id}/packs/{packId}`. Required scope: `machines:write`.
+  """
+  def delete_packs(client, id, pack_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/mcp_gateways/{id}/packs/{packId}", %{"id" => id, "packId" => pack_id}, nil, opts)
+
+  @doc ~S"""
+  The pinned tool definitions of a gateway with `guard.pin_tools` on: each tool's description and schema is hashed when first seen; a changed definition is blocked (status changed) until approved.
+
+  `GET /v1/mcp_gateways/{id}/pins`. Required scope: `machines:read`.
+  """
+  def get_pins(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/pins", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_pins/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_pins(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/mcp_gateways/{id}/pins", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Accept the definition the upstream serves now for a tool whose definition changed. Unblocks the tool.
+
+  `POST /v1/mcp_gateways/{id}/pins/{tool}/approve`. Required scope: `machines:write`.
+  """
+  def post_pins_approve(client, id, tool, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/pins/{tool}/approve", %{"id" => id, "tool" => tool}, nil, opts)
+
+  @doc ~S"""
+  Forget a pin; the next tools/list pins whatever the upstream serves then.
+
+  `DELETE /v1/mcp_gateways/{id}/pins/{tool}`. Required scope: `machines:write`.
+  """
+  def delete_pins(client, id, tool, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/mcp_gateways/{id}/pins/{tool}", %{"id" => id, "tool" => tool}, nil, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/mcp_gateways", 0, false, false},
@@ -116,6 +249,20 @@ defmodule Atlas.McpGateways do
     {:get_by_id_budgets_by_budget_id, :get, "/v1/mcp_gateways/{id}/budgets/{budgetId}", 2, false, false},
     {:update_budgets, :patch, "/v1/mcp_gateways/{id}/budgets/{budgetId}", 2, true, false},
     {:delete_budgets, :delete, "/v1/mcp_gateways/{id}/budgets/{budgetId}", 2, false, false},
-    {:get_budgets_usage, :get, "/v1/mcp_gateways/{id}/budgets/{budgetId}/usage", 2, false, false}
+    {:get_budgets_usage, :get, "/v1/mcp_gateways/{id}/budgets/{budgetId}/usage", 2, false, false},
+    {:get_by_id_upstreams, :get, "/v1/mcp_gateways/{id}/upstreams", 1, false, true},
+    {:post_upstreams, :post, "/v1/mcp_gateways/{id}/upstreams", 1, true, false},
+    {:get_by_id_upstreams_by_upstream_id, :get, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", 2, false, false},
+    {:update_upstreams, :patch, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", 2, true, false},
+    {:delete_upstreams, :delete, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", 2, false, false},
+    {:post_upstreams_test, :post, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}/test", 2, false, false},
+    {:get_by_id_packs, :get, "/v1/mcp_gateways/{id}/packs", 1, false, true},
+    {:post_packs, :post, "/v1/mcp_gateways/{id}/packs", 1, true, false},
+    {:get_by_id_packs_by_pack_id, :get, "/v1/mcp_gateways/{id}/packs/{packId}", 2, false, false},
+    {:update_packs, :patch, "/v1/mcp_gateways/{id}/packs/{packId}", 2, true, false},
+    {:delete_packs, :delete, "/v1/mcp_gateways/{id}/packs/{packId}", 2, false, false},
+    {:get_pins, :get, "/v1/mcp_gateways/{id}/pins", 1, false, true},
+    {:post_pins_approve, :post, "/v1/mcp_gateways/{id}/pins/{tool}/approve", 2, false, false},
+    {:delete_pins, :delete, "/v1/mcp_gateways/{id}/pins/{tool}", 2, false, false}
   ]
 end

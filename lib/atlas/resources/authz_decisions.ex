@@ -40,10 +40,19 @@ defmodule Atlas.AuthzDecisions do
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authz_decisions/{id}", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  A local policy decision point ships a batch of up to 500 of its decisions and checks in with its id and the bundle revision it runs. Decisions are sampled and redacted by the instance decision-log settings, exactly like server-side decisions; nothing is stored while capture is off.
+
+  `POST /v1/authz_decisions/ingest`. Required scope: `authz_decisions:write`.
+  """
+  def post_ingest(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/authz_decisions/ingest", %{}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/authz_decisions", 0, false, true},
     {:get_stats, :get, "/v1/authz_decisions/stats", 0, false, false},
-    {:get, :get, "/v1/authz_decisions/{id}", 1, false, false}
+    {:get, :get, "/v1/authz_decisions/{id}", 1, false, false},
+    {:post_ingest, :post, "/v1/authz_decisions/ingest", 0, true, false}
   ]
 end

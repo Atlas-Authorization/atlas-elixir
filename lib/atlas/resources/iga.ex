@@ -407,6 +407,185 @@ defmodule Atlas.Iga do
   def post_campaign_items_decide(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaign_items/{id}/decide", %{"id" => id}, body, opts)
 
+  @doc ~S"""
+  People who may activate an entitlement (eligible assignments).
+
+  `GET /v1/iga/eligibilities`. Required scope: `iga:read`.
+  """
+  def get_eligibilities(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/iga/eligibilities", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_eligibilities/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_eligibilities(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/iga/eligibilities", %{}, opts)
+
+  @doc ~S"""
+  Make a person eligible for an entitlement: they hold nothing until they activate it. The entitlement needs `activation_rules`. `expires_at` ends the eligibility.
+
+  `POST /v1/iga/eligibilities`. Required scope: `iga:write`.
+  """
+  def post_eligibilities(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/eligibilities", %{}, body, opts)
+
+  @doc ~S"""
+  Remove an eligibility. Access already activated stays until it ends.
+
+  `DELETE /v1/iga/eligibilities/{id}`. Required scope: `iga:write`.
+  """
+  def delete_eligibilities(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/iga/eligibilities/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The activation history, newest first, with each activation's live status.
+
+  `GET /v1/iga/activations`. Required scope: `iga:read`.
+  """
+  def get_activations(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/iga/activations", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_activations/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_activations(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/iga/activations", %{}, opts)
+
+  @doc ~S"""
+  Activate eligible access for a person as an administrator (the MFA the entitlement asks for is waived and the activation is marked `admin`). Justification, ticket and duration limits still apply. With `require_approval` the entitlement's approval steps run first and the status is `pending_approval`.
+
+  `POST /v1/iga/activations`. Required scope: `iga:write`.
+  """
+  def post_activations(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/activations", %{}, body, opts)
+
+  @doc ~S"""
+  End an activation now: closes the grant, or cancels the pending approval.
+
+  `POST /v1/iga/activations/{id}/end`. Required scope: `iga:write`.
+  """
+  def post_activations_end(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/activations/{id}/end", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  List access bundles (packages of entitlements requested together).
+
+  `GET /v1/iga/bundles`. Required scope: `iga:read`.
+  """
+  def get_bundles(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/iga/bundles", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_bundles/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_bundles(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/iga/bundles", %{}, opts)
+
+  @doc ~S"""
+  Create a bundle: several catalog entitlements, request form fields, and a policy (who may ask, guest expiry).
+
+  `POST /v1/iga/bundles`. Required scope: `iga:write`.
+  """
+  def post_bundles(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/bundles", %{}, body, opts)
+
+  @doc ~S"""
+  Read one bundle by id or key.
+
+  `GET /v1/iga/bundles/{id}`. Required scope: `iga:read`.
+  """
+  def get_bundles_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/iga/bundles/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Change an access bundle, its entitlements, form fields or policy.
+
+  `PATCH /v1/iga/bundles/{id}`. Required scope: `iga:write`.
+  """
+  def update_bundles(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/iga/bundles/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Delete a bundle (access already granted stays).
+
+  `DELETE /v1/iga/bundles/{id}`. Required scope: `iga:write`.
+  """
+  def delete_bundles(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/iga/bundles/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Request every entitlement of a bundle for a person. Each one follows its own approval steps and separation-of-duties rules; the response says which were requested, skipped (already held or pending) or failed.
+
+  `POST /v1/iga/bundles/{id}/request`. Required scope: `iga:write`.
+  """
+  def post_bundles_request(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/bundles/{id}/request", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Add catalog entitlements (not requestable, no approval steps) for the groups or app roles that exist but are not in the catalog yet.
+
+  `POST /v1/iga/entitlements/import`. Required scope: `iga:write`.
+  """
+  def post_entitlements_import(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/entitlements/import", %{}, body, opts)
+
+  @doc ~S"""
+  Ready-made access reviews: inactive users, guest and contractor access, and a quarterly two-stage review.
+
+  `GET /v1/iga/campaign_templates`. Required scope: `iga:read`.
+  """
+  def get_campaign_templates(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/iga/campaign_templates", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_campaign_templates/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_campaign_templates(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/iga/campaign_templates", %{}, opts)
+
+  @doc ~S"""
+  Create a campaign from a template. `parameters` fill the template (inactive_days; company_domains).
+
+  `POST /v1/iga/campaigns/from_template`. Required scope: `iga:write`.
+  """
+  def post_campaigns_from_template(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/from_template", %{}, body, opts)
+
+  @doc ~S"""
+  Start a copy of a recurring campaign now, outside its schedule.
+
+  `POST /v1/iga/campaigns/{id}/run_now`. Required scope: `iga:write`.
+  """
+  def post_campaigns_run_now(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/{id}/run_now", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Stop a recurring campaign. Copies already started are unaffected.
+
+  `POST /v1/iga/campaigns/{id}/stop_recurrence`. Required scope: `iga:write`.
+  """
+  def post_campaigns_stop_recurrence(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/{id}/stop_recurrence", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The open review items with advice for the reviewer: revoke (no sign-in for 90 days, or none since the access was granted), review (held by few of the manager's other reports) or certify. Advice only.
+
+  `GET /v1/iga/campaigns/{id}/recommendations`. Required scope: `iga:read`.
+  """
+  def get_campaigns_recommendations(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/iga/campaigns/{id}/recommendations", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_campaigns_recommendations/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_campaigns_recommendations(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/iga/campaigns/{id}/recommendations", %{"id" => id}, opts)
+
   @doc false
   def __operations__, do: [
     {:get_entitlements, :get, "/v1/iga/entitlements", 0, false, true},
@@ -449,6 +628,24 @@ defmodule Atlas.Iga do
     {:get_campaigns_items, :get, "/v1/iga/campaigns/{id}/items", 1, false, true},
     {:get_campaigns_progress, :get, "/v1/iga/campaigns/{id}/progress", 1, false, false},
     {:get_campaigns_evidence, :get, "/v1/iga/campaigns/{id}/evidence", 1, false, false},
-    {:post_campaign_items_decide, :post, "/v1/iga/campaign_items/{id}/decide", 1, true, false}
+    {:post_campaign_items_decide, :post, "/v1/iga/campaign_items/{id}/decide", 1, true, false},
+    {:get_eligibilities, :get, "/v1/iga/eligibilities", 0, false, true},
+    {:post_eligibilities, :post, "/v1/iga/eligibilities", 0, true, false},
+    {:delete_eligibilities, :delete, "/v1/iga/eligibilities/{id}", 1, false, false},
+    {:get_activations, :get, "/v1/iga/activations", 0, false, true},
+    {:post_activations, :post, "/v1/iga/activations", 0, true, false},
+    {:post_activations_end, :post, "/v1/iga/activations/{id}/end", 1, false, false},
+    {:get_bundles, :get, "/v1/iga/bundles", 0, false, true},
+    {:post_bundles, :post, "/v1/iga/bundles", 0, true, false},
+    {:get_bundles_by_id, :get, "/v1/iga/bundles/{id}", 1, false, false},
+    {:update_bundles, :patch, "/v1/iga/bundles/{id}", 1, true, false},
+    {:delete_bundles, :delete, "/v1/iga/bundles/{id}", 1, false, false},
+    {:post_bundles_request, :post, "/v1/iga/bundles/{id}/request", 1, true, false},
+    {:post_entitlements_import, :post, "/v1/iga/entitlements/import", 0, true, false},
+    {:get_campaign_templates, :get, "/v1/iga/campaign_templates", 0, false, true},
+    {:post_campaigns_from_template, :post, "/v1/iga/campaigns/from_template", 0, true, false},
+    {:post_campaigns_run_now, :post, "/v1/iga/campaigns/{id}/run_now", 1, false, false},
+    {:post_campaigns_stop_recurrence, :post, "/v1/iga/campaigns/{id}/stop_recurrence", 1, false, false},
+    {:get_campaigns_recommendations, :get, "/v1/iga/campaigns/{id}/recommendations", 1, false, true}
   ]
 end

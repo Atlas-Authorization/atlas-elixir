@@ -49,7 +49,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.stream(client, "/v1/organizations", %{}, opts)
 
   @doc ~S"""
-  Create an organization. Body: `name` and `slug` (required); `created_by` (optional: an Atlas user id seated with the creator role; omit or null for an organization created by your backend, which then has no members yet); `external_id` (your id for the customer, unique per instance; 409 when taken); `public_metadata` / `private_metadata`; `owner_email` (invites that address with the creator role, org:admin by default; the invitation is in `owner_invitation`); `role_mappings` (role key → your product's name for it, echoed as the `org_role_mapped` token claim); `max_allowed_memberships`. Emits organization.created.
+  Create an organization. Body: `name` (required); `slug` (optional: derived from the name, suffixed -2, -3… when taken, and returned; an explicit slug that is taken is 409); `created_by` (optional: an Atlas user id seated with the creator role; omit or null for an organization created by your backend, which then has no members yet); `external_id` (your id for the customer, unique per instance; 409 when taken); `public_metadata` / `private_metadata`; `owner_email` (invites that address with the creator role, org:admin by default; the invitation is in `owner_invitation`); `role_mappings` (role key → your product's name for it, echoed as the `org_role_mapped` token claim); `max_allowed_memberships`. Emits organization.created.
 
   `POST /v1/organizations`. Required scope: `organizations:write`.
   """
@@ -57,12 +57,12 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :post, "/v1/organizations", %{}, body, opts)
 
   @doc ~S"""
-  Fetch an organization by its slug (case-insensitive).
+  Create-or-update the organization keyed by your own id (external_id, the path segment, URL-encoded): 201 with the new organization when none has it (as POST /v1/organizations, external_id set from the path), else 200 with it updated (as PATCH /v1/organizations/{id}; only the fields sent change). Body: name (required when it creates), slug, image_url, max_allowed_memberships, public_metadata, private_metadata, role_mappings, and on create only created_by and owner_email (ignored on update). Two calls racing for a new external_id create exactly one organization; the other updates it. Emits organization.created or organization.updated.
 
-  `GET /v1/organizations/by_slug/{slug}`. Required scope: `organizations:read`.
+  `PUT /v1/organizations/by_external_id/{external_id}`. Required scope: `organizations:write`.
   """
-  def get_by_slug(client, slug, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/organizations/by_slug/{slug}", %{"slug" => slug}, nil, opts)
+  def put_by_external_id(client, external_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/by_external_id/{external_id}", %{"external_id" => external_id}, body, opts)
 
   @doc ~S"""
   Find the organization that owns an email domain (or an email address: its domain is used). Only VERIFIED domains match unless ?include_unverified=true. 404 when none. Returns the organization plus the matched `domain` (id, status, verified_at).
@@ -73,6 +73,14 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/by_domain/{domain}", %{"domain" => domain}, nil, opts)
 
   @doc ~S"""
+  Fetch an organization by its slug (case-insensitive).
+
+  `GET /v1/organizations/by_slug/{slug}`. Required scope: `organizations:read`.
+  """
+  def get_by_slug(client, slug, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/by_slug/{slug}", %{"slug" => slug}, nil, opts)
+
+  @doc ~S"""
   Check whether a slug is valid and free, for a create-organization form.
 
   `GET /v1/organizations/check_slug`. Required scope: `organizations:read`.
@@ -81,7 +89,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/check_slug", %{}, nil, opts)
 
   @doc ~S"""
-  Fetch an organization. Never includes private_metadata. Includes `sso`: its SSO connections (id, type, status) and `scim_base_url`, the SCIM 2.0 base URL to give its identity provider.
+  Fetch an organization. Never includes private_metadata. Includes `sso`: its SSO connections (id, type saml|oidc, status draft|active|disabled, domains, created_at in Unix ms) and `scim_base_url`, the SCIM 2.0 base URL to give its identity provider.
 
   `GET /v1/organizations/{id}`. Required scope: `organizations:read`.
   """
@@ -89,7 +97,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an organization name, slug, image, seat cap or metadata, `external_id` or `role_mappings`. Emits organization.updated.
+  Update an organization name, slug, image, seat cap or metadata. Emits organization.updated.
 
   `PATCH /v1/organizations/{id}`. Required scope: `organizations:write`.
   """
@@ -152,7 +160,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/memberships", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Change a member's role. Demoting the last admin returns LAST_ADMIN.
+  Change a member's role, who manages it (`role_source`), and/or their administrator `scope`. A role set here is `manual`: directory re-sync (SCIM groups, SSO claims, LDAP groups) leaves it alone until you send `role_source` naming a source of this organization again. A scope (`groups`, `teams`, `units`) limits where that member's admin permissions apply to members inside it, so an administrator can run part of an organization; `null` makes them organization-wide. A scoped administrator cannot invite, change settings, manage roles or assign a management role. Demoting the last admin returns LAST_ADMIN.
 
   `PATCH /v1/organizations/{id}/memberships/{userId}`. Required scope: `organizations:write`.
   """
@@ -270,7 +278,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/domains", %{"id" => id}, opts)
 
   @doc ~S"""
-  Claim an email domain for auto-join. Returns the DNS TXT record to publish; the domain object carries `verification_methods` (dns_txt, well_known, email), `verification_method` and `status` (pending, verified, failed).
+  Claim an email domain for auto-join. Returns the DNS TXT record to publish.
 
   `POST /v1/organizations/{id}/domains`. Required scope: `organizations:write`.
   """
@@ -282,13 +290,7 @@ defmodule Atlas.Organizations do
 
   `POST /v1/organizations/{id}/domains/{domainId}/verify`. Required scope: `organizations:write`.
   """
-  def post_domains_verify(client, id, domain_id, body \\ %{}, opts \\ [])
-
-  # Callers before the body existed passed opts 4th; a keyword list there is still opts (DNS check).
-  def post_domains_verify(client, id, domain_id, opts, []) when is_list(opts),
-    do: post_domains_verify(client, id, domain_id, %{}, opts)
-
-  def post_domains_verify(client, id, domain_id, body, opts),
+  def post_domains_verify(client, id, domain_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains/{domainId}/verify", %{"id" => id, "domainId" => domain_id}, body, opts)
 
   @doc ~S"""
@@ -495,6 +497,76 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{orgId}/reader_domain", %{"orgId" => org_id}, nil, opts)
 
   @doc ~S"""
+  List the machines that are members of an organization. Separate from user memberships.
+
+  `GET /v1/organizations/{id}/machine_memberships`. Required scope: `organizations:read`.
+  """
+  def get_machine_memberships(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/machine_memberships", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_machine_memberships/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_machine_memberships(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/machine_memberships", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Make a machine a member of an organization with a role. Holds no seat. 409 if it is already a member.
+
+  `POST /v1/organizations/{id}/machine_memberships`. Required scope: `organizations:write`.
+  """
+  def post_machine_memberships(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/machine_memberships", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Change a machine's role in an organization. New tokens carry the new role.
+
+  `PATCH /v1/organizations/{id}/machine_memberships/{machineId}`. Required scope: `organizations:write`.
+  """
+  def update_machine_memberships(client, id, machine_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/machine_memberships/{machineId}", %{"id" => id, "machineId" => machine_id}, body, opts)
+
+  @doc ~S"""
+  Remove a machine from an organization. New tokens no longer carry its role there.
+
+  `DELETE /v1/organizations/{id}/machine_memberships/{machineId}`. Required scope: `organizations:write`.
+  """
+  def delete_machine_memberships(client, id, machine_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/machine_memberships/{machineId}", %{"id" => id, "machineId" => machine_id}, nil, opts)
+
+  @doc ~S"""
+  The OAuth applications an organization has been given access to.
+
+  `GET /v1/organizations/{id}/applications`. Required scope: `organizations:read`.
+  """
+  def get_applications(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/applications", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_applications/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_applications(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/applications", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Give an organization access to an application (by client id or id), optionally limited to some organization roles. Idempotent; send `enabled: false` to pause access without removing it. Only matters while the application is `restricted`.
+
+  `PUT /v1/organizations/{id}/applications/{clientId}`. Required scope: `organizations:write`.
+  """
+  def put_applications(client, id, client_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/applications/{clientId}", %{"id" => id, "clientId" => client_id}, body, opts)
+
+  @doc ~S"""
+  Take an organization's access to an application away.
+
+  `DELETE /v1/organizations/{id}/applications/{clientId}`. Required scope: `organizations:write`.
+  """
+  def delete_applications(client, id, client_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/applications/{clientId}", %{"id" => id, "clientId" => client_id}, nil, opts)
+
+  @doc ~S"""
   List an organization's end-user (reader) pool — the B2B2C tier of external users attached to the org, distinct from its staff members. Filter with `?status=active|pending|blocked`; cursor-paginated.
 
   `GET /v1/organizations/{orgId}/end_users`. Required scope: `end_users:read`.
@@ -563,6 +635,21 @@ defmodule Atlas.Organizations do
   """
   def delete_audit_streams(client, id, stream_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/audit_streams/{streamId}", %{"id" => id, "streamId" => stream_id}, nil, opts)
+
+  @doc ~S"""
+  Recent alerts sent to an organization's IT contacts, newest first: a single sign-on signing certificate nearing expiry, failing sign-ins, failing SCIM requests. Filter with kind (certificate_expiring, sso_failure, scim_error); page with limit and starting_after. Each alert also fired the organization.it_alert webhook event. Another instance's or org's id is a 404.
+
+  `GET /v1/organizations/{id}/it_alerts`. Required scope: `audit:read`.
+  """
+  def get_it_alerts(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/it_alerts", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_it_alerts/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_it_alerts(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/it_alerts", %{"id" => id}, opts)
 
   @doc ~S"""
   List the organization's own webhook endpoints. Backend API. Never returns a secret.
@@ -635,38 +722,6 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, opts)
 
   @doc ~S"""
-  The same read, scoped to an organization: 404 unless the connection is owned by that organization. Needs connections:secret_read; audited.
-
-  `GET /v1/organizations/{id}/connections/{connectionId}/secret`. Required scope: `connections:secret_read`.
-  """
-  def get_connections_secret(client, id, connection_id, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/connections/{connectionId}/secret", %{"id" => id, "connectionId" => connection_id}, nil, opts)
-
-  @doc ~S"""
-  Fetch one organization's settings values. Returns an empty document at version 0 if none are set. Another instance's org is a 404.
-
-  `GET /v1/organizations/{id}/settings`. Required scope: `organizations:read`.
-  """
-  def get_settings(client, id, opts \\ []),
-    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/settings", %{"id" => id}, nil, opts)
-
-  @doc ~S"""
-  Write one organization's settings values. Validated against the registered schema (422 SETTINGS_INVALID with failing paths on mismatch); versions, audits, and emits organization.settings.updated.
-
-  `PUT /v1/organizations/{id}/settings`. Required scope: `organizations:write`.
-  """
-  def put_settings(client, id, body, opts \\ []),
-    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
-
-  @doc ~S"""
-  Merge a partial object into an organization's settings values (RFC 7396 shallow merge): a key set to null is REMOVED, any other value sets/overwrites it, untouched keys are preserved — so a single settings key can be removed or changed without read-replacing the whole document. The merge is row-locked (atomic against concurrent writers); the MERGED result is validated against the registered schema (422 SETTINGS_INVALID — e.g. removing a required key), then versioned, audited, and emitted as organization.settings.updated.
-
-  `PATCH /v1/organizations/{id}/settings`. Required scope: `organizations:write`.
-  """
-  def update_settings(client, id, body, opts \\ []),
-    do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
-
-  @doc ~S"""
   List the organization's application webhook endpoints (the app's own events, published with POST /v1/app_events), with delivery health. Backend API. Never returns a secret.
 
   `GET /v1/organizations/{id}/app_webhook_endpoints`. Required scope: `webhooks:read`.
@@ -682,7 +737,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/app_webhook_endpoints", %{"id" => id}, opts)
 
   @doc ~S"""
-  Register an endpoint that receives the app's own events for this organization (`url`, `enabled_events` from the app event catalog or `["*"]`, `description`, `active`). Deliveries are signed with Standard Webhooks headers (verify with `AtlasAuth.Webhook.verify_standard/4`). The whsec_ secret is returned in this response only. At most 20 per organization; https only.
+  Register an endpoint that receives the app's own events for this organization. Deliveries are signed with Standard Webhooks headers (webhook-id, webhook-timestamp in seconds, webhook-signature: v1,<base64 HMAC-SHA256 of id.timestamp.body keyed with the base64 after whsec_>), so any Standard Webhooks verifier library accepts them. The whsec_ secret is returned in this response only. Backend API. At most 20 per organization; https only, private and loopback addresses refused.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints`. Required scope: `webhooks:write`.
   """
@@ -714,28 +769,12 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
 
   @doc ~S"""
-  Rotate the whsec_ signing secret. The previous secret keeps signing alongside the new one (a second v1 entry in webhook-signature) for 24 hours. Returns `secret`, `overlap_seconds` and `previous_secret_expires_at`.
+  Rotate the whsec_ signing secret. The previous secret keeps signing alongside the new one (a second v1 entry in webhook-signature) for 24 hours.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret`. Required scope: `webhooks:write`.
   """
   def post_app_webhook_endpoints_rotate_secret(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
-
-  @doc ~S"""
-  Show the current whsec_ signing secret again. Audited.
-
-  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret`. Required scope: `webhooks:reveal`.
-  """
-  def post_app_webhook_endpoints_reveal_secret(client, id, endpoint_id, opts \\ []),
-    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
-
-  @doc ~S"""
-  Send a signed webhook.test event to this endpoint only. With `params: [wait: "10s"]` the attempt is made now and its result returned; otherwise it is queued (201).
-
-  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test`. Required scope: `webhooks:write`.
-  """
-  def post_app_webhook_endpoints_test(client, id, endpoint_id, opts \\ []),
-    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
 
   @doc ~S"""
   The endpoint's delivery log: payload, response and retry state for each attempt, filterable by status, app event type and time.
@@ -746,11 +785,27 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_app_webhook_endpoints_deliveries/4`, following the cursor page by page.
+  Lazy stream over every item of `get_app_webhook_endpoints_deliveries/3`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_app_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, opts)
+
+  @doc ~S"""
+  Show the current whsec_ signing secret again. Audited.
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret`. Required scope: `webhooks:reveal`.
+  """
+  def post_app_webhook_endpoints_reveal_secret(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Send a signed webhook.test event to this endpoint only. With ?wait=10s the attempt is made now and its result returned; otherwise it is queued (201).
+
+  `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test`. Required scope: `webhooks:write`.
+  """
+  def post_app_webhook_endpoints_test(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
 
   @doc ~S"""
   Redeliver one past delivery as a fresh attempt (same event id). 409 when the event has passed its 90-day retention; a delivery of another endpoint is a 404.
@@ -761,7 +816,7 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", %{"id" => id, "endpointId" => endpoint_id, "deliveryId" => delivery_id}, nil, opts)
 
   @doc ~S"""
-  Re-send every event of this organization since `since` (or since=failing_since) that the endpoint subscribes to and has not received, including events published while it was disabled (`since`, `until`, `event_type`). At most 1,000 per call; running it again queues nothing new. 409 if the endpoint is disabled.
+  Re-send every event of this organization since `since` (or since=failing_since) that the endpoint subscribes to and has not received, including events published while it was disabled. At most 1,000 per call; running it again queues nothing new. 409 if the endpoint is disabled.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay`. Required scope: `webhooks:write`.
   """
@@ -783,6 +838,38 @@ defmodule Atlas.Organizations do
   def stream_get_app_event_types(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/app_event_types", %{"id" => id}, opts)
 
+  @doc ~S"""
+  The same read, scoped to an organization: 404 unless the connection is owned by that organization. Needs connections:secret_read; audited.
+
+  `GET /v1/organizations/{id}/connections/{connectionId}/secret`. Required scope: `connections:secret_read`.
+  """
+  def get_connections_secret(client, id, connection_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/connections/{connectionId}/secret", %{"id" => id, "connectionId" => connection_id}, nil, opts)
+
+  @doc ~S"""
+  Fetch one organization's settings values. Returns an empty document at version 0 if none are set. Another instance's org is a 404.
+
+  `GET /v1/organizations/{id}/settings`. Required scope: `organizations:read`.
+  """
+  def get_settings(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/settings", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Write one organization's settings values. Validated against the registered schema (422 SETTINGS_INVALID with failing paths on mismatch); versions, audits, and emits organization.settings.updated.
+
+  `PUT /v1/organizations/{id}/settings`. Required scope: `organizations:write`.
+  """
+  def put_settings(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Merge a partial object into an organization's settings values (RFC 7396 shallow merge): a key set to null is REMOVED, any other value sets/overwrites it, untouched keys are preserved — so a single settings key can be removed or changed without read-replacing the whole document. The merge is row-locked (atomic against concurrent writers); the MERGED result is validated against the registered schema (422 SETTINGS_INVALID — e.g. removing a required key), then versioned, audited, and emitted as organization.settings.updated.
+
+  `PATCH /v1/organizations/{id}/settings`. Required scope: `organizations:write`.
+  """
+  def update_settings(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:get_design, :get, "/v1/organizations/{id}/design", 1, false, false},
@@ -790,8 +877,9 @@ defmodule Atlas.Organizations do
     {:update_design, :patch, "/v1/organizations/{id}/design", 1, true, false},
     {:list, :get, "/v1/organizations", 0, false, true},
     {:create, :post, "/v1/organizations", 0, true, false},
-    {:get_by_slug, :get, "/v1/organizations/by_slug/{slug}", 1, false, false},
+    {:put_by_external_id, :put, "/v1/organizations/by_external_id/{external_id}", 1, true, false},
     {:get_by_domain, :get, "/v1/organizations/by_domain/{domain}", 1, false, false},
+    {:get_by_slug, :get, "/v1/organizations/by_slug/{slug}", 1, false, false},
     {:get_check_slug, :get, "/v1/organizations/check_slug", 0, false, false},
     {:get, :get, "/v1/organizations/{id}", 1, false, false},
     {:update, :patch, "/v1/organizations/{id}", 1, true, false},
@@ -837,6 +925,13 @@ defmodule Atlas.Organizations do
     {:get_reader_domain, :get, "/v1/organizations/{orgId}/reader_domain", 1, false, true},
     {:post_reader_domain, :post, "/v1/organizations/{orgId}/reader_domain", 1, true, false},
     {:delete_reader_domain, :delete, "/v1/organizations/{orgId}/reader_domain", 1, false, false},
+    {:get_machine_memberships, :get, "/v1/organizations/{id}/machine_memberships", 1, false, true},
+    {:post_machine_memberships, :post, "/v1/organizations/{id}/machine_memberships", 1, true, false},
+    {:update_machine_memberships, :patch, "/v1/organizations/{id}/machine_memberships/{machineId}", 2, true, false},
+    {:delete_machine_memberships, :delete, "/v1/organizations/{id}/machine_memberships/{machineId}", 2, false, false},
+    {:get_applications, :get, "/v1/organizations/{id}/applications", 1, false, true},
+    {:put_applications, :put, "/v1/organizations/{id}/applications/{clientId}", 2, true, false},
+    {:delete_applications, :delete, "/v1/organizations/{id}/applications/{clientId}", 2, false, false},
     {:get_end_users, :get, "/v1/organizations/{orgId}/end_users", 1, false, true},
     {:post_end_users, :post, "/v1/organizations/{orgId}/end_users", 1, true, false},
     {:update_end_users, :patch, "/v1/organizations/{orgId}/end_users/{userId}", 2, true, false},
@@ -844,6 +939,7 @@ defmodule Atlas.Organizations do
     {:get_audit_streams, :get, "/v1/organizations/{id}/audit_streams", 1, false, true},
     {:post_audit_streams, :post, "/v1/organizations/{id}/audit_streams", 1, true, false},
     {:delete_audit_streams, :delete, "/v1/organizations/{id}/audit_streams/{streamId}", 2, false, false},
+    {:get_it_alerts, :get, "/v1/organizations/{id}/it_alerts", 1, false, true},
     {:get_by_id_webhook_endpoints, :get, "/v1/organizations/{id}/webhook_endpoints", 1, false, true},
     {:post_webhook_endpoints, :post, "/v1/organizations/{id}/webhook_endpoints", 1, true, false},
     {:get_by_id_webhook_endpoints_by_endpoint_id, :get, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", 2, false, false},
@@ -851,21 +947,21 @@ defmodule Atlas.Organizations do
     {:delete_webhook_endpoints, :delete, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", 2, false, false},
     {:post_webhook_endpoints_rotate_secret, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/rotate_secret", 2, false, false},
     {:get_webhook_endpoints_deliveries, :get, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries", 2, false, true},
-    {:get_connections_secret, :get, "/v1/organizations/{id}/connections/{connectionId}/secret", 2, false, false},
-    {:get_settings, :get, "/v1/organizations/{id}/settings", 1, false, false},
-    {:put_settings, :put, "/v1/organizations/{id}/settings", 1, true, false},
-    {:update_settings, :patch, "/v1/organizations/{id}/settings", 1, true, false},
     {:get_by_id_app_webhook_endpoints, :get, "/v1/organizations/{id}/app_webhook_endpoints", 1, false, true},
     {:post_app_webhook_endpoints, :post, "/v1/organizations/{id}/app_webhook_endpoints", 1, true, false},
     {:get_by_id_app_webhook_endpoints_by_endpoint_id, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, false, false},
     {:update_app_webhook_endpoints, :patch, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, true, false},
     {:delete_app_webhook_endpoints, :delete, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, false, false},
     {:post_app_webhook_endpoints_rotate_secret, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret", 2, false, false},
+    {:get_app_webhook_endpoints_deliveries, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", 2, false, true},
     {:post_app_webhook_endpoints_reveal_secret, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret", 2, false, false},
     {:post_app_webhook_endpoints_test, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test", 2, false, false},
-    {:get_app_webhook_endpoints_deliveries, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", 2, false, true},
     {:post_app_webhook_endpoints_deliveries_redeliver, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", 3, false, false},
     {:post_app_webhook_endpoints_replay, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay", 2, true, false},
-    {:get_app_event_types, :get, "/v1/organizations/{id}/app_event_types", 1, false, true}
+    {:get_app_event_types, :get, "/v1/organizations/{id}/app_event_types", 1, false, true},
+    {:get_connections_secret, :get, "/v1/organizations/{id}/connections/{connectionId}/secret", 2, false, false},
+    {:get_settings, :get, "/v1/organizations/{id}/settings", 1, false, false},
+    {:put_settings, :put, "/v1/organizations/{id}/settings", 1, true, false},
+    {:update_settings, :patch, "/v1/organizations/{id}/settings", 1, true, false}
   ]
 end

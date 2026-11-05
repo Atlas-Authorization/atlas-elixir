@@ -25,9 +25,18 @@ defmodule Atlas.Mcp do
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp", %{}, body, opts)
 
+  @doc ~S"""
+  Give another API key a short write elevation over the admin MCP server. A key with the mcp:read_only_default scope can only use read tools until it presents the returned token in the X-Atlas-MCP-Elevation header. Needs the mcp:elevate scope, which belongs on a key a person holds, not on the agent. The token is bound to that one key and expires by itself (at most 15 minutes).
+
+  `POST /v1/mcp/elevations`. Required scope: `mcp:elevate`.
+  """
+  def post_elevations(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/mcp/elevations", %{}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/mcp", 0, false, false},
-    {:create, :post, "/v1/mcp", 0, true, false}
+    {:create, :post, "/v1/mcp", 0, true, false},
+    {:post_elevations, :post, "/v1/mcp/elevations", 0, true, false}
   ]
 end

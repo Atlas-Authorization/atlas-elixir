@@ -18,14 +18,14 @@ defmodule Atlas.AppEventTypes do
     do: Atlas.Client.request(client, :get, "/v1/app_event_types", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/2`, following the cursor page by page.
+  Lazy stream over every item of `list/1`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/app_event_types", %{}, opts)
 
   @doc ~S"""
-  Register an app event type (e.g. call.completed) with `type`, optionally `description`, a JSON Schema for its data (`schema`) and `deprecated`. 409 if already registered. At most 500 per instance.
+  Register an app event type (e.g. call.completed), optionally with a JSON Schema for its data. 409 if already registered. At most 500 per instance.
 
   `POST /v1/app_event_types`. Required scope: `webhooks:write`.
   """

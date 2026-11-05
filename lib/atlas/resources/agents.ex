@@ -56,12 +56,55 @@ defmodule Atlas.Agents do
   def post_revoke_access(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agents/{id}/revoke_access", %{"id" => id}, body, opts)
 
+  @doc ~S"""
+  An agent's sponsor, backup sponsor and expiry.
+
+  `GET /v1/agents/{id}/lifecycle`. Required scope: `machines:read`.
+  """
+  def get_lifecycle(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/agents/{id}/lifecycle", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Set an agent's sponsor, backup sponsor and expiry (omitted fields keep their value; null clears). Emits agent.sponsor_changed. When the sponsor's account is gone, banned or locked the backup is promoted automatically; at the expiry the agent's grants are revoked and the agent is revoked, after an agent.expiring warning 14 days ahead.
+
+  `PUT /v1/agents/{id}/lifecycle`. Required scope: `machines:write`.
+  """
+  def put_lifecycle(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/agents/{id}/lifecycle", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Extend an agent's registration by extend_days (1 to 365) from its current expiry (or now, when that has passed). A revoked agent cannot be renewed.
+
+  `POST /v1/agents/{id}/renew`. Required scope: `machines:write`.
+  """
+  def post_renew(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/agents/{id}/renew", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Everything an agent did, newest first: audit entries about it and entries it caused (gateway tool calls with their outcome, connection tokens and actions, access decisions). Defaults to the last 30 days.
+
+  `GET /v1/agents/{id}/activity`. Required scope: `machines:read`.
+  """
+  def get_activity(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/agents/{id}/activity", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_activity/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_activity(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/agents/{id}/activity", %{"id" => id}, opts)
+
   @doc false
   def __operations__, do: [
     {:post_claim, :post, "/v1/agents/{id}/claim", 1, true, false},
     {:list, :get, "/v1/agents", 0, false, true},
     {:get, :get, "/v1/agents/{id}", 1, false, false},
     {:put_owner, :put, "/v1/agents/{id}/owner", 1, true, false},
-    {:post_revoke_access, :post, "/v1/agents/{id}/revoke_access", 1, true, false}
+    {:post_revoke_access, :post, "/v1/agents/{id}/revoke_access", 1, true, false},
+    {:get_lifecycle, :get, "/v1/agents/{id}/lifecycle", 1, false, false},
+    {:put_lifecycle, :put, "/v1/agents/{id}/lifecycle", 1, true, false},
+    {:post_renew, :post, "/v1/agents/{id}/renew", 1, true, false},
+    {:get_activity, :get, "/v1/agents/{id}/activity", 1, false, true}
   ]
 end

@@ -10,15 +10,7 @@ defmodule Atlas.AppEvents do
   """
 
   @doc ~S"""
-  Publish one application event to one organization (your customer): `organization_id` (or `org`), `type` (registered in the app event catalog), `data` (must match the type's schema; 422 with one error per failing path) and optionally `idempotency_key` (or the `:idempotency_key` option). Every active app webhook endpoint of that organization subscribed to the type (or "*") gets a signed delivery (Standard Webhooks). 201 on a new event; a repeat with the same idempotency key returns the first event (200, `idempotent_replay: true`).
-
-  `POST /v1/app_events`. Required scope: `webhooks:write`.
-  """
-  def create(client, body, opts \\ []),
-    do: Atlas.Client.request(client, :post, "/v1/app_events", %{}, body, opts)
-
-  @doc ~S"""
-  One organization's published app events, newest first. `params: [organization_id: ...]` is required; `type`, `limit`, `starting_after` optional.
+  One organization's published app events, newest first.
 
   `GET /v1/app_events`. Required scope: `webhooks:read`.
   """
@@ -26,11 +18,19 @@ defmodule Atlas.AppEvents do
     do: Atlas.Client.request(client, :get, "/v1/app_events", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/2`, following the cursor page by page.
+  Lazy stream over every item of `list/1`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/app_events", %{}, opts)
+
+  @doc ~S"""
+  Publish one application event to one organization (your customer). The type must be in the catalog and data must match its schema (422 with one error per failing path). Every active app webhook endpoint of that organization subscribed to the type (or "*") gets a signed delivery (Standard Webhooks), retried on the webhook schedule, visible in its delivery log with redeliver and replay. idempotency_key (or the Idempotency-Key header) makes a repeat return the first event (200, idempotent_replay: true) for as long as the event is kept (90 days). 201 on a new event.
+
+  `POST /v1/app_events`. Required scope: `webhooks:write`.
+  """
+  def create(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/app_events", %{}, body, opts)
 
   @doc ~S"""
   Retrieve one published app event.
@@ -42,8 +42,8 @@ defmodule Atlas.AppEvents do
 
   @doc false
   def __operations__, do: [
-    {:create, :post, "/v1/app_events", 0, true, false},
     {:list, :get, "/v1/app_events", 0, false, true},
+    {:create, :post, "/v1/app_events", 0, true, false},
     {:get, :get, "/v1/app_events/{id}", 1, false, false}
   ]
 end

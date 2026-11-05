@@ -34,7 +34,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :delete, "/v1/messaging_providers/{channel}", %{"channel" => channel}, nil, opts)
 
   @doc ~S"""
-  Configure the email delivery provider. The body is discriminated by `transport` (resend, ses, smtp, brevo, mailgun, webhook); each transport has its own `config` keys, listed in its schema. Unknown or missing keys are refused with a 422 naming `config.<key>`. Secrets are write-only; on an update of the same transport an omitted secret keeps the stored one.
+  Configure the email delivery provider. The body is discriminated by `transport` (resend, ses, smtp, brevo, mailgun, smtp2go, webhook); each transport has its own `config` keys, listed in its schema. Unknown or missing keys are refused with a 422 naming `config.<key>`. Secrets are write-only; on an update of the same transport an omitted secret keeps the stored one.
 
   `PUT /v1/messaging_providers/email`. Required scope: `messaging:write`.
   """
@@ -50,7 +50,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/sms", %{}, body, opts)
 
   @doc ~S"""
-  Send a clearly-marked test message to a destination to verify the configured email or SMS provider delivers, without triggering a real auth flow. Rate-limited; 422 when nothing is configured. Success answers ok, accepted, provider (the transport that accepted it: resend, smtp, twilio, ...), provider_message_id and, for SMTP, provider_response (the server reply line); a provider refusal is a 502 whose error meta says what the provider answered.
+  Send a clearly-marked test message to a destination to verify the configured email or SMS provider delivers, without triggering a real auth flow. Rate-limited; 422 when nothing is configured. 200 when the provider accepted the message: `ok`/`accepted` true, `provider`, `provider_message_id` (for SMTP also `provider_response`, the server reply line with its queue id). 502 INTERNAL when the provider refused it or could not be reached; the error `meta` carries `ok: false`, `accepted: false`, `failure` (provider_rejected | provider_unreachable), `provider`, `provider_message_id`, `provider_status`, `provider_reason` (the provider's own reason) and, for SMTP, `provider_response`.
 
   `POST /v1/messaging_providers/{channel}/test`. Required scope: `messaging:write`.
   """
@@ -66,7 +66,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers/email/managed", %{}, nil, opts)
 
   @doc ~S"""
-  Managed email: Atlas sets up your sending domain (the domain of `from_address`) on YOUR OWN Resend or Brevo account, with your API key, and sends through it once the domain is verified. Pass `transport` ("resend" | "brevo") with `config.api_key`, or `provider_id` of your configured Resend or Brevo email provider; without either the call is refused with 422 (param `config.api_key`). The key is stored, write-only, as the instance's email provider in `managed_domain` mode. Returns 201 with the DNS `records` to publish (DKIM, SPF / return-path for Resend; ownership, DKIM, DMARC for Brevo). Until the domain is verified email delivery stays unavailable and preflight warns `managed_email_unverified`. Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the records itself (DNS-only; the token is write-only) and verifies in the same call when DNS propagates in time. Atlas also registers a bounce / complaint webhook on your Resend or Brevo account, for this instance only (`feedback_webhook`); the counts appear in `usage`. No Atlas sending limits apply (`limits: null`): the account and its limits are yours. Atlas never uses an email account of its own. 409 when the domain is set up on another Atlas instance; 502 MANAGED_EMAIL_PROVIDER_ERROR when your provider refuses.
+  Managed email: Atlas sets up your sending domain (the domain of `from_address`) on YOUR OWN Resend or Brevo account, with your API key, and sends through it once the domain is verified. Pass `transport` ("resend" | "brevo") with `config.api_key`, or `provider_id` of your configured Resend or Brevo email provider; without either the call is refused with 422 (param `config.api_key`). The key is stored, write-only, as the instance's email provider in `managed_domain` mode. Returns 201 with the DNS `records` to publish (DKIM, SPF / return-path for Resend; ownership, DKIM, DMARC for Brevo). Until the domain is verified email delivery stays unavailable and preflight warns `managed_email_unverified`. Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the records itself (DNS-only; the token is write-only) IN THE BACKGROUND: the call answers 202 at once with the records and `dns.status: "pending"`, then Atlas writes them and checks with your provider until the domain is verified (`dns.status` pending → verifying → verified; `dns.last_error` and `failed` when it cannot). No further call is needed; GET shows progress and POST …/verify checks at once. Atlas also registers a bounce / complaint webhook on your Resend or Brevo account, for this instance only (`feedback_webhook`, `feedback_webhook_id`); the counts appear in `usage`. No Atlas sending limits apply (`limits: null`): the account and its limits are yours. Atlas never uses an email account of its own. 409 when the domain is set up on another Atlas instance; 502 MANAGED_EMAIL_PROVIDER_ERROR when your provider refuses.
 
   `POST /v1/messaging_providers/email/managed`. Required scope: `messaging:write`.
   """
@@ -74,7 +74,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :post, "/v1/messaging_providers/email/managed", %{}, body, opts)
 
   @doc ~S"""
-  Stop using managed email: removes the domain from your provider account (and, on Resend, the bounce / complaint webhook Atlas registered there) and the email provider (managed_domain mode) that held your key (`provider_removed`). DNS records are left in place. Refused with 409 EMAIL_PROVIDER_IN_USE while it is the only way the instance can send email and email-dependent features are on; pass force=true to remove it anyway.
+  Stop using managed email: removes the domain from your provider account (and the bounce / complaint webhook Atlas registered there, on Resend or Brevo) and the email provider (managed_domain mode) that held your key (`provider_removed`). DNS records are left in place. Refused with 409 EMAIL_PROVIDER_IN_USE while it is the only way the instance can send email and email-dependent features are on; pass force=true to remove it anyway.
 
   `DELETE /v1/messaging_providers/email/managed`. Required scope: `messaging:write`.
   """
@@ -82,7 +82,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :delete, "/v1/messaging_providers/email/managed", %{}, nil, opts)
 
   @doc ~S"""
-  Re-check the managed sending domain's DNS records now (and, with DNS automation, re-write any that are missing). On Resend it also re-registers the bounce / complaint webhook if it is missing (`feedback_webhook`). Returns the managed_email object; `verified` is true once email can be sent.
+  Re-check the managed sending domain's DNS records now (and, with DNS automation, re-write any that are missing). It also re-registers the bounce / complaint webhook on your Resend or Brevo account if it is missing (`feedback_webhook`), and marks background DNS automation verified once the domain is. Returns the managed_email object; `verified` is true once email can be sent.
 
   `POST /v1/messaging_providers/email/managed/verify`. Required scope: `messaging:write`.
   """

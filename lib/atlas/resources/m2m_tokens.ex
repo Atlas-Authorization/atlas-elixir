@@ -10,7 +10,7 @@ defmodule Atlas.M2mTokens do
   """
 
   @doc ~S"""
-  Verify a presented machine secret → { valid, machine_id? } (Clerk verifyM2MToken).
+  Verify a machine secret or machine JWT and report what it holds. Apps verifying a JWT against the JWKS do not need this call.
 
   `POST /v1/m2m_tokens/verify`. Required scope: `machines:read`.
   """

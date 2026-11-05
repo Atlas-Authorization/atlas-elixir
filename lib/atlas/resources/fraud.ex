@@ -17,8 +17,35 @@ defmodule Atlas.Fraud do
   def post_lookup(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fraud/lookup", %{}, body, opts)
 
+  @doc ~S"""
+  Email risk for one address: syntax, disposable domain, role account, MX (with the implicit-MX fallback), the suppression list and, when configured or `verify_mailbox` is true, a mailbox verdict from your own ZeroBounce or Kickbox account. Returns a score and an allow / review / block verdict.
+
+  `POST /v1/fraud/email_risk`. Required scope: `email_suppressions:read`.
+  """
+  def post_email_risk(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fraud/email_risk", %{}, body, opts)
+
+  @doc ~S"""
+  Email risk settings: mode, provider, blocking policy and the sign-up gate.
+
+  `GET /v1/fraud/email_risk/settings`. Required scope: `email_suppressions:read`.
+  """
+  def get_email_risk_settings(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fraud/email_risk/settings", %{}, nil, opts)
+
+  @doc ~S"""
+  Change email risk settings. `mode`: off, mx or provider (your own verification account; the key is write-only). With `gate_sign_up` a `block` verdict refuses the sign-up.
+
+  `PUT /v1/fraud/email_risk/settings`. Required scope: `email_suppressions:write`.
+  """
+  def put_email_risk_settings(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/fraud/email_risk/settings", %{}, body, opts)
+
   @doc false
   def __operations__, do: [
-    {:post_lookup, :post, "/v1/fraud/lookup", 0, true, false}
+    {:post_lookup, :post, "/v1/fraud/lookup", 0, true, false},
+    {:post_email_risk, :post, "/v1/fraud/email_risk", 0, true, false},
+    {:get_email_risk_settings, :get, "/v1/fraud/email_risk/settings", 0, false, false},
+    {:put_email_risk_settings, :put, "/v1/fraud/email_risk/settings", 0, true, false}
   ]
 end

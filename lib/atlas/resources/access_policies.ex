@@ -25,7 +25,7 @@ defmodule Atlas.AccessPolicies do
     do: Atlas.Client.stream(client, "/v1/access_policies", %{}, opts)
 
   @doc ~S"""
-  Create a conditional-access policy. `conditions` (applications, userIds, groups, orgs, roles, networkZones {include, exclude}, countries, riskLevels, deviceTrust, authMethods, timeWindow) are ANDed; an empty condition matches anything. `grants` are allow, block, require_mfa, require_acr, require_policy_acceptance or require_action. `stages` limits it to sign_in, authorize and/or token (default all). A matching block wins; step-up grants are unioned.
+  Create a conditional-access policy. `conditions` (applications, userIds, groups, orgs, roles, networkZones {include, exclude}, countries, riskLevels, deviceTrust, authMethods, timeWindow) are ANDed; an empty condition matches anything. `grants` are allow, block, require_mfa, require_acr, require_policy_acceptance or require_action. `stages` limits it to sign_in, authorize and/or token (default all). Further conditions: devicePlatforms, osVersion {min, max}, clientTypes, userAttributes, userRiskLevels, signInRiskLevels and principalIds. Further grants: require_auth_strength (mfa, passwordless, phishing_resistant), require_device_bound_session, require_password_change, sign_in_frequency, max_session_age and persistent_session. `mode: report_only` logs `access_policy.would_block` and never denies. `targets` picks user, machine and/or agent principals (default user). A matching block wins; step-up grants are unioned.
 
   `POST /v1/access_policies`. Required scope: `access_policies:write`.
   """
@@ -39,6 +39,22 @@ defmodule Atlas.AccessPolicies do
   """
   def post_simulate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/access_policies/simulate", %{}, body, opts)
+
+  @doc ~S"""
+  Impact preview: replay a draft policy (`draft`: conditions, grants, stages, targets) against the sampled sign-ins of the last `days` (1-30, default 7) and get how many would have been allowed, stepped up or blocked, plus the affected users. Nothing is stored or enforced.
+
+  `POST /v1/access_policies/impact`. Required scope: `access_policies:read`.
+  """
+  def post_impact(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/access_policies/impact", %{}, body, opts)
+
+  @doc ~S"""
+  Report-only insights: how often `report_only` policies would have blocked or stepped up a request in the last `days`, per policy and per day.
+
+  `GET /v1/access_policies/insights`. Required scope: `access_policies:read`.
+  """
+  def get_insights(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/access_policies/insights", %{}, nil, opts)
 
   @doc ~S"""
   Read one access policy.
@@ -69,6 +85,8 @@ defmodule Atlas.AccessPolicies do
     {:list, :get, "/v1/access_policies", 0, false, true},
     {:create, :post, "/v1/access_policies", 0, true, false},
     {:post_simulate, :post, "/v1/access_policies/simulate", 0, true, false},
+    {:post_impact, :post, "/v1/access_policies/impact", 0, true, false},
+    {:get_insights, :get, "/v1/access_policies/insights", 0, false, false},
     {:get, :get, "/v1/access_policies/{id}", 1, false, false},
     {:update, :patch, "/v1/access_policies/{id}", 1, true, false},
     {:delete, :delete, "/v1/access_policies/{id}", 1, false, false}

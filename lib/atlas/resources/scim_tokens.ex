@@ -25,7 +25,7 @@ defmodule Atlas.ScimTokens do
     do: Atlas.Client.stream(client, "/v1/scim_tokens", %{}, opts)
 
   @doc ~S"""
-  Mint a SCIM provisioning token for an organization. The token is revealed exactly once. scopes ["read"] makes it read-only; role_mappings maps the SCIM user roles attribute to organization roles. The create response also carries `scim_base_url` (the SCIM 2.0 base URL to give the identity provider) and `warnings` (`no_sso_connection` when the organization has no SSO connection yet).
+  Mint a SCIM provisioning token for an organization. The token is revealed exactly once. scopes ["read"] makes it read-only; role_mappings maps the SCIM user roles attribute to organization roles.
 
   `POST /v1/scim_tokens`. Required scope: `scim:write`.
   """

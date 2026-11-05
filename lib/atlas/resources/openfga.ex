@@ -121,6 +121,22 @@ defmodule Atlas.Openfga do
   def post_stores_batch_check(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/batch-check", %{"store" => store}, body, opts)
 
+  @doc ~S"""
+  Read the stored assertions for a model version.
+
+  `GET /v1/openfga/stores/{store}/assertions/{model}`. Required scope: `fga:read`.
+  """
+  def get_stores_assertions(client, store, model, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/openfga/stores/{store}/assertions/{model}", %{"store" => store, "model" => model}, nil, opts)
+
+  @doc ~S"""
+  Replace the stored assertions for a model version.
+
+  `PUT /v1/openfga/stores/{store}/assertions/{model}`. Required scope: `fga:write`.
+  """
+  def put_stores_assertions(client, store, model, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/openfga/stores/{store}/assertions/{model}", %{"store" => store, "model" => model}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:get_stores, :get, "/v1/openfga/stores", 0, false, false},
@@ -136,6 +152,8 @@ defmodule Atlas.Openfga do
     {:post_stores_list_users, :post, "/v1/openfga/stores/{store}/list-users", 1, true, false},
     {:get_stores_changes, :get, "/v1/openfga/stores/{store}/changes", 1, false, false},
     {:post_stores_expand, :post, "/v1/openfga/stores/{store}/expand", 1, true, false},
-    {:post_stores_batch_check, :post, "/v1/openfga/stores/{store}/batch-check", 1, true, false}
+    {:post_stores_batch_check, :post, "/v1/openfga/stores/{store}/batch-check", 1, true, false},
+    {:get_stores_assertions, :get, "/v1/openfga/stores/{store}/assertions/{model}", 2, false, false},
+    {:put_stores_assertions, :put, "/v1/openfga/stores/{store}/assertions/{model}", 2, true, false}
   ]
 end

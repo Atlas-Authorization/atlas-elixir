@@ -10,6 +10,84 @@ defmodule Atlas.Connections do
   """
 
   @doc ~S"""
+  The actions available on a connection (its provider's catalog).
+
+  `GET /v1/connections/{id}/actions`. Required scope: `organizations:read`.
+  """
+  def get_actions(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/connections/{id}/actions", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_actions/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_actions(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/connections/{id}/actions", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Run an action on a connection: the input is validated against the action's schema, the connection's granted scopes are checked, and the call goes through the relay (host allow-list, credential, one refresh, retry on 429). `dry_run` returns the request without sending it; `all_pages` walks the action's pagination. The audit log records the action, provider and status, never the input.
+
+  `POST /v1/connections/{id}/actions/{name}`. Required scope: `oauth_tokens:read`.
+  """
+  def post_actions(client, id, name, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/connections/{id}/actions/{name}", %{"id" => id, "name" => name}, body, opts)
+
+  @doc ~S"""
+  Mint a scoped relay token: a signed credential for ONE connection that only works through POST /v1/connection_relay/scoped, for the listed HTTP methods and https URL prefixes, and expires within the hour. It narrows what a caller can do with the connection without touching the stored provider token (which stays in the vault).
+
+  `POST /v1/connections/{id}/scoped_tokens`. Required scope: `oauth_tokens:read`.
+  """
+  def post_scoped_tokens(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/connections/{id}/scoped_tokens", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The triggers of a connection.
+
+  `GET /v1/connections/{id}/triggers`. Required scope: `organizations:read`.
+  """
+  def get_by_id_triggers(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/connections/{id}/triggers", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_by_id_triggers/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_by_id_triggers(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/connections/{id}/triggers", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Subscribe to provider events. webhook: Atlas creates a verified ingress endpoint and, for providers whose API allows it (GitHub), registers the webhook there (filter: owner, repo); verified deliveries are forwarded to target_url. Other providers get an ingress_url to paste into the provider and need `scheme`. poll: a read-only catalog action runs on an interval and each new item becomes a `connection.trigger_fired` event.
+
+  `POST /v1/connections/{id}/triggers`. Required scope: `organizations:write`.
+  """
+  def post_triggers(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/connections/{id}/triggers", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Read one trigger of a connection.
+
+  `GET /v1/connections/{id}/triggers/{triggerId}`. Required scope: `organizations:read`.
+  """
+  def get_by_id_triggers_by_trigger_id(client, id, trigger_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/connections/{id}/triggers/{triggerId}", %{"id" => id, "triggerId" => trigger_id}, nil, opts)
+
+  @doc ~S"""
+  Pause or resume a trigger.
+
+  `PATCH /v1/connections/{id}/triggers/{triggerId}`. Required scope: `organizations:write`.
+  """
+  def update_triggers(client, id, trigger_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/connections/{id}/triggers/{triggerId}", %{"id" => id, "triggerId" => trigger_id}, body, opts)
+
+  @doc ~S"""
+  Remove a trigger: the provider webhook is deleted first when Atlas registered it (`provider_unregistered` says what happened; the connection must allow DELETE for that), then the ingress endpoint.
+
+  `DELETE /v1/connections/{id}/triggers/{triggerId}`. Required scope: `organizations:write`.
+  """
+  def delete_triggers(client, id, trigger_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/connections/{id}/triggers/{triggerId}", %{"id" => id, "triggerId" => trigger_id}, nil, opts)
+
+  @doc ~S"""
   List connections, newest first, with each one's live status. Filter by owner or provider.
 
   `GET /v1/connections`. Required scope: `organizations:read`.
@@ -144,6 +222,14 @@ defmodule Atlas.Connections do
     do: Atlas.Client.request(client, :get, "/v1/connections/{id}/token", %{"id" => id}, nil, opts)
 
   @doc ~S"""
+  A short-lived access token limited to a subset of the scopes the connection was granted, to hand to a less-trusted caller (an agent, a plugin). The provider mints it from the stored refresh token with the scope narrowed; the connection itself is unchanged. 422 `invalid_scope` when a scope was not granted; 422 `downscope_unsupported` when the provider cannot issue a narrower token (Microsoft identity platform v2.0 can).
+
+  `POST /v1/connections/{id}/token/downscope`. Required scope: `connections:token`.
+  """
+  def post_token_downscope(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/connections/{id}/token/downscope", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Force a refresh after the provider refused the access token (401). Single-flight: however many callers saw the same 401, the provider is called once. Send `stale_token_hash` (lowercase hex SHA-256 of the access token you were refused with); if the stored token is already a different one, a peer has refreshed and the current token is returned without calling the provider (`refreshed: false`). Same body, ETag and 402 behaviour as the token read; the response is never cached. Counts against the same rate limit as the token read.
 
   `POST /v1/connections/{id}/token/refresh`. Required scope: `connections:token`.
@@ -160,7 +246,7 @@ defmodule Atlas.Connections do
     do: Atlas.Client.request(client, :post, "/v1/connections/tokens/batch", %{}, body, opts)
 
   @doc ~S"""
-  Bulk-import existing provider refresh tokens as connections, up to 500 rows, so nobody reconnects. Each row: provider, owner, external_id (the provider-side account: how a re-import finds the same connection), refresh_token (or access_token), and optionally scopes, metadata, environment, host_params, name, allowed_hosts. By default (validate true) each refresh token is spent once against the provider with the OAuth client that will own the connection, and the tokens the provider issues are stored, so the imported copy stops being current on a rotating provider. A failing row creates and changes nothing. dry_run checks shapes only and never calls the provider. Idempotent on Idempotency-Key. Tokens go straight to the vault and never appear in the answer or the audit log.
+  Bulk-import existing provider refresh tokens as connections, up to 500 rows, so nobody reconnects. Each row: provider, owner, external_id (the provider-side account: how a re-import finds the same connection), refresh_token (or access_token), and optionally scopes, metadata, environment, host_params, name, allowed_hosts and token_family (rows that were exported with the same token_family came from one grant and share one refresh token: the first row spends it, the others join its token set as siblings). By default (validate true) each refresh token is spent once against the provider with the OAuth client that will own the connection, and the tokens the provider issues are stored, so the imported copy stops being current on a rotating provider. A failing row creates and changes nothing. dry_run checks shapes only and never calls the provider. Idempotent on Idempotency-Key. Tokens go straight to the vault and never appear in the answer or the audit log.
 
   `POST /v1/connections/import`. Required scope: `connections:import`.
   """
@@ -255,6 +341,14 @@ defmodule Atlas.Connections do
 
   @doc false
   def __operations__, do: [
+    {:get_actions, :get, "/v1/connections/{id}/actions", 1, false, true},
+    {:post_actions, :post, "/v1/connections/{id}/actions/{name}", 2, true, false},
+    {:post_scoped_tokens, :post, "/v1/connections/{id}/scoped_tokens", 1, true, false},
+    {:get_by_id_triggers, :get, "/v1/connections/{id}/triggers", 1, false, true},
+    {:post_triggers, :post, "/v1/connections/{id}/triggers", 1, true, false},
+    {:get_by_id_triggers_by_trigger_id, :get, "/v1/connections/{id}/triggers/{triggerId}", 2, false, false},
+    {:update_triggers, :patch, "/v1/connections/{id}/triggers/{triggerId}", 2, true, false},
+    {:delete_triggers, :delete, "/v1/connections/{id}/triggers/{triggerId}", 2, false, false},
     {:list, :get, "/v1/connections", 0, false, true},
     {:create, :post, "/v1/connections", 0, true, false},
     {:get, :get, "/v1/connections/{id}", 1, false, false},
@@ -270,6 +364,7 @@ defmodule Atlas.Connections do
     {:delete_oauth_clients, :delete, "/v1/connections/oauth_clients/{id}", 1, false, false},
     {:post_relay, :post, "/v1/connections/{id}/relay", 1, true, false},
     {:get_token, :get, "/v1/connections/{id}/token", 1, false, false},
+    {:post_token_downscope, :post, "/v1/connections/{id}/token/downscope", 1, true, false},
     {:post_token_refresh, :post, "/v1/connections/{id}/token/refresh", 1, true, false},
     {:post_tokens_batch, :post, "/v1/connections/tokens/batch", 0, true, false},
     {:post_import, :post, "/v1/connections/import", 0, true, false},

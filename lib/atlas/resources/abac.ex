@@ -34,6 +34,46 @@ defmodule Atlas.Abac do
     do: Atlas.Client.request(client, :post, "/v1/abac/accessible_resources", %{}, body, opts)
 
   @doc ~S"""
+  Convert Cedar policy text to the Cedar JSON policy format (annotations, decimal and ip extension calls included).
+
+  `POST /v1/abac/cedar/export`. Required scope: `abac:read`.
+  """
+  def post_cedar_export(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/abac/cedar/export", %{}, body, opts)
+
+  @doc ~S"""
+  Convert Cedar JSON policies to policy text. With `name`, also create the policy from them.
+
+  `POST /v1/abac/cedar/import`. Required scope: `abac:read`.
+  """
+  def post_cedar_import(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/abac/cedar/import", %{}, body, opts)
+
+  @doc ~S"""
+  How access-token claims become a policy principal and its parents, and which extra token issuers are trusted.
+
+  `GET /v1/abac/token_mapping`. Required scope: `abac:read`.
+  """
+  def get_token_mapping(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/abac/token_mapping", %{}, nil, opts)
+
+  @doc ~S"""
+  Set the claim mapping used by `authorize_token`: the principal type and id claim, claims that become parent entities (org, role, groups), claims copied as attributes, and trusted issuers with their JWKS URLs.
+
+  `PUT /v1/abac/token_mapping`. Required scope: `abac:write`.
+  """
+  def put_token_mapping(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/abac/token_mapping", %{}, body, opts)
+
+  @doc ~S"""
+  Decide for the principal an access token stands for. The token is verified first (an active Atlas session token, or a token from a trusted issuer); its claims map to the principal and parents per the token mapping. An invalid token is a 401, not a deny.
+
+  `POST /v1/abac/authorize_token`. Required scope: `abac:evaluate`.
+  """
+  def post_authorize_token(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/abac/authorize_token", %{}, body, opts)
+
+  @doc ~S"""
   The same comparison for two policy sources you send (a draft against the saved version, or two templates), without saving anything.
 
   `POST /v1/abac/diff`. Required scope: `abac:read`.
@@ -46,6 +86,11 @@ defmodule Atlas.Abac do
     {:post_evaluate, :post, "/v1/abac/evaluate", 0, true, false},
     {:post_partial_evaluate, :post, "/v1/abac/partial_evaluate", 0, true, false},
     {:post_accessible_resources, :post, "/v1/abac/accessible_resources", 0, true, false},
+    {:post_cedar_export, :post, "/v1/abac/cedar/export", 0, true, false},
+    {:post_cedar_import, :post, "/v1/abac/cedar/import", 0, true, false},
+    {:get_token_mapping, :get, "/v1/abac/token_mapping", 0, false, false},
+    {:put_token_mapping, :put, "/v1/abac/token_mapping", 0, true, false},
+    {:post_authorize_token, :post, "/v1/abac/authorize_token", 0, true, false},
     {:post_diff, :post, "/v1/abac/diff", 0, true, false}
   ]
 end

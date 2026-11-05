@@ -268,6 +268,14 @@ defmodule Atlas.Users do
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/password", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Remove a user's password: password_enabled becomes false and the old password stops working at once. Also allowed when it is the user's only sign-in method. Idempotent: on a user with no password nothing changes and the answer is the same. Signs the user out of their sessions unless sign_out_of_other_sessions is false (in the body, or as a query parameter for clients that cannot send a body on DELETE).
+
+  `DELETE /v1/users/{id}/password`. Required scope: `users:write`.
+  """
+  def delete_password(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}/password", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Replace the metadata bags wholesale. Each bag present overwrites the stored one; a bag omitted is untouched. At least one bag is required.
 
   `PUT /v1/users/{id}/metadata`. Required scope: `users:write`.
@@ -306,6 +314,14 @@ defmodule Atlas.Users do
   """
   def post_unban(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/unban", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Protect one existing unverified user, so a proof of its address reaches it instead of making a second account. Body: `password_policy` must be `until_email_verified`. A user with a password gets the same hold an import gives. A user with no credential is marked as yours, and a proof of its address then claims it. Naming the exact user id is what makes this safe, so nothing matches by address. Answers 409 ACCOUNT_NOT_CLAIMABLE with `meta.reasons` when the user has a verified address or anything else that signs in, and 422 when it has no email address. Safe to repeat.
+
+  `POST /v1/users/{id}/account_claim`. Required scope: `users:write`.
+  """
+  def post_account_claim(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/account_claim", %{"id" => id}, body, opts)
 
   @doc ~S"""
   Lock an account so it cannot sign in, for an optional duration (default one year) and with an optional reason. The lock, its expiry and reason are recorded in the user history.
@@ -518,6 +534,22 @@ defmodule Atlas.Users do
   """
   def post_referral_flag(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/referral/flag", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Re-report one user to the referral platform: their sign-up call is sent again now (same customerRef, original signed-up time, the stored arrival context, the user's current email and name) and the answer (code, link, partner) is applied to the user. For a user whose earlier answer is final on the platform (e.g. enroll_email_taken) but has since been fixed there. A code the user already has is kept. 404 for an unknown user; 422 REFERRALS_NOT_CONFIGURED when referral attribution is off. With `?dry_run=true` nothing is sent.
+
+  `POST /v1/users/{id}/referral/resync`. Required scope: `users:write`.
+  """
+  def post_referral_resync(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/referral/resync", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Merge another user INTO this one (the one kept). Emails, phones, social accounts, MFA factors, passkeys, API tokens, devices, organization and group memberships, app roles, consents, billing subscriptions and credits move across (a membership the target already has is left as it is, and the target's role wins); metadata merges key by key with the target winning; blank profile fields are filled. The source user's sessions end and it is deleted, firing `user.deleted` and `user.merged`. Refused when the users are the same, the source is banned and the target is not, or the target is a guest. `dry_run` reports what would move. Needs users:write and users:delete.
+
+  `POST /v1/users/{id}/merge`. Required scope: `users:write`.
+  """
+  def post_merge(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/merge", %{"id" => id}, body, opts)
 
   @doc ~S"""
   Schedule a GRACEFUL deletion of a user: opens a cancellation grace window (grace_seconds, default the instance erasure grace of 7 days) and emits user.deletion_scheduled. When the window lapses the worker finalizes the purge (reusing the shared soft-delete → 30-day PII scrub). DELETE /v1/users/:id remains the immediate path.
@@ -817,6 +849,53 @@ defmodule Atlas.Users do
   def stream_get_sign_in_history(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/users/{id}/sign_in_history", %{"id" => id}, opts)
 
+  @doc ~S"""
+  Contain an account in one action: sign-in disabled, password invalidated (a new one is required), sessions and OIDC sessions ended, personal API tokens, API keys, agent grants, device keys, desktop devices, remembered devices and temporary passes revoked. Sends `user.banned` (and the Shared Signals account-disabled event) and `user.contained`, and writes one audit record. Idempotent.
+
+  `POST /v1/users/{id}/contain`. Required scope: `risky_users:write`.
+  """
+  def post_contain(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/contain", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Release a contained account. The user can sign in again and still owes the password change.
+
+  `POST /v1/users/{id}/release`. Required scope: `risky_users:write`.
+  """
+  def post_release(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/release", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The user's active temporary access passes (never the codes).
+
+  `GET /v1/users/{id}/temporary_access`. Required scope: `users:read`.
+  """
+  def get_temporary_access(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/temporary_access", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_temporary_access/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_temporary_access(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/{id}/temporary_access", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Issue a temporary access pass: a time-limited code (60 seconds to 7 days, one use by default) that signs the user in with `strategy: "temporary_access_pass"`, counts as MFA for that sign-in, and (unless `require_enrolment` is false) makes them register a passkey or second factor. Optionally bound to an IP. The code is shown once.
+
+  `POST /v1/users/{id}/temporary_access`. Required scope: `users:write`.
+  """
+  def post_temporary_access(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/temporary_access", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Revoke a temporary access pass.
+
+  `DELETE /v1/users/{id}/temporary_access/{pass_id}`. Required scope: `users:write`.
+  """
+  def delete_temporary_access(client, id, pass_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}/temporary_access/{pass_id}", %{"id" => id, "pass_id" => pass_id}, nil, opts)
+
   @doc false
   def __operations__, do: [
     {:get_required_actions, :get, "/v1/users/{id}/required_actions", 1, false, true},
@@ -846,11 +925,13 @@ defmodule Atlas.Users do
     {:update, :patch, "/v1/users/{id}", 1, true, false},
     {:delete, :delete, "/v1/users/{id}", 1, false, false},
     {:post_password, :post, "/v1/users/{id}/password", 1, true, false},
+    {:delete_password, :delete, "/v1/users/{id}/password", 1, true, false},
     {:put_metadata, :put, "/v1/users/{id}/metadata", 1, true, false},
     {:post_ban, :post, "/v1/users/{id}/ban", 1, true, false},
     {:post_directives, :post, "/v1/users/{id}/directives", 1, true, false},
     {:delete_directives, :delete, "/v1/users/{id}/directives", 1, false, false},
     {:post_unban, :post, "/v1/users/{id}/unban", 1, false, false},
+    {:post_account_claim, :post, "/v1/users/{id}/account_claim", 1, true, false},
     {:post_lock, :post, "/v1/users/{id}/lock", 1, true, false},
     {:post_unlock, :post, "/v1/users/{id}/unlock", 1, false, false},
     {:post_reset_mfa, :post, "/v1/users/{id}/reset_mfa", 1, false, false},
@@ -874,6 +955,8 @@ defmodule Atlas.Users do
     {:get_organization_memberships, :get, "/v1/users/{id}/organization_memberships", 1, false, true},
     {:get_referral, :get, "/v1/users/{id}/referral", 1, false, false},
     {:post_referral_flag, :post, "/v1/users/{id}/referral/flag", 1, true, false},
+    {:post_referral_resync, :post, "/v1/users/{id}/referral/resync", 1, false, false},
+    {:post_merge, :post, "/v1/users/{id}/merge", 1, true, false},
     {:post_deletion, :post, "/v1/users/{id}/deletion", 1, true, false},
     {:post_deletion_cancel, :post, "/v1/users/{id}/deletion/cancel", 1, false, false},
     {:post_deletion_finalize, :post, "/v1/users/{id}/deletion/finalize", 1, false, false},
@@ -905,6 +988,11 @@ defmodule Atlas.Users do
     {:post_identity_verifications, :post, "/v1/users/{id}/identity_verifications", 1, true, false},
     {:get_policies, :get, "/v1/users/{id}/policies", 1, false, true},
     {:put_entitlements, :put, "/v1/users/{id}/entitlements", 1, true, false},
-    {:get_sign_in_history, :get, "/v1/users/{id}/sign_in_history", 1, false, true}
+    {:get_sign_in_history, :get, "/v1/users/{id}/sign_in_history", 1, false, true},
+    {:post_contain, :post, "/v1/users/{id}/contain", 1, true, false},
+    {:post_release, :post, "/v1/users/{id}/release", 1, false, false},
+    {:get_temporary_access, :get, "/v1/users/{id}/temporary_access", 1, false, true},
+    {:post_temporary_access, :post, "/v1/users/{id}/temporary_access", 1, true, false},
+    {:delete_temporary_access, :delete, "/v1/users/{id}/temporary_access/{pass_id}", 2, false, false}
   ]
 end

@@ -25,7 +25,7 @@ defmodule Atlas.ResourceServers do
     do: Atlas.Client.stream(client, "/v1/resource_servers", %{}, opts)
 
   @doc ~S"""
-  Register a resource server (API): its audience identifier, scopes and token TTL.
+  Register a resource server (API): its audience identifier, scopes, scope presets and token TTL.
 
   `POST /v1/resource_servers`. Required scope: `resource_servers:write`.
   """
@@ -41,7 +41,7 @@ defmodule Atlas.ResourceServers do
     do: Atlas.Client.request(client, :get, "/v1/resource_servers/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update a resource server. The identifier (audience) is immutable.
+  Update a resource server. The identifier (audience) is immutable, and a scope that a preset names cannot be removed without changing the preset in the same request.
 
   `PATCH /v1/resource_servers/{id}`. Required scope: `resource_servers:write`.
   """
@@ -49,7 +49,7 @@ defmodule Atlas.ResourceServers do
     do: Atlas.Client.request(client, :patch, "/v1/resource_servers/{id}", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Delete a resource server; its client grants cascade with it.
+  Delete a resource server; its client and machine grants go with it.
 
   `DELETE /v1/resource_servers/{id}`. Required scope: `resource_servers:write`.
   """

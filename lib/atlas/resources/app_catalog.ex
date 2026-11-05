@@ -25,6 +25,84 @@ defmodule Atlas.AppCatalog do
     do: Atlas.Client.stream(client, "/v1/app_catalog", %{}, opts)
 
   @doc ~S"""
+  List this instance's private SAML presets, in the portable form POST /v1/app_catalog/custom_presets accepts, so a preset can be moved between environments.
+
+  `GET /v1/app_catalog/custom_presets`. Required scope: `app_catalog:read`.
+  """
+  def get_custom_presets(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/app_catalog/custom_presets", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_custom_presets/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_custom_presets(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/app_catalog/custom_presets", %{}, opts)
+
+  @doc ~S"""
+  Save a private SAML preset for apps that are not in the catalog (an id, name, entityIdTemplate and acsUrlTemplate using {param} placeholders, params with a kind of slug, host, https_url or entity, and an attribute map). It then appears in GET /v1/app_catalog (custom: true, never verified) and installs like any preset. Saving an existing id replaces it.
+
+  `POST /v1/app_catalog/custom_presets`. Required scope: `app_catalog:write`.
+  """
+  def post_custom_presets(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/app_catalog/custom_presets", %{}, body, opts)
+
+  @doc ~S"""
+  Delete a private preset. Apps already installed from it keep working.
+
+  `DELETE /v1/app_catalog/custom_presets/{id}`. Required scope: `app_catalog:write`.
+  """
+  def delete_custom_presets(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/app_catalog/custom_presets/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The queue of apps people asked for, most wanted first. Filter with status (open, building, available, declined).
+
+  `GET /v1/app_catalog/requests`. Required scope: `app_catalog:read`.
+  """
+  def get_requests(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/app_catalog/requests", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_requests/1`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_requests(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/app_catalog/requests", %{}, opts)
+
+  @doc ~S"""
+  Ask for an app that is not in the catalog (name, protocol, docs_url, note). Asking again for an app already open counts as the requester’s vote (once) instead of a duplicate (200); a new request is 201; an app already in the catalog is 409.
+
+  `POST /v1/app_catalog/requests`. Required scope: `app_catalog:write`.
+  """
+  def post_requests(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/app_catalog/requests", %{}, body, opts)
+
+  @doc ~S"""
+  Add one vote to an open or in-progress app request (409 when it is available or declined, 404 when unknown). One vote per person or key: a repeat vote changes nothing.
+
+  `POST /v1/app_catalog/requests/{id}/vote`. Required scope: `app_catalog:write`.
+  """
+  def post_requests_vote(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/app_catalog/requests/{id}/vote", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Move a request along: status open, building, available or declined, and a note.
+
+  `PATCH /v1/app_catalog/requests/{id}`. Required scope: `app_catalog:write`.
+  """
+  def update_requests(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/app_catalog/requests/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Remove an app catalog request.
+
+  `DELETE /v1/app_catalog/requests/{id}`. Required scope: `app_catalog:write`.
+  """
+  def delete_requests(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/app_catalog/requests/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   List the installed apps (SAML and OpenID Connect) with their email-domain allow-list and assignment.
 
   `GET /v1/app_catalog/installed`. Required scope: `app_catalog:read`.
@@ -66,6 +144,14 @@ defmodule Atlas.AppCatalog do
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/app_catalog", 0, false, true},
+    {:get_custom_presets, :get, "/v1/app_catalog/custom_presets", 0, false, true},
+    {:post_custom_presets, :post, "/v1/app_catalog/custom_presets", 0, true, false},
+    {:delete_custom_presets, :delete, "/v1/app_catalog/custom_presets/{id}", 1, false, false},
+    {:get_requests, :get, "/v1/app_catalog/requests", 0, false, true},
+    {:post_requests, :post, "/v1/app_catalog/requests", 0, true, false},
+    {:post_requests_vote, :post, "/v1/app_catalog/requests/{id}/vote", 1, false, false},
+    {:update_requests, :patch, "/v1/app_catalog/requests/{id}", 1, true, false},
+    {:delete_requests, :delete, "/v1/app_catalog/requests/{id}", 1, false, false},
     {:get_installed, :get, "/v1/app_catalog/installed", 0, false, true},
     {:post_install, :post, "/v1/app_catalog/{id}/install", 1, true, false},
     {:update_installed, :patch, "/v1/app_catalog/installed/{id}", 1, true, false},

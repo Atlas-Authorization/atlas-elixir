@@ -48,11 +48,27 @@ defmodule Atlas.Devices do
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/devices/{id}", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  The compliance transitions of one device, newest first.
+
+  `GET /v1/devices/{id}/compliance_history`. Required scope: `device_assurance:read`.
+  """
+  def get_compliance_history(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/devices/{id}/compliance_history", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_compliance_history/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_compliance_history(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/devices/{id}/compliance_history", %{"id" => id}, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/devices", 0, false, true},
     {:put, :put, "/v1/devices", 0, true, false},
     {:get, :get, "/v1/devices/{id}", 1, false, false},
-    {:delete, :delete, "/v1/devices/{id}", 1, false, false}
+    {:delete, :delete, "/v1/devices/{id}", 1, false, false},
+    {:get_compliance_history, :get, "/v1/devices/{id}/compliance_history", 1, false, true}
   ]
 end

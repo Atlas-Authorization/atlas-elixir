@@ -41,12 +41,28 @@ defmodule Atlas.SsoOnboardingProfiles do
     do: Atlas.Client.request(client, :get, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
+  Update an onboarding profile in place. Only the fields sent change; the rest are kept. Same validation as create (an unknown organization, connection type or intent is 400). Tickets already issued keep working.
+
+  `PATCH /v1/sso_onboarding_profiles/{id}`. Required scope: `sso_connections:write`.
+  """
+  def update(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Delete an onboarding profile; its issued tickets cascade away with it.
 
   `DELETE /v1/sso_onboarding_profiles/{id}`. Required scope: `sso_connections:write`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Create-or-update the onboarding profile with this exact name (the path segment, URL-encoded): 201 with the new profile when none has the name, else 200 with it updated in place (only the fields sent change). Body: the POST fields except name. Two calls racing for a new name create exactly one profile. 409 IDENTIFIER_EXISTS when two profiles already share the name (POST allows that): rename or delete the extras. Rename with PATCH /v1/sso_onboarding_profiles/{id}.
+
+  `PUT /v1/sso_onboarding_profiles/by_name/{name}`. Required scope: `sso_connections:write`.
+  """
+  def put_by_name(client, name, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/sso_onboarding_profiles/by_name/{name}", %{"name" => name}, body, opts)
 
   @doc ~S"""
   Issue a scoped, one-time, expiring onboarding ticket for one organization. Returns the token and hosted URL exactly once. `expires_in_seconds` defaults to 259200 (3 days) and is clamped into [300, 2592000] (5 minutes to 30 days); `expires_in` says what was granted. `return_url` overrides the profile's for this ticket.
@@ -61,7 +77,9 @@ defmodule Atlas.SsoOnboardingProfiles do
     {:list, :get, "/v1/sso_onboarding_profiles", 0, false, true},
     {:create, :post, "/v1/sso_onboarding_profiles", 0, true, false},
     {:get, :get, "/v1/sso_onboarding_profiles/{id}", 1, false, false},
+    {:update, :patch, "/v1/sso_onboarding_profiles/{id}", 1, true, false},
     {:delete, :delete, "/v1/sso_onboarding_profiles/{id}", 1, false, false},
+    {:put_by_name, :put, "/v1/sso_onboarding_profiles/by_name/{name}", 1, true, false},
     {:post_tickets, :post, "/v1/sso_onboarding_profiles/{id}/tickets", 1, true, false}
   ]
 end

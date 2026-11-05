@@ -10,6 +10,22 @@ defmodule Atlas.Fga do
   """
 
   @doc ~S"""
+  How this instance runs fine-grained authorization reads: the result-cache TTL, the consistency mode applied to reads that name none, and how long the tuple change log is kept.
+
+  `GET /v1/fga/settings`. Required scope: `fga:read`.
+  """
+  def get_settings(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/settings", %{}, nil, opts)
+
+  @doc ~S"""
+  Change the instance FGA settings. Fields you omit keep their value. `cache_ttl_ms` null uses the platform default and 0 turns the result cache off; a request that carries its own `consistency` always wins over `default_consistency`; `changelog_retention_days` null keeps the whole tuple change log, otherwise older changes are removed in the background.
+
+  `PUT /v1/fga/settings`. Required scope: `fga:write`.
+  """
+  def put_settings(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/fga/settings", %{}, body, opts)
+
+  @doc ~S"""
   List fine-grained authorization (ReBAC / Zanzibar) stores in the instance. Each store namespaces its own authorization models and relationship tuples.
 
   `GET /v1/fga/stores`. Required scope: `fga:read`.
@@ -150,8 +166,122 @@ defmodule Atlas.Fga do
   def stream_get_stores_changes(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/fga/stores/{id}/changes", %{"id" => id}, opts)
 
+  @doc ~S"""
+  What a local policy decision point syncs: the latest model and the store tuples. Without `since`, a page of tuples (`full: true`, follow `next_cursor`); with `since=<revision>`, only the tuple changes after that revision. Tuples carry `expires_at`; expired tuples are never listed.
+
+  `GET /v1/fga/stores/{id}/snapshot`. Required scope: `fga:read`.
+  """
+  def get_stores_snapshot(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/snapshot", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Export the store tuples as NDJSON (one tuple per line), paged: pass the `atlas-next-cursor` response header back as `cursor`.
+
+  `GET /v1/fga/stores/{id}/export`. Required scope: `fga:read`.
+  """
+  def get_stores_export(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/export", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Bulk-import up to 20,000 tuples. Idempotent: an existing tuple is untouched, a changed condition or expiry updates it. Validated against the latest model; `dry_run` reports how many are new without writing.
+
+  `POST /v1/fga/stores/{id}/import`. Required scope: `fga:write`.
+  """
+  def post_stores_import(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/import", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Server-sent stream of the store tuple changes after `since` (or `Last-Event-ID`). Ends after about a minute; reconnect with the last event id.
+
+  `GET /v1/fga/stores/{id}/watch`. Required scope: `fga:read`.
+  """
+  def get_stores_watch(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/watch", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The nodes and edges of an authorization model, for a visualizer.
+
+  `GET /v1/fga/stores/{id}/authorization-models/{mid}/graph`. Required scope: `fga:read`.
+  """
+  def get_stores_authorization_models_graph(client, id, mid, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/authorization-models/{mid}/graph", %{"id" => id, "mid" => mid}, nil, opts)
+
+  @doc ~S"""
+  What changed between a model version and the one before it (or `against`): types, relations, conditions, and whether the change can alter who has access.
+
+  `GET /v1/fga/stores/{id}/authorization-models/{mid}/diff`. Required scope: `fga:read`.
+  """
+  def get_stores_authorization_models_diff(client, id, mid, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/authorization-models/{mid}/diff", %{"id" => id, "mid" => mid}, nil, opts)
+
+  @doc ~S"""
+  Run an FGA test suite in memory: a model (DSL, modules, a version id or the latest), suite tuples and tests with check, list_objects and list_users assertions. Returns per-test results and relation coverage. The store tuples are never read.
+
+  `POST /v1/fga/stores/{id}/tests`. Required scope: `fga:read`.
+  """
+  def post_stores_tests(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/tests", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Run an FGA test suite with no store: the model comes from `dsl` or `modules`. Returns per-test results and relation coverage. For CI.
+
+  `POST /v1/fga/tests`. Required scope: `fga:read`.
+  """
+  def post_tests(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/tests", %{}, body, opts)
+
+  @doc ~S"""
+  Validate an authorization model and convert it: DSL (or modular DSL files) to canonical JSON, and JSON to DSL.
+
+  `POST /v1/fga/models/transform`. Required scope: `fga:read`.
+  """
+  def post_models_transform(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/models/transform", %{}, body, opts)
+
+  @doc ~S"""
+  Run the stored assertions of a model version against the real store tuples.
+
+  `POST /v1/fga/stores/{id}/authorization-models/{mid}/assertions/run`. Required scope: `fga:read`.
+  """
+  def post_stores_authorization_models_assertions_run(client, id, mid, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/authorization-models/{mid}/assertions/run", %{"id" => id, "mid" => mid}, nil, opts)
+
+  @doc ~S"""
+  The materialized permission sets of a store: which (object type, relation, user type) answers are precomputed, their status, the revision they were built at and when a tuple expiry will next invalidate them.
+
+  `GET /v1/fga/stores/{id}/materializations`. Required scope: `fga:read`.
+  """
+  def get_stores_materializations(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/materializations", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Precompute list-objects for every user of `user_type` on `object_type#relation`, so a huge list question is one indexed read. The first build runs now; the worker rebuilds after tuple writes. A stored answer is served only while it is current for the store revision and model, before any tuple expiry, and for a plain `type:id` user with no request context or contextual tuples; otherwise list-objects is answered live. A model that uses conditions cannot be materialized.
+
+  `POST /v1/fga/stores/{id}/materializations`. Required scope: `fga:write`.
+  """
+  def post_stores_materializations(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/materializations", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Rebuild one materialization now.
+
+  `POST /v1/fga/stores/{id}/materializations/{mid}/rebuild`. Required scope: `fga:write`.
+  """
+  def post_stores_materializations_rebuild(client, id, mid, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/materializations/{mid}/rebuild", %{"id" => id, "mid" => mid}, nil, opts)
+
+  @doc ~S"""
+  Remove a materialization; list-objects is then always computed live.
+
+  `DELETE /v1/fga/stores/{id}/materializations/{mid}`. Required scope: `fga:write`.
+  """
+  def delete_stores_materializations(client, id, mid, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/fga/stores/{id}/materializations/{mid}", %{"id" => id, "mid" => mid}, nil, opts)
+
   @doc false
   def __operations__, do: [
+    {:get_settings, :get, "/v1/fga/settings", 0, false, false},
+    {:put_settings, :put, "/v1/fga/settings", 0, true, false},
     {:get_stores, :get, "/v1/fga/stores", 0, false, true},
     {:post_stores, :post, "/v1/fga/stores", 0, true, false},
     {:get_stores_by_id, :get, "/v1/fga/stores/{id}", 1, false, false},
@@ -166,6 +296,20 @@ defmodule Atlas.Fga do
     {:post_stores_list_objects, :post, "/v1/fga/stores/{id}/list-objects", 1, true, false},
     {:post_stores_expand, :post, "/v1/fga/stores/{id}/expand", 1, true, false},
     {:post_stores_list_users, :post, "/v1/fga/stores/{id}/list-users", 1, true, false},
-    {:get_stores_changes, :get, "/v1/fga/stores/{id}/changes", 1, false, true}
+    {:get_stores_changes, :get, "/v1/fga/stores/{id}/changes", 1, false, true},
+    {:get_stores_snapshot, :get, "/v1/fga/stores/{id}/snapshot", 1, false, false},
+    {:get_stores_export, :get, "/v1/fga/stores/{id}/export", 1, false, false},
+    {:post_stores_import, :post, "/v1/fga/stores/{id}/import", 1, true, false},
+    {:get_stores_watch, :get, "/v1/fga/stores/{id}/watch", 1, false, false},
+    {:get_stores_authorization_models_graph, :get, "/v1/fga/stores/{id}/authorization-models/{mid}/graph", 2, false, false},
+    {:get_stores_authorization_models_diff, :get, "/v1/fga/stores/{id}/authorization-models/{mid}/diff", 2, false, false},
+    {:post_stores_tests, :post, "/v1/fga/stores/{id}/tests", 1, true, false},
+    {:post_tests, :post, "/v1/fga/tests", 0, true, false},
+    {:post_models_transform, :post, "/v1/fga/models/transform", 0, true, false},
+    {:post_stores_authorization_models_assertions_run, :post, "/v1/fga/stores/{id}/authorization-models/{mid}/assertions/run", 2, false, false},
+    {:get_stores_materializations, :get, "/v1/fga/stores/{id}/materializations", 1, false, false},
+    {:post_stores_materializations, :post, "/v1/fga/stores/{id}/materializations", 1, true, false},
+    {:post_stores_materializations_rebuild, :post, "/v1/fga/stores/{id}/materializations/{mid}/rebuild", 2, false, false},
+    {:delete_stores_materializations, :delete, "/v1/fga/stores/{id}/materializations/{mid}", 2, false, false}
   ]
 end

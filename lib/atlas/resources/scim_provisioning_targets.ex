@@ -80,6 +80,44 @@ defmodule Atlas.ScimProvisioningTargets do
   def post_sync_group(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets/{id}/sync_group", %{"id" => id}, body, opts)
 
+  @doc ~S"""
+  The target's provisioning log, newest first (30 days): one entry per push with the operation, the downstream status and the error. Filter with failures=true or resource_id.
+
+  `GET /v1/scim_provisioning_targets/{id}/logs`. Required scope: `scim_provisioning:read`.
+  """
+  def get_logs(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_targets/{id}/logs", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_logs/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_logs(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/scim_provisioning_targets/{id}/logs", %{"id" => id}, opts)
+
+  @doc ~S"""
+  The failed-provision inbox: users and organizations whose last push to this target failed, with the error and the number of consecutive attempts.
+
+  `GET /v1/scim_provisioning_targets/{id}/failures`. Required scope: `scim_provisioning:read`.
+  """
+  def get_failures(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_targets/{id}/failures", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_failures/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_failures(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/scim_provisioning_targets/{id}/failures", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Retry failed users and groups now (up to 50), or one with resource_type and resource_id. Each goes through the same sync as sync_user and sync_group; the result says how each went.
+
+  `POST /v1/scim_provisioning_targets/{id}/retry_failed`. Required scope: `scim_provisioning:write`.
+  """
+  def post_retry_failed(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets/{id}/retry_failed", %{"id" => id}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/scim_provisioning_targets", 0, false, true},
@@ -89,6 +127,9 @@ defmodule Atlas.ScimProvisioningTargets do
     {:delete, :delete, "/v1/scim_provisioning_targets/{id}", 1, false, false},
     {:post_test, :post, "/v1/scim_provisioning_targets/{id}/test", 1, false, false},
     {:post_sync_user, :post, "/v1/scim_provisioning_targets/{id}/sync_user", 1, true, false},
-    {:post_sync_group, :post, "/v1/scim_provisioning_targets/{id}/sync_group", 1, true, false}
+    {:post_sync_group, :post, "/v1/scim_provisioning_targets/{id}/sync_group", 1, true, false},
+    {:get_logs, :get, "/v1/scim_provisioning_targets/{id}/logs", 1, false, true},
+    {:get_failures, :get, "/v1/scim_provisioning_targets/{id}/failures", 1, false, true},
+    {:post_retry_failed, :post, "/v1/scim_provisioning_targets/{id}/retry_failed", 1, true, false}
   ]
 end

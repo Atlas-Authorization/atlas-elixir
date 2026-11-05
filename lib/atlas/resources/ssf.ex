@@ -81,6 +81,69 @@ defmodule Atlas.Ssf do
     do: Atlas.Client.request(client, :post, "/v1/ssf/streams/{id}/status", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  SSF 1.0 add subject: start (or, on an ALL stream, resume) events for one subject on a stream. Subject formats: iss_sub (this issuer), email, phone_number, opaque, account, did, uri. 200 with an empty body.
+
+  `POST /v1/ssf/subjects/add`. Required scope: `ssf:write`.
+  """
+  def post_subjects_add(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/subjects/add", %{}, body, opts)
+
+  @doc ~S"""
+  SSF 1.0 remove subject: stop events for one subject on a stream (on an ALL stream), or drop an earlier add (on a NONE stream). 204.
+
+  `POST /v1/ssf/subjects/remove`. Required scope: `ssf:write`.
+  """
+  def post_subjects_remove(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/subjects/remove", %{}, body, opts)
+
+  @doc ~S"""
+  The subjects a receiver added to or removed from a stream, with the stream's `default_subjects` (ALL or NONE).
+
+  `GET /v1/ssf/streams/{id}/subjects`. Required scope: `ssf:read`.
+  """
+  def get_streams_subjects(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/ssf/streams/{id}/subjects", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_streams_subjects/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_streams_subjects(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/ssf/streams/{id}/subjects", %{"id" => id}, opts)
+
+  @doc ~S"""
+  SSF 1.0 verification endpoint: queue a verification event carrying `state` for the stream named by `stream_id`. 204.
+
+  `POST /v1/ssf/verify`. Required scope: `ssf:write`.
+  """
+  def post_verify(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/verify", %{}, body, opts)
+
+  @doc ~S"""
+  SSF 1.0 stream status endpoint: the status (enabled, paused, disabled) of the stream named by the `stream_id` query parameter.
+
+  `GET /v1/ssf/status`. Required scope: `ssf:read`.
+  """
+  def get_status(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/ssf/status", %{}, nil, opts)
+
+  @doc ~S"""
+  SSF 1.0 stream status endpoint: set the status of the stream named by `stream_id`.
+
+  `POST /v1/ssf/status`. Required scope: `ssf:write`.
+  """
+  def post_status(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/status", %{}, body, opts)
+
+  @doc ~S"""
+  Raise a Shared Signals event for one of your users: the CAEP and RISC events Atlas has no flow for (opt-in, opt-out-initiated, opt-out-cancelled, opt-out-effective, identifier-recycled, recovery-activated ...). It reaches every stream that asked for the event and whose subject rules allow the user. 202.
+
+  `POST /v1/ssf/events`. Required scope: `ssf:write`.
+  """
+  def post_events(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/events", %{}, body, opts)
+
+  @doc ~S"""
   The stream's recent events with delivery status, attempts and the last error (the dashboard activity view).
 
   `GET /v1/ssf/streams/{id}/events`. Required scope: `ssf:read`.
@@ -144,6 +207,13 @@ defmodule Atlas.Ssf do
     {:post_streams_verify, :post, "/v1/ssf/streams/{id}/verify", 1, true, false},
     {:get_streams_status, :get, "/v1/ssf/streams/{id}/status", 1, false, false},
     {:post_streams_status, :post, "/v1/ssf/streams/{id}/status", 1, true, false},
+    {:post_subjects_add, :post, "/v1/ssf/subjects/add", 0, true, false},
+    {:post_subjects_remove, :post, "/v1/ssf/subjects/remove", 0, true, false},
+    {:get_streams_subjects, :get, "/v1/ssf/streams/{id}/subjects", 1, false, true},
+    {:post_verify, :post, "/v1/ssf/verify", 0, true, false},
+    {:get_status, :get, "/v1/ssf/status", 0, false, false},
+    {:post_status, :post, "/v1/ssf/status", 0, true, false},
+    {:post_events, :post, "/v1/ssf/events", 0, true, false},
     {:get_streams_events, :get, "/v1/ssf/streams/{id}/events", 1, false, true},
     {:get_receivers, :get, "/v1/ssf/receivers", 0, false, true},
     {:post_receivers, :post, "/v1/ssf/receivers", 0, true, false},

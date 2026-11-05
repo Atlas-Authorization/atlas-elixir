@@ -80,6 +80,14 @@ defmodule Atlas.AbacPolicies do
     do: Atlas.Client.request(client, :post, "/v1/abac_policies/{id}/test", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  The current version of a stored policy as Cedar JSON.
+
+  `GET /v1/abac_policies/{id}/cedar_json`. Required scope: `abac:read`.
+  """
+  def get_cedar_json(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/abac_policies/{id}/cedar_json", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Compare two versions of a policy: a line diff of the source and, unless `semantic=false`, the requests whose decision changes. The semantic part enumerates a bounded set of requests built from the attributes, groups and actions the policies test (from the entity schema when one is set), and lists those that come out differently, with newly-allowed and newly-denied counts per action. `exhaustive` says whether every request in the space was compared or the space was sampled.
 
   `GET /v1/abac_policies/{id}/diff`. Required scope: `abac:read`.
@@ -96,6 +104,7 @@ defmodule Atlas.AbacPolicies do
     {:delete, :delete, "/v1/abac_policies/{id}", 1, false, false},
     {:get_versions, :get, "/v1/abac_policies/{id}/versions", 1, false, true},
     {:post_test, :post, "/v1/abac_policies/{id}/test", 1, true, false},
+    {:get_cedar_json, :get, "/v1/abac_policies/{id}/cedar_json", 1, false, false},
     {:get_diff, :get, "/v1/abac_policies/{id}/diff", 1, false, false}
   ]
 end

@@ -80,6 +80,29 @@ defmodule Atlas.DesktopMfa do
   def post_devices_revoke_offline_cache(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/desktop_mfa/devices/{id}/revoke_offline_cache", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  List the passkeys registered through a workstation.
+
+  `GET /v1/desktop_mfa/devices/{id}/passkeys`. Required scope: `desktop_mfa:read`.
+  """
+  def get_devices_passkeys(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/desktop_mfa/devices/{id}/passkeys", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_devices_passkeys/2`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_devices_passkeys(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/desktop_mfa/devices/{id}/passkeys", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Remove a passkey registered through a workstation. It stops answering the passkey factor at once.
+
+  `DELETE /v1/desktop_mfa/devices/{id}/passkeys/{passkeyId}`. Required scope: `desktop_mfa:write`.
+  """
+  def delete_devices_passkeys(client, id, passkey_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/desktop_mfa/devices/{id}/passkeys/{passkeyId}", %{"id" => id, "passkeyId" => passkey_id}, nil, opts)
+
   @doc false
   def __operations__, do: [
     {:get_policy, :get, "/v1/desktop_mfa/policy", 0, false, false},
@@ -89,6 +112,8 @@ defmodule Atlas.DesktopMfa do
     {:get_devices_by_id, :get, "/v1/desktop_mfa/devices/{id}", 1, false, false},
     {:delete_devices, :delete, "/v1/desktop_mfa/devices/{id}", 1, false, false},
     {:post_devices_revoke, :post, "/v1/desktop_mfa/devices/{id}/revoke", 1, false, false},
-    {:post_devices_revoke_offline_cache, :post, "/v1/desktop_mfa/devices/{id}/revoke_offline_cache", 1, false, false}
+    {:post_devices_revoke_offline_cache, :post, "/v1/desktop_mfa/devices/{id}/revoke_offline_cache", 1, false, false},
+    {:get_devices_passkeys, :get, "/v1/desktop_mfa/devices/{id}/passkeys", 1, false, true},
+    {:delete_devices_passkeys, :delete, "/v1/desktop_mfa/devices/{id}/passkeys/{passkeyId}", 2, false, false}
   ]
 end

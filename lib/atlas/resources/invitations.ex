@@ -25,7 +25,7 @@ defmodule Atlas.Invitations do
     do: Atlas.Client.stream(client, "/v1/invitations", %{}, opts)
 
   @doc ~S"""
-  Create an instance-level invitation. On matching-email sign-up its public_metadata is copied onto the new user. Expires in 7 days unless the body sets `expires_at` (epoch ms or ISO 8601, at most 365 days ahead) or `expires_in_days` (1-365); send one or the other. Emits invitation.created.
+  Create an instance-level invitation (no email is sent). On matching-email sign-up, once the address is proven, it is accepted, its public_metadata is copied onto the new user and invitation.accepted fires. While pending and unexpired it also admits that exact address when the sign-up mode is restricted (invite-only), so your product can share its own allowlist with Atlas. Expires in 7 days unless you send expires_at (epoch ms or ISO 8601, at most 365 days ahead) or expires_in_days (1-365), not both. Fires invitation.created.
 
   `POST /v1/invitations`. Required scope: `invitations:write`.
   """
@@ -33,7 +33,7 @@ defmodule Atlas.Invitations do
     do: Atlas.Client.request(client, :post, "/v1/invitations", %{}, body, opts)
 
   @doc ~S"""
-  Bulk-create instance invitations (≤100). Per-entry validation/dedup; returns created + errors.
+  Bulk-create instance invitations (≤100). Each entry takes email_address, public_metadata, expires_at or expires_in_days as on POST /v1/invitations. Per-entry validation/dedup; returns created + errors. Fires invitation.created per created entry.
 
   `POST /v1/invitations/bulk`. Required scope: `invitations:write`.
   """
@@ -41,7 +41,7 @@ defmodule Atlas.Invitations do
     do: Atlas.Client.request(client, :post, "/v1/invitations/bulk", %{}, body, opts)
 
   @doc ~S"""
-  Revoke a pending instance invitation so it can no longer be accepted.
+  Revoke a pending instance invitation so it can no longer be accepted and no longer admits its address in restricted sign-up mode. Fires invitation.revoked.
 
   `POST /v1/invitations/{id}/revoke`. Required scope: `invitations:write`.
   """
