@@ -105,6 +105,7 @@ defmodule AtlasAuth.WebhookEvents do
   def privacy_request_completed, do: "privacy_request.completed"
   def user_deletion_scheduled, do: "user.deletion_scheduled"
   def user_deletion_canceled, do: "user.deletion_canceled"
+  def user_deletion_paused, do: "user.deletion_paused"
 
   # Enterprise SSO and SCIM groups. `sso_onboarding_ticket.completed` data carries
   # `profile_id`, `organization_id`, `sso_connection_id` and `return_url`;
