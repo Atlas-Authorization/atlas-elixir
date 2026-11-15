@@ -5,7 +5,8 @@ defmodule Atlas.AbacPolicyLinks do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AbacPolicyLinks do
   List template links: a template with its slots filled by entities. Each link’s `source` is what the policy engine evaluates.
 
   `GET /v1/abac_policy_links`. Required scope: `abac:read`.
+
+  Query params (`params:`): `template_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.template_id`, `data.template_name`, `data.template_version`, `data.principal`, `data.principal.type`, `data.principal.id`, `data.resource`, `data.resource.type`, `data.resource.id`, `data.enabled`, `data.source`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_policy_links", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.AbacPolicyLinks do
   Link a template to entities. Every slot the template uses needs its entity (`principal` for `?principal`, `resource` for `?resource`); one it does not use is refused. The link is evaluated together with the other enabled policies, always from the template’s current source, and is type-checked against the entity schema when one is set.
 
   `POST /v1/abac_policy_links`. Required scope: `abac:write`.
+
+  Body fields: `template_id` (string, required), `name` (string, required), `principal` (object|null), `resource` (object|null), `enabled` (boolean).
+  Nested body fields: `principal.type`, `principal.id`, `resource.type`, `resource.id`.
+  Response fields: `object`, `id`, `name`, `template_id`, `template_name`, `template_version`, `principal`, `principal.type`, `principal.id`, `resource`, `resource.type`, `resource.id`, `enabled`, `source`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac_policy_links", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.AbacPolicyLinks do
   Read one template link.
 
   `GET /v1/abac_policy_links/{id}`. Required scope: `abac:read`.
+
+  Response fields: `object`, `id`, `name`, `template_id`, `template_name`, `template_version`, `principal`, `principal.type`, `principal.id`, `resource`, `resource.type`, `resource.id`, `enabled`, `source`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_policy_links/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.AbacPolicyLinks do
   Rename, enable or disable a link, or point its slots at other entities.
 
   `PATCH /v1/abac_policy_links/{id}`. Required scope: `abac:write`.
+
+  Body fields: `template_id` (string), `name` (string), `principal` (object|null), `resource` (object|null), `enabled` (boolean).
+  Nested body fields: `principal.type`, `principal.id`, `resource.type`, `resource.id`.
+  Response fields: `object`, `id`, `name`, `template_id`, `template_name`, `template_version`, `principal`, `principal.type`, `principal.id`, `resource`, `resource.type`, `resource.id`, `enabled`, `source`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/abac_policy_links/{id}", %{"id" => id}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.NotificationCategories do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.NotificationCategories do
   List this instance's tenant-defined notification categories.
 
   `GET /v1/notification_categories`. Required scope: `notifications:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.label`, `data.optional`, `data.created_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/notification_categories", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.NotificationCategories do
   Create a tenant-defined notification category: a key (unique per instance, cannot collide with a built-in) and the user-facing label shown on the end-user preference toggle. A duplicate or built-in key is a 409.
 
   `POST /v1/notification_categories`. Required scope: `notifications:write`.
+
+  Body fields: `key` (string, required), `label` (string, required).
+  Response fields: `object`, `id`, `key`, `label`, `optional`, `created_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/notification_categories", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.NotificationCategories do
   Update a tenant-defined notification category's user-facing label.
 
   `PUT /v1/notification_categories/{key}`. Required scope: `notifications:write`.
+
+  Body fields: `label` (string, required).
+  Response fields: `object`, `id`, `key`, `label`, `optional`, `created_at`.
   """
   def put(client, key, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/notification_categories/{key}", %{"key" => key}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.NotificationCategories do
   Delete a tenant-defined notification category. Refused with a 409 while a notification template still uses it.
 
   `DELETE /v1/notification_categories/{key}`. Required scope: `notifications:write`.
+
+  Response fields: `object`, `key`, `deleted`.
   """
   def delete(client, key, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/notification_categories/{key}", %{"key" => key}, nil, opts)

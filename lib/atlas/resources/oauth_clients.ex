@@ -5,7 +5,8 @@ defmodule Atlas.OauthClients do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.OauthClients do
   List the resource-server grants (client_credentials authorizations) of a client.
 
   `GET /v1/oauth_clients/{clientId}/grants`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.resource_server_id`, `data.scopes`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_grants(client, client_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{clientId}/grants", %{"clientId" => client_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_grants/2`, following the cursor page by page.
+  Lazy stream over every item of `get_grants`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_grants(client, client_id, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.OauthClients do
   Authorize a confidential client for a resource server and its scopes.
 
   `POST /v1/oauth_clients/{clientId}/grants`. Required scope: `oauth_clients:write`.
+
+  Body fields: `resource_server_id` (string), `scopes` (array), `scope_presets` (array).
+  Response fields: `object`, `id`, `client_id`, `resource_server_id`, `scopes`, `created_at`, `updated_at`.
   """
   def post_grants(client, client_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{clientId}/grants", %{"clientId" => client_id}, body, opts)
@@ -36,20 +43,25 @@ defmodule Atlas.OauthClients do
   Revoke a client's grant for a resource server.
 
   `DELETE /v1/oauth_clients/{clientId}/grants/{grantId}`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_grants(client, client_id, grant_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{clientId}/grants/{grantId}", %{"clientId" => client_id, "grantId" => grant_id}, nil, opts)
 
   @doc ~S"""
-  List "Sign in with Atlas" OAuth clients. The client secret is never returned. Filter with ?metadata[key]=value; each item carries `metadata` and `external_ref`.
+  List "Sign in with Atlas" OAuth clients. The client secret is never returned. Filter with ?metadata[key]=value or ?owner=<developer id>; each item carries `metadata` and `external_ref`.
 
   `GET /v1/oauth_clients`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `owner`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.app_settings`, `data.app_settings.allowed_sign_in_methods`, `data.app_settings.branding`, `data.app_settings.branding.heading`, `data.app_settings.branding.subheading`, `data.app_settings.branding.logo_url`, `data.app_settings.branding.primary_color`, `data.app_settings.claims_allowlist`, `data.app_settings.writable_traits`, `data.app_settings.risk`, `data.app_settings.risk.enabled`, `data.app_settings.risk.mode`, `data.app_settings.risk.step_up_threshold`, `data.app_settings.risk.on_high_risk_no_factor`, `data.app_settings.risk.level_actions`, `data.app_settings.risk.mid_session`, `data.id`, `data.client_id`, `data.name`, `data.logo_url`, `data.redirect_uris`, `data.allowed_scopes`, `data.grant_types`, `data.token_endpoint_auth_method`, `data.added_origins`, `data.secret_prefix`, `data.previous_secret_expires_at`, `data.is_public`, `data.first_party`, `data.disabled`, `data.require_pkce`, `data.profile`, `data.login_url`, `data.consent_url`, `data.discovery_source`, `data.post_logout_redirect_uris`, `data.claims_redirect_uris`, `data.backchannel_logout_uri`, `data.backchannel_logout_session_required`, `data.frontchannel_logout_uri`, `data.frontchannel_logout_session_required`, `data.skip_logout_confirmation`, `data.refresh_touches_session`, `data.require_verified_email`, `data.owner`, `data.status`, `data.testers`, `data.approved_scopes`, `data.rate_limit_per_minute`, `data.subject_type`, `data.sector_identifier_uri`, `data.client_secret_expires_at`, `data.access_token_format`, `data.token_lifetimes`, `data.token_lifetimes.access_token_ttl_seconds`, `data.token_lifetimes.id_token_ttl_seconds`, `data.token_lifetimes.refresh_token_absolute_ttl_seconds`, `data.token_lifetimes.refresh_token_idle_ttl_seconds`, `data.token_lifetimes.authorization_code_ttl_seconds`, `data.token_lifetimes.device_code_ttl_seconds`, `data.token_lifetimes.session_absolute_ttl_seconds`, `data.token_lifetimes.session_idle_ttl_seconds`, `data.client_secret`, `data.client_secret_reveal`, `data.client_secret_reveal.path`, `data.client_secret_reveal.expires_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -59,6 +71,10 @@ defmodule Atlas.OauthClients do
   Register an OAuth client (confidential or public PKCE). A confidential client's secret is in the response; a generated one can be fetched once more within 10 minutes with POST /v1/oauth_clients/{id}/secret/reveal (`client_secret_reveal` gives the path and deadline). Send `client_secret` to choose the secret yourself (32-256 random printable characters), so a provisioning script can re-run safely. `require_verified_email: true` makes /oauth2/authorize refuse users whose primary email is not verified. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value). `add_redirect_origins: true` also adds the redirect URIs' origins to allowed_origins (append only; listed in added_origins); a client that a connected integration signs users in with (its oauth_client_id, or tagged metadata product=<integration id>) gets them automatically.
 
   `POST /v1/oauth_clients`. Required scope: `oauth_clients:write`.
+
+  Body fields: `name` (string, required), `redirect_uris` (array, required), `allowed_scopes` (array), `grant_types` (array), `token_endpoint_auth_method` (enum), `logo_url` (string), `first_party` (boolean), `post_logout_redirect_uris` (array), `claims_redirect_uris` (array), `add_redirect_origins` (boolean), `backchannel_logout_uri` (string|null), `backchannel_logout_session_required` (boolean), `frontchannel_logout_uri` (string|null), `frontchannel_logout_session_required` (boolean), `skip_logout_confirmation` (boolean), `refresh_touches_session` (boolean), `require_verified_email` (boolean), `owner` (string|null), `status` (enum), `testers` (array), `approved_scopes` (array), `rate_limit_per_minute` (integer|null), `login_url` (string|null), `consent_url` (string|null), `secret_expires_in_seconds` (integer), `subject_type` (enum), `sector_identifier_uri` (string|null), `access_token_format` (enum), `token_lifetimes` (object|null), `client_id` (string), `client_secret_hash` (string), `client_secret` (string).
+  Nested body fields: `token_lifetimes.access_token_ttl_seconds`, `token_lifetimes.id_token_ttl_seconds`, `token_lifetimes.refresh_token_absolute_ttl_seconds`, `token_lifetimes.refresh_token_idle_ttl_seconds`, `token_lifetimes.authorization_code_ttl_seconds`, `token_lifetimes.device_code_ttl_seconds`, `token_lifetimes.session_absolute_ttl_seconds`, `token_lifetimes.session_idle_ttl_seconds`.
+  Response fields: `object`, `app_settings`, `app_settings.allowed_sign_in_methods`, `app_settings.branding`, `app_settings.branding.heading`, `app_settings.branding.subheading`, `app_settings.branding.logo_url`, `app_settings.branding.primary_color`, `app_settings.claims_allowlist`, `app_settings.writable_traits`, `app_settings.risk`, `app_settings.risk.enabled`, `app_settings.risk.mode`, `app_settings.risk.step_up_threshold`, `app_settings.risk.on_high_risk_no_factor`, `app_settings.risk.level_actions`, `app_settings.risk.level_actions.medium`, `app_settings.risk.level_actions.high`, `app_settings.risk.mid_session`, `app_settings.risk.mid_session.enabled`, `app_settings.risk.mid_session.action`, `id`, `client_id`, `name`, `logo_url`, `redirect_uris`, `allowed_scopes`, `grant_types`, `token_endpoint_auth_method`, `added_origins`, `secret_prefix`, `previous_secret_expires_at`, `is_public`, `first_party`, `disabled`, `require_pkce`, `profile`, `login_url`, `consent_url`, `discovery_source`, `post_logout_redirect_uris`, `claims_redirect_uris`, `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, `frontchannel_logout_session_required`, `skip_logout_confirmation`, `refresh_touches_session`, `require_verified_email`, `owner`, `status`, `testers`, `approved_scopes`, `rate_limit_per_minute`, `subject_type`, `sector_identifier_uri`, `client_secret_expires_at`, `access_token_format`, `token_lifetimes`, `token_lifetimes.access_token_ttl_seconds`, `token_lifetimes.id_token_ttl_seconds`, `token_lifetimes.refresh_token_absolute_ttl_seconds`, `token_lifetimes.refresh_token_idle_ttl_seconds`, `token_lifetimes.authorization_code_ttl_seconds`, `token_lifetimes.device_code_ttl_seconds`, `token_lifetimes.session_absolute_ttl_seconds`, `token_lifetimes.session_idle_ttl_seconds`, `client_secret`, `client_secret_reveal`, `client_secret_reveal.path`, `client_secret_reveal.expires_at`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients", %{}, body, opts)
@@ -67,6 +83,8 @@ defmodule Atlas.OauthClients do
   Fetch one OAuth client. Another instance id is 404, never 403. Never the secret.
 
   `GET /v1/oauth_clients/{id}`. Required scope: `oauth_clients:read`.
+
+  Response fields: `object`, `app_settings`, `app_settings.allowed_sign_in_methods`, `app_settings.branding`, `app_settings.branding.heading`, `app_settings.branding.subheading`, `app_settings.branding.logo_url`, `app_settings.branding.primary_color`, `app_settings.claims_allowlist`, `app_settings.writable_traits`, `app_settings.risk`, `app_settings.risk.enabled`, `app_settings.risk.mode`, `app_settings.risk.step_up_threshold`, `app_settings.risk.on_high_risk_no_factor`, `app_settings.risk.level_actions`, `app_settings.risk.level_actions.medium`, `app_settings.risk.level_actions.high`, `app_settings.risk.mid_session`, `app_settings.risk.mid_session.enabled`, `app_settings.risk.mid_session.action`, `id`, `client_id`, `name`, `logo_url`, `redirect_uris`, `allowed_scopes`, `grant_types`, `token_endpoint_auth_method`, `added_origins`, `secret_prefix`, `previous_secret_expires_at`, `is_public`, `first_party`, `disabled`, `require_pkce`, `profile`, `login_url`, `consent_url`, `discovery_source`, `post_logout_redirect_uris`, `claims_redirect_uris`, `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, `frontchannel_logout_session_required`, `skip_logout_confirmation`, `refresh_touches_session`, `require_verified_email`, `owner`, `status`, `testers`, `approved_scopes`, `rate_limit_per_minute`, `subject_type`, `sector_identifier_uri`, `client_secret_expires_at`, `access_token_format`, `token_lifetimes`, `token_lifetimes.access_token_ttl_seconds`, `token_lifetimes.id_token_ttl_seconds`, `token_lifetimes.refresh_token_absolute_ttl_seconds`, `token_lifetimes.refresh_token_idle_ttl_seconds`, `token_lifetimes.authorization_code_ttl_seconds`, `token_lifetimes.device_code_ttl_seconds`, `token_lifetimes.session_absolute_ttl_seconds`, `token_lifetimes.session_idle_ttl_seconds`, `client_secret`, `client_secret_reveal`, `client_secret_reveal.path`, `client_secret_reveal.expires_at`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}", %{"id" => id}, nil, opts)
@@ -75,6 +93,10 @@ defmodule Atlas.OauthClients do
   Update an OAuth client's registration (name, redirect_uris, scopes). The secret is immutable here. Accepts `metadata` (replaces the provisioning tags) and `add_redirect_origins` (adds the redirect URIs' origins to allowed_origins, append only; listed in added_origins, automatic for an integration's sign-in client).
 
   `PATCH /v1/oauth_clients/{id}`. Required scope: `oauth_clients:write`.
+
+  Body fields: `name` (string), `redirect_uris` (array), `allowed_scopes` (array), `grant_types` (array), `token_endpoint_auth_method` (enum), `logo_url` (string), `first_party` (boolean), `post_logout_redirect_uris` (array), `claims_redirect_uris` (array), `add_redirect_origins` (boolean), `backchannel_logout_uri` (string|null), `backchannel_logout_session_required` (boolean), `frontchannel_logout_uri` (string|null), `frontchannel_logout_session_required` (boolean), `skip_logout_confirmation` (boolean), `refresh_touches_session` (boolean), `require_verified_email` (boolean), `owner` (string|null), `status` (enum), `testers` (array), `approved_scopes` (array), `rate_limit_per_minute` (integer|null), `login_url` (string|null), `consent_url` (string|null), `secret_expires_in_seconds` (integer), `subject_type` (enum), `sector_identifier_uri` (string|null), `access_token_format` (enum), `token_lifetimes` (object|null), `disabled` (boolean), `require_pkce` (boolean).
+  Nested body fields: `token_lifetimes.access_token_ttl_seconds`, `token_lifetimes.id_token_ttl_seconds`, `token_lifetimes.refresh_token_absolute_ttl_seconds`, `token_lifetimes.refresh_token_idle_ttl_seconds`, `token_lifetimes.authorization_code_ttl_seconds`, `token_lifetimes.device_code_ttl_seconds`, `token_lifetimes.session_absolute_ttl_seconds`, `token_lifetimes.session_idle_ttl_seconds`.
+  Response fields: `object`, `app_settings`, `app_settings.allowed_sign_in_methods`, `app_settings.branding`, `app_settings.branding.heading`, `app_settings.branding.subheading`, `app_settings.branding.logo_url`, `app_settings.branding.primary_color`, `app_settings.claims_allowlist`, `app_settings.writable_traits`, `app_settings.risk`, `app_settings.risk.enabled`, `app_settings.risk.mode`, `app_settings.risk.step_up_threshold`, `app_settings.risk.on_high_risk_no_factor`, `app_settings.risk.level_actions`, `app_settings.risk.level_actions.medium`, `app_settings.risk.level_actions.high`, `app_settings.risk.mid_session`, `app_settings.risk.mid_session.enabled`, `app_settings.risk.mid_session.action`, `id`, `client_id`, `name`, `logo_url`, `redirect_uris`, `allowed_scopes`, `grant_types`, `token_endpoint_auth_method`, `added_origins`, `secret_prefix`, `previous_secret_expires_at`, `is_public`, `first_party`, `disabled`, `require_pkce`, `profile`, `login_url`, `consent_url`, `discovery_source`, `post_logout_redirect_uris`, `claims_redirect_uris`, `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, `frontchannel_logout_session_required`, `skip_logout_confirmation`, `refresh_touches_session`, `require_verified_email`, `owner`, `status`, `testers`, `approved_scopes`, `rate_limit_per_minute`, `subject_type`, `sector_identifier_uri`, `client_secret_expires_at`, `access_token_format`, `token_lifetimes`, `token_lifetimes.access_token_ttl_seconds`, `token_lifetimes.id_token_ttl_seconds`, `token_lifetimes.refresh_token_absolute_ttl_seconds`, `token_lifetimes.refresh_token_idle_ttl_seconds`, `token_lifetimes.authorization_code_ttl_seconds`, `token_lifetimes.device_code_ttl_seconds`, `token_lifetimes.session_absolute_ttl_seconds`, `token_lifetimes.session_idle_ttl_seconds`, `client_secret`, `client_secret_reveal`, `client_secret_reveal.path`, `client_secret_reveal.expires_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/oauth_clients/{id}", %{"id" => id}, body, opts)
@@ -83,6 +105,8 @@ defmodule Atlas.OauthClients do
   Delete an OAuth client; its codes and grants cascade with it.
 
   `DELETE /v1/oauth_clients/{id}`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}", %{"id" => id}, nil, opts)
@@ -91,6 +115,9 @@ defmodule Atlas.OauthClients do
   Rotate a confidential client's secret; the new one is in the response and can be fetched once more within 10 minutes with POST /v1/oauth_clients/{id}/secret/reveal. The previous secret keeps working for `overlap_seconds` (default 86400 = 24 hours, at most 604800 = 7 days) so you can deploy the new one without downtime; pass `overlap_seconds: 0` to revoke it now (for example after a leak). `previous_secret_expires_at` says when the old secret stops working (epoch ms), or null when it already has. 409 for a public client.
 
   `POST /v1/oauth_clients/{id}/rotate_secret`. Required scope: `oauth_clients:write`.
+
+  Body fields: `overlap_seconds` (integer), `secret_expires_in_seconds` (integer).
+  Response fields: `object`, `app_settings`, `app_settings.allowed_sign_in_methods`, `app_settings.branding`, `app_settings.branding.heading`, `app_settings.branding.subheading`, `app_settings.branding.logo_url`, `app_settings.branding.primary_color`, `app_settings.claims_allowlist`, `app_settings.writable_traits`, `app_settings.risk`, `app_settings.risk.enabled`, `app_settings.risk.mode`, `app_settings.risk.step_up_threshold`, `app_settings.risk.on_high_risk_no_factor`, `app_settings.risk.level_actions`, `app_settings.risk.level_actions.medium`, `app_settings.risk.level_actions.high`, `app_settings.risk.mid_session`, `app_settings.risk.mid_session.enabled`, `app_settings.risk.mid_session.action`, `id`, `client_id`, `name`, `logo_url`, `redirect_uris`, `allowed_scopes`, `grant_types`, `token_endpoint_auth_method`, `added_origins`, `secret_prefix`, `previous_secret_expires_at`, `is_public`, `first_party`, `disabled`, `require_pkce`, `profile`, `login_url`, `consent_url`, `discovery_source`, `post_logout_redirect_uris`, `claims_redirect_uris`, `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, `frontchannel_logout_session_required`, `skip_logout_confirmation`, `refresh_touches_session`, `require_verified_email`, `owner`, `status`, `testers`, `approved_scopes`, `rate_limit_per_minute`, `subject_type`, `sector_identifier_uri`, `client_secret_expires_at`, `access_token_format`, `token_lifetimes`, `token_lifetimes.access_token_ttl_seconds`, `token_lifetimes.id_token_ttl_seconds`, `token_lifetimes.refresh_token_absolute_ttl_seconds`, `token_lifetimes.refresh_token_idle_ttl_seconds`, `token_lifetimes.authorization_code_ttl_seconds`, `token_lifetimes.device_code_ttl_seconds`, `token_lifetimes.session_absolute_ttl_seconds`, `token_lifetimes.session_idle_ttl_seconds`, `client_secret`, `client_secret_reveal`, `client_secret_reveal.path`, `client_secret_reveal.expires_at`, `created_at`, `updated_at`, `overlap_seconds`, `note`.
   """
   def post_rotate_secret(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/rotate_secret", %{"id" => id}, body, opts)
@@ -99,14 +126,20 @@ defmodule Atlas.OauthClients do
   Show a confidential client's secret once more: for a script that crashed between the create (or rotate) response and saving the secret. Works once, within 10 minutes of the POST /v1/oauth_clients or POST /v1/oauth_clients/{id}/rotate_secret that generated it, and only while that secret is still the client's current one. The secret is kept encrypted for that window only and is cleared by this call, so a second call, a call after the window, a secret you chose yourself, or one rotated away since is 410 and the answer is to rotate. Audited (oauth_client.secret_revealed / oauth_client.secret_reveal_refused). An operator token needs a recent MFA. With `?dry_run=true` nothing is consumed: the response says whether the reveal is still available and until when. Unknown client is 404.
 
   `POST /v1/oauth_clients/{id}/secret/reveal`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `client_id`, `client_secret`, `secret_prefix`, `client_secret_expires_at`, `available`, `expires_at`, `note`.
   """
   def post_secret_reveal(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/secret/reveal", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Bulk-import OAuth clients for a migration, optionally with a pre-hashed client secret. Idempotent per client_id.
+  Bulk-import OAuth clients for a migration, optionally with a pre-hashed client secret. Idempotent per client_id. With `?dry_run=true` every row is validated exactly as a real import would and the report (created, updated, failed, data, errors) comes back at the top level with `dry_run: true`, but nothing is written. `would_return` carries the same report for older callers and is deprecated: read the top-level fields.
 
   `POST /v1/oauth_clients/import`. Required scope: `oauth_clients:write`.
+
+  Body fields: `clients` (array, required).
+  Nested body fields: `clients.client_id`, `clients.client_secret`, `clients.client_secret_hash`, `clients.name`, `clients.redirect_uris`, `clients.scopes`, `clients.grant_types`, `clients.token_endpoint_auth_method`, `clients.logo_url`, `clients.first_party`, `clients.skip_logout_confirmation`, `clients.refresh_touches_session`.
+  Response fields: `object`, `data`, `data.object`, `data.app_settings`, `data.app_settings.allowed_sign_in_methods`, `data.app_settings.branding`, `data.app_settings.branding.heading`, `data.app_settings.branding.subheading`, `data.app_settings.branding.logo_url`, `data.app_settings.branding.primary_color`, `data.app_settings.claims_allowlist`, `data.app_settings.writable_traits`, `data.app_settings.risk`, `data.app_settings.risk.enabled`, `data.app_settings.risk.mode`, `data.app_settings.risk.step_up_threshold`, `data.app_settings.risk.on_high_risk_no_factor`, `data.app_settings.risk.level_actions`, `data.app_settings.risk.mid_session`, `data.id`, `data.client_id`, `data.name`, `data.logo_url`, `data.redirect_uris`, `data.allowed_scopes`, `data.grant_types`, `data.token_endpoint_auth_method`, `data.added_origins`, `data.secret_prefix`, `data.previous_secret_expires_at`, `data.is_public`, `data.first_party`, `data.disabled`, `data.require_pkce`, `data.profile`, `data.login_url`, `data.consent_url`, `data.discovery_source`, `data.post_logout_redirect_uris`, `data.claims_redirect_uris`, `data.backchannel_logout_uri`, `data.backchannel_logout_session_required`, `data.frontchannel_logout_uri`, `data.frontchannel_logout_session_required`, `data.skip_logout_confirmation`, `data.refresh_touches_session`, `data.require_verified_email`, `data.owner`, `data.status`, `data.testers`, `data.approved_scopes`, `data.rate_limit_per_minute`, `data.subject_type`, `data.sector_identifier_uri`, `data.client_secret_expires_at`, `data.access_token_format`, `data.token_lifetimes`, `data.token_lifetimes.access_token_ttl_seconds`, `data.token_lifetimes.id_token_ttl_seconds`, `data.token_lifetimes.refresh_token_absolute_ttl_seconds`, `data.token_lifetimes.refresh_token_idle_ttl_seconds`, `data.token_lifetimes.authorization_code_ttl_seconds`, `data.token_lifetimes.device_code_ttl_seconds`, `data.token_lifetimes.session_absolute_ttl_seconds`, `data.token_lifetimes.session_idle_ttl_seconds`, `data.client_secret`, `data.client_secret_reveal`, `data.client_secret_reveal.path`, `data.client_secret_reveal.expires_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def post_import(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/import", %{}, body, opts)
@@ -115,12 +148,15 @@ defmodule Atlas.OauthClients do
   List the back-channel logout deliveries to a client's backchannel_logout_uri, newest first: status, http_status, latency_ms, attempt_number, a named error and timestamps. Atlas never follows redirects: a 3xx answer is recorded as error `backchannel_redirect_not_followed` with its `location`. 5xx, 408, 429 and no answer are retried with backoff; other 4xx answers are final. Test sends are included with test: true. Cursor-paginated (starting_after).
 
   `GET /v1/oauth_clients/{id}/backchannel_deliveries`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.trace_id`, `data.id`, `data.oauth_client_id`, `data.sid`, `data.test`, `data.status`, `data.attempt_number`, `data.max_attempts`, `data.http_status`, `data.latency_ms`, `data.error`, `data.location`, `data.response_snippet`, `data.next_retry_at`, `data.attempted_at`, `data.delivered_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_backchannel_deliveries(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/backchannel_deliveries", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_backchannel_deliveries/2`, following the cursor page by page.
+  Lazy stream over every item of `get_backchannel_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_backchannel_deliveries(client, id, opts \\ []),
@@ -130,6 +166,8 @@ defmodule Atlas.OauthClients do
   Send a test back-channel logout now: a correctly signed logout_token for a synthetic session (sid `sid_test_…`) with the extra claim `atlas_test: true`. Returns the receiver's status, latency_ms, location (for a 3xx, which is not followed), error and a short body_excerpt, and records the attempt in the delivery log (test: true, never retried). 409 when the client has no backchannel_logout_uri.
 
   `POST /v1/oauth_clients/{id}/backchannel_logout/test`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `delivery_id`, `ok`, `sid`, `status`, `latency_ms`, `error`, `location`, `blocked_reason`, `body_excerpt`.
   """
   def post_backchannel_logout_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/backchannel_logout/test", %{"id" => id}, nil, opts)
@@ -138,6 +176,9 @@ defmodule Atlas.OauthClients do
   Sign a user out of this app and of Atlas in one server-side call. The path takes the client id (`oac_...`) or its public `client_id`. Body `sid` = the `sid` claim of the id_token Atlas issued to this client. Revokes every refresh grant this client holds under the sid (offline_access included) and forgets its ID-token-only sign-in; revokes the Atlas session itself exactly like POST /v1/sessions/{id}/revoke (session.revoked webhook, back-channel logout to every other app signed in through it); and sends this client a back-channel logout so its other servers hear it. Afterwards the Atlas cookie in the browser points at a dead session, so no redirect to /oauth2/logout is needed (it remains available when you want a post_logout_redirect_uri). Needs BOTH `oauth_clients:write` and `sessions:write` on the key. 404 when the client or the session is not in this instance; 403 when that session never signed in to this client (use POST /v1/sessions/{id}/revoke for any session). A session that had already ended answers `session: "already_ended"` and still has the grants of this client under it revoked. Supports `?dry_run=true`.
 
   `POST /v1/oauth_clients/{id}/logout`. Required scope: `oauth_clients:write`.
+
+  Body fields: `sid` (string, required).
+  Response fields: `object`, `client_id`, `sid`, `session`, `grants_revoked`, `backchannel_logouts`.
   """
   def post_logout(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/logout", %{"id" => id}, body, opts)
@@ -146,6 +187,8 @@ defmodule Atlas.OauthClients do
   The per-application settings of an OAuth client: allowed sign-in methods, hosted-page branding, the user-claim allow-list for ID tokens and userinfo, and the traits a session from this app may write. Null = no restriction.
 
   `GET /v1/oauth_clients/{id}/app_settings`. Required scope: `oauth_clients:read`.
+
+  Response fields: `object`, `client_id`, `allowed_sign_in_methods`, `branding`, `branding.heading`, `branding.subheading`, `branding.logo_url`, `branding.primary_color`, `claims_allowlist`, `writable_traits`, `risk`, `risk.enabled`, `risk.mode`, `risk.step_up_threshold`, `risk.on_high_risk_no_factor`, `risk.level_actions`, `risk.level_actions.medium`, `risk.level_actions.high`, `risk.mid_session`, `risk.mid_session.enabled`, `risk.mid_session.action`.
   """
   def get_app_settings(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/app_settings", %{"id" => id}, nil, opts)
@@ -154,6 +197,10 @@ defmodule Atlas.OauthClients do
   Change the per-application settings. Each field sent replaces the stored one and null clears it; fields left out keep their value. Unknown fields and malformed values are refused.
 
   `PATCH /v1/oauth_clients/{id}/app_settings`. Required scope: `oauth_clients:write`.
+
+  Body fields: `allowed_sign_in_methods` (array|null), `branding` (object|null), `claims_allowlist` (array|null), `writable_traits` (array|null), `risk` (object|null).
+  Nested body fields: `branding.heading`, `branding.subheading`, `branding.logo_url`, `branding.primary_color`, `risk.enabled`, `risk.mode`, `risk.step_up_threshold`, `risk.on_high_risk_no_factor`, `risk.level_actions`, `risk.level_actions.medium`, `risk.level_actions.high`, `risk.mid_session`, `risk.mid_session.enabled`, `risk.mid_session.action`.
+  Response fields: `object`, `client_id`, `allowed_sign_in_methods`, `branding`, `branding.heading`, `branding.subheading`, `branding.logo_url`, `branding.primary_color`, `claims_allowlist`, `writable_traits`, `risk`, `risk.enabled`, `risk.mode`, `risk.step_up_threshold`, `risk.on_high_risk_no_factor`, `risk.level_actions`, `risk.level_actions.medium`, `risk.level_actions.high`, `risk.mid_session`, `risk.mid_session.enabled`, `risk.mid_session.action`.
   """
   def update_app_settings(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/oauth_clients/{id}/app_settings", %{"id" => id}, body, opts)
@@ -162,12 +209,15 @@ defmodule Atlas.OauthClients do
   List the external issuers this OAuth client trusts to assert users through the RFC 7523 jwt-bearer grant.
 
   `GET /v1/oauth_clients/{id}/trusted_issuers`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.issuer`, `data.jwks`, `data.jwks_uri`, `data.subject_mapping`, `data.workload_kind`, `data.purpose`, `data.subject_pattern`, `data.required_claims`, `data.audiences`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_trusted_issuers(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/trusted_issuers", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_trusted_issuers/2`, following the cursor page by page.
+  Lazy stream over every item of `get_trusted_issuers`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_trusted_issuers(client, id, opts \\ []),
@@ -177,6 +227,9 @@ defmodule Atlas.OauthClients do
   Trust an external issuer for this client. With purpose user_assertion (default) its signed JWTs (verified against the inline jwks or the https jwks_uri) can then be presented to POST /oauth2/token with grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer. subject_mapping says how the JWT sub names an Atlas user. With purpose client_auth or both (PRO-06 workload identity) a client registered with token_endpoint_auth_method workload_jwt authenticates by presenting a token from this issuer as its client_assertion; subject_pattern is then required and must name the workload. workload_kind github_actions, gcp and azure fill in the issuer and JWKS URL. Audited as oauth_trusted_issuer.created.
 
   `POST /v1/oauth_clients/{id}/trusted_issuers`. Required scope: `oauth_clients:write`.
+
+  Body fields: `issuer` (string, required), `jwks` (object), `jwks_uri` (string), `subject_mapping` (enum), `workload_kind` (enum), `tenant_id` (string), `purpose` (enum), `subject_pattern` (string), `required_claims` (object), `audiences` (array).
+  Response fields: `object`, `id`, `client_id`, `issuer`, `jwks`, `jwks_uri`, `subject_mapping`, `workload_kind`, `purpose`, `subject_pattern`, `required_claims`, `audiences`, `created_at`.
   """
   def post_trusted_issuers(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/trusted_issuers", %{"id" => id}, body, opts)
@@ -185,6 +238,8 @@ defmodule Atlas.OauthClients do
   Stop trusting an issuer: its assertions are refused at once. Audited as oauth_trusted_issuer.deleted.
 
   `DELETE /v1/oauth_clients/{id}/trusted_issuers/{issuerId}`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_trusted_issuers(client, id, issuer_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}/trusted_issuers/{issuerId}", %{"id" => id, "issuerId" => issuer_id}, nil, opts)
@@ -193,12 +248,15 @@ defmodule Atlas.OauthClients do
   List the custom subject_token_type URIs an OAuth client may present to the token-exchange grant.
 
   `GET /v1/oauth_clients/{id}/token_exchange_profiles`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.name`, `data.subject_token_type`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def get_token_exchange_profiles(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/token_exchange_profiles", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_token_exchange_profiles/2`, following the cursor page by page.
+  Lazy stream over every item of `get_token_exchange_profiles`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_token_exchange_profiles(client, id, opts \\ []),
@@ -208,6 +266,8 @@ defmodule Atlas.OauthClients do
   Register a custom subject_token_type (a urn: or https URI that is not a standard Atlas or IETF token type) for a confidential client. An exchange with it runs your `custom_token_exchange` Action, which validates the token and names the user to issue tokens for.
 
   `POST /v1/oauth_clients/{id}/token_exchange_profiles`. Required scope: `oauth_clients:write`.
+
+  Body fields: `name` (string), `subject_token_type` (string), `enabled` (boolean).
   """
   def post_token_exchange_profiles(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_clients/{id}/token_exchange_profiles", %{"id" => id}, body, opts)
@@ -216,6 +276,8 @@ defmodule Atlas.OauthClients do
   Rename or enable / disable a token exchange profile.
 
   `PATCH /v1/oauth_clients/{id}/token_exchange_profiles/{profileId}`. Required scope: `oauth_clients:write`.
+
+  Body fields: `name` (string), `enabled` (boolean).
   """
   def update_token_exchange_profiles(client, id, profile_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/oauth_clients/{id}/token_exchange_profiles/{profileId}", %{"id" => id, "profileId" => profile_id}, body, opts)
@@ -232,6 +294,8 @@ defmodule Atlas.OauthClients do
   Read the token-exchange policy of an OAuth client (the defaults, with configured=false, when none is set).
 
   `GET /v1/oauth_clients/{id}/exchange_policy`. Required scope: `oauth_clients:read`.
+
+  Response fields: `object`, `client_id`, `allowed_audiences`, `allowed_scopes`, `id_jag_audiences`, `allow_impersonation`, `require_may_act`, `max_delegation_depth`, `configured`.
   """
   def get_exchange_policy(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/exchange_policy", %{"id" => id}, nil, opts)
@@ -240,6 +304,9 @@ defmodule Atlas.OauthClients do
   Set the token-exchange policy of an OAuth client: allowed audiences and scopes, whether it may impersonate (no actor_token), whether delegation needs may_act, and the maximum act-chain depth. Audited as oauth_exchange_policy.updated.
 
   `PUT /v1/oauth_clients/{id}/exchange_policy`. Required scope: `oauth_clients:write`.
+
+  Body fields: `allowed_audiences` (array|null), `allowed_scopes` (array|null), `id_jag_audiences` (array|null), `allow_impersonation` (boolean), `require_may_act` (boolean), `max_delegation_depth` (integer).
+  Response fields: `object`, `client_id`, `allowed_audiences`, `allowed_scopes`, `id_jag_audiences`, `allow_impersonation`, `require_may_act`, `max_delegation_depth`, `configured`.
   """
   def put_exchange_policy(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/exchange_policy", %{"id" => id}, body, opts)
@@ -248,6 +315,8 @@ defmodule Atlas.OauthClients do
   Remove the token-exchange policy of an OAuth client, restoring the defaults.
 
   `DELETE /v1/oauth_clients/{id}/exchange_policy`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_exchange_policy(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}/exchange_policy", %{"id" => id}, nil, opts)
@@ -256,6 +325,9 @@ defmodule Atlas.OauthClients do
   Assign a policy profile to an OAuth client (profile null clears it). The client must already conform (auth method, redirect URIs); the profile is then enforced at /oauth2/authorize, /oauth2/par and /oauth2/token.
 
   `PUT /v1/oauth_clients/{id}/profile`. Required scope: `oauth_clients:write`.
+
+  Body fields: `profile` (string|null, required).
+  Response fields: `object`, `client_id`, `profile`.
   """
   def put_profile(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/profile", %{"id" => id}, body, opts)
@@ -264,20 +336,73 @@ defmodule Atlas.OauthClients do
   Set (or clear, with null) the URLs of your own sign-in and consent pages for an OAuth client. /oauth2/authorize then sends the browser there with a login_challenge / consent_challenge instead of Atlas’s pages. A client URL overrides the instance-wide oauthProvider.loginUrl / consentUrl.
 
   `PUT /v1/oauth_clients/{id}/delegated_ui`. Required scope: `oauth_clients:write`.
+
+  Body fields: `login_url` (string|null), `consent_url` (string|null).
+  Response fields: `object`, `client_id`, `login_url`, `consent_url`.
   """
   def put_delegated_ui(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/delegated_ui", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Per-day usage of one OAuth client for the last `days` days (1 to 90, default 30): token endpoint calls, access tokens issued, distinct active users, errors and rate-limited calls, with totals. The path takes the oac_ id or the public client_id. The developer can read the same report at GET /oauth2/register/{client_id}/usage with the client's registration_access_token.
+
+  `GET /v1/oauth_clients/{id}/usage`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `days`, `limit`, `starting_after`.
+  Response fields: `object`, `client_id`, `rate_limit_per_minute`, `since`, `until`, `totals`, `totals.calls`, `totals.token_issuances`, `totals.errors`, `totals.rate_limited`, `data`, `data.day`, `data.calls`, `data.token_issuances`, `data.active_users`, `data.errors`, `data.rate_limited`.
+  """
+  def get_usage(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/usage", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_usage`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_usage(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/oauth_clients/{id}/usage", %{"id" => id}, opts)
+
+  @doc ~S"""
+  The webhook this client receives user events on (404 when it has none).
+
+  `GET /v1/oauth_clients/{id}/webhook`. Required scope: `oauth_clients:read`.
+
+  Response fields: `object`, `id`, `url`, `enabled_events`, `active`, `available_events`, `webhook_secret`, `note`.
+  """
+  def get_webhook(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/webhook", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Create or update the client's event webhook: a signed, retried endpoint that receives events about users who granted the client access, never the instance's own stream. user.updated carries only what the user's granted scopes allow (email with the email scope, name and picture with profile). enabled_events may also name your own types declared with PUT /v1/instance/app_event_types; those reach the client only for users who granted the type's required scope. The signing secret is returned once, on create (201). Audited.
+
+  `PUT /v1/oauth_clients/{id}/webhook`. Required scope: `oauth_clients:write`.
+
+  Body fields: `url` (string, required), `enabled_events` (array).
+  Response fields: `object`, `id`, `url`, `enabled_events`, `active`, `available_events`, `webhook_secret`, `note`.
+  """
+  def put_webhook(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/webhook", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Remove the client's event webhook. 204.
+
+  `DELETE /v1/oauth_clients/{id}/webhook`. Required scope: `oauth_clients:write`.
+  """
+  def delete_webhook(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/oauth_clients/{id}/webhook", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   The organizations that have access to an application, with the application's access mode.
 
   `GET /v1/oauth_clients/{id}/organizations`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.client_id`, `data.application_id`, `data.application_name`, `data.roles`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`, `mode`.
   """
   def get_organizations(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_clients/{id}/organizations", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_organizations/2`, following the cursor page by page.
+  Lazy stream over every item of `get_organizations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_organizations(client, id, opts \\ []),
@@ -287,6 +412,9 @@ defmodule Atlas.OauthClients do
   Set who may use an application. `open` (default): any organization. `restricted`: only organizations granted access (and, when a grant lists roles, members holding them); a sign-in outside an entitled organization is refused with `access_denied` at the authorize endpoint.
 
   `PUT /v1/oauth_clients/{id}/organization_access`. Required scope: `oauth_clients:write`.
+
+  Body fields: `mode` (enum, required).
+  Response fields: `object`, `client_id`, `mode`.
   """
   def put_organization_access(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_clients/{id}/organization_access", %{"id" => id}, body, opts)
@@ -321,6 +449,10 @@ defmodule Atlas.OauthClients do
     {:delete_exchange_policy, :delete, "/v1/oauth_clients/{id}/exchange_policy", 1, false, false},
     {:put_profile, :put, "/v1/oauth_clients/{id}/profile", 1, true, false},
     {:put_delegated_ui, :put, "/v1/oauth_clients/{id}/delegated_ui", 1, true, false},
+    {:get_usage, :get, "/v1/oauth_clients/{id}/usage", 1, false, true},
+    {:get_webhook, :get, "/v1/oauth_clients/{id}/webhook", 1, false, false},
+    {:put_webhook, :put, "/v1/oauth_clients/{id}/webhook", 1, true, false},
+    {:delete_webhook, :delete, "/v1/oauth_clients/{id}/webhook", 1, false, false},
     {:get_organizations, :get, "/v1/oauth_clients/{id}/organizations", 1, false, true},
     {:put_organization_access, :put, "/v1/oauth_clients/{id}/organization_access", 1, true, false}
   ]

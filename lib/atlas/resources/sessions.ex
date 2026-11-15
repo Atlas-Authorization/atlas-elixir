@@ -5,20 +5,24 @@ defmodule Atlas.Sessions do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
   @doc ~S"""
-  List a user's active sessions, or with status=ended the 50 most recently ended ones (each with revoked_reason). Requires a user_id query parameter.
+  List a user's active sessions, or with status=ended the 50 most recently ended ones (each with revoked_reason). Needs a user_id, or any of the filters below: with a filter the list spans the instance, newest first, paged with `cursor` (organization, ip, country, device, risk, created range, active).
 
   `GET /v1/sessions`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `user_id`, `status`, `organization_id`, `ip`, `country`, `device`, `risk_level`, `min_risk_score`, `created_after`, `created_before`, `active`, `limit`, `cursor`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.status`, `data.last_active_organization_id`, `data.impersonated_by`, `data.last_active_at`, `data.expire_at`, `data.abandon_at`, `data.idle_expires_at`, `data.created_at`, `data.custom_data`, `data.sign_in_method`, `data.provider`, `data.amr`, `data.user_agent`, `data.ip_address`, `data.location`, `data.location.country`, `data.location.region`, `data.location.city`, `data.risk`, `data.risk.score`, `data.risk.level`, `data.risk.reasons`, `data.risk.computed_at`, `data.revoked_at`, `data.revoked_reason`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sessions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,22 +32,58 @@ defmodule Atlas.Sessions do
   Establish a session for a user in one call — returns jwt + refresh_token, audited as a first-party sign-in (not impersonation unless actor.sub is set). Pass set_cookies:true (+ optional cookie_domain) to also get the ready-to-set Set-Cookie strings, so a backend can relay one response to establish a real browser session for a known reader. Bypasses the sign-in gate. With mode "browser_ticket" no session is minted here: the response is a one-time ticket (60 s by default, single use, this instance only) that a browser redeems with POST /v1/client/sign_ins {strategy:"ticket"}, plus, when you pass redirect_url (an allowed origin), a ready `url` that signs the browser in and lands on redirect_url. This is the successor of the deprecated POST /v1/sign_in_tokens for support handoffs and end-to-end tests; audited as sign_in_ticket.created.
 
   `POST /v1/sessions`. Required scope: `sessions:write`.
+
+  Body fields: `user_id` (string, required), `set_cookies` (boolean), `cookie_domain` (string), `actor` (object), `custom_data` (object), `mode` (enum), `redirect_url` (string), `expires_in_seconds` (integer).
+  Nested body fields: `actor.sub`.
+  Response fields: `object`, `ticket`, `url`, `redirect_url`, `expires_at`, `id`, `user_id`, `jwt`, `refresh_token`, `expires_in`, `custom_data`, `cookies`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sessions", %{}, body, opts)
 
   @doc ~S"""
+  Sessions revoked since a time (revoked by the user, an operator, a ban, a password reset...), oldest first, for a verifier that polls this list instead of asking Atlas per request. Looks back at most 24 hours; page with `cursor` (the `next_cursor` of the previous page). `server_time` is when the answer was computed: poll again with `since` a little before it. Each item is `{ sid, user_id, revoked_at, reason }`; `sid` is the `sid` claim of the session token.
+
+  `GET /v1/sessions/revoked`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `since`, `limit`, `cursor`, `starting_after`.
+  Response fields: `object`, `data`, `data.sid`, `data.user_id`, `data.revoked_at`, `data.reason`, `has_more`, `next_cursor`, `server_time`, `window_start`.
+  """
+  def get_revoked(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/revoked", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_revoked`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_revoked(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/sessions/revoked", %{}, opts)
+
+  @doc ~S"""
   Fetch a single session. Another instance session id is 404, never 403.
 
   `GET /v1/sessions/{id}`. Required scope: `sessions:read`.
+
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sessions/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
+  The session's advisory risk: `{ score (0-100), level (low|medium|high), reasons[], computed_at }`. Reasons come from signals Atlas already holds: `new_device`, `new_country`, `impossible_travel` (against the user's previous session), `bot_likely` and `breached_password` (at sign-in). The same object is on the session (`risk`) and, when `session.includeRiskClaim` is on, in the session token as the `risk` claim; `risk.elevated` is sent when a session turns high. Advisory only: Atlas never allows or denies anything because of it. Fields are null and `reasons` empty when the session was never assessed, which means unknown, not safe.
+
+  `GET /v1/sessions/{id}/risk`. Required scope: `sessions:read`.
+
+  Response fields: `object`, `session_id`, `user_id`, `score`, `level`, `reasons`, `computed_at`.
+  """
+  def get_risk(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/{id}/risk", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Cheap session-freshness check for a relying party: `{ id, status, user_id, expires_at, last_active_at? }`, where status is active, expired, revoked or ended. `:id` is the session id or the `sid` claim of an ID token (a device or CIBA sign-in answers from its grant, without last_active_at). Sent with `Cache-Control: private, max-age=5` and an ETag; `If-None-Match` answers 304. Another instance session is 404, never 403. A banned user session is revoked at once and the back-channel logout is sent in the same request.
 
   `GET /v1/sessions/{id}/status`. Required scope: `sessions:read`.
+
+  Response fields: `id`, `status`, `user_id`, `expires_at`, `last_active_at`.
   """
   def get_status(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sessions/{id}/status", %{"id" => id}, nil, opts)
@@ -52,6 +92,9 @@ defmodule Atlas.Sessions do
   Replace the session's custom data with `custom_data` (a JSON object of at most 2 KB; null clears it). Only an active session can be changed (409 SESSION_REVOKED otherwise). The data is returned on the session object and on the Frontend API client session, and — when the instance sets session.customData.inToken — in the next session token under session.customData.claim, so it never shadows a reserved claim. Not for secrets: the signed-in user can read it.
 
   `PUT /v1/sessions/{id}/custom_data`. Required scope: `sessions:write`.
+
+  Body fields: `custom_data` (object|null, required).
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
   """
   def put_custom_data(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/sessions/{id}/custom_data", %{"id" => id}, body, opts)
@@ -60,6 +103,9 @@ defmodule Atlas.Sessions do
   Merge keys into the session's custom data: each key in `custom_data` replaces that key, and a key set to null is removed. The merged object must stay within 2 KB. Same rules as PUT.
 
   `PATCH /v1/sessions/{id}/custom_data`. Required scope: `sessions:write`.
+
+  Body fields: `custom_data` (object, required).
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
   """
   def update_custom_data(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/sessions/{id}/custom_data", %{"id" => id}, body, opts)
@@ -68,6 +114,8 @@ defmodule Atlas.Sessions do
   Revoke one session, signing that device out. OIDC apps signed in through it are sent a back-channel logout.
 
   `POST /v1/sessions/{id}/revoke`. Required scope: `sessions:write`.
+
+  Response fields: `object`, `id`, `status`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sessions/{id}/revoke", %{"id" => id}, nil, opts)
@@ -76,6 +124,8 @@ defmodule Atlas.Sessions do
   Keep a session alive from your backend: slides its inactivity (idle) window as if the user had just loaded a page. Use it when your app mounts the Atlas SDK only on some pages, so time spent on pages without it does not count as inactivity. Never extends past the session's absolute expiry and never revives an ended session — a revoked session is 409 SESSION_REVOKED, a session that already timed out is 409 SESSION_IDLE_EXPIRED, and one past its absolute expiry is 409 SESSION_EXPIRED; an unknown id is 404. At most one effective write per minute per session: a touch within 60 seconds of the session's last activity returns the current state with extended:false, so calling it on every request is safe. No request body. Returns the session with last_active_at and idle_expires_at.
 
   `POST /v1/sessions/{id}/touch`. Required scope: `sessions:write`.
+
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `extended`.
   """
   def post_touch(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sessions/{id}/touch", %{"id" => id}, nil, opts)
@@ -84,29 +134,175 @@ defmodule Atlas.Sessions do
   Mint a named JWT-template token for a session (Clerk SessionApi.getToken). Reserved `session` name refused.
 
   `POST /v1/sessions/{id}/tokens/{template}`. Required scope: `sessions:write`.
+
+  Response fields: `object`, `jwt`, `expires_in`.
   """
   def post_tokens(client, id, template, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sessions/{id}/tokens/{template}", %{"id" => id, "template" => template}, nil, opts)
 
   @doc ~S"""
-  getToken({ for }) on your server: an integration token for a session by id (the same token the browser SDK mints). A per-call audience (?audience= or the integration's parameter, e.g. ?cbid=) follows per_call_audience; 403 for one it does not permit. 404 for an integration that is not enabled; 401 when the session is no longer active.
+  The session revocation feed: sessions revoked after a point, oldest first, as `{ sid, sub, revoked_at, reason }` (`sub` is the user). `after` is epoch milliseconds to start from (default one hour ago, at most 24 hours back) or the `next_after` of the previous page. Poll it, or fetch the signed list at /v1/sessions/revocations/status-list.
+
+  `GET /v1/sessions/revocations`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `after`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.sid`, `data.sub`, `data.revoked_at`, `data.reason`, `has_more`, `next_after`, `server_time`, `window_start`.
+  """
+  def get_revocations(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/revocations", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_revocations`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_revocations(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/sessions/revocations", %{}, opts)
+
+  @doc ~S"""
+  A compact signed list of recently revoked sessions for a verifier that cannot call Atlas per request (an edge function, a Lambda authorizer). `token` is a JWT (`typ: statuslist+jwt`) signed with the instance signing key: verify it against the instance JWKS, then reject any session token whose `sid` hashes (first 8 bytes of SHA-256) into the list carried in `h`. It covers the last `window_seconds` (default 3600): ask for at least the longest session token lifetime you accept. `truncated: true` means more sessions were revoked than fit; use the feed instead. The token itself lives two minutes.
+
+  `GET /v1/sessions/revocations/status-list`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `window_seconds`.
+  Response fields: `object`, `token`, `issued_at`, `expires_at`, `window_seconds`, `count`, `truncated`.
+  """
+  def get_revocations_status_list(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/revocations/status-list", %{}, nil, opts)
+
+  @doc ~S"""
+  One session's timeline, oldest first: `created`, `step_up`, `organization_changed`, `risk_elevated`, `revoked` (with the reason). Sessions that predate the timeline get `created` and `revoked` from their own row, marked `synthesized`. 404 for a session of another instance.
+
+  `GET /v1/sessions/{id}/events`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `limit`, `after`, `starting_after`.
+  Response fields: `object`, `session_id`, `data`, `data.id`, `data.type`, `data.at`, `data.ip`, `data.actor_type`, `data.actor_id`, `data.detail`, `has_more`, `next_after`.
+  """
+  def get_events(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/{id}/events", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_events`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_events(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/sessions/{id}/events", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Revoke every active session matching a filter, as an async job. Give at least one of user_id, organization_id, ip, country, device, risk_level, min_risk_score, created_after, created_before. With `dry_run: true` nothing changes and the answer is `{ matched }`: look at the count first. Otherwise a job is created (202); poll GET /v1/sessions/revoke_jobs/{id}. Each session ends the way a single revoke ends it (webhook, back-channel logout, revocation cache). Honours Idempotency-Key. Audited.
+
+  `POST /v1/sessions/revoke_by_filter`. Required scope: `sessions:write`.
+
+  Body fields: `user_id` (string), `organization_id` (string), `ip` (string), `country` (string), `device` (string), `risk_level` (enum), `min_risk_score` (integer), `created_after` (integer), `created_before` (integer), `dry_run` (boolean), `reason` (string).
+  Response fields: `object`, `id`, `status`, `filter`, `reason`, `matched`, `revoked`, `failed`, `error`, `created_at`, `updated_at`, `completed_at`, `dry_run`.
+  """
+  def post_revoke_by_filter(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/sessions/revoke_by_filter", %{}, body, opts)
+
+  @doc ~S"""
+  Recent revoke-by-filter jobs, newest first.
+
+  `GET /v1/sessions/revoke_jobs`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.status`, `data.filter`, `data.reason`, `data.matched`, `data.revoked`, `data.failed`, `data.error`, `data.created_at`, `data.updated_at`, `data.completed_at`, `has_more`.
+  """
+  def get_revoke_jobs(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/revoke_jobs", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_revoke_jobs`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_revoke_jobs(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/sessions/revoke_jobs", %{}, opts)
+
+  @doc ~S"""
+  One revoke-by-filter job and its progress (`matched`, `revoked`, `failed`, `status`). 404 for a job of another instance.
+
+  `GET /v1/sessions/revoke_jobs/{id}`. Required scope: `sessions:read`.
+
+  Response fields: `object`, `id`, `status`, `filter`, `reason`, `matched`, `revoked`, `failed`, `error`, `created_at`, `updated_at`, `completed_at`.
+  """
+  def get_revoke_jobs_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/revoke_jobs/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Export the sessions matching a filter as CSV (default) or NDJSON, newest first. Same filters as GET /v1/sessions. `limit` defaults to 10000 (at most 50000); `x-atlas-truncated: true` when more matched. Custom data and tokens are never included. Audited as session.exported.
+
+  `GET /v1/sessions/export`. Required scope: `sessions:read`.
+
+  Query params (`params:`): `user_id`, `organization_id`, `ip`, `country`, `device`, `risk_level`, `min_risk_score`, `created_after`, `created_before`, `active`, `format`, `limit`.
+  """
+  def get_export(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/export", %{}, nil, opts)
+
+  @doc ~S"""
+  Which DPoP key (by thumbprint) a session is bound to, and whether it was attested.
+
+  `GET /v1/sessions/{id}/binding`. Required scope: `sessions:read`.
+
+  Response fields: `object`, `session_id`, `bound`, `jkt`, `alg`, `attested`, `attestation_provider`, `bound_at`, `last_proof_at`.
+  """
+  def get_binding(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sessions/{id}/binding", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Remove a session's DPoP binding so it can bind a new key (a user who lost their device key). Audited.
+
+  `DELETE /v1/sessions/{id}/binding`. Required scope: `sessions:write`.
+
+  Response fields: `object`, `deleted`, `session_id`, `bound`.
+  """
+  def delete_binding(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/sessions/{id}/binding", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  getToken({ for }) on your server: an integration token for a session by id (the same token the browser SDK mints). A per-call audience (?audience= or the integration's parameter, e.g. ?cbid=) follows per_call_audience; 403 for one it does not permit. An optional JSON body { context: { <name>: <value> } } adds per-mint claims: each name and value must be on the integration's claims.context allow-list, else 403. 404 for an integration that is not enabled; 401 when the session is no longer active.
 
   `POST /v1/sessions/{id}/integration_tokens/{integration}`. Required scope: `sessions:write`.
+
+  Query params (`params:`): `audience`, `cbid`.
+  Body fields: `context` (object).
+  Response fields: `object`, `integration`, `product`, `jwt`, `expires_in`, `audience`, `org_id`, `space_id`, `redeem_url`, `issuer`, `jwks_uri`.
   """
   def post_integration_tokens(client, id, integration, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sessions/{id}/integration_tokens/{integration}", %{"id" => id, "integration" => integration}, nil, opts)
+
+  @doc ~S"""
+  getToken({ for }) on your server: an integration token for a session by id (the same token the browser SDK mints). A per-call audience (?audience= or the integration's parameter, e.g. ?cbid=) follows per_call_audience; 403 for one it does not permit. An optional JSON body { context: { <name>: <value> } } adds per-mint claims: each name and value must be on the integration's claims.context allow-list, else 403. 404 for an integration that is not enabled; 401 when the session is no longer active.
+
+  `POST /v1/sessions/{id}/integration_tokens/{integration}`. Required scope: `sessions:write`.
+
+  Query params (`params:`): `audience`, `cbid`.
+  Body fields: `context` (object).
+  Response fields: `object`, `integration`, `product`, `jwt`, `expires_in`, `audience`, `org_id`, `space_id`, `redeem_url`, `issuer`, `jwks_uri`.
+  """
+  def post_integration_tokens_with_body(client, id, integration, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/sessions/{id}/integration_tokens/{integration}", %{"id" => id, "integration" => integration}, body, opts)
 
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/sessions", 0, false, true},
     {:create, :post, "/v1/sessions", 0, true, false},
+    {:get_revoked, :get, "/v1/sessions/revoked", 0, false, true},
     {:get, :get, "/v1/sessions/{id}", 1, false, false},
+    {:get_risk, :get, "/v1/sessions/{id}/risk", 1, false, false},
     {:get_status, :get, "/v1/sessions/{id}/status", 1, false, false},
     {:put_custom_data, :put, "/v1/sessions/{id}/custom_data", 1, true, false},
     {:update_custom_data, :patch, "/v1/sessions/{id}/custom_data", 1, true, false},
     {:post_revoke, :post, "/v1/sessions/{id}/revoke", 1, false, false},
     {:post_touch, :post, "/v1/sessions/{id}/touch", 1, false, false},
     {:post_tokens, :post, "/v1/sessions/{id}/tokens/{template}", 2, false, false},
-    {:post_integration_tokens, :post, "/v1/sessions/{id}/integration_tokens/{integration}", 2, false, false}
+    {:get_revocations, :get, "/v1/sessions/revocations", 0, false, true},
+    {:get_revocations_status_list, :get, "/v1/sessions/revocations/status-list", 0, false, false},
+    {:get_events, :get, "/v1/sessions/{id}/events", 1, false, true},
+    {:post_revoke_by_filter, :post, "/v1/sessions/revoke_by_filter", 0, true, false},
+    {:get_revoke_jobs, :get, "/v1/sessions/revoke_jobs", 0, false, true},
+    {:get_revoke_jobs_by_id, :get, "/v1/sessions/revoke_jobs/{id}", 1, false, false},
+    {:get_export, :get, "/v1/sessions/export", 0, false, false},
+    {:get_binding, :get, "/v1/sessions/{id}/binding", 1, false, false},
+    {:delete_binding, :delete, "/v1/sessions/{id}/binding", 1, false, false},
+    {:post_integration_tokens, :post, "/v1/sessions/{id}/integration_tokens/{integration}", 2, false, false},
+    {:post_integration_tokens_with_body, :post, "/v1/sessions/{id}/integration_tokens/{integration}", 2, true, false}
   ]
 end

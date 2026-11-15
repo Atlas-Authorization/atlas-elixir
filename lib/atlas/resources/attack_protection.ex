@@ -5,7 +5,8 @@ defmodule Atlas.AttackProtection do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.AttackProtection do
   Store the Play Integrity response-decryption key (base64 AES-256) for app attestation. Write-only; the public verification key is attackProtection.appAttestation.android.verificationKey.
 
   `PUT /v1/attack_protection/app_attestation_secret`. Required scope: `attack_protection:write`.
+
+  Body fields: `secret` (string), `kind` (enum).
+  Response fields: `object`, `set`.
   """
   def put_app_attestation_secret(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/attack_protection/app_attestation_secret", %{}, body, opts)
@@ -21,6 +25,9 @@ defmodule Atlas.AttackProtection do
   Remove a stored attestation secret: the Play Integrity decryption key (default) or, with kind=devicecheck, the Apple DeviceCheck key. That platform then refuses every request.
 
   `DELETE /v1/attack_protection/app_attestation_secret`. Required scope: `attack_protection:write`.
+
+  Query params (`params:`): `kind`.
+  Response fields: `object`, `deleted`.
   """
   def delete_app_attestation_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/attack_protection/app_attestation_secret", %{}, nil, opts)
@@ -29,6 +36,8 @@ defmodule Atlas.AttackProtection do
   Read the instance's attack-protection settings: brute-force lockout, breached-password checking, IP allowlist, captcha status, country restrictions, the accounts-per-device limit and dormant-account reactivation alerts.
 
   `GET /v1/attack_protection`. Required scope: `attack_protection:read`.
+
+  Response fields: `object`, `brute_force`, `brute_force.enabled`, `brute_force.tiers`, `brute_force.tiers.threshold`, `brute_force.tiers.window_ms`, `brute_force.tiers.lock_ms`, `brute_force.tiers.notify_user`, `brute_force.tiers.flag_for_admin`, `breached_password`, `breached_password.enabled`, `suspicious_ip`, `suspicious_ip.enabled`, `suspicious_ip.ip_allowlist`, `suspicious_ip.managed_by`, `captcha`, `captcha.provider`, `captcha.site_key_set`, `captcha.secret_set`, `captcha.managed_by`, `country_restrictions`, `country_restrictions.mode`, `country_restrictions.countries`, `country_restrictions.sign_up`, `country_restrictions.sign_in`, `country_restrictions.block_unknown`, `country_restrictions.managed_by`, `device_accounts`, `device_accounts.enabled`, `device_accounts.max_accounts`, `device_accounts.window_days`, `device_accounts.managed_by`, `dormant_accounts`, `dormant_accounts.enabled`, `dormant_accounts.threshold_days`, `dormant_accounts.require_mfa`, `dormant_accounts.on_no_factor`, `dormant_accounts.notify_user`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/attack_protection", %{}, nil, opts)
@@ -37,6 +46,10 @@ defmodule Atlas.AttackProtection do
   Toggle attack protections — the brute-force lockout, the breached-password (HIBP) check, and dormant-account reactivation alerts (threshold, optional second-factor step-up, user notice).
 
   `PATCH /v1/attack_protection`. Required scope: `attack_protection:write`.
+
+  Body fields: `brute_force` (object), `breached_password` (object), `dormant_accounts` (object).
+  Nested body fields: `brute_force.enabled`, `breached_password.enabled`, `dormant_accounts.enabled`, `dormant_accounts.threshold_days`, `dormant_accounts.require_mfa`, `dormant_accounts.on_no_factor`, `dormant_accounts.notify_user`.
+  Response fields: `object`, `brute_force`, `brute_force.enabled`, `brute_force.tiers`, `brute_force.tiers.threshold`, `brute_force.tiers.window_ms`, `brute_force.tiers.lock_ms`, `brute_force.tiers.notify_user`, `brute_force.tiers.flag_for_admin`, `breached_password`, `breached_password.enabled`, `suspicious_ip`, `suspicious_ip.enabled`, `suspicious_ip.ip_allowlist`, `suspicious_ip.managed_by`, `captcha`, `captcha.provider`, `captcha.site_key_set`, `captcha.secret_set`, `captcha.managed_by`, `country_restrictions`, `country_restrictions.mode`, `country_restrictions.countries`, `country_restrictions.sign_up`, `country_restrictions.sign_in`, `country_restrictions.block_unknown`, `country_restrictions.managed_by`, `device_accounts`, `device_accounts.enabled`, `device_accounts.max_accounts`, `device_accounts.window_days`, `device_accounts.managed_by`, `dormant_accounts`, `dormant_accounts.enabled`, `dormant_accounts.threshold_days`, `dormant_accounts.require_mfa`, `dormant_accounts.on_no_factor`, `dormant_accounts.notify_user`.
   """
   def update(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/attack_protection", %{}, body, opts)

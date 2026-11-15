@@ -5,7 +5,8 @@ defmodule Atlas.GroupRules do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.GroupRules do
   Group rules, lowest priority number first.
 
   `GET /v1/group_rules`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.enabled`, `data.priority`, `data.condition`, `data.actions`, `data.created_by`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/group_rules", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.GroupRules do
   Create a rule: when a user matches condition, run the actions (add to a group, grant an app role, set a trait). → 201.
 
   `POST /v1/group_rules`. Required scope: `users:write`.
+
+  Body fields: `name` (string, required), `enabled` (boolean), `priority` (integer), `condition` (object, required), `actions` (array, required).
+  Nested body fields: `actions.type`, `actions.group`, `actions.role`, `actions.key`, `actions.value`.
+  Response fields: `object`, `id`, `name`, `enabled`, `priority`, `condition`, `actions`, `created_by`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/group_rules", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.GroupRules do
   Run every enabled rule in priority order. One result per rule.
 
   `POST /v1/group_rules/apply`. Required scope: `users:write`.
+
+  Response fields: `object`, `data`, `data.object`, `data.rule_id`, `data.matched`, `data.groups_added`, `data.groups_removed`, `data.roles_granted`, `data.traits_set`, `has_more`, `next_cursor`.
   """
   def post_apply(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/group_rules/apply", %{}, nil, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.GroupRules do
   One group rule, with its condition and actions.
 
   `GET /v1/group_rules/{id}`. Required scope: `users:read`.
+
+  Response fields: `object`, `id`, `name`, `enabled`, `priority`, `condition`, `actions`, `created_by`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/group_rules/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +64,10 @@ defmodule Atlas.GroupRules do
   Change a group rule, its condition or actions.
 
   `PATCH /v1/group_rules/{id}`. Required scope: `users:write`.
+
+  Body fields: `name` (string), `enabled` (boolean), `priority` (integer), `condition` (object), `actions` (array).
+  Nested body fields: `actions.type`, `actions.group`, `actions.role`, `actions.key`, `actions.value`.
+  Response fields: `object`, `id`, `name`, `enabled`, `priority`, `condition`, `actions`, `created_by`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/group_rules/{id}", %{"id" => id}, body, opts)
@@ -60,6 +76,8 @@ defmodule Atlas.GroupRules do
   Delete a rule. Memberships it created stay until removed.
 
   `DELETE /v1/group_rules/{id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/group_rules/{id}", %{"id" => id}, nil, opts)
@@ -68,6 +86,8 @@ defmodule Atlas.GroupRules do
   Run one rule against every matching user now. Returns the match count and what changed.
 
   `POST /v1/group_rules/{id}/apply`. Required scope: `users:write`.
+
+  Response fields: `object`, `rule_id`, `matched`, `groups_added`, `groups_removed`, `roles_granted`, `traits_set`.
   """
   def post_by_id_apply(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/group_rules/{id}/apply", %{"id" => id}, nil, opts)

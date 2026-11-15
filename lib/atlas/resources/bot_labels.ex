@@ -5,7 +5,8 @@ defmodule Atlas.BotLabels do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.BotLabels do
   Export the supervised training labels (bot / human / suspect) with their subject and source.
 
   `GET /v1/bot_labels`. Required scope: `bot_signals:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.label`, `data.source`, `data.confidence`, `data.note`, `data.labeled_by`, `data.created_at`, `next_before`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/bot_labels", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.BotLabels do
   Add a supervised training label to a subject (user / device / ip_hash / attempt) — an analyst confirming a bot or a human. Same label set that banning-as-bot writes.
 
   `POST /v1/bot_labels`. Required scope: `bot_signals:write`.
+
+  Body fields: `subject_type` (string), `subject_id` (string), `label` (string), `confidence` (number), `note` (string).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `label`, `source`, `confidence`, `note`, `labeled_by`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/bot_labels", %{}, body, opts)

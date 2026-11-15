@@ -5,7 +5,8 @@ defmodule Atlas.ActionGalleryInstalls do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ActionGalleryInstalls do
   The actions in this instance that were installed from the gallery, with the installed and latest versions, update_available and the secrets still missing.
 
   `GET /v1/action_gallery_installs`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.action_id`, `data.action_name`, `data.enabled`, `data.trigger`, `data.source`, `data.template_slug`, `data.installed_version`, `data.latest_version`, `data.update_available`, `data.missing_secrets`, `data.update_requires_secrets`, `data.installed_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/action_gallery_installs", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

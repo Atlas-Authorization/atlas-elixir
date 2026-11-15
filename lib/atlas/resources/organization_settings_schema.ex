@@ -5,7 +5,8 @@ defmodule Atlas.OrganizationSettingsSchema do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.OrganizationSettingsSchema do
   Fetch the instance-wide JSON Schema registered for organization settings. When none is registered: 200 with `configured: false` and `schema: null` (not a 404).
 
   `GET /v1/organization_settings_schema`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `configured`, `schema`, `version`, `updated_at`, `channel`, `message`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organization_settings_schema", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.OrganizationSettingsSchema do
   Register the instance-wide JSON Schema for organization settings (first registration). Bumps the schema version.
 
   `POST /v1/organization_settings_schema`. Required scope: `organizations:write`.
+
+  Body fields: `schema` (object, required).
+  Response fields: `object`, `configured`, `schema`, `version`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organization_settings_schema", %{}, body, opts)
@@ -29,6 +35,9 @@ defmodule Atlas.OrganizationSettingsSchema do
   Replace the instance-wide organization-settings JSON Schema. Bumps the schema version so a consumer can detect a contract change.
 
   `PUT /v1/organization_settings_schema`. Required scope: `organizations:write`.
+
+  Body fields: `schema` (object, required).
+  Response fields: `object`, `configured`, `schema`, `version`, `updated_at`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organization_settings_schema", %{}, body, opts)

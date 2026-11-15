@@ -5,7 +5,8 @@ defmodule Atlas.AgentAccessRequests do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.AgentAccessRequests do
   Approve a pending request, optionally for a limited time (expires_in_seconds). 409 when it is no longer pending. Emits agent.access_decided.
 
   `POST /v1/agent_access_requests/{id}/approve`. Required scope: `machines:write`.
+
+  Body fields: `expires_in_seconds` (integer), `decided_by` (string), `constraints` (object).
   """
   def post_approve(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agent_access_requests/{id}/approve", %{"id" => id}, body, opts)
@@ -21,6 +24,8 @@ defmodule Atlas.AgentAccessRequests do
   Deny a pending request. 409 when it is no longer pending. Emits agent.access_decided.
 
   `POST /v1/agent_access_requests/{id}/deny`. Required scope: `machines:write`.
+
+  Body fields: `decided_by` (string).
   """
   def post_deny(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agent_access_requests/{id}/deny", %{"id" => id}, body, opts)
@@ -29,12 +34,15 @@ defmodule Atlas.AgentAccessRequests do
   List agent access requests, newest first. Filter by status (pending, approved, denied, revoked) or agent_id.
 
   `GET /v1/agent_access_requests`. Required scope: `machines:read`.
+
+  Query params (`params:`): `status`, `agent_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agent_access_requests", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

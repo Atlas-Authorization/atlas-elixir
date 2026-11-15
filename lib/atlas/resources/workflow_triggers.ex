@@ -5,7 +5,8 @@ defmodule Atlas.WorkflowTriggers do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.WorkflowTriggers do
   The events a workflow can start on (`trigger.type = webhook_event`): each name, what it means, which fields its data carries (usable as `event.<field>` in a trigger filter or a step) and which part of the product emits it.
 
   `GET /v1/workflow_triggers`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.name`, `data.description`, `data.subject`, `data.payload`, `data.emitter`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflow_triggers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

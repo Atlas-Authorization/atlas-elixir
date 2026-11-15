@@ -5,7 +5,8 @@ defmodule Atlas.RefreshTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.RefreshTokens do
   Search the refresh grants OAuth apps hold, by `user_id`, `client_id` and `status`. The tokens and their hashes are never returned.
 
   `GET /v1/refresh_tokens`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `user_id`, `client_id`, `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.user_id`, `data.organization_id`, `data.status`, `data.scope`, `data.audience`, `data.sender_constrained`, `data.created_at`, `data.expires_at`, `data.idle_expires_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/refresh_tokens", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.RefreshTokens do
   Revoke refresh grants in bulk: by `ids`, or every active grant of a `user_id` and / or `client_id`. A request with no filter is refused. Each revoked grant ends the sessions minted from it and sends `grant.revoked`.
 
   `POST /v1/refresh_tokens/revoke`. Required scope: `oauth_clients:write`.
+
+  Body fields: `ids` (array), `user_id` (string), `client_id` (string).
   """
   def post_revoke(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/refresh_tokens/revoke", %{}, body, opts)

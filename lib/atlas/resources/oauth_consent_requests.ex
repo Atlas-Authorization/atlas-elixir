@@ -5,7 +5,8 @@ defmodule Atlas.OauthConsentRequests do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.OauthConsentRequests do
   Read a consent challenge: the signed-in user, the application and the scopes, audience, authorization details and organization it asks for.
 
   `GET /v1/oauth_consent_requests`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `consent_challenge`.
+  Response fields: `object`, `subject`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `authorization_details`, `organization_id`, `redirect_uri`, `expires_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_consent_requests", %{}, nil, opts)
@@ -21,6 +25,10 @@ defmodule Atlas.OauthConsentRequests do
   Accept a consent challenge, optionally narrowing the granted scopes. Following redirect_to (in the same browser that started the flow) records the consent unless remember is false, and returns the application to its redirect_uri with a code.
 
   `PUT /v1/oauth_consent_requests/accept`. Required scope: `oauth_clients:write`.
+
+  Query params (`params:`): `consent_challenge`.
+  Body fields: `grant_scope` (array), `remember` (boolean).
+  Response fields: `object`, `redirect_to`.
   """
   def put_accept(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_consent_requests/accept", %{}, body, opts)
@@ -29,6 +37,10 @@ defmodule Atlas.OauthConsentRequests do
   Reject a consent challenge. Following redirect_to returns the application to its redirect_uri with the OAuth error.
 
   `PUT /v1/oauth_consent_requests/reject`. Required scope: `oauth_clients:write`.
+
+  Query params (`params:`): `consent_challenge`.
+  Body fields: `error` (enum), `error_description` (string).
+  Response fields: `object`, `redirect_to`.
   """
   def put_reject(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_consent_requests/reject", %{}, body, opts)

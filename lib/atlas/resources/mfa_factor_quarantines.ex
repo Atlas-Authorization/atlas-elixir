@@ -5,7 +5,8 @@ defmodule Atlas.MfaFactorQuarantines do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.MfaFactorQuarantines do
   Second factors held in quarantine because they were enrolled while the account looked compromised.
 
   `GET /v1/mfa_factor_quarantines`. Required scope: `risky_users:read`.
+
+  Query params (`params:`): `user_id`, `active`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.factor_type`, `data.factor_id`, `data.reason`, `data.until`, `data.released_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mfa_factor_quarantines", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.MfaFactorQuarantines do
   Release a quarantined factor so it can complete sign-ins.
 
   `POST /v1/mfa_factor_quarantines/{id}/release`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `id`, `user_id`, `factor_type`, `factor_id`, `reason`, `until`, `released_at`, `created_at`.
   """
   def post_release(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mfa_factor_quarantines/{id}/release", %{"id" => id}, nil, opts)

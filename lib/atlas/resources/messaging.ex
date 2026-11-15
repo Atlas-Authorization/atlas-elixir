@@ -5,20 +5,84 @@ defmodule Atlas.Messaging do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
+
+  @doc ~S"""
+  Per-country SMS routes: numbers in a country go through the named provider (your SMS provider or one of its fallbacks) first.
+
+  `GET /v1/messaging/country_routes`. Required scope: `messaging:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.channel`, `data.country`, `data.provider_id`, `data.updated_at`, `has_more`, `next_cursor`.
+  """
+  def get_country_routes(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/messaging/country_routes", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_country_routes`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_country_routes(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/messaging/country_routes", %{}, opts)
+
+  @doc ~S"""
+  Route SMS to a country through a provider. `provider_id` is the id of your SMS provider or one of its fallback providers; the other providers still back it up when failover is on. Replaces an earlier route for the country.
+
+  `PUT /v1/messaging/country_routes`. Required scope: `messaging:write`.
+
+  Body fields: `country` (string, required), `provider_id` (string, required).
+  Response fields: `object`, `id`, `channel`, `country`, `provider_id`, `updated_at`.
+  """
+  def put_country_routes(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/messaging/country_routes", %{}, body, opts)
+
+  @doc ~S"""
+  Remove the route for a country.
+
+  `DELETE /v1/messaging/country_routes/{country}`. Required scope: `messaging:write`.
+
+  Response fields: `object`, `country`, `deleted`.
+  """
+  def delete_country_routes(client, country, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/messaging/country_routes/{country}", %{"country" => country}, nil, opts)
+
+  @doc ~S"""
+  Messaging behaviour: automatic suppression, failover and ledger retention.
+
+  `GET /v1/messaging/settings`. Required scope: `messaging:read`.
+
+  Response fields: `object`, `auto_suppress`, `failover_enabled`, `ledger_retention_days`, `updated_at`.
+  """
+  def get_settings(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/messaging/settings", %{}, nil, opts)
+
+  @doc ~S"""
+  Change messaging behaviour. Send only the fields to change. Audited.
+
+  `PUT /v1/messaging/settings`. Required scope: `messaging:write`.
+
+  Body fields: `auto_suppress` (boolean), `failover_enabled` (boolean), `ledger_retention_days` (integer).
+  Response fields: `object`, `auto_suppress`, `failover_enabled`, `ledger_retention_days`, `updated_at`.
+  """
+  def put_settings(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/messaging/settings", %{}, body, opts)
 
   @doc ~S"""
   The email suppression list, or one address with `email`.
 
   `GET /v1/messaging/suppressions`. Required scope: `email_suppressions:read`.
+
+  Query params (`params:`): `email`, `after`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.email`, `data.reason`, `data.source`, `data.detail`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_suppressions(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging/suppressions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_suppressions/1`, following the cursor page by page.
+  Lazy stream over every item of `get_suppressions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_suppressions(client, opts \\ []),
@@ -28,6 +92,9 @@ defmodule Atlas.Messaging do
   Add one or many addresses (a bounce or complaint webhook forwarder can post here). Existing entries are updated.
 
   `POST /v1/messaging/suppressions`. Required scope: `email_suppressions:write`.
+
+  Body fields: `email` (string), `emails` (array), `reason` (enum), `source` (string), `detail` (string).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.email`, `data.reason`, `data.source`, `data.detail`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def post_suppressions(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/messaging/suppressions", %{}, body, opts)
@@ -36,12 +103,19 @@ defmodule Atlas.Messaging do
   Remove an address from the suppression list.
 
   `DELETE /v1/messaging/suppressions/{email}`. Required scope: `email_suppressions:write`.
+
+  Response fields: `object`, `email`, `deleted`.
   """
   def delete_suppressions(client, email, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/messaging/suppressions/{email}", %{"email" => email}, nil, opts)
 
   @doc false
   def __operations__, do: [
+    {:get_country_routes, :get, "/v1/messaging/country_routes", 0, false, true},
+    {:put_country_routes, :put, "/v1/messaging/country_routes", 0, true, false},
+    {:delete_country_routes, :delete, "/v1/messaging/country_routes/{country}", 1, false, false},
+    {:get_settings, :get, "/v1/messaging/settings", 0, false, false},
+    {:put_settings, :put, "/v1/messaging/settings", 0, true, false},
     {:get_suppressions, :get, "/v1/messaging/suppressions", 0, false, true},
     {:post_suppressions, :post, "/v1/messaging/suppressions", 0, true, false},
     {:delete_suppressions, :delete, "/v1/messaging/suppressions/{email}", 1, false, false}

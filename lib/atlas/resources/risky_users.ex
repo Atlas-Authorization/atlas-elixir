@@ -5,7 +5,8 @@ defmodule Atlas.RiskyUsers do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.RiskyUsers do
   The risky-user report: users with a standing risk score, filterable by state.
 
   `GET /v1/risky_users`. Required scope: `risky_users:read`.
+
+  Query params (`params:`): `state`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.user_id`, `data.state`, `data.level`, `data.score`, `data.reasons`, `data.last_event_at`, `data.resolved_by`, `data.resolved_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/risky_users", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.RiskyUsers do
   One user's risk state, level, score and reasons.
 
   `GET /v1/risky_users/{user_id}`. Required scope: `risky_users:read`.
+
+  Response fields: `object`, `user_id`, `state`, `level`, `score`, `reasons`, `last_event_at`, `resolved_by`, `resolved_at`, `updated_at`.
   """
   def get(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/risky_users/{user_id}", %{"user_id" => user_id}, nil, opts)
@@ -36,6 +42,8 @@ defmodule Atlas.RiskyUsers do
   Dismiss the risk (false alarm). The score resets.
 
   `POST /v1/risky_users/{user_id}/dismiss`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `user_id`, `state`, `level`, `score`, `reasons`, `last_event_at`, `resolved_by`, `resolved_at`, `updated_at`.
   """
   def post_dismiss(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/risky_users/{user_id}/dismiss", %{"user_id" => user_id}, nil, opts)
@@ -44,6 +52,8 @@ defmodule Atlas.RiskyUsers do
   Confirm the account as compromised. The user reads as high risk to access policies until remediated.
 
   `POST /v1/risky_users/{user_id}/confirm`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `user_id`, `state`, `level`, `score`, `reasons`, `last_event_at`, `resolved_by`, `resolved_at`, `updated_at`.
   """
   def post_confirm(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/risky_users/{user_id}/confirm", %{"user_id" => user_id}, nil, opts)
@@ -52,6 +62,8 @@ defmodule Atlas.RiskyUsers do
   Mark the risk remediated. The score resets.
 
   `POST /v1/risky_users/{user_id}/remediate`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `user_id`, `state`, `level`, `score`, `reasons`, `last_event_at`, `resolved_by`, `resolved_at`, `updated_at`.
   """
   def post_remediate(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/risky_users/{user_id}/remediate", %{"user_id" => user_id}, nil, opts)
@@ -60,6 +72,8 @@ defmodule Atlas.RiskyUsers do
   Require a new password at the next sign-in and end every session.
 
   `POST /v1/risky_users/{user_id}/force_password_change`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `user_id`, `action`, `sessions_revoked`.
   """
   def post_force_password_change(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/risky_users/{user_id}/force_password_change", %{"user_id" => user_id}, nil, opts)
@@ -68,6 +82,8 @@ defmodule Atlas.RiskyUsers do
   End every session so the user signs in, and passes MFA, again.
 
   `POST /v1/risky_users/{user_id}/force_reauth`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `user_id`, `action`, `sessions_revoked`.
   """
   def post_force_reauth(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/risky_users/{user_id}/force_reauth", %{"user_id" => user_id}, nil, opts)

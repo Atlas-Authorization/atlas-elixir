@@ -5,7 +5,8 @@ defmodule Atlas.Instance do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Instance do
   Read the instance's sign-in page design: stored overrides, the resolved design, contrast warnings and the legacy flag.
 
   `GET /v1/instance/design`. Required scope: `instance:read`.
+
+  Response fields: `object`, `organization_id`, `design`, `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `legacy`, `legacy_design`, `legacy_design.version`, `legacy_design.preset`, `legacy_design.colorScheme`, `legacy_design.palette`, `legacy_design.palette.primary`, `legacy_design.palette.primaryInk`, `legacy_design.palette.accent`, `legacy_design.palette.background`, `legacy_design.palette.surface`, `legacy_design.palette.text`, `legacy_design.palette.muted`, `legacy_design.palette.border`, `legacy_design.palette.danger`, `legacy_design.palette.success`, `legacy_design.palette.inputBackground`, `legacy_design.palette.inputText`, `legacy_design.paletteDark`, `legacy_design.paletteDark.primary`, `legacy_design.paletteDark.primaryInk`, `legacy_design.paletteDark.accent`, `legacy_design.paletteDark.background`, `legacy_design.paletteDark.surface`, `legacy_design.paletteDark.text`, `legacy_design.paletteDark.muted`, `legacy_design.paletteDark.border`, `legacy_design.paletteDark.danger`, `legacy_design.paletteDark.success`, `legacy_design.paletteDark.inputBackground`, `legacy_design.paletteDark.inputText`, `legacy_design.typography`, `legacy_design.typography.font`, `legacy_design.typography.headingFont`, `legacy_design.typography.baseSize`, `legacy_design.typography.headingWeight`, `legacy_design.typography.bodyWeight`, `legacy_design.typography.letterCase`, `legacy_design.typography.scale`, `legacy_design.shape`, `legacy_design.shape.radius`, `legacy_design.shape.controlRadius`, `legacy_design.shape.borderWidth`, `legacy_design.elevation`, `legacy_design.elevation.cardShadow`, `legacy_design.spacing`, `legacy_design.spacing.density`, `legacy_design.card`, `legacy_design.card.style`, `legacy_design.card.blur`, `legacy_design.card.width`, `legacy_design.layout`, `legacy_design.layout.position`, `legacy_design.layout.splitImageSide`, `legacy_design.layout.logoPlacement`, `legacy_design.layout.logoSize`, `legacy_design.buttons`, `legacy_design.buttons.style`, `legacy_design.buttons.socialLayout`, `legacy_design.inputs`, `legacy_design.inputs.style`, `legacy_design.background`, `legacy_design.background.color`, `legacy_design.background.gradient`, `legacy_design.background.gradient.type`, `legacy_design.background.gradient.angle`, `legacy_design.background.gradient.stops`, `legacy_design.background.image`, `legacy_design.background.image.assetId`, `legacy_design.background.image.fit`, `legacy_design.background.image.position`, `legacy_design.background.image.overlay`, `legacy_design.background.image.blur`, `legacy_design.background.pattern`, `legacy_design.backgroundDark`, `legacy_design.backgroundDark.color`, `legacy_design.backgroundDark.gradient`, `legacy_design.backgroundDark.gradient.type`, `legacy_design.backgroundDark.gradient.angle`, `legacy_design.backgroundDark.gradient.stops`, `legacy_design.backgroundDark.image`, `legacy_design.backgroundDark.image.assetId`, `legacy_design.backgroundDark.image.fit`, `legacy_design.backgroundDark.image.position`, `legacy_design.backgroundDark.image.overlay`, `legacy_design.backgroundDark.image.blur`, `legacy_design.backgroundDark.pattern`, `legacy_design.logo`, `legacy_design.logo.assetId`, `legacy_design.logo.darkAssetId`, `brand`, `brand.source`, `brand.url`, `brand.imported_at`, `brand.document_sha256`, `brand.design`, `brand.design.version`, `brand.design.preset`, `brand.design.colorScheme`, `brand.design.palette`, `brand.design.palette.primary`, `brand.design.palette.primaryInk`, `brand.design.palette.accent`, `brand.design.palette.background`, `brand.design.palette.surface`, `brand.design.palette.text`, `brand.design.palette.muted`, `brand.design.palette.border`, `brand.design.palette.danger`, `brand.design.palette.success`, `brand.design.palette.inputBackground`, `brand.design.palette.inputText`, `brand.design.paletteDark`, `brand.design.paletteDark.primary`, `brand.design.paletteDark.primaryInk`, `brand.design.paletteDark.accent`, `brand.design.paletteDark.background`, `brand.design.paletteDark.surface`, `brand.design.paletteDark.text`, `brand.design.paletteDark.muted`, `brand.design.paletteDark.border`, `brand.design.paletteDark.danger`, `brand.design.paletteDark.success`, `brand.design.paletteDark.inputBackground`, `brand.design.paletteDark.inputText`, `brand.design.typography`, `brand.design.typography.font`, `brand.design.typography.headingFont`, `brand.design.typography.baseSize`, `brand.design.typography.headingWeight`, `brand.design.typography.bodyWeight`, `brand.design.typography.letterCase`, `brand.design.typography.scale`, `brand.design.shape`, `brand.design.shape.radius`, `brand.design.shape.controlRadius`, `brand.design.shape.borderWidth`, `brand.design.elevation`, `brand.design.elevation.cardShadow`, `brand.design.spacing`, `brand.design.spacing.density`, `brand.design.card`, `brand.design.card.style`, `brand.design.card.blur`, `brand.design.card.width`, `brand.design.layout`, `brand.design.layout.position`, `brand.design.layout.splitImageSide`, `brand.design.layout.logoPlacement`, `brand.design.layout.logoSize`, `brand.design.buttons`, `brand.design.buttons.style`, `brand.design.buttons.socialLayout`, `brand.design.inputs`, `brand.design.inputs.style`, `brand.design.background`, `brand.design.background.color`, `brand.design.background.gradient`, `brand.design.background.image`, `brand.design.background.pattern`, `brand.design.backgroundDark`, `brand.design.backgroundDark.color`, `brand.design.backgroundDark.gradient`, `brand.design.backgroundDark.image`, `brand.design.backgroundDark.pattern`, `brand.design.logo`, `brand.design.logo.assetId`, `brand.design.logo.darkAssetId`, `brand.mapping`, `brand.mapping.token`, `brand.mapping.to`, `brand.mapping.value`, `brand.ignored`, `brand.ignored.token`, `brand.ignored.reason`, `brand.meta`, `brand.meta.name`, `brand.meta.legalName`, `brand.meta.supportEmail`, `brand.meta.favicon`, `precedence`, `precedence.layer`, `precedence.source`, `sources`, `ignored`, `ignored.token`, `ignored.reason`.
   """
   def get_design(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/design", %{}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.Instance do
   Replace the instance design ({ design: AtlasDesign }), and/or import a brand document ({ brand: {…} } or { brand_url: "https://…/brand.json" }; brand: null removes it). The brand maps onto its own layer under the stored design (precedence: brand < design < audience branding); logos are stored as design images, self-hosted fonts are mirrored to Atlas. The read-back shows brand.mapping, ignored[] with reasons, and each field's source. Unknown keys are refused with their path.
 
   `PUT /v1/instance/design`. Required scope: `instance:write`.
+
+  Body fields: `design` (object), `brand` (object|null), `brand_url` (string).
+  Nested body fields: `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`.
+  Response fields: `object`, `organization_id`, `design`, `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `legacy`, `legacy_design`, `legacy_design.version`, `legacy_design.preset`, `legacy_design.colorScheme`, `legacy_design.palette`, `legacy_design.palette.primary`, `legacy_design.palette.primaryInk`, `legacy_design.palette.accent`, `legacy_design.palette.background`, `legacy_design.palette.surface`, `legacy_design.palette.text`, `legacy_design.palette.muted`, `legacy_design.palette.border`, `legacy_design.palette.danger`, `legacy_design.palette.success`, `legacy_design.palette.inputBackground`, `legacy_design.palette.inputText`, `legacy_design.paletteDark`, `legacy_design.paletteDark.primary`, `legacy_design.paletteDark.primaryInk`, `legacy_design.paletteDark.accent`, `legacy_design.paletteDark.background`, `legacy_design.paletteDark.surface`, `legacy_design.paletteDark.text`, `legacy_design.paletteDark.muted`, `legacy_design.paletteDark.border`, `legacy_design.paletteDark.danger`, `legacy_design.paletteDark.success`, `legacy_design.paletteDark.inputBackground`, `legacy_design.paletteDark.inputText`, `legacy_design.typography`, `legacy_design.typography.font`, `legacy_design.typography.headingFont`, `legacy_design.typography.baseSize`, `legacy_design.typography.headingWeight`, `legacy_design.typography.bodyWeight`, `legacy_design.typography.letterCase`, `legacy_design.typography.scale`, `legacy_design.shape`, `legacy_design.shape.radius`, `legacy_design.shape.controlRadius`, `legacy_design.shape.borderWidth`, `legacy_design.elevation`, `legacy_design.elevation.cardShadow`, `legacy_design.spacing`, `legacy_design.spacing.density`, `legacy_design.card`, `legacy_design.card.style`, `legacy_design.card.blur`, `legacy_design.card.width`, `legacy_design.layout`, `legacy_design.layout.position`, `legacy_design.layout.splitImageSide`, `legacy_design.layout.logoPlacement`, `legacy_design.layout.logoSize`, `legacy_design.buttons`, `legacy_design.buttons.style`, `legacy_design.buttons.socialLayout`, `legacy_design.inputs`, `legacy_design.inputs.style`, `legacy_design.background`, `legacy_design.background.color`, `legacy_design.background.gradient`, `legacy_design.background.gradient.type`, `legacy_design.background.gradient.angle`, `legacy_design.background.gradient.stops`, `legacy_design.background.image`, `legacy_design.background.image.assetId`, `legacy_design.background.image.fit`, `legacy_design.background.image.position`, `legacy_design.background.image.overlay`, `legacy_design.background.image.blur`, `legacy_design.background.pattern`, `legacy_design.backgroundDark`, `legacy_design.backgroundDark.color`, `legacy_design.backgroundDark.gradient`, `legacy_design.backgroundDark.gradient.type`, `legacy_design.backgroundDark.gradient.angle`, `legacy_design.backgroundDark.gradient.stops`, `legacy_design.backgroundDark.image`, `legacy_design.backgroundDark.image.assetId`, `legacy_design.backgroundDark.image.fit`, `legacy_design.backgroundDark.image.position`, `legacy_design.backgroundDark.image.overlay`, `legacy_design.backgroundDark.image.blur`, `legacy_design.backgroundDark.pattern`, `legacy_design.logo`, `legacy_design.logo.assetId`, `legacy_design.logo.darkAssetId`, `brand`, `brand.source`, `brand.url`, `brand.imported_at`, `brand.document_sha256`, `brand.design`, `brand.design.version`, `brand.design.preset`, `brand.design.colorScheme`, `brand.design.palette`, `brand.design.palette.primary`, `brand.design.palette.primaryInk`, `brand.design.palette.accent`, `brand.design.palette.background`, `brand.design.palette.surface`, `brand.design.palette.text`, `brand.design.palette.muted`, `brand.design.palette.border`, `brand.design.palette.danger`, `brand.design.palette.success`, `brand.design.palette.inputBackground`, `brand.design.palette.inputText`, `brand.design.paletteDark`, `brand.design.paletteDark.primary`, `brand.design.paletteDark.primaryInk`, `brand.design.paletteDark.accent`, `brand.design.paletteDark.background`, `brand.design.paletteDark.surface`, `brand.design.paletteDark.text`, `brand.design.paletteDark.muted`, `brand.design.paletteDark.border`, `brand.design.paletteDark.danger`, `brand.design.paletteDark.success`, `brand.design.paletteDark.inputBackground`, `brand.design.paletteDark.inputText`, `brand.design.typography`, `brand.design.typography.font`, `brand.design.typography.headingFont`, `brand.design.typography.baseSize`, `brand.design.typography.headingWeight`, `brand.design.typography.bodyWeight`, `brand.design.typography.letterCase`, `brand.design.typography.scale`, `brand.design.shape`, `brand.design.shape.radius`, `brand.design.shape.controlRadius`, `brand.design.shape.borderWidth`, `brand.design.elevation`, `brand.design.elevation.cardShadow`, `brand.design.spacing`, `brand.design.spacing.density`, `brand.design.card`, `brand.design.card.style`, `brand.design.card.blur`, `brand.design.card.width`, `brand.design.layout`, `brand.design.layout.position`, `brand.design.layout.splitImageSide`, `brand.design.layout.logoPlacement`, `brand.design.layout.logoSize`, `brand.design.buttons`, `brand.design.buttons.style`, `brand.design.buttons.socialLayout`, `brand.design.inputs`, `brand.design.inputs.style`, `brand.design.background`, `brand.design.background.color`, `brand.design.background.gradient`, `brand.design.background.image`, `brand.design.background.pattern`, `brand.design.backgroundDark`, `brand.design.backgroundDark.color`, `brand.design.backgroundDark.gradient`, `brand.design.backgroundDark.image`, `brand.design.backgroundDark.pattern`, `brand.design.logo`, `brand.design.logo.assetId`, `brand.design.logo.darkAssetId`, `brand.mapping`, `brand.mapping.token`, `brand.mapping.to`, `brand.mapping.value`, `brand.ignored`, `brand.ignored.token`, `brand.ignored.reason`, `brand.meta`, `brand.meta.name`, `brand.meta.legalName`, `brand.meta.supportEmail`, `brand.meta.favicon`, `precedence`, `precedence.layer`, `precedence.source`, `sources`, `ignored`, `ignored.token`, `ignored.reason`.
   """
   def put_design(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/design", %{}, body, opts)
@@ -29,6 +36,10 @@ defmodule Atlas.Instance do
   Change part of the instance design ({ design: AtlasDesignPatch }): nested settings merge, null removes a setting.
 
   `PATCH /v1/instance/design`. Required scope: `instance:write`.
+
+  Body fields: `design` (object, required).
+  Nested body fields: `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`.
+  Response fields: `object`, `organization_id`, `design`, `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `legacy`, `legacy_design`, `legacy_design.version`, `legacy_design.preset`, `legacy_design.colorScheme`, `legacy_design.palette`, `legacy_design.palette.primary`, `legacy_design.palette.primaryInk`, `legacy_design.palette.accent`, `legacy_design.palette.background`, `legacy_design.palette.surface`, `legacy_design.palette.text`, `legacy_design.palette.muted`, `legacy_design.palette.border`, `legacy_design.palette.danger`, `legacy_design.palette.success`, `legacy_design.palette.inputBackground`, `legacy_design.palette.inputText`, `legacy_design.paletteDark`, `legacy_design.paletteDark.primary`, `legacy_design.paletteDark.primaryInk`, `legacy_design.paletteDark.accent`, `legacy_design.paletteDark.background`, `legacy_design.paletteDark.surface`, `legacy_design.paletteDark.text`, `legacy_design.paletteDark.muted`, `legacy_design.paletteDark.border`, `legacy_design.paletteDark.danger`, `legacy_design.paletteDark.success`, `legacy_design.paletteDark.inputBackground`, `legacy_design.paletteDark.inputText`, `legacy_design.typography`, `legacy_design.typography.font`, `legacy_design.typography.headingFont`, `legacy_design.typography.baseSize`, `legacy_design.typography.headingWeight`, `legacy_design.typography.bodyWeight`, `legacy_design.typography.letterCase`, `legacy_design.typography.scale`, `legacy_design.shape`, `legacy_design.shape.radius`, `legacy_design.shape.controlRadius`, `legacy_design.shape.borderWidth`, `legacy_design.elevation`, `legacy_design.elevation.cardShadow`, `legacy_design.spacing`, `legacy_design.spacing.density`, `legacy_design.card`, `legacy_design.card.style`, `legacy_design.card.blur`, `legacy_design.card.width`, `legacy_design.layout`, `legacy_design.layout.position`, `legacy_design.layout.splitImageSide`, `legacy_design.layout.logoPlacement`, `legacy_design.layout.logoSize`, `legacy_design.buttons`, `legacy_design.buttons.style`, `legacy_design.buttons.socialLayout`, `legacy_design.inputs`, `legacy_design.inputs.style`, `legacy_design.background`, `legacy_design.background.color`, `legacy_design.background.gradient`, `legacy_design.background.gradient.type`, `legacy_design.background.gradient.angle`, `legacy_design.background.gradient.stops`, `legacy_design.background.image`, `legacy_design.background.image.assetId`, `legacy_design.background.image.fit`, `legacy_design.background.image.position`, `legacy_design.background.image.overlay`, `legacy_design.background.image.blur`, `legacy_design.background.pattern`, `legacy_design.backgroundDark`, `legacy_design.backgroundDark.color`, `legacy_design.backgroundDark.gradient`, `legacy_design.backgroundDark.gradient.type`, `legacy_design.backgroundDark.gradient.angle`, `legacy_design.backgroundDark.gradient.stops`, `legacy_design.backgroundDark.image`, `legacy_design.backgroundDark.image.assetId`, `legacy_design.backgroundDark.image.fit`, `legacy_design.backgroundDark.image.position`, `legacy_design.backgroundDark.image.overlay`, `legacy_design.backgroundDark.image.blur`, `legacy_design.backgroundDark.pattern`, `legacy_design.logo`, `legacy_design.logo.assetId`, `legacy_design.logo.darkAssetId`, `brand`, `brand.source`, `brand.url`, `brand.imported_at`, `brand.document_sha256`, `brand.design`, `brand.design.version`, `brand.design.preset`, `brand.design.colorScheme`, `brand.design.palette`, `brand.design.palette.primary`, `brand.design.palette.primaryInk`, `brand.design.palette.accent`, `brand.design.palette.background`, `brand.design.palette.surface`, `brand.design.palette.text`, `brand.design.palette.muted`, `brand.design.palette.border`, `brand.design.palette.danger`, `brand.design.palette.success`, `brand.design.palette.inputBackground`, `brand.design.palette.inputText`, `brand.design.paletteDark`, `brand.design.paletteDark.primary`, `brand.design.paletteDark.primaryInk`, `brand.design.paletteDark.accent`, `brand.design.paletteDark.background`, `brand.design.paletteDark.surface`, `brand.design.paletteDark.text`, `brand.design.paletteDark.muted`, `brand.design.paletteDark.border`, `brand.design.paletteDark.danger`, `brand.design.paletteDark.success`, `brand.design.paletteDark.inputBackground`, `brand.design.paletteDark.inputText`, `brand.design.typography`, `brand.design.typography.font`, `brand.design.typography.headingFont`, `brand.design.typography.baseSize`, `brand.design.typography.headingWeight`, `brand.design.typography.bodyWeight`, `brand.design.typography.letterCase`, `brand.design.typography.scale`, `brand.design.shape`, `brand.design.shape.radius`, `brand.design.shape.controlRadius`, `brand.design.shape.borderWidth`, `brand.design.elevation`, `brand.design.elevation.cardShadow`, `brand.design.spacing`, `brand.design.spacing.density`, `brand.design.card`, `brand.design.card.style`, `brand.design.card.blur`, `brand.design.card.width`, `brand.design.layout`, `brand.design.layout.position`, `brand.design.layout.splitImageSide`, `brand.design.layout.logoPlacement`, `brand.design.layout.logoSize`, `brand.design.buttons`, `brand.design.buttons.style`, `brand.design.buttons.socialLayout`, `brand.design.inputs`, `brand.design.inputs.style`, `brand.design.background`, `brand.design.background.color`, `brand.design.background.gradient`, `brand.design.background.image`, `brand.design.background.pattern`, `brand.design.backgroundDark`, `brand.design.backgroundDark.color`, `brand.design.backgroundDark.gradient`, `brand.design.backgroundDark.image`, `brand.design.backgroundDark.pattern`, `brand.design.logo`, `brand.design.logo.assetId`, `brand.design.logo.darkAssetId`, `brand.mapping`, `brand.mapping.token`, `brand.mapping.to`, `brand.mapping.value`, `brand.ignored`, `brand.ignored.token`, `brand.ignored.reason`, `brand.meta`, `brand.meta.name`, `brand.meta.legalName`, `brand.meta.supportEmail`, `brand.meta.favicon`, `precedence`, `precedence.layer`, `precedence.source`, `sources`, `ignored`, `ignored.token`, `ignored.reason`.
   """
   def update_design(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/design", %{}, body, opts)
@@ -37,6 +48,10 @@ defmodule Atlas.Instance do
   Compile an unsaved design: CSS variables scoped to .atlas-root, data attributes, font stylesheet URLs, warnings, the resolved design and the rendered sign-in page. Nothing is saved.
 
   `POST /v1/instance/design/preview`. Required scope: `instance:read`.
+
+  Body fields: `design` (object, required).
+  Nested body fields: `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`.
+  Response fields: `object`, `scope`, `css`, `data_attributes`, `font_stylesheets`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `html`.
   """
   def post_design_preview(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/design/preview", %{}, body, opts)
@@ -45,6 +60,8 @@ defmodule Atlas.Instance do
   The instance's data-rights orchestrator: the provider (a preset or `custom`), where Atlas opens a closure case when an account deletion is scheduled (`case_url`, `cancel_url`), how it authenticates, the managed completion webhook, the last case and error, and the available presets. Never a secret.
 
   `GET /v1/instance/privacy_orchestrator`. Required scope: `instance:read`.
+
+  Response fields: `object`, `configured`, `enabled`, `provider`, `name`, `case_url`, `cancel_url`, `auth_header`, `auth_scheme`, `api_key_set`, `signing_secret_set`, `use_partner_link`, `partner_link_id`, `site_id`, `open_closure_cases`, `cancel_deletion_on_sign_in`, `completion_webhook`, `last_case_at`, `last_error`, `last_error_at`, `presets`, `signing_secret`, `completion_webhook_secret`, `deleted`.
   """
   def get_privacy_orchestrator(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/privacy_orchestrator", %{}, nil, opts)
@@ -53,6 +70,9 @@ defmodule Atlas.Instance do
   Connect or update the data-rights orchestrator. `provider` is a preset (`cookiemunch` fills in its URLs and auth, and opens cases with Cookie Munch's own `POST /v1/dsar/requests` body: `cbid`, `type`, `source: atlas`, `subject { emails, identity }`, `reason`) or your own id with `name` and `case_url` (the Atlas case format). `api_key` is write-only. `sign_requests: true` mints the secret Atlas signs case calls with (Atlas-Signature over id.timestamp.body); `completion_webhook_url` creates a webhook endpoint subscribed to `privacy_request.updated` / `privacy_request.completed`. New secrets are returned once. → 201 on create.
 
   `PUT /v1/instance/privacy_orchestrator`. Required scope: `instance:write`.
+
+  Body fields: `provider` (string), `name` (string), `enabled` (boolean), `case_url` (string|null), `cancel_url` (string|null), `auth_header` (string), `auth_scheme` (enum), `api_key` (string|null), `use_partner_link` (boolean), `partner_link_id` (string|null), `site_id` (string|null), `cancel_deletion_on_sign_in` (boolean), `open_closure_cases` (boolean), `sign_requests` (boolean), `completion_webhook_url` (string|null).
+  Response fields: `object`, `configured`, `enabled`, `provider`, `name`, `case_url`, `cancel_url`, `auth_header`, `auth_scheme`, `api_key_set`, `signing_secret_set`, `use_partner_link`, `partner_link_id`, `site_id`, `open_closure_cases`, `cancel_deletion_on_sign_in`, `completion_webhook`, `last_case_at`, `last_error`, `last_error_at`, `presets`, `signing_secret`, `completion_webhook_secret`, `deleted`.
   """
   def put_privacy_orchestrator(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/privacy_orchestrator", %{}, body, opts)
@@ -61,14 +81,68 @@ defmodule Atlas.Instance do
   Disconnect the data-rights orchestrator and remove its managed completion webhook.
 
   `DELETE /v1/instance/privacy_orchestrator`. Required scope: `instance:write`.
+
+  Response fields: `object`, `configured`, `enabled`, `provider`, `name`, `case_url`, `cancel_url`, `auth_header`, `auth_scheme`, `api_key_set`, `signing_secret_set`, `use_partner_link`, `partner_link_id`, `site_id`, `open_closure_cases`, `cancel_deletion_on_sign_in`, `completion_webhook`, `last_case_at`, `last_error`, `last_error_at`, `presets`, `signing_secret`, `completion_webhook_secret`, `deleted`.
   """
   def delete_privacy_orchestrator(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/privacy_orchestrator", %{}, nil, opts)
 
   @doc ~S"""
+  The data-rights cases Atlas opened (or tried to) at the orchestrator, newest first, paged like every list (`limit` 1-100, `starting_after` = a request id, `has_more`). `status` filters (`abandoned` = given up, `failed` = still being retried, `open`, `pending`, `cancel_pending`, `cancelled`). A case dismissed by an operator is left out unless `dismissed=true`. `reason_code: email_unverified` marks a case deliberately not filed because the account's primary email address is not verified. Each `id` is the Atlas request id.
+
+  `GET /v1/instance/privacy_orchestrator/cases`. Required scope: `instance:read`.
+
+  Query params (`params:`): `status`, `dismissed`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.request_id`, `data.provider`, `data.case_id`, `data.status`, `data.attempts`, `data.last_error`, `data.reason_code`, `data.opened_at`, `data.dismissed_at`, `data.dismissed_reason`, `data.updated_at`, `has_more`.
+  """
+  def get_privacy_orchestrator_cases(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/privacy_orchestrator/cases", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_privacy_orchestrator_cases`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_privacy_orchestrator_cases(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/privacy_orchestrator/cases", %{}, opts)
+
+  @doc ~S"""
+  Open a failed or abandoned case again now: its attempts reset and Atlas sends it to the orchestrator immediately; the answer is the case as it stands afterwards. 422 for a case that is not failed or abandoned, 404 for an unknown request. Audited (privacy_orchestrator.case_retried). A case skipped because the primary email is not verified is skipped again until the address is verified.
+
+  `POST /v1/instance/privacy_orchestrator/cases/{id}/retry`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `request_id`, `provider`, `case_id`, `status`, `attempts`, `last_error`, `reason_code`, `opened_at`, `dismissed_at`, `dismissed_reason`, `updated_at`.
+  """
+  def post_privacy_orchestrator_cases_retry(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/privacy_orchestrator/cases/{id}/retry", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Settle a failed or abandoned case without filing it: it leaves the integration-health problem count and the default case list. The `reason` is required and audited (privacy_orchestrator.case_dismissed). The request itself is untouched (an account deletion still runs on schedule).
+
+  `POST /v1/instance/privacy_orchestrator/cases/{id}/dismiss`. Required scope: `instance:write`.
+
+  Body fields: `reason` (string, required).
+  Response fields: `object`, `id`, `request_id`, `provider`, `case_id`, `status`, `attempts`, `last_error`, `reason_code`, `opened_at`, `dismissed_at`, `dismissed_reason`, `updated_at`.
+  """
+  def post_privacy_orchestrator_cases_by_id_dismiss(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/privacy_orchestrator/cases/{id}/dismiss", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Dismiss every open case that was deliberately not filed because the account's primary email is not verified (`reason_code: email_unverified`), in one call; this clears the `privacy_orchestrator.cases_unverified_email` integration-health note. `reason` is optional (a default is recorded). Returns how many were dismissed (0 when none). Each is audited (privacy_orchestrator.case_dismissed). The requests themselves are untouched.
+
+  `POST /v1/instance/privacy_orchestrator/cases/dismiss`. Required scope: `instance:write`.
+
+  Body fields: `reason_code` (enum, required), `reason` (string).
+  Response fields: `object`, `reason_code`, `dismissed`.
+  """
+  def post_privacy_orchestrator_cases_dismiss(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/privacy_orchestrator/cases/dismiss", %{}, body, opts)
+
+  @doc ~S"""
   Everything a privacy integration wires, in one view: the hosted-page consent manager (`cookie_consent`, as GET /v1/instance/cookie_consent answers it), the data-rights orchestrator (`privacy_orchestrator`), the DSR completion webhook to the orchestrator (`dsr_webhook`) and the narrow executor key the connect minted (`executor_key`, never its secret). `connected` is true when all four are in place. Needs `instance:read` and `secret_keys:read`.
 
   `GET /v1/instance/privacy_integrations`. Required scope: `instance:read`.
+
+  Response fields: `object`, `preset`, `connected`, `cookie_consent`, `privacy_orchestrator`, `privacy_orchestrator.object`, `privacy_orchestrator.configured`, `privacy_orchestrator.enabled`, `privacy_orchestrator.provider`, `privacy_orchestrator.name`, `privacy_orchestrator.case_url`, `privacy_orchestrator.cancel_url`, `privacy_orchestrator.auth_header`, `privacy_orchestrator.auth_scheme`, `privacy_orchestrator.api_key_set`, `privacy_orchestrator.signing_secret_set`, `privacy_orchestrator.use_partner_link`, `privacy_orchestrator.partner_link_id`, `privacy_orchestrator.site_id`, `privacy_orchestrator.open_closure_cases`, `privacy_orchestrator.cancel_deletion_on_sign_in`, `privacy_orchestrator.completion_webhook`, `privacy_orchestrator.last_case_at`, `privacy_orchestrator.last_error`, `privacy_orchestrator.last_error_at`, `privacy_orchestrator.presets`, `privacy_orchestrator.signing_secret`, `privacy_orchestrator.completion_webhook_secret`, `privacy_orchestrator.deleted`, `dsr_webhook`, `dsr_webhook.source`, `dsr_webhook.secret_destination`, `dsr_webhook.secret_destination.executor_connection_id`, `dsr_webhook.secret_destination.connection_url`, `dsr_webhook.secret_destination.field`, `dsr_webhook.secret_destination.sent`, `dsr_webhook.secret_destination.secret`, `dsr_webhook.secret_destination.instructions`, `executor_key`, `executor_key.id`, `executor_key.action`, `executor_key.prefix`, `executor_key.scopes`, `executor_key.secret`, `executor_key.idempotent_replay`, `executor_key.note`, `warnings`.
   """
   def get_privacy_integrations(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/privacy_integrations", %{}, nil, opts)
@@ -77,14 +151,109 @@ defmodule Atlas.Instance do
   Wire a consent manager / data-rights orchestrator to the instance both ways in one call. `preset` is an orchestrator preset (`cookiemunch` fills the banner script, CSP origins and case URLs from `site_id`) or `custom` (send `cookie_consent.script_url` and `orchestrator.name` / `case_url` yourself). Sets the hosted-page CMP, the orchestrator Atlas opens cases with (`api_key` or `partner_link_id`), the DSR completion webhook to the orchestrator's executor connection (`completion_webhook_url`, or with preset cookiemunch `executor_connection_id`: Atlas reads that connection's `webhookUrl` from Cookie Munch and `dsr_webhook.secret_destination` says where its signing secret goes), and mints a secret key with `privacy:*` scopes and `cookie_consent:read` only (default `privacy:execute` + `privacy:grants:revoke` + `cookie_consent:read`) for the orchestrator to call the executor protocol with, or uses the one it already holds (`key.id`). `executor_key.action` says which: `minted`, `kept`, `upgraded` (a re-run added requested scopes the key lacked; secret unchanged) or `adopted`. `warnings` says when a new key is minted. Idempotent: a re-run updates the same settings and returns the same key without its secret (`idempotent_replay: true`); rotate it with POST /v1/secret_keys/{id}/rotate. The body is validated in full before anything is written; errors name the nested field (`cookie_consent.script_url`, `key.scopes.0`). Needs `instance:write` and `secret_keys:write` (and recent MFA for an operator token on first mint). → 201 when the orchestrator or the key was created, else 200.
 
   `POST /v1/instance/privacy_integrations/connect`. Required scope: `instance:write`.
+
+  Body fields: `preset` (string, required), `site_id` (string), `api_key` (string), `partner_link_id` (string), `completion_webhook_url` (string), `executor_connection_id` (string), `cookie_consent` (any), `orchestrator` (object), `key` (object).
+  Nested body fields: `key.id`, `key.name`, `key.scopes`, `key.expires_at`, `key.allowed_ips`, `key.allowed_origins`.
+  Response fields: `object`, `preset`, `connected`, `cookie_consent`, `privacy_orchestrator`, `privacy_orchestrator.object`, `privacy_orchestrator.configured`, `privacy_orchestrator.enabled`, `privacy_orchestrator.provider`, `privacy_orchestrator.name`, `privacy_orchestrator.case_url`, `privacy_orchestrator.cancel_url`, `privacy_orchestrator.auth_header`, `privacy_orchestrator.auth_scheme`, `privacy_orchestrator.api_key_set`, `privacy_orchestrator.signing_secret_set`, `privacy_orchestrator.use_partner_link`, `privacy_orchestrator.partner_link_id`, `privacy_orchestrator.site_id`, `privacy_orchestrator.open_closure_cases`, `privacy_orchestrator.cancel_deletion_on_sign_in`, `privacy_orchestrator.completion_webhook`, `privacy_orchestrator.last_case_at`, `privacy_orchestrator.last_error`, `privacy_orchestrator.last_error_at`, `privacy_orchestrator.presets`, `privacy_orchestrator.signing_secret`, `privacy_orchestrator.completion_webhook_secret`, `privacy_orchestrator.deleted`, `dsr_webhook`, `dsr_webhook.source`, `dsr_webhook.secret_destination`, `dsr_webhook.secret_destination.executor_connection_id`, `dsr_webhook.secret_destination.connection_url`, `dsr_webhook.secret_destination.field`, `dsr_webhook.secret_destination.sent`, `dsr_webhook.secret_destination.secret`, `dsr_webhook.secret_destination.instructions`, `executor_key`, `executor_key.id`, `executor_key.action`, `executor_key.prefix`, `executor_key.scopes`, `executor_key.secret`, `executor_key.idempotent_replay`, `executor_key.note`, `warnings`.
   """
   def post_privacy_integrations_connect(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/privacy_integrations/connect", %{}, body, opts)
 
   @doc ~S"""
-  Read instance configuration. Returns both the raw auth_config patch and auth_config_resolved — the EFFECTIVE config with defaults expanded (enabled first factors, password policy, session, MFA), so you can inspect live auth behaviour and learn the exact shape to PATCH. Never returns the private signing key.
+  The scope catalogue: the scopes your product defines, with consent-screen text per locale, `sensitive` and `requires_verified_client`.
+
+  `GET /v1/instance/scopes`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.name`, `data.label`, `data.description`, `data.sensitive`, `data.requires_verified_client`.
+  """
+  def get_scopes(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/scopes", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_scopes`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_scopes(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/scopes", %{}, opts)
+
+  @doc ~S"""
+  Replace the scope catalogue. Each scope has a `name`, a `label` and a `description` per locale ({ "en": "…", "es": "…" }), `sensitive`, and `requires_verified_client`. The consent screen shows the label and description in the user's language (falling back to its base language, then `en`). A scope with `requires_verified_client` is refused at /oauth2/authorize with `invalid_scope` unless the app's status is `approved` or that scope is in the client's `approved_scopes` (per-scope review). The owner and testers of a client still in development may request it too. A client still needs the scope in its allowed scopes to request it.
+
+  `PUT /v1/instance/scopes`. Required scope: `instance:write`.
+
+  Body fields: `scopes` (array, required).
+  Nested body fields: `scopes.name`, `scopes.label`, `scopes.description`, `scopes.sensitive`, `scopes.requires_verified_client`.
+  """
+  def put_scopes(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/scopes", %{}, body, opts)
+
+  @doc ~S"""
+  The instance's staff impersonation policy: require_reason, reason_codes, max_duration_seconds, require_approval, read_only_default and notify_user.
+
+  `GET /v1/instance/impersonation_policy`. Required scope: `instance:read`.
+
+  Response fields: `object`, `require_reason`, `reason_codes`, `max_duration_seconds`, `require_approval`, `read_only_default`, `notify_user`.
+  """
+  def get_impersonation_policy(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/impersonation_policy", %{}, nil, opts)
+
+  @doc ~S"""
+  Change the staff impersonation policy. Send only the fields to change; unknown fields are refused. Audited.
+
+  `PUT /v1/instance/impersonation_policy`. Required scope: `instance:write`.
+
+  Body fields: `require_reason` (boolean), `reason_codes` (array), `max_duration_seconds` (integer), `require_approval` (boolean), `read_only_default` (boolean), `notify_user` (boolean).
+  """
+  def put_impersonation_policy(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/impersonation_policy", %{}, body, opts)
+
+  @doc ~S"""
+  The map of organization role key to the feature keys a seat in that role grants. Those features join the token's `fea` claim for a member whose active organization role matches, on top of (or without) a plan.
+
+  `GET /v1/instance/org_role_entitlements`. Required scope: `instance:read`.
+
+  Response fields: `object`, `roles`.
+  """
+  def get_org_role_entitlements(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/org_role_entitlements", %{}, nil, opts)
+
+  @doc ~S"""
+  Replace the role to features map. A role left out grants nothing. Takes effect on the next token.
+
+  `PUT /v1/instance/org_role_entitlements`. Required scope: `instance:write`.
+
+  Body fields: `roles` (object, required).
+  """
+  def put_org_role_entitlements(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/org_role_entitlements", %{}, body, opts)
+
+  @doc ~S"""
+  What happens to the organization connections a departing member authorized: oldest_admin (default), a fixed user, or none.
+
+  `GET /v1/instance/org_departure_policy`. Required scope: `instance:read`.
+
+  Response fields: `object`, `transfer_to`, `user_id`.
+  """
+  def get_org_departure_policy(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/org_departure_policy", %{}, nil, opts)
+
+  @doc ~S"""
+  Set the departure policy. `transfer_to`: oldest_admin, user (needs `user_id`, who must still be a member) or none.
+
+  `PUT /v1/instance/org_departure_policy`. Required scope: `instance:write`.
+
+  Body fields: `transfer_to` (enum, required), `user_id` (string).
+  """
+  def put_org_departure_policy(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/org_departure_policy", %{}, body, opts)
+
+  @doc ~S"""
+  Read instance configuration. Returns both the raw auth_config patch and auth_config_resolved — the EFFECTIVE config with defaults expanded (enabled first factors, password policy, session, MFA), so you can inspect live auth behaviour and learn the exact shape to PATCH. Never returns the private signing key. auth_config includes sections owned by other routes (branding, design, hosted_pages and so on); they are read-only through PATCH /v1/instance unless sent back unchanged.
 
   `GET /v1/instance`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `accepted_issuers`, `accepted_issuers.issuer`, `accepted_issuers.jwks_url`, `accepted_issuers.accepted_until`, `allowed_origins`, `allowed_origin_integrations`, `auth_config`, `auth_config_resolved`, `auth_config_resolved.accountLinking`, `auth_config_resolved.accountLinkingTrust`, `auth_config_resolved.accountUx`, `auth_config_resolved.accountUx.deviceKeys`, `auth_config_resolved.accountUx.deviceKeys.enabled`, `auth_config_resolved.accountUx.deviceKeys.satisfiesMfa`, `auth_config_resolved.accountUx.emailChange`, `auth_config_resolved.accountUx.emailChange.requireOldAddressConfirm`, `auth_config_resolved.accountUx.emailVerification`, `auth_config_resolved.accountUx.impersonation`, `auth_config_resolved.accountUx.impersonation.notifyUser`, `auth_config_resolved.accountUx.lastSignInMethod`, `auth_config_resolved.accountUx.lastSignInMethod.enabled`, `auth_config_resolved.accountUx.passkeyAdoption`, `auth_config_resolved.accountUx.passkeyAdoption.endpoints`, `auth_config_resolved.accountUx.passkeyAdoption.endpoints.enroll`, `auth_config_resolved.accountUx.passkeyAdoption.endpoints.manage`, `auth_config_resolved.accountUx.passkeyAdoption.prompt`, `auth_config_resolved.accountUx.passkeyAdoption.prompt.cooldownDays`, `auth_config_resolved.accountUx.passkeyAdoption.prompt.enabled`, `auth_config_resolved.accountUx.passkeyAdoption.recovery`, `auth_config_resolved.accountUx.passkeyAdoption.recovery.enabled`, `auth_config_resolved.accountUx.passkeyAdoption.recovery.methods`, `auth_config_resolved.accountUx.passkeyAdoption.retirePasswords`, `auth_config_resolved.accountUx.passkeyAdoption.rollout`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.deviceClasses`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.orgs`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.percentage`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.variant`, `auth_config_resolved.accountUx.passkeyAdoption.signals`, `auth_config_resolved.accountUx.passkeyAdoption.webauthn`, `auth_config_resolved.accountUx.passkeyAdoption.webauthn.conditionalCreate`, `auth_config_resolved.accountUx.passkeyAdoption.webauthn.hints`, `auth_config_resolved.accountUx.passkeySignUp`, `auth_config_resolved.accountUx.passkeySignUp.email`, `auth_config_resolved.accountUx.passkeySignUp.enabled`, `auth_config_resolved.accountUx.passkeySignUp.preferred`, `auth_config_resolved.accountUx.passwordReset`, `auth_config_resolved.accountUx.securityNotifications`, `auth_config_resolved.accountUx.securityNotifications.accountChanges`, `auth_config_resolved.accountUx.securityNotifications.newDeviceSignIn`, `auth_config_resolved.accountUx.username`, `auth_config_resolved.accountUx.username.charset`, `auth_config_resolved.accountUx.username.maxLength`, `auth_config_resolved.accountUx.username.minLength`, `auth_config_resolved.accountUx.username.requiredAtSignUp`, `auth_config_resolved.agentFabric`, `auth_config_resolved.agentFabric.allowSelfDelegation`, `auth_config_resolved.agentFabric.continuousEvaluation`, `auth_config_resolved.agentFabric.defaultDelegationTtlSeconds`, `auth_config_resolved.agentFabric.maxDelegationDepth`, `auth_config_resolved.agentFabric.maxMfaAgeSeconds`, `auth_config_resolved.agentFabric.maxRiskLevel`, `auth_config_resolved.agentFabric.onFailure`, `auth_config_resolved.agentFabric.requireTrustedDevice`, `auth_config_resolved.appApproval`, `auth_config_resolved.appApproval.firstFactor`, `auth_config_resolved.appApproval.stepUp`, `auth_config_resolved.appApproval.ttlSeconds`, `auth_config_resolved.appCatalog`, `auth_config_resolved.appCatalog.oidcApps`, `auth_config_resolved.appCatalog.oidcApps.allowedEmailDomains`, `auth_config_resolved.appCatalog.oidcApps.assignment`, `auth_config_resolved.appCatalog.oidcApps.clientId`, `auth_config_resolved.appCatalog.oidcApps.id`, `auth_config_resolved.appCatalog.oidcApps.launchUrl`, `auth_config_resolved.appCatalog.oidcApps.name`, `auth_config_resolved.appCatalog.oidcApps.presetId`, `auth_config_resolved.approvals`, `auth_config_resolved.approvals.requireTrustedDevice`, `auth_config_resolved.attackProtection`, `auth_config_resolved.attackProtection.appAttestation`, `auth_config_resolved.attackProtection.appAttestation.android`, `auth_config_resolved.attackProtection.appAttestation.android.packageNames`, `auth_config_resolved.attackProtection.appAttestation.android.requireDeviceIntegrity`, `auth_config_resolved.attackProtection.appAttestation.android.requirePlayRecognized`, `auth_config_resolved.attackProtection.appAttestation.android.verificationKey`, `auth_config_resolved.attackProtection.appAttestation.enabled`, `auth_config_resolved.attackProtection.appAttestation.flows`, `auth_config_resolved.attackProtection.appAttestation.flows.signIn`, `auth_config_resolved.attackProtection.appAttestation.flows.signUp`, `auth_config_resolved.attackProtection.appAttestation.flows.smsSend`, `auth_config_resolved.attackProtection.appAttestation.ios`, `auth_config_resolved.attackProtection.appAttestation.ios.allowDevelopment`, `auth_config_resolved.attackProtection.appAttestation.ios.appIds`, `auth_config_resolved.attackProtection.appAttestation.ios.deviceCheck`, `auth_config_resolved.attackProtection.appAttestation.maxAgeSeconds`, `auth_config_resolved.attackProtection.bruteForce`, `auth_config_resolved.attackProtection.bruteForce.enabled`, `auth_config_resolved.attackProtection.bruteForce.unblock`, `auth_config_resolved.attackProtection.countries`, `auth_config_resolved.attackProtection.countries.blockUnknown`, `auth_config_resolved.attackProtection.countries.list`, `auth_config_resolved.attackProtection.countries.mode`, `auth_config_resolved.attackProtection.countries.signIn`, `auth_config_resolved.attackProtection.countries.signUp`, `auth_config_resolved.attackProtection.deviceAccounts`, `auth_config_resolved.attackProtection.deviceAccounts.enabled`, `auth_config_resolved.attackProtection.deviceAccounts.maxAccounts`, `auth_config_resolved.attackProtection.deviceAccounts.windowDays`, `auth_config_resolved.attackProtection.disposableEmail`, `auth_config_resolved.attackProtection.disposableEmail.allowDomains`, `auth_config_resolved.attackProtection.disposableEmail.block`, `auth_config_resolved.attackProtection.disposableEmail.extraDomains`, `auth_config_resolved.attackProtection.dormantAccounts`, `auth_config_resolved.attackProtection.dormantAccounts.enabled`, `auth_config_resolved.attackProtection.dormantAccounts.notifyUser`, `auth_config_resolved.attackProtection.dormantAccounts.onNoFactor`, `auth_config_resolved.attackProtection.dormantAccounts.requireMfa`, `auth_config_resolved.attackProtection.dormantAccounts.thresholdDays`, `auth_config_resolved.attackProtection.recoveryAbuse`, `auth_config_resolved.attackProtection.recoveryAbuse.enabled`, `auth_config_resolved.attackProtection.recoveryAbuse.perAccountPerHour`, `auth_config_resolved.attackProtection.recoveryAbuse.perIpPerHour`, `auth_config_resolved.attackProtection.signUpAbuse`, `auth_config_resolved.attackProtection.signUpAbuse.blockRiskAt`, `auth_config_resolved.attackProtection.signUpAbuse.enabled`, `auth_config_resolved.attackProtection.signUpAbuse.perAsnPerHour`, `auth_config_resolved.attackProtection.signUpAbuse.perIpPerDay`, `auth_config_resolved.attackProtection.signUpAbuse.perIpPerHour`, `auth_config_resolved.attackProtection.smsPumping`, `auth_config_resolved.attackProtection.smsPumping.allowedPrefixes`, `auth_config_resolved.attackProtection.smsPumping.blockedPrefixes`, `auth_config_resolved.attackProtection.smsPumping.enabled`, `auth_config_resolved.attackProtection.smsPumping.maxPerHour`, `auth_config_resolved.banBlocksIp`, `auth_config_resolved.banBlocksReregistration`, `auth_config_resolved.banIpBlockDays`, `auth_config_resolved.billing`, `auth_config_resolved.billing.portalConfigurationId`, `auth_config_resolved.captcha`, `auth_config_resolved.captcha.actions`, `auth_config_resolved.captcha.attestationUrl`, `auth_config_resolved.captcha.flows`, `auth_config_resolved.captcha.gateAnonymous`, `auth_config_resolved.captcha.minScore`, `auth_config_resolved.captcha.projectId`, `auth_config_resolved.captcha.provider`, `auth_config_resolved.captcha.siteKey`, `auth_config_resolved.captcha.verifyUrl`, `auth_config_resolved.captcha.widget`, `auth_config_resolved.changeFeed`, `auth_config_resolved.changeFeed.retentionDays`, `auth_config_resolved.compliance`, `auth_config_resolved.compliance.consents`, `auth_config_resolved.compliance.consents.policy`, `auth_config_resolved.compliance.consents.required`, `auth_config_resolved.compliance.consents.version`, `auth_config_resolved.compliance.cookieConsent`, `auth_config_resolved.compliance.cookieConsent.categories`, `auth_config_resolved.compliance.cookieConsent.enabled`, `auth_config_resolved.compliance.cookieConsent.honorDnt`, `auth_config_resolved.compliance.cookieConsent.honorGpc`, `auth_config_resolved.compliance.cookieConsent.policyVersion`, `auth_config_resolved.compliance.cookieConsent.repromptDays`, `auth_config_resolved.compliance.cookieConsent.retentionDays`, `auth_config_resolved.compliance.dataPolicy`, `auth_config_resolved.compliance.dataPolicy.activities`, `auth_config_resolved.compliance.dataPolicy.controller`, `auth_config_resolved.compliance.dataPolicy.controller.contactEmail`, `auth_config_resolved.compliance.dataPolicy.controller.dpoEmail`, `auth_config_resolved.compliance.dataPolicy.controller.name`, `auth_config_resolved.compliance.dataRegion`, `auth_config_resolved.compliance.inactiveUsers`, `auth_config_resolved.compliance.inactiveUsers.action`, `auth_config_resolved.compliance.inactiveUsers.afterDays`, `auth_config_resolved.compliance.inactiveUsers.enabled`, `auth_config_resolved.compliance.inactiveUsers.warnDays`, `auth_config_resolved.compliance.minors`, `auth_config_resolved.compliance.minors.birthdateTrait`, `auth_config_resolved.compliance.minors.consentAges`, `auth_config_resolved.compliance.minors.consentMethods`, `auth_config_resolved.compliance.minors.consentTtlHours`, `auth_config_resolved.compliance.minors.countryTrait`, `auth_config_resolved.compliance.minors.defaultConsentAge`, `auth_config_resolved.compliance.minors.enabled`, `auth_config_resolved.compliance.minors.minAssuranceLevel`, `auth_config_resolved.compliance.minors.minimumAge`, `auth_config_resolved.compliance.minors.restriction`, `auth_config_resolved.compliance.minors.trustedAgeMethods`, `auth_config_resolved.compliance.retention`, `auth_config_resolved.compliance.retention.anonymousRetentionDays`, `auth_config_resolved.compliance.retention.cancelDeletionOnSignIn`, `auth_config_resolved.compliance.retention.deletedUserGraceDays`, `auth_config_resolved.compliance.retention.deletionReminders`, `auth_config_resolved.compliance.retention.dsrDueDays`, `auth_config_resolved.compliance.retention.erasureGraceDays`, `auth_config_resolved.compliance.retention.ownershipTransfer`, `auth_config_resolved.compliance.retention.requireFinalNotice`, `auth_config_resolved.dangerouslyReportSkippedEmailsAsVerified`, `auth_config_resolved.deletedUserReturn`, `auth_config_resolved.endUserApiKeys`, `auth_config_resolved.endUserApiKeys.allowedClaimNames`, `auth_config_resolved.endUserApiKeys.allowedScopes`, `auth_config_resolved.endUserApiKeys.allowOrganizationKeys`, `auth_config_resolved.endUserApiKeys.defaultExpiresInSeconds`, `auth_config_resolved.endUserApiKeys.keyPrefix`, `auth_config_resolved.endUserApiKeys.keyTypes`, `auth_config_resolved.endUserApiKeys.maxActiveKeysPerSubject`, `auth_config_resolved.endUserApiKeys.maxExpiresInSeconds`, `auth_config_resolved.endUserApiKeys.organizationPermission`, `auth_config_resolved.endUserApiKeys.orgKeyOnCreatorDeparture`, `auth_config_resolved.endUserApiKeys.restoreKeysOnUnban`, `auth_config_resolved.endUserApiKeys.scopeImplications`, `auth_config_resolved.endUserApiKeys.selfServiceEnabled`, `auth_config_resolved.entitlements`, `auth_config_resolved.entitlements.features`, `auth_config_resolved.entitlements.features.key`, `auth_config_resolved.entitlements.features.name`, `auth_config_resolved.entitlements.plans`, `auth_config_resolved.entitlements.plans.features`, `auth_config_resolved.entitlements.plans.key`, `auth_config_resolved.entitlements.plans.name`, `auth_config_resolved.externalJwt`, `auth_config_resolved.externalJwt.issuers`, `auth_config_resolved.externalJwt.issuers.audience`, `auth_config_resolved.externalJwt.issuers.emailClaim`, `auth_config_resolved.externalJwt.issuers.id`, `auth_config_resolved.externalJwt.issuers.issuer`, `auth_config_resolved.externalJwt.issuers.jwksUri`, `auth_config_resolved.identityTraits`, `auth_config_resolved.identityTraits.audienceKey`, `auth_config_resolved.identityTraits.groups`, `auth_config_resolved.identityTraits.groups.key`, `auth_config_resolved.identityTraits.groups.label`, `auth_config_resolved.identityTraits.groups.labels`, `auth_config_resolved.identityTraits.traits`, `auth_config_resolved.identityTraits.traits.audiences`, `auth_config_resolved.identityTraits.traits.default`, `auth_config_resolved.identityTraits.traits.defaultFrom`, `auth_config_resolved.identityTraits.traits.description`, `auth_config_resolved.identityTraits.traits.editableBy`, `auth_config_resolved.identityTraits.traits.enum`, `auth_config_resolved.identityTraits.traits.group`, `auth_config_resolved.identityTraits.traits.indexed`, `auth_config_resolved.identityTraits.traits.items`, `auth_config_resolved.identityTraits.traits.key`, `auth_config_resolved.identityTraits.traits.label`, `auth_config_resolved.identityTraits.traits.labels`, `auth_config_resolved.identityTraits.traits.max`, `auth_config_resolved.identityTraits.traits.maxDate`, `auth_config_resolved.identityTraits.traits.maxItems`, `auth_config_resolved.identityTraits.traits.maxLength`, `auth_config_resolved.identityTraits.traits.min`, `auth_config_resolved.identityTraits.traits.minDate`, `auth_config_resolved.identityTraits.traits.minItems`, `auth_config_resolved.identityTraits.traits.minLength`, `auth_config_resolved.identityTraits.traits.pattern`, `auth_config_resolved.identityTraits.traits.properties`, `auth_config_resolved.identityTraits.traits.required`, `auth_config_resolved.identityTraits.traits.requiredWhen`, `auth_config_resolved.identityTraits.traits.type`, `auth_config_resolved.identityTraits.traits.userEditable`, `auth_config_resolved.identityTraits.traits.viewableBy`, `auth_config_resolved.jwtTemplates`, `auth_config_resolved.jwtTemplateSettings`, `auth_config_resolved.kerberos`, `auth_config_resolved.kerberos.allowJitProvisioning`, `auth_config_resolved.kerberos.emailDomain`, `auth_config_resolved.kerberos.principalHeader`, `auth_config_resolved.kerberos.realm`, `auth_config_resolved.ldap`, `auth_config_resolved.ldap.connections`, `auth_config_resolved.ldap.connections.attributes`, `auth_config_resolved.ldap.connections.baseDN`, `auth_config_resolved.ldap.connections.bindDN`, `auth_config_resolved.ldap.connections.id`, `auth_config_resolved.ldap.connections.requireConsentScreen`, `auth_config_resolved.ldap.connections.url`, `auth_config_resolved.ldap.connections.userFilter`, `auth_config_resolved.localization`, `auth_config_resolved.localization.defaultLocale`, `auth_config_resolved.localization.enabledLocales`, `auth_config_resolved.localization.requireFourEyes`, `auth_config_resolved.localization.requireReview`, `auth_config_resolved.mcpConnector`, `auth_config_resolved.mcpConnector.allowedRedirectHosts`, `auth_config_resolved.mcpConnector.dynamicRegistration`, `auth_config_resolved.mcpConnector.enabled`, `auth_config_resolved.mcpConnector.exposedScopes`, `auth_config_resolved.mcpConnector.name`, `auth_config_resolved.mfa`, `auth_config_resolved.mfa.backupCodes`, `auth_config_resolved.mfa.backupCodes.count`, `auth_config_resolved.mfa.duo`, `auth_config_resolved.mfa.duo.apiHost`, `auth_config_resolved.mfa.duo.clientId`, `auth_config_resolved.mfa.factors`, `auth_config_resolved.mfa.factors.customChallenge`, `auth_config_resolved.mfa.factors.duo`, `auth_config_resolved.mfa.factors.emailCode`, `auth_config_resolved.mfa.factors.hotp`, `auth_config_resolved.mfa.factors.passkey`, `auth_config_resolved.mfa.factors.push`, `auth_config_resolved.mfa.factors.sms`, `auth_config_resolved.mfa.factors.totp`, `auth_config_resolved.mfa.factors.yubikey`, `auth_config_resolved.mfa.hotp`, `auth_config_resolved.mfa.hotp.algorithm`, `auth_config_resolved.mfa.hotp.digits`, `auth_config_resolved.mfa.hotp.lookAhead`, `auth_config_resolved.mfa.push`, `auth_config_resolved.mfa.push.context`, `auth_config_resolved.mfa.push.context.showApp`, `auth_config_resolved.mfa.push.context.showIp`, `auth_config_resolved.mfa.push.context.showLocation`, `auth_config_resolved.mfa.push.denyStreak`, `auth_config_resolved.mfa.push.denyStreak.lockMinutes`, `auth_config_resolved.mfa.push.denyStreak.threshold`, `auth_config_resolved.mfa.recovery`, `auth_config_resolved.mfa.recovery.viaIdentityVerification`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.allowNeedsReview`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.enabled`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.minBaselineAgeHours`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.requireNewPassword`, `auth_config_resolved.mfa.rememberDevice`, `auth_config_resolved.mfa.rememberDevice.days`, `auth_config_resolved.mfa.rememberDevice.enabled`, `auth_config_resolved.mfa.securityQuestions`, `auth_config_resolved.mfa.securityQuestions.enabled`, `auth_config_resolved.mfa.securityQuestions.maxAttempts`, `auth_config_resolved.mfa.securityQuestions.questions`, `auth_config_resolved.mfa.securityQuestions.required`, `auth_config_resolved.mfa.smartCard`, `auth_config_resolved.mfa.smartCard.certHeader`, `auth_config_resolved.mfa.smartCard.enabled`, `auth_config_resolved.mfa.smartCard.fingerprintHeader`, `auth_config_resolved.mfa.smartCard.mappingRules`, `auth_config_resolved.mfa.smartCard.satisfiesMfa`, `auth_config_resolved.mfa.smartCard.secretHeader`, `auth_config_resolved.mfa.smartCard.subjectHeader`, `auth_config_resolved.mfa.smartCard.verifyHeader`, `auth_config_resolved.mfa.totp`, `auth_config_resolved.mfa.totp.algorithm`, `auth_config_resolved.mfa.totp.digits`, `auth_config_resolved.mfa.totp.period`, `auth_config_resolved.mfa.totpEnrollmentCodes`, `auth_config_resolved.mfa.yubikey`, `auth_config_resolved.mfa.yubikey.apiUrls`, `auth_config_resolved.mfa.yubikey.clientId`, `auth_config_resolved.mfa.yubikey.mode`, `auth_config_resolved.mfaPolicy`, `auth_config_resolved.nativeApps`, `auth_config_resolved.nativeApps.androidApps`, `auth_config_resolved.nativeApps.androidApps.packageName`, `auth_config_resolved.nativeApps.androidApps.sha256CertFingerprints`, `auth_config_resolved.nativeApps.appleAppIds`, `auth_config_resolved.oauthProvider`, `auth_config_resolved.oauthProvider.accessTokenFormat`, `auth_config_resolved.oauthProvider.advanced`, `auth_config_resolved.oauthProvider.advanced.cibaPasswordFallback`, `auth_config_resolved.oauthProvider.advanced.clientAttestationIssuers`, `auth_config_resolved.oauthProvider.advanced.federation`, `auth_config_resolved.oauthProvider.advanced.federation.authorityHints`, `auth_config_resolved.oauthProvider.advanced.federation.automaticRegistration`, `auth_config_resolved.oauthProvider.advanced.federation.enabled`, `auth_config_resolved.oauthProvider.advanced.federation.explicitRegistration`, `auth_config_resolved.oauthProvider.advanced.federation.maxChainDepth`, `auth_config_resolved.oauthProvider.advanced.federation.organizationName`, `auth_config_resolved.oauthProvider.advanced.federation.statementTtlSeconds`, `auth_config_resolved.oauthProvider.advanced.federation.subordinates`, `auth_config_resolved.oauthProvider.advanced.federation.trustAnchors`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.allowSignUp`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.atlasClientIds`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.clientIds`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.enabled`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.hostedDomains`, `auth_config_resolved.oauthProvider.advanced.mtlsEndpointHost`, `auth_config_resolved.oauthProvider.advanced.nativeSso`, `auth_config_resolved.oauthProvider.advanced.requireSoftwareStatement`, `auth_config_resolved.oauthProvider.advanced.sessionManagement`, `auth_config_resolved.oauthProvider.advanced.softwareStatementIssuers`, `auth_config_resolved.oauthProvider.advanced.spiffeTrustDomains`, `auth_config_resolved.oauthProvider.advanced.transactionTokens`, `auth_config_resolved.oauthProvider.advanced.transactionTokens.enabled`, `auth_config_resolved.oauthProvider.advanced.transactionTokens.trustDomains`, `auth_config_resolved.oauthProvider.advanced.transactionTokens.ttlSeconds`, `auth_config_resolved.oauthProvider.authorizationDetailsTypesSupported`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.allowedHosts`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.blockedHosts`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.enabled`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.trustedHosts`, `auth_config_resolved.oauthProvider.consentUrl`, `auth_config_resolved.oauthProvider.customScopes`, `auth_config_resolved.oauthProvider.customScopes.claims`, `auth_config_resolved.oauthProvider.customScopes.description`, `auth_config_resolved.oauthProvider.customScopes.descriptions`, `auth_config_resolved.oauthProvider.customScopes.labels`, `auth_config_resolved.oauthProvider.customScopes.name`, `auth_config_resolved.oauthProvider.customScopes.parameters`, `auth_config_resolved.oauthProvider.customScopes.requiresVerifiedClient`, `auth_config_resolved.oauthProvider.customScopes.sensitive`, `auth_config_resolved.oauthProvider.deviceApprovalRequiresStepUp`, `auth_config_resolved.oauthProvider.dynamicClientSecretTtlSeconds`, `auth_config_resolved.oauthProvider.dynamicRegistration`, `auth_config_resolved.oauthProvider.loginUrl`, `auth_config_resolved.oauthProvider.requireInitialAccessToken`, `auth_config_resolved.oauthProvider.requirePkce`, `auth_config_resolved.oauthProvider.requirePushedAuthorizationRequests`, `auth_config_resolved.oauthProvider.tokenClaims`, `auth_config_resolved.oauthProvider.tokenClaims.scope`, `auth_config_resolved.oauthProvider.tokenClaims.template`, `auth_config_resolved.oauthProvider.tokenClaims.tokens`, `auth_config_resolved.oauthProvider.tokenLifetimes`, `auth_config_resolved.oauthProvider.tokenLifetimes.accessTokenSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.authorizationCodeSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.deviceCodeSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.idTokenSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.refreshTokenAbsoluteSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.refreshTokenIdleSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.sessionAbsoluteSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.sessionIdleSeconds`, `auth_config_resolved.oauthProvider.umaEnabled`, `auth_config_resolved.organizations`, `auth_config_resolved.organizations.allowCustomRolesFromApp`, `auth_config_resolved.organizations.allowDeletionFromApp`, `auth_config_resolved.organizations.creatorRole`, `auth_config_resolved.organizations.defaultMaxAllowedMemberships`, `auth_config_resolved.organizations.inheritAncestorRoles`, `auth_config_resolved.organizations.invitationAccept`, `auth_config_resolved.organizations.invitationEmail`, `auth_config_resolved.organizations.invitationRedirectUrl`, `auth_config_resolved.organizations.invitationTtlSeconds`, `auth_config_resolved.organizations.maxCustomRolesPerOrganization`, `auth_config_resolved.organizations.maxMembersPerTeam`, `auth_config_resolved.organizations.maxOrganizationsPerUser`, `auth_config_resolved.organizations.maxPendingInvitationsPerOrganization`, `auth_config_resolved.organizations.maxTeamsPerOrganization`, `auth_config_resolved.passkeyPolicy`, `auth_config_resolved.passkeyPolicy.attachment`, `auth_config_resolved.passkeyPolicy.attestation`, `auth_config_resolved.passkeyPolicy.authenticatorAllowlist`, `auth_config_resolved.passkeyPolicy.authenticatorBlocklist`, `auth_config_resolved.passkeyPolicy.mds`, `auth_config_resolved.passkeyPolicy.mds.blockStatuses`, `auth_config_resolved.passkeyPolicy.mds.enabled`, `auth_config_resolved.passkeyPolicy.mds.enforceAtSignIn`, `auth_config_resolved.passkeyPolicy.requireUserVerification`, `auth_config_resolved.passkeyPolicy.requireUserVerificationForFirstFactor`, `auth_config_resolved.passkeyPolicy.timeoutSeconds`, `auth_config_resolved.passwordPolicy`, `auth_config_resolved.passwordPolicy.bannedPasswords`, `auth_config_resolved.passwordPolicy.breachCheckOnSignIn`, `auth_config_resolved.passwordPolicy.checkBreaches`, `auth_config_resolved.passwordPolicy.historyCount`, `auth_config_resolved.passwordPolicy.maxAgeDays`, `auth_config_resolved.passwordPolicy.maxLength`, `auth_config_resolved.passwordPolicy.minLength`, `auth_config_resolved.passwordPolicy.rejectCommonPasswords`, `auth_config_resolved.passwordPolicy.rejectIdentifierSubstring`, `auth_config_resolved.passwordPolicy.requireLowercase`, `auth_config_resolved.passwordPolicy.requireNumber`, `auth_config_resolved.passwordPolicy.requireSymbol`, `auth_config_resolved.passwordPolicy.requireUppercase`, `auth_config_resolved.pca`, `auth_config_resolved.pca.enabled`, `auth_config_resolved.pca.maxPlanNodes`, `auth_config_resolved.pca.publicRateLimitPerMin`, `auth_config_resolved.phoneChannels`, `auth_config_resolved.phoneChannels.sms`, `auth_config_resolved.phoneChannels.voice`, `auth_config_resolved.phoneChannels.whatsapp`, `auth_config_resolved.qrSignIn`, `auth_config_resolved.qrSignIn.enabled`, `auth_config_resolved.qrSignIn.matchCodeDigits`, `auth_config_resolved.qrSignIn.ttlMinutes`, `auth_config_resolved.rateLimit`, `auth_config_resolved.rateLimit.bapiPerMin`, `auth_config_resolved.rateLimit.fapiCreatePerMin`, `auth_config_resolved.rateLimit.fapiVerifyPerMin`, `auth_config_resolved.rateLimit.ldapPerIpPerMin`, `auth_config_resolved.rateLimit.ldapPerUserPerMin`, `auth_config_resolved.rateLimit.rules`, `auth_config_resolved.rateLimit.rules.group`, `auth_config_resolved.rateLimit.rules.key`, `auth_config_resolved.rateLimit.rules.max`, `auth_config_resolved.rateLimit.rules.windowSeconds`, `auth_config_resolved.requireEmailVerification`, `auth_config_resolved.restrictions`, `auth_config_resolved.restrictions.allowlistOnly`, `auth_config_resolved.riskBasedMfa`, `auth_config_resolved.riskBasedMfa.baseline`, `auth_config_resolved.riskBasedMfa.baseline.enabled`, `auth_config_resolved.riskBasedMfa.baseline.weight`, `auth_config_resolved.riskBasedMfa.enabled`, `auth_config_resolved.riskBasedMfa.fraud`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit.adaptive`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit.enabled`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit.perHour`, `auth_config_resolved.riskBasedMfa.fraud.rules`, `auth_config_resolved.riskBasedMfa.fraud.sanctionedCountries`, `auth_config_resolved.riskBasedMfa.levelActions`, `auth_config_resolved.riskBasedMfa.levelActions.high`, `auth_config_resolved.riskBasedMfa.levelActions.medium`, `auth_config_resolved.riskBasedMfa.midSession`, `auth_config_resolved.riskBasedMfa.midSession.action`, `auth_config_resolved.riskBasedMfa.midSession.enabled`, `auth_config_resolved.riskBasedMfa.mode`, `auth_config_resolved.riskBasedMfa.onHighRiskNoFactor`, `auth_config_resolved.riskBasedMfa.reputation`, `auth_config_resolved.riskBasedMfa.reputation.emailChecks`, `auth_config_resolved.riskBasedMfa.reputation.emailWeight`, `auth_config_resolved.riskBasedMfa.reputation.flagAnonymizers`, `auth_config_resolved.riskBasedMfa.reputation.ipWeight`, `auth_config_resolved.riskBasedMfa.reputation.minScore`, `auth_config_resolved.riskBasedMfa.reputation.provider`, `auth_config_resolved.riskBasedMfa.signals`, `auth_config_resolved.riskBasedMfa.signals.dormantAccount`, `auth_config_resolved.riskBasedMfa.signals.impossibleTravel`, `auth_config_resolved.riskBasedMfa.signals.newDevice`, `auth_config_resolved.riskBasedMfa.signals.newIp`, `auth_config_resolved.riskBasedMfa.signals.newSubnet`, `auth_config_resolved.riskBasedMfa.signals.velocity`, `auth_config_resolved.riskBasedMfa.stepUpThreshold`, `auth_config_resolved.riskBasedMfa.weights`, `auth_config_resolved.riskBasedMfa.weights.dormantAccount`, `auth_config_resolved.riskBasedMfa.weights.impossibleTravel`, `auth_config_resolved.riskBasedMfa.weights.newDevice`, `auth_config_resolved.riskBasedMfa.weights.newIp`, `auth_config_resolved.riskBasedMfa.weights.newSubnet`, `auth_config_resolved.riskBasedMfa.weights.velocity`, `auth_config_resolved.samlIdp`, `auth_config_resolved.samlIdp.serviceProviders`, `auth_config_resolved.samlIdp.serviceProviders.acsUrl`, `auth_config_resolved.samlIdp.serviceProviders.acsUrls`, `auth_config_resolved.samlIdp.serviceProviders.allowedEmailDomains`, `auth_config_resolved.samlIdp.serviceProviders.artifactBinding`, `auth_config_resolved.samlIdp.serviceProviders.assertionLifetimeSeconds`, `auth_config_resolved.samlIdp.serviceProviders.assignment`, `auth_config_resolved.samlIdp.serviceProviders.attributeQuery`, `auth_config_resolved.samlIdp.serviceProviders.attributes`, `auth_config_resolved.samlIdp.serviceProviders.authnContextClassRef`, `auth_config_resolved.samlIdp.serviceProviders.digestAlgorithm`, `auth_config_resolved.samlIdp.serviceProviders.ecp`, `auth_config_resolved.samlIdp.serviceProviders.encryptAssertions`, `auth_config_resolved.samlIdp.serviceProviders.encryptionCert`, `auth_config_resolved.samlIdp.serviceProviders.entityId`, `auth_config_resolved.samlIdp.serviceProviders.id`, `auth_config_resolved.samlIdp.serviceProviders.name`, `auth_config_resolved.samlIdp.serviceProviders.nameIdField`, `auth_config_resolved.samlIdp.serviceProviders.nameIdFormat`, `auth_config_resolved.samlIdp.serviceProviders.presetId`, `auth_config_resolved.samlIdp.serviceProviders.requireSignedRequests`, `auth_config_resolved.samlIdp.serviceProviders.signatureAlgorithm`, `auth_config_resolved.samlIdp.serviceProviders.signingCerts`, `auth_config_resolved.samlIdp.serviceProviders.signResponse`, `auth_config_resolved.samlIdp.serviceProviders.sloBinding`, `auth_config_resolved.samlIdp.serviceProviders.sloUrl`, `auth_config_resolved.samlIdp.serviceProviders.staticAttributes`, `auth_config_resolved.samlIdp.serviceProviders.tokenFormat`, `auth_config_resolved.samlIdp.serviceProviders.wsTrust`, `auth_config_resolved.samlIdp.serviceProviders.wsTrustEncryptionCert`, `auth_config_resolved.session`, `auth_config_resolved.session.absoluteMs`, `auth_config_resolved.session.audience`, `auth_config_resolved.session.crossSubdomainCookies`, `auth_config_resolved.session.customData`, `auth_config_resolved.session.customData.claim`, `auth_config_resolved.session.customData.inToken`, `auth_config_resolved.session.deviceBoundSessions`, `auth_config_resolved.session.idleMs`, `auth_config_resolved.session.idleReconcileAcrossOrgs`, `auth_config_resolved.session.idleTimeout`, `auth_config_resolved.session.includeEmailClaim`, `auth_config_resolved.session.includeEndUserPoolClaim`, `auth_config_resolved.session.includeOrgsClaim`, `auth_config_resolved.session.includeRiskClaim`, `auth_config_resolved.session.jwtTtlSeconds`, `auth_config_resolved.session.longLived`, `auth_config_resolved.session.maxConcurrentSessions`, `auth_config_resolved.session.multiSession`, `auth_config_resolved.session.nonPersistentAbsoluteMs`, `auth_config_resolved.session.nonPersistentIdleMs`, `auth_config_resolved.session.refreshRotation`, `auth_config_resolved.session.rememberMe`, `auth_config_resolved.session.revokeOnPasswordChange`, `auth_config_resolved.session.tokenIncludedSettingsKeys`, `auth_config_resolved.session.tokenStrategy`, `auth_config_resolved.sessionBinding`, `auth_config_resolved.sessionBinding.mode`, `auth_config_resolved.sessionBinding.requireAttestation`, `auth_config_resolved.signals`, `auth_config_resolved.signals.rawCapture`, `auth_config_resolved.signals.retentionDays`, `auth_config_resolved.signInAfterReset`, `auth_config_resolved.signUpMode`, `auth_config_resolved.srp`, `auth_config_resolved.srp.deviceTracking`, `auth_config_resolved.srp.enabled`, `auth_config_resolved.srp.poolName`, `auth_config_resolved.stepUp`, `auth_config_resolved.stepUp.enabled`, `auth_config_resolved.stepUp.windowMs`, `auth_config_resolved.strategies`, `auth_config_resolved.strategies.anonymous`, `auth_config_resolved.strategies.emailCode`, `auth_config_resolved.strategies.emailLink`, `auth_config_resolved.strategies.kerberos`, `auth_config_resolved.strategies.oauthProviders`, `auth_config_resolved.strategies.passkey`, `auth_config_resolved.strategies.password`, `auth_config_resolved.strategies.phoneCode`, `auth_config_resolved.strategies.siwb`, `auth_config_resolved.strategies.siwe`, `auth_config_resolved.strategies.siwf`, `auth_config_resolved.strategies.siws`, `auth_config_resolved.strategies.username`, `auth_config_resolved.strictRequestBodies`, `auth_config_resolved.verification`, `auth_config_resolved.verification.emailCode`, `auth_config_resolved.verification.emailCode.charset`, `auth_config_resolved.verification.emailCode.length`, `auth_config_resolved.verification.emailCode.maxAttempts`, `auth_config_resolved.verification.emailCode.resendCooldownSeconds`, `auth_config_resolved.verification.emailCode.resendHourlyLimit`, `auth_config_resolved.verification.emailCode.resendSameCode`, `auth_config_resolved.verification.emailCode.ttlMinutes`, `auth_config_resolved.verification.magicLink`, `auth_config_resolved.verification.magicLink.resendCooldownSeconds`, `auth_config_resolved.verification.magicLink.resendHourlyLimit`, `auth_config_resolved.verification.magicLink.ttlMinutes`, `auth_config_resolved.verification.smsCode`, `auth_config_resolved.verification.smsCode.length`, `auth_config_resolved.verification.smsCode.maxAttempts`, `auth_config_resolved.verification.smsCode.resendCooldownSeconds`, `auth_config_resolved.verification.smsCode.resendHourlyLimit`, `auth_config_resolved.verification.smsCode.ttlMinutes`, `auth_config_resolved.walletGating`, `auth_config_resolved.walletGating.enabled`, `auth_config_resolved.walletGating.rpcUrls`, `auth_config_resolved.walletGating.rules`, `auth_config_resolved.walletGating.rules.action`, `auth_config_resolved.walletGating.rules.chainId`, `auth_config_resolved.walletGating.rules.contract`, `auth_config_resolved.walletGating.rules.id`, `auth_config_resolved.walletGating.rules.label`, `auth_config_resolved.walletGating.rules.minBalance`, `auth_config_resolved.walletGating.rules.standard`, `auth_config_resolved.walletGating.rules.tokenId`, `auth_config_resolved.branding`, `auth_config_resolved.branding.audiences`, `warnings`, `warnings.code`, `warnings.message`, `warnings.field`, `warnings.hint`, `warnings.did_you_mean`, `warnings.origin`, `inactive_methods`, `inactive_methods.method`, `inactive_methods.reason`, `limited_methods`, `limited_methods.method`, `limited_methods.reason`, `limited_methods.unavailable`, `created_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance", %{}, nil, opts)
@@ -93,6 +262,11 @@ defmodule Atlas.Instance do
   Update allowed origins and auth_config (a partial, validated, merged patch — not a replace). Open or public-suffix wildcard origins refused (a single-label https://*.your-domain.com is accepted; shared hosts like *.vercel.app on development instances only); an invalid auth_config returns 422. A method that needs email (email code, email link, password sign-up that verifies by email) is accepted even when the instance has no email provider yet (email is bring-your-own; Terraform or config import may add the provider later in the same apply): the response lists it under inactive_methods, users are not offered it, and it becomes active on its own once a provider is configured (PUT /v1/messaging_providers/email). Captcha always runs on your own provider keys: turning a captcha ON for a flow (or changing its provider) before both the provider site key (auth_config.captcha.siteKey) and its secret (PUT /v1/instance/captcha_secret) are set returns 422 CAPTCHA_KEYS_REQUIRED with param naming the missing one — store the secret first, then enable. Removing the site key while a flow uses it returns 409 CAPTCHA_IN_USE unless force=true, which also turns the captcha off on those flows. Setting the retired raw branding fields (branding.customCss / customHtmlHeader / customHtmlFooter) returns 422 naming the field — use the design settings (PUT /v1/instance/design) instead; clearing them (null or "") is accepted. The response echoes auth_config_resolved so you can confirm the change took effect, and `warnings`: an origin_still_referenced entry for every removed origin that webhook endpoints (not marked external) or OAuth client URIs still point at, naming each one and the POST /v1/instance/move_origin call that moves them. Strict writes: auth_config.strictRequestBodies (true on instances created from 2026-10 on) refuses unknown body fields with 422 UNKNOWN_FIELD on every Backend API write; set it to opt in or out, or send Atlas-Strict: true | false on one request. Every auth_config key is checked at every depth against the auth_config schema: strict, an unknown or moved key is 422 UNKNOWN_FIELD with param naming its full path (auth_config.strategies.atlasId), meta.did_you_mean when a real key is close, and meta.hint naming the endpoint for a setting that has its own (auth_config.branding → PATCH /v1/branding, design → PUT /v1/instance/design, hostedPages → PATCH /v1/instance/hosted_pages, …); lenient, the key is dropped (never stored) and listed in warnings as unknown_field and in the Atlas-Unknown-Fields header. A null on any key and an unchanged echo of a stored section (the raw auth_config GET returns, sent back as is) are always accepted.
 
   `PATCH /v1/instance`. Required scope: `instance:write`.
+
+  Query params (`params:`): `force`.
+  Body fields: `allowed_origins` (array), `auth_config` (object).
+  Nested body fields: `allowed_origins.origin`, `allowed_origins.integration`, `auth_config.accountLinking`, `auth_config.accountLinkingTrust`, `auth_config.accountUx`, `auth_config.accountUx.deviceKeys`, `auth_config.accountUx.deviceKeys.enabled`, `auth_config.accountUx.deviceKeys.satisfiesMfa`, `auth_config.accountUx.emailChange`, `auth_config.accountUx.emailChange.requireOldAddressConfirm`, `auth_config.accountUx.emailVerification`, `auth_config.accountUx.impersonation`, `auth_config.accountUx.impersonation.notifyUser`, `auth_config.accountUx.lastSignInMethod`, `auth_config.accountUx.lastSignInMethod.enabled`, `auth_config.accountUx.passkeyAdoption`, `auth_config.accountUx.passkeyAdoption.endpoints`, `auth_config.accountUx.passkeyAdoption.endpoints.enroll`, `auth_config.accountUx.passkeyAdoption.endpoints.manage`, `auth_config.accountUx.passkeyAdoption.prompt`, `auth_config.accountUx.passkeyAdoption.prompt.cooldownDays`, `auth_config.accountUx.passkeyAdoption.prompt.enabled`, `auth_config.accountUx.passkeyAdoption.recovery`, `auth_config.accountUx.passkeyAdoption.recovery.enabled`, `auth_config.accountUx.passkeyAdoption.recovery.methods`, `auth_config.accountUx.passkeyAdoption.retirePasswords`, `auth_config.accountUx.passkeyAdoption.rollout`, `auth_config.accountUx.passkeyAdoption.rollout.deviceClasses`, `auth_config.accountUx.passkeyAdoption.rollout.orgs`, `auth_config.accountUx.passkeyAdoption.rollout.percentage`, `auth_config.accountUx.passkeyAdoption.rollout.variant`, `auth_config.accountUx.passkeyAdoption.signals`, `auth_config.accountUx.passkeyAdoption.webauthn`, `auth_config.accountUx.passkeyAdoption.webauthn.conditionalCreate`, `auth_config.accountUx.passkeyAdoption.webauthn.hints`, `auth_config.accountUx.passkeySignUp`, `auth_config.accountUx.passkeySignUp.email`, `auth_config.accountUx.passkeySignUp.enabled`, `auth_config.accountUx.passkeySignUp.preferred`, `auth_config.accountUx.passwordReset`, `auth_config.accountUx.securityNotifications`, `auth_config.accountUx.securityNotifications.accountChanges`, `auth_config.accountUx.securityNotifications.newDeviceSignIn`, `auth_config.accountUx.username`, `auth_config.accountUx.username.charset`, `auth_config.accountUx.username.maxLength`, `auth_config.accountUx.username.minLength`, `auth_config.accountUx.username.requiredAtSignUp`, `auth_config.agentFabric`, `auth_config.agentFabric.allowSelfDelegation`, `auth_config.agentFabric.continuousEvaluation`, `auth_config.agentFabric.defaultDelegationTtlSeconds`, `auth_config.agentFabric.maxDelegationDepth`, `auth_config.agentFabric.maxMfaAgeSeconds`, `auth_config.agentFabric.maxRiskLevel`, `auth_config.agentFabric.onFailure`, `auth_config.agentFabric.requireTrustedDevice`, `auth_config.appApproval`, `auth_config.appApproval.firstFactor`, `auth_config.appApproval.stepUp`, `auth_config.appApproval.ttlSeconds`, `auth_config.appCatalog`, `auth_config.appCatalog.oidcApps`, `auth_config.appCatalog.oidcApps.allowedEmailDomains`, `auth_config.appCatalog.oidcApps.assignment`, `auth_config.appCatalog.oidcApps.clientId`, `auth_config.appCatalog.oidcApps.id`, `auth_config.appCatalog.oidcApps.launchUrl`, `auth_config.appCatalog.oidcApps.name`, `auth_config.appCatalog.oidcApps.presetId`, `auth_config.approvals`, `auth_config.approvals.requireTrustedDevice`, `auth_config.attackProtection`, `auth_config.attackProtection.appAttestation`, `auth_config.attackProtection.appAttestation.android`, `auth_config.attackProtection.appAttestation.android.packageNames`, `auth_config.attackProtection.appAttestation.android.requireDeviceIntegrity`, `auth_config.attackProtection.appAttestation.android.requirePlayRecognized`, `auth_config.attackProtection.appAttestation.android.verificationKey`, `auth_config.attackProtection.appAttestation.enabled`, `auth_config.attackProtection.appAttestation.flows`, `auth_config.attackProtection.appAttestation.flows.signIn`, `auth_config.attackProtection.appAttestation.flows.signUp`, `auth_config.attackProtection.appAttestation.flows.smsSend`, `auth_config.attackProtection.appAttestation.ios`, `auth_config.attackProtection.appAttestation.ios.allowDevelopment`, `auth_config.attackProtection.appAttestation.ios.appIds`, `auth_config.attackProtection.appAttestation.ios.deviceCheck`, `auth_config.attackProtection.appAttestation.maxAgeSeconds`, `auth_config.attackProtection.bruteForce`, `auth_config.attackProtection.bruteForce.enabled`, `auth_config.attackProtection.bruteForce.unblock`, `auth_config.attackProtection.countries`, `auth_config.attackProtection.countries.blockUnknown`, `auth_config.attackProtection.countries.list`, `auth_config.attackProtection.countries.mode`, `auth_config.attackProtection.countries.signIn`, `auth_config.attackProtection.countries.signUp`, `auth_config.attackProtection.deviceAccounts`, `auth_config.attackProtection.deviceAccounts.enabled`, `auth_config.attackProtection.deviceAccounts.maxAccounts`, `auth_config.attackProtection.deviceAccounts.windowDays`, `auth_config.attackProtection.disposableEmail`, `auth_config.attackProtection.disposableEmail.allowDomains`, `auth_config.attackProtection.disposableEmail.block`, `auth_config.attackProtection.disposableEmail.extraDomains`, `auth_config.attackProtection.dormantAccounts`, `auth_config.attackProtection.dormantAccounts.enabled`, `auth_config.attackProtection.dormantAccounts.notifyUser`, `auth_config.attackProtection.dormantAccounts.onNoFactor`, `auth_config.attackProtection.dormantAccounts.requireMfa`, `auth_config.attackProtection.dormantAccounts.thresholdDays`, `auth_config.attackProtection.recoveryAbuse`, `auth_config.attackProtection.recoveryAbuse.enabled`, `auth_config.attackProtection.recoveryAbuse.perAccountPerHour`, `auth_config.attackProtection.recoveryAbuse.perIpPerHour`, `auth_config.attackProtection.signUpAbuse`, `auth_config.attackProtection.signUpAbuse.blockRiskAt`, `auth_config.attackProtection.signUpAbuse.enabled`, `auth_config.attackProtection.signUpAbuse.perAsnPerHour`, `auth_config.attackProtection.signUpAbuse.perIpPerDay`, `auth_config.attackProtection.signUpAbuse.perIpPerHour`, `auth_config.attackProtection.smsPumping`, `auth_config.attackProtection.smsPumping.allowedPrefixes`, `auth_config.attackProtection.smsPumping.blockedPrefixes`, `auth_config.attackProtection.smsPumping.enabled`, `auth_config.attackProtection.smsPumping.maxPerHour`, `auth_config.banBlocksIp`, `auth_config.banBlocksReregistration`, `auth_config.banIpBlockDays`, `auth_config.billing`, `auth_config.billing.portalConfigurationId`, `auth_config.captcha`, `auth_config.captcha.actions`, `auth_config.captcha.attestationUrl`, `auth_config.captcha.flows`, `auth_config.captcha.gateAnonymous`, `auth_config.captcha.minScore`, `auth_config.captcha.projectId`, `auth_config.captcha.provider`, `auth_config.captcha.siteKey`, `auth_config.captcha.verifyUrl`, `auth_config.captcha.widget`, `auth_config.changeFeed`, `auth_config.changeFeed.retentionDays`, `auth_config.compliance`, `auth_config.compliance.consents`, `auth_config.compliance.consents.policy`, `auth_config.compliance.consents.required`, `auth_config.compliance.consents.version`, `auth_config.compliance.cookieConsent`, `auth_config.compliance.cookieConsent.categories`, `auth_config.compliance.cookieConsent.enabled`, `auth_config.compliance.cookieConsent.honorDnt`, `auth_config.compliance.cookieConsent.honorGpc`, `auth_config.compliance.cookieConsent.policyVersion`, `auth_config.compliance.cookieConsent.repromptDays`, `auth_config.compliance.cookieConsent.retentionDays`, `auth_config.compliance.dataPolicy`, `auth_config.compliance.dataPolicy.activities`, `auth_config.compliance.dataPolicy.controller`, `auth_config.compliance.dataPolicy.controller.contactEmail`, `auth_config.compliance.dataPolicy.controller.dpoEmail`, `auth_config.compliance.dataPolicy.controller.name`, `auth_config.compliance.dataRegion`, `auth_config.compliance.inactiveUsers`, `auth_config.compliance.inactiveUsers.action`, `auth_config.compliance.inactiveUsers.afterDays`, `auth_config.compliance.inactiveUsers.enabled`, `auth_config.compliance.inactiveUsers.warnDays`, `auth_config.compliance.minors`, `auth_config.compliance.minors.birthdateTrait`, `auth_config.compliance.minors.consentAges`, `auth_config.compliance.minors.consentMethods`, `auth_config.compliance.minors.consentTtlHours`, `auth_config.compliance.minors.countryTrait`, `auth_config.compliance.minors.defaultConsentAge`, `auth_config.compliance.minors.enabled`, `auth_config.compliance.minors.minAssuranceLevel`, `auth_config.compliance.minors.minimumAge`, `auth_config.compliance.minors.restriction`, `auth_config.compliance.minors.trustedAgeMethods`, `auth_config.compliance.retention`, `auth_config.compliance.retention.anonymousRetentionDays`, `auth_config.compliance.retention.cancelDeletionOnSignIn`, `auth_config.compliance.retention.deletedUserGraceDays`, `auth_config.compliance.retention.deletionReminders`, `auth_config.compliance.retention.dsrDueDays`, `auth_config.compliance.retention.erasureGraceDays`, `auth_config.compliance.retention.ownershipTransfer`, `auth_config.compliance.retention.requireFinalNotice`, `auth_config.dangerouslyReportSkippedEmailsAsVerified`, `auth_config.deletedUserReturn`, `auth_config.endUserApiKeys`, `auth_config.endUserApiKeys.allowedClaimNames`, `auth_config.endUserApiKeys.allowedScopes`, `auth_config.endUserApiKeys.allowOrganizationKeys`, `auth_config.endUserApiKeys.defaultExpiresInSeconds`, `auth_config.endUserApiKeys.keyPrefix`, `auth_config.endUserApiKeys.keyTypes`, `auth_config.endUserApiKeys.maxActiveKeysPerSubject`, `auth_config.endUserApiKeys.maxExpiresInSeconds`, `auth_config.endUserApiKeys.organizationPermission`, `auth_config.endUserApiKeys.orgKeyOnCreatorDeparture`, `auth_config.endUserApiKeys.restoreKeysOnUnban`, `auth_config.endUserApiKeys.scopeImplications`, `auth_config.endUserApiKeys.selfServiceEnabled`, `auth_config.entitlements`, `auth_config.entitlements.features`, `auth_config.entitlements.features.key`, `auth_config.entitlements.features.name`, `auth_config.entitlements.plans`, `auth_config.entitlements.plans.features`, `auth_config.entitlements.plans.key`, `auth_config.entitlements.plans.name`, `auth_config.externalJwt`, `auth_config.externalJwt.issuers`, `auth_config.externalJwt.issuers.audience`, `auth_config.externalJwt.issuers.emailClaim`, `auth_config.externalJwt.issuers.id`, `auth_config.externalJwt.issuers.issuer`, `auth_config.externalJwt.issuers.jwksUri`, `auth_config.identityTraits`, `auth_config.identityTraits.audienceKey`, `auth_config.identityTraits.groups`, `auth_config.identityTraits.groups.key`, `auth_config.identityTraits.groups.label`, `auth_config.identityTraits.groups.labels`, `auth_config.identityTraits.traits`, `auth_config.identityTraits.traits.audiences`, `auth_config.identityTraits.traits.default`, `auth_config.identityTraits.traits.defaultFrom`, `auth_config.identityTraits.traits.description`, `auth_config.identityTraits.traits.editableBy`, `auth_config.identityTraits.traits.enum`, `auth_config.identityTraits.traits.group`, `auth_config.identityTraits.traits.indexed`, `auth_config.identityTraits.traits.items`, `auth_config.identityTraits.traits.key`, `auth_config.identityTraits.traits.label`, `auth_config.identityTraits.traits.labels`, `auth_config.identityTraits.traits.max`, `auth_config.identityTraits.traits.maxDate`, `auth_config.identityTraits.traits.maxItems`, `auth_config.identityTraits.traits.maxLength`, `auth_config.identityTraits.traits.min`, `auth_config.identityTraits.traits.minDate`, `auth_config.identityTraits.traits.minItems`, `auth_config.identityTraits.traits.minLength`, `auth_config.identityTraits.traits.pattern`, `auth_config.identityTraits.traits.properties`, `auth_config.identityTraits.traits.required`, `auth_config.identityTraits.traits.requiredWhen`, `auth_config.identityTraits.traits.type`, `auth_config.identityTraits.traits.userEditable`, `auth_config.identityTraits.traits.viewableBy`, `auth_config.jwtTemplates`, `auth_config.jwtTemplateSettings`, `auth_config.kerberos`, `auth_config.kerberos.allowJitProvisioning`, `auth_config.kerberos.emailDomain`, `auth_config.kerberos.principalHeader`, `auth_config.kerberos.realm`, `auth_config.ldap`, `auth_config.ldap.connections`, `auth_config.ldap.connections.attributes`, `auth_config.ldap.connections.baseDN`, `auth_config.ldap.connections.bindDN`, `auth_config.ldap.connections.id`, `auth_config.ldap.connections.requireConsentScreen`, `auth_config.ldap.connections.url`, `auth_config.ldap.connections.userFilter`, `auth_config.localization`, `auth_config.localization.defaultLocale`, `auth_config.localization.enabledLocales`, `auth_config.localization.requireFourEyes`, `auth_config.localization.requireReview`, `auth_config.mcpConnector`, `auth_config.mcpConnector.allowedRedirectHosts`, `auth_config.mcpConnector.dynamicRegistration`, `auth_config.mcpConnector.enabled`, `auth_config.mcpConnector.exposedScopes`, `auth_config.mcpConnector.name`, `auth_config.mfa`, `auth_config.mfa.backupCodes`, `auth_config.mfa.backupCodes.count`, `auth_config.mfa.duo`, `auth_config.mfa.duo.apiHost`, `auth_config.mfa.duo.clientId`, `auth_config.mfa.factors`, `auth_config.mfa.factors.customChallenge`, `auth_config.mfa.factors.duo`, `auth_config.mfa.factors.emailCode`, `auth_config.mfa.factors.hotp`, `auth_config.mfa.factors.passkey`, `auth_config.mfa.factors.push`, `auth_config.mfa.factors.sms`, `auth_config.mfa.factors.totp`, `auth_config.mfa.factors.yubikey`, `auth_config.mfa.hotp`, `auth_config.mfa.hotp.algorithm`, `auth_config.mfa.hotp.digits`, `auth_config.mfa.hotp.lookAhead`, `auth_config.mfa.push`, `auth_config.mfa.push.context`, `auth_config.mfa.push.context.showApp`, `auth_config.mfa.push.context.showIp`, `auth_config.mfa.push.context.showLocation`, `auth_config.mfa.push.denyStreak`, `auth_config.mfa.push.denyStreak.lockMinutes`, `auth_config.mfa.push.denyStreak.threshold`, `auth_config.mfa.recovery`, `auth_config.mfa.recovery.viaIdentityVerification`, `auth_config.mfa.recovery.viaIdentityVerification.allowNeedsReview`, `auth_config.mfa.recovery.viaIdentityVerification.enabled`, `auth_config.mfa.recovery.viaIdentityVerification.minBaselineAgeHours`, `auth_config.mfa.recovery.viaIdentityVerification.requireNewPassword`, `auth_config.mfa.rememberDevice`, `auth_config.mfa.rememberDevice.days`, `auth_config.mfa.rememberDevice.enabled`, `auth_config.mfa.securityQuestions`, `auth_config.mfa.securityQuestions.enabled`, `auth_config.mfa.securityQuestions.maxAttempts`, `auth_config.mfa.securityQuestions.questions`, `auth_config.mfa.smartCard`, `auth_config.mfa.smartCard.certHeader`, `auth_config.mfa.smartCard.enabled`, `auth_config.mfa.smartCard.fingerprintHeader`, `auth_config.mfa.smartCard.mappingRules`, `auth_config.mfa.smartCard.satisfiesMfa`, `auth_config.mfa.smartCard.secretHeader`, `auth_config.mfa.smartCard.subjectHeader`, `auth_config.mfa.smartCard.verifyHeader`, `auth_config.mfa.totp`, `auth_config.mfa.totp.algorithm`, `auth_config.mfa.totp.digits`, `auth_config.mfa.totp.period`, `auth_config.mfa.totpEnrollmentCodes`, `auth_config.mfa.yubikey`, `auth_config.mfa.yubikey.apiUrls`, `auth_config.mfa.yubikey.clientId`, `auth_config.mfa.yubikey.mode`, `auth_config.mfaPolicy`, `auth_config.nativeApps`, `auth_config.nativeApps.androidApps`, `auth_config.nativeApps.androidApps.packageName`, `auth_config.nativeApps.androidApps.sha256CertFingerprints`, `auth_config.nativeApps.appleAppIds`, `auth_config.oauthProvider`, `auth_config.oauthProvider.accessTokenFormat`, `auth_config.oauthProvider.advanced`, `auth_config.oauthProvider.advanced.cibaPasswordFallback`, `auth_config.oauthProvider.advanced.clientAttestationIssuers`, `auth_config.oauthProvider.advanced.federation`, `auth_config.oauthProvider.advanced.federation.authorityHints`, `auth_config.oauthProvider.advanced.federation.automaticRegistration`, `auth_config.oauthProvider.advanced.federation.enabled`, `auth_config.oauthProvider.advanced.federation.explicitRegistration`, `auth_config.oauthProvider.advanced.federation.maxChainDepth`, `auth_config.oauthProvider.advanced.federation.organizationName`, `auth_config.oauthProvider.advanced.federation.statementTtlSeconds`, `auth_config.oauthProvider.advanced.federation.subordinates`, `auth_config.oauthProvider.advanced.federation.trustAnchors`, `auth_config.oauthProvider.advanced.googleTokenExchange`, `auth_config.oauthProvider.advanced.googleTokenExchange.allowSignUp`, `auth_config.oauthProvider.advanced.googleTokenExchange.atlasClientIds`, `auth_config.oauthProvider.advanced.googleTokenExchange.clientIds`, `auth_config.oauthProvider.advanced.googleTokenExchange.enabled`, `auth_config.oauthProvider.advanced.googleTokenExchange.hostedDomains`, `auth_config.oauthProvider.advanced.mtlsEndpointHost`, `auth_config.oauthProvider.advanced.nativeSso`, `auth_config.oauthProvider.advanced.requireSoftwareStatement`, `auth_config.oauthProvider.advanced.sessionManagement`, `auth_config.oauthProvider.advanced.softwareStatementIssuers`, `auth_config.oauthProvider.advanced.spiffeTrustDomains`, `auth_config.oauthProvider.advanced.transactionTokens`, `auth_config.oauthProvider.advanced.transactionTokens.enabled`, `auth_config.oauthProvider.advanced.transactionTokens.trustDomains`, `auth_config.oauthProvider.advanced.transactionTokens.ttlSeconds`, `auth_config.oauthProvider.authorizationDetailsTypesSupported`, `auth_config.oauthProvider.clientIdMetadataDocuments`, `auth_config.oauthProvider.clientIdMetadataDocuments.allowedHosts`, `auth_config.oauthProvider.clientIdMetadataDocuments.blockedHosts`, `auth_config.oauthProvider.clientIdMetadataDocuments.enabled`, `auth_config.oauthProvider.clientIdMetadataDocuments.trustedHosts`, `auth_config.oauthProvider.consentUrl`, `auth_config.oauthProvider.customScopes`, `auth_config.oauthProvider.customScopes.claims`, `auth_config.oauthProvider.customScopes.description`, `auth_config.oauthProvider.customScopes.descriptions`, `auth_config.oauthProvider.customScopes.labels`, `auth_config.oauthProvider.customScopes.name`, `auth_config.oauthProvider.customScopes.parameters`, `auth_config.oauthProvider.customScopes.requiresVerifiedClient`, `auth_config.oauthProvider.customScopes.sensitive`, `auth_config.oauthProvider.deviceApprovalRequiresStepUp`, `auth_config.oauthProvider.dynamicClientSecretTtlSeconds`, `auth_config.oauthProvider.dynamicRegistration`, `auth_config.oauthProvider.loginUrl`, `auth_config.oauthProvider.requireInitialAccessToken`, `auth_config.oauthProvider.requirePkce`, `auth_config.oauthProvider.requirePushedAuthorizationRequests`, `auth_config.oauthProvider.tokenClaims`, `auth_config.oauthProvider.tokenClaims.scope`, `auth_config.oauthProvider.tokenClaims.template`, `auth_config.oauthProvider.tokenClaims.tokens`, `auth_config.oauthProvider.tokenLifetimes`, `auth_config.oauthProvider.tokenLifetimes.accessTokenSeconds`, `auth_config.oauthProvider.tokenLifetimes.authorizationCodeSeconds`, `auth_config.oauthProvider.tokenLifetimes.deviceCodeSeconds`, `auth_config.oauthProvider.tokenLifetimes.idTokenSeconds`, `auth_config.oauthProvider.tokenLifetimes.refreshTokenAbsoluteSeconds`, `auth_config.oauthProvider.tokenLifetimes.refreshTokenIdleSeconds`, `auth_config.oauthProvider.tokenLifetimes.sessionAbsoluteSeconds`, `auth_config.oauthProvider.tokenLifetimes.sessionIdleSeconds`, `auth_config.oauthProvider.umaEnabled`, `auth_config.organizations`, `auth_config.organizations.allowCustomRolesFromApp`, `auth_config.organizations.allowDeletionFromApp`, `auth_config.organizations.creatorRole`, `auth_config.organizations.defaultMaxAllowedMemberships`, `auth_config.organizations.inheritAncestorRoles`, `auth_config.organizations.invitationAccept`, `auth_config.organizations.invitationEmail`, `auth_config.organizations.invitationRedirectUrl`, `auth_config.organizations.invitationTtlSeconds`, `auth_config.organizations.maxCustomRolesPerOrganization`, `auth_config.organizations.maxMembersPerTeam`, `auth_config.organizations.maxOrganizationsPerUser`, `auth_config.organizations.maxPendingInvitationsPerOrganization`, `auth_config.organizations.maxTeamsPerOrganization`, `auth_config.passkeyPolicy`, `auth_config.passkeyPolicy.attachment`, `auth_config.passkeyPolicy.attestation`, `auth_config.passkeyPolicy.authenticatorAllowlist`, `auth_config.passkeyPolicy.authenticatorBlocklist`, `auth_config.passkeyPolicy.mds`, `auth_config.passkeyPolicy.mds.blockStatuses`, `auth_config.passkeyPolicy.mds.enabled`, `auth_config.passkeyPolicy.mds.enforceAtSignIn`, `auth_config.passkeyPolicy.requireUserVerification`, `auth_config.passkeyPolicy.requireUserVerificationForFirstFactor`, `auth_config.passkeyPolicy.timeoutSeconds`, `auth_config.passwordPolicy`, `auth_config.passwordPolicy.bannedPasswords`, `auth_config.passwordPolicy.breachCheckOnSignIn`, `auth_config.passwordPolicy.checkBreaches`, `auth_config.passwordPolicy.historyCount`, `auth_config.passwordPolicy.maxAgeDays`, `auth_config.passwordPolicy.maxLength`, `auth_config.passwordPolicy.minLength`, `auth_config.passwordPolicy.rejectCommonPasswords`, `auth_config.passwordPolicy.rejectIdentifierSubstring`, `auth_config.passwordPolicy.requireLowercase`, `auth_config.passwordPolicy.requireNumber`, `auth_config.passwordPolicy.requireSymbol`, `auth_config.passwordPolicy.requireUppercase`, `auth_config.pca`, `auth_config.pca.enabled`, `auth_config.pca.maxPlanNodes`, `auth_config.pca.publicRateLimitPerMin`, `auth_config.phoneChannels`, `auth_config.phoneChannels.sms`, `auth_config.phoneChannels.voice`, `auth_config.phoneChannels.whatsapp`, `auth_config.qrSignIn`, `auth_config.qrSignIn.enabled`, `auth_config.qrSignIn.matchCodeDigits`, `auth_config.qrSignIn.ttlMinutes`, `auth_config.rateLimit`, `auth_config.rateLimit.bapiPerMin`, `auth_config.rateLimit.fapiCreatePerMin`, `auth_config.rateLimit.fapiVerifyPerMin`, `auth_config.rateLimit.ldapPerIpPerMin`, `auth_config.rateLimit.ldapPerUserPerMin`, `auth_config.rateLimit.rules`, `auth_config.rateLimit.rules.group`, `auth_config.rateLimit.rules.key`, `auth_config.rateLimit.rules.max`, `auth_config.rateLimit.rules.windowSeconds`, `auth_config.requireEmailVerification`, `auth_config.restrictions`, `auth_config.restrictions.allowlistOnly`, `auth_config.riskBasedMfa`, `auth_config.riskBasedMfa.baseline`, `auth_config.riskBasedMfa.baseline.enabled`, `auth_config.riskBasedMfa.baseline.weight`, `auth_config.riskBasedMfa.enabled`, `auth_config.riskBasedMfa.fraud`, `auth_config.riskBasedMfa.fraud.deviceRateLimit`, `auth_config.riskBasedMfa.fraud.deviceRateLimit.adaptive`, `auth_config.riskBasedMfa.fraud.deviceRateLimit.enabled`, `auth_config.riskBasedMfa.fraud.deviceRateLimit.perHour`, `auth_config.riskBasedMfa.fraud.rules`, `auth_config.riskBasedMfa.fraud.sanctionedCountries`, `auth_config.riskBasedMfa.levelActions`, `auth_config.riskBasedMfa.levelActions.high`, `auth_config.riskBasedMfa.levelActions.medium`, `auth_config.riskBasedMfa.midSession`, `auth_config.riskBasedMfa.midSession.action`, `auth_config.riskBasedMfa.midSession.enabled`, `auth_config.riskBasedMfa.mode`, `auth_config.riskBasedMfa.onHighRiskNoFactor`, `auth_config.riskBasedMfa.reputation`, `auth_config.riskBasedMfa.reputation.emailChecks`, `auth_config.riskBasedMfa.reputation.emailWeight`, `auth_config.riskBasedMfa.reputation.flagAnonymizers`, `auth_config.riskBasedMfa.reputation.ipWeight`, `auth_config.riskBasedMfa.reputation.minScore`, `auth_config.riskBasedMfa.reputation.provider`, `auth_config.riskBasedMfa.signals`, `auth_config.riskBasedMfa.signals.dormantAccount`, `auth_config.riskBasedMfa.signals.impossibleTravel`, `auth_config.riskBasedMfa.signals.newDevice`, `auth_config.riskBasedMfa.signals.newIp`, `auth_config.riskBasedMfa.signals.newSubnet`, `auth_config.riskBasedMfa.signals.velocity`, `auth_config.riskBasedMfa.stepUpThreshold`, `auth_config.riskBasedMfa.weights`, `auth_config.riskBasedMfa.weights.dormantAccount`, `auth_config.riskBasedMfa.weights.impossibleTravel`, `auth_config.riskBasedMfa.weights.newDevice`, `auth_config.riskBasedMfa.weights.newIp`, `auth_config.riskBasedMfa.weights.newSubnet`, `auth_config.riskBasedMfa.weights.velocity`, `auth_config.samlIdp`, `auth_config.samlIdp.serviceProviders`, `auth_config.samlIdp.serviceProviders.acsUrl`, `auth_config.samlIdp.serviceProviders.acsUrls`, `auth_config.samlIdp.serviceProviders.allowedEmailDomains`, `auth_config.samlIdp.serviceProviders.artifactBinding`, `auth_config.samlIdp.serviceProviders.assertionLifetimeSeconds`, `auth_config.samlIdp.serviceProviders.assignment`, `auth_config.samlIdp.serviceProviders.attributeQuery`, `auth_config.samlIdp.serviceProviders.attributes`, `auth_config.samlIdp.serviceProviders.authnContextClassRef`, `auth_config.samlIdp.serviceProviders.digestAlgorithm`, `auth_config.samlIdp.serviceProviders.ecp`, `auth_config.samlIdp.serviceProviders.encryptAssertions`, `auth_config.samlIdp.serviceProviders.encryptionCert`, `auth_config.samlIdp.serviceProviders.entityId`, `auth_config.samlIdp.serviceProviders.id`, `auth_config.samlIdp.serviceProviders.name`, `auth_config.samlIdp.serviceProviders.nameIdField`, `auth_config.samlIdp.serviceProviders.nameIdFormat`, `auth_config.samlIdp.serviceProviders.presetId`, `auth_config.samlIdp.serviceProviders.requireSignedRequests`, `auth_config.samlIdp.serviceProviders.signatureAlgorithm`, `auth_config.samlIdp.serviceProviders.signingCerts`, `auth_config.samlIdp.serviceProviders.signResponse`, `auth_config.samlIdp.serviceProviders.sloBinding`, `auth_config.samlIdp.serviceProviders.sloUrl`, `auth_config.samlIdp.serviceProviders.staticAttributes`, `auth_config.samlIdp.serviceProviders.tokenFormat`, `auth_config.samlIdp.serviceProviders.wsTrust`, `auth_config.samlIdp.serviceProviders.wsTrustEncryptionCert`, `auth_config.session`, `auth_config.session.absoluteMs`, `auth_config.session.audience`, `auth_config.session.crossSubdomainCookies`, `auth_config.session.customData`, `auth_config.session.customData.claim`, `auth_config.session.customData.inToken`, `auth_config.session.deviceBoundSessions`, `auth_config.session.idleMs`, `auth_config.session.idleReconcileAcrossOrgs`, `auth_config.session.idleTimeout`, `auth_config.session.includeEmailClaim`, `auth_config.session.includeEndUserPoolClaim`, `auth_config.session.includeOrgsClaim`, `auth_config.session.includeRiskClaim`, `auth_config.session.jwtTtlSeconds`, `auth_config.session.longLived`, `auth_config.session.maxConcurrentSessions`, `auth_config.session.multiSession`, `auth_config.session.nonPersistentAbsoluteMs`, `auth_config.session.nonPersistentIdleMs`, `auth_config.session.refreshRotation`, `auth_config.session.rememberMe`, `auth_config.session.revokeOnPasswordChange`, `auth_config.session.tokenIncludedSettingsKeys`, `auth_config.session.tokenStrategy`, `auth_config.sessionBinding`, `auth_config.sessionBinding.mode`, `auth_config.sessionBinding.requireAttestation`, `auth_config.signals`, `auth_config.signals.rawCapture`, `auth_config.signals.retentionDays`, `auth_config.signInAfterReset`, `auth_config.signUpMode`, `auth_config.srp`, `auth_config.srp.deviceTracking`, `auth_config.srp.enabled`, `auth_config.srp.poolName`, `auth_config.stepUp`, `auth_config.stepUp.enabled`, `auth_config.stepUp.windowMs`, `auth_config.strategies`, `auth_config.strategies.anonymous`, `auth_config.strategies.emailCode`, `auth_config.strategies.emailLink`, `auth_config.strategies.kerberos`, `auth_config.strategies.oauthProviders`, `auth_config.strategies.passkey`, `auth_config.strategies.password`, `auth_config.strategies.phoneCode`, `auth_config.strategies.siwb`, `auth_config.strategies.siwe`, `auth_config.strategies.siwf`, `auth_config.strategies.siws`, `auth_config.strategies.username`, `auth_config.strictRequestBodies`, `auth_config.verification`, `auth_config.verification.emailCode`, `auth_config.verification.emailCode.charset`, `auth_config.verification.emailCode.length`, `auth_config.verification.emailCode.maxAttempts`, `auth_config.verification.emailCode.resendCooldownSeconds`, `auth_config.verification.emailCode.resendHourlyLimit`, `auth_config.verification.emailCode.resendSameCode`, `auth_config.verification.emailCode.ttlMinutes`, `auth_config.verification.magicLink`, `auth_config.verification.magicLink.resendCooldownSeconds`, `auth_config.verification.magicLink.resendHourlyLimit`, `auth_config.verification.magicLink.ttlMinutes`, `auth_config.verification.smsCode`, `auth_config.verification.smsCode.length`, `auth_config.verification.smsCode.maxAttempts`, `auth_config.verification.smsCode.resendCooldownSeconds`, `auth_config.verification.smsCode.resendHourlyLimit`, `auth_config.verification.smsCode.ttlMinutes`, `auth_config.walletGating`, `auth_config.walletGating.enabled`, `auth_config.walletGating.rpcUrls`, `auth_config.walletGating.rules`, `auth_config.walletGating.rules.action`, `auth_config.walletGating.rules.chainId`, `auth_config.walletGating.rules.contract`, `auth_config.walletGating.rules.id`, `auth_config.walletGating.rules.label`, `auth_config.walletGating.rules.minBalance`, `auth_config.walletGating.rules.standard`, `auth_config.walletGating.rules.tokenId`, `auth_config.branding`, `auth_config.branding.audiences`.
+  Response fields: `object`, `id`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `accepted_issuers`, `accepted_issuers.issuer`, `accepted_issuers.jwks_url`, `accepted_issuers.accepted_until`, `allowed_origins`, `allowed_origin_integrations`, `auth_config`, `auth_config_resolved`, `auth_config_resolved.accountLinking`, `auth_config_resolved.accountLinkingTrust`, `auth_config_resolved.accountUx`, `auth_config_resolved.accountUx.deviceKeys`, `auth_config_resolved.accountUx.deviceKeys.enabled`, `auth_config_resolved.accountUx.deviceKeys.satisfiesMfa`, `auth_config_resolved.accountUx.emailChange`, `auth_config_resolved.accountUx.emailChange.requireOldAddressConfirm`, `auth_config_resolved.accountUx.emailVerification`, `auth_config_resolved.accountUx.impersonation`, `auth_config_resolved.accountUx.impersonation.notifyUser`, `auth_config_resolved.accountUx.lastSignInMethod`, `auth_config_resolved.accountUx.lastSignInMethod.enabled`, `auth_config_resolved.accountUx.passkeyAdoption`, `auth_config_resolved.accountUx.passkeyAdoption.endpoints`, `auth_config_resolved.accountUx.passkeyAdoption.endpoints.enroll`, `auth_config_resolved.accountUx.passkeyAdoption.endpoints.manage`, `auth_config_resolved.accountUx.passkeyAdoption.prompt`, `auth_config_resolved.accountUx.passkeyAdoption.prompt.cooldownDays`, `auth_config_resolved.accountUx.passkeyAdoption.prompt.enabled`, `auth_config_resolved.accountUx.passkeyAdoption.recovery`, `auth_config_resolved.accountUx.passkeyAdoption.recovery.enabled`, `auth_config_resolved.accountUx.passkeyAdoption.recovery.methods`, `auth_config_resolved.accountUx.passkeyAdoption.retirePasswords`, `auth_config_resolved.accountUx.passkeyAdoption.rollout`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.deviceClasses`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.orgs`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.percentage`, `auth_config_resolved.accountUx.passkeyAdoption.rollout.variant`, `auth_config_resolved.accountUx.passkeyAdoption.signals`, `auth_config_resolved.accountUx.passkeyAdoption.webauthn`, `auth_config_resolved.accountUx.passkeyAdoption.webauthn.conditionalCreate`, `auth_config_resolved.accountUx.passkeyAdoption.webauthn.hints`, `auth_config_resolved.accountUx.passkeySignUp`, `auth_config_resolved.accountUx.passkeySignUp.email`, `auth_config_resolved.accountUx.passkeySignUp.enabled`, `auth_config_resolved.accountUx.passkeySignUp.preferred`, `auth_config_resolved.accountUx.passwordReset`, `auth_config_resolved.accountUx.securityNotifications`, `auth_config_resolved.accountUx.securityNotifications.accountChanges`, `auth_config_resolved.accountUx.securityNotifications.newDeviceSignIn`, `auth_config_resolved.accountUx.username`, `auth_config_resolved.accountUx.username.charset`, `auth_config_resolved.accountUx.username.maxLength`, `auth_config_resolved.accountUx.username.minLength`, `auth_config_resolved.accountUx.username.requiredAtSignUp`, `auth_config_resolved.agentFabric`, `auth_config_resolved.agentFabric.allowSelfDelegation`, `auth_config_resolved.agentFabric.continuousEvaluation`, `auth_config_resolved.agentFabric.defaultDelegationTtlSeconds`, `auth_config_resolved.agentFabric.maxDelegationDepth`, `auth_config_resolved.agentFabric.maxMfaAgeSeconds`, `auth_config_resolved.agentFabric.maxRiskLevel`, `auth_config_resolved.agentFabric.onFailure`, `auth_config_resolved.agentFabric.requireTrustedDevice`, `auth_config_resolved.appApproval`, `auth_config_resolved.appApproval.firstFactor`, `auth_config_resolved.appApproval.stepUp`, `auth_config_resolved.appApproval.ttlSeconds`, `auth_config_resolved.appCatalog`, `auth_config_resolved.appCatalog.oidcApps`, `auth_config_resolved.appCatalog.oidcApps.allowedEmailDomains`, `auth_config_resolved.appCatalog.oidcApps.assignment`, `auth_config_resolved.appCatalog.oidcApps.clientId`, `auth_config_resolved.appCatalog.oidcApps.id`, `auth_config_resolved.appCatalog.oidcApps.launchUrl`, `auth_config_resolved.appCatalog.oidcApps.name`, `auth_config_resolved.appCatalog.oidcApps.presetId`, `auth_config_resolved.approvals`, `auth_config_resolved.approvals.requireTrustedDevice`, `auth_config_resolved.attackProtection`, `auth_config_resolved.attackProtection.appAttestation`, `auth_config_resolved.attackProtection.appAttestation.android`, `auth_config_resolved.attackProtection.appAttestation.android.packageNames`, `auth_config_resolved.attackProtection.appAttestation.android.requireDeviceIntegrity`, `auth_config_resolved.attackProtection.appAttestation.android.requirePlayRecognized`, `auth_config_resolved.attackProtection.appAttestation.android.verificationKey`, `auth_config_resolved.attackProtection.appAttestation.enabled`, `auth_config_resolved.attackProtection.appAttestation.flows`, `auth_config_resolved.attackProtection.appAttestation.flows.signIn`, `auth_config_resolved.attackProtection.appAttestation.flows.signUp`, `auth_config_resolved.attackProtection.appAttestation.flows.smsSend`, `auth_config_resolved.attackProtection.appAttestation.ios`, `auth_config_resolved.attackProtection.appAttestation.ios.allowDevelopment`, `auth_config_resolved.attackProtection.appAttestation.ios.appIds`, `auth_config_resolved.attackProtection.appAttestation.ios.deviceCheck`, `auth_config_resolved.attackProtection.appAttestation.maxAgeSeconds`, `auth_config_resolved.attackProtection.bruteForce`, `auth_config_resolved.attackProtection.bruteForce.enabled`, `auth_config_resolved.attackProtection.bruteForce.unblock`, `auth_config_resolved.attackProtection.countries`, `auth_config_resolved.attackProtection.countries.blockUnknown`, `auth_config_resolved.attackProtection.countries.list`, `auth_config_resolved.attackProtection.countries.mode`, `auth_config_resolved.attackProtection.countries.signIn`, `auth_config_resolved.attackProtection.countries.signUp`, `auth_config_resolved.attackProtection.deviceAccounts`, `auth_config_resolved.attackProtection.deviceAccounts.enabled`, `auth_config_resolved.attackProtection.deviceAccounts.maxAccounts`, `auth_config_resolved.attackProtection.deviceAccounts.windowDays`, `auth_config_resolved.attackProtection.disposableEmail`, `auth_config_resolved.attackProtection.disposableEmail.allowDomains`, `auth_config_resolved.attackProtection.disposableEmail.block`, `auth_config_resolved.attackProtection.disposableEmail.extraDomains`, `auth_config_resolved.attackProtection.dormantAccounts`, `auth_config_resolved.attackProtection.dormantAccounts.enabled`, `auth_config_resolved.attackProtection.dormantAccounts.notifyUser`, `auth_config_resolved.attackProtection.dormantAccounts.onNoFactor`, `auth_config_resolved.attackProtection.dormantAccounts.requireMfa`, `auth_config_resolved.attackProtection.dormantAccounts.thresholdDays`, `auth_config_resolved.attackProtection.recoveryAbuse`, `auth_config_resolved.attackProtection.recoveryAbuse.enabled`, `auth_config_resolved.attackProtection.recoveryAbuse.perAccountPerHour`, `auth_config_resolved.attackProtection.recoveryAbuse.perIpPerHour`, `auth_config_resolved.attackProtection.signUpAbuse`, `auth_config_resolved.attackProtection.signUpAbuse.blockRiskAt`, `auth_config_resolved.attackProtection.signUpAbuse.enabled`, `auth_config_resolved.attackProtection.signUpAbuse.perAsnPerHour`, `auth_config_resolved.attackProtection.signUpAbuse.perIpPerDay`, `auth_config_resolved.attackProtection.signUpAbuse.perIpPerHour`, `auth_config_resolved.attackProtection.smsPumping`, `auth_config_resolved.attackProtection.smsPumping.allowedPrefixes`, `auth_config_resolved.attackProtection.smsPumping.blockedPrefixes`, `auth_config_resolved.attackProtection.smsPumping.enabled`, `auth_config_resolved.attackProtection.smsPumping.maxPerHour`, `auth_config_resolved.banBlocksIp`, `auth_config_resolved.banBlocksReregistration`, `auth_config_resolved.banIpBlockDays`, `auth_config_resolved.billing`, `auth_config_resolved.billing.portalConfigurationId`, `auth_config_resolved.captcha`, `auth_config_resolved.captcha.actions`, `auth_config_resolved.captcha.attestationUrl`, `auth_config_resolved.captcha.flows`, `auth_config_resolved.captcha.gateAnonymous`, `auth_config_resolved.captcha.minScore`, `auth_config_resolved.captcha.projectId`, `auth_config_resolved.captcha.provider`, `auth_config_resolved.captcha.siteKey`, `auth_config_resolved.captcha.verifyUrl`, `auth_config_resolved.captcha.widget`, `auth_config_resolved.changeFeed`, `auth_config_resolved.changeFeed.retentionDays`, `auth_config_resolved.compliance`, `auth_config_resolved.compliance.consents`, `auth_config_resolved.compliance.consents.policy`, `auth_config_resolved.compliance.consents.required`, `auth_config_resolved.compliance.consents.version`, `auth_config_resolved.compliance.cookieConsent`, `auth_config_resolved.compliance.cookieConsent.categories`, `auth_config_resolved.compliance.cookieConsent.enabled`, `auth_config_resolved.compliance.cookieConsent.honorDnt`, `auth_config_resolved.compliance.cookieConsent.honorGpc`, `auth_config_resolved.compliance.cookieConsent.policyVersion`, `auth_config_resolved.compliance.cookieConsent.repromptDays`, `auth_config_resolved.compliance.cookieConsent.retentionDays`, `auth_config_resolved.compliance.dataPolicy`, `auth_config_resolved.compliance.dataPolicy.activities`, `auth_config_resolved.compliance.dataPolicy.controller`, `auth_config_resolved.compliance.dataPolicy.controller.contactEmail`, `auth_config_resolved.compliance.dataPolicy.controller.dpoEmail`, `auth_config_resolved.compliance.dataPolicy.controller.name`, `auth_config_resolved.compliance.dataRegion`, `auth_config_resolved.compliance.inactiveUsers`, `auth_config_resolved.compliance.inactiveUsers.action`, `auth_config_resolved.compliance.inactiveUsers.afterDays`, `auth_config_resolved.compliance.inactiveUsers.enabled`, `auth_config_resolved.compliance.inactiveUsers.warnDays`, `auth_config_resolved.compliance.minors`, `auth_config_resolved.compliance.minors.birthdateTrait`, `auth_config_resolved.compliance.minors.consentAges`, `auth_config_resolved.compliance.minors.consentMethods`, `auth_config_resolved.compliance.minors.consentTtlHours`, `auth_config_resolved.compliance.minors.countryTrait`, `auth_config_resolved.compliance.minors.defaultConsentAge`, `auth_config_resolved.compliance.minors.enabled`, `auth_config_resolved.compliance.minors.minAssuranceLevel`, `auth_config_resolved.compliance.minors.minimumAge`, `auth_config_resolved.compliance.minors.restriction`, `auth_config_resolved.compliance.minors.trustedAgeMethods`, `auth_config_resolved.compliance.retention`, `auth_config_resolved.compliance.retention.anonymousRetentionDays`, `auth_config_resolved.compliance.retention.cancelDeletionOnSignIn`, `auth_config_resolved.compliance.retention.deletedUserGraceDays`, `auth_config_resolved.compliance.retention.deletionReminders`, `auth_config_resolved.compliance.retention.dsrDueDays`, `auth_config_resolved.compliance.retention.erasureGraceDays`, `auth_config_resolved.compliance.retention.ownershipTransfer`, `auth_config_resolved.compliance.retention.requireFinalNotice`, `auth_config_resolved.dangerouslyReportSkippedEmailsAsVerified`, `auth_config_resolved.deletedUserReturn`, `auth_config_resolved.endUserApiKeys`, `auth_config_resolved.endUserApiKeys.allowedClaimNames`, `auth_config_resolved.endUserApiKeys.allowedScopes`, `auth_config_resolved.endUserApiKeys.allowOrganizationKeys`, `auth_config_resolved.endUserApiKeys.defaultExpiresInSeconds`, `auth_config_resolved.endUserApiKeys.keyPrefix`, `auth_config_resolved.endUserApiKeys.keyTypes`, `auth_config_resolved.endUserApiKeys.maxActiveKeysPerSubject`, `auth_config_resolved.endUserApiKeys.maxExpiresInSeconds`, `auth_config_resolved.endUserApiKeys.organizationPermission`, `auth_config_resolved.endUserApiKeys.orgKeyOnCreatorDeparture`, `auth_config_resolved.endUserApiKeys.restoreKeysOnUnban`, `auth_config_resolved.endUserApiKeys.scopeImplications`, `auth_config_resolved.endUserApiKeys.selfServiceEnabled`, `auth_config_resolved.entitlements`, `auth_config_resolved.entitlements.features`, `auth_config_resolved.entitlements.features.key`, `auth_config_resolved.entitlements.features.name`, `auth_config_resolved.entitlements.plans`, `auth_config_resolved.entitlements.plans.features`, `auth_config_resolved.entitlements.plans.key`, `auth_config_resolved.entitlements.plans.name`, `auth_config_resolved.externalJwt`, `auth_config_resolved.externalJwt.issuers`, `auth_config_resolved.externalJwt.issuers.audience`, `auth_config_resolved.externalJwt.issuers.emailClaim`, `auth_config_resolved.externalJwt.issuers.id`, `auth_config_resolved.externalJwt.issuers.issuer`, `auth_config_resolved.externalJwt.issuers.jwksUri`, `auth_config_resolved.identityTraits`, `auth_config_resolved.identityTraits.audienceKey`, `auth_config_resolved.identityTraits.groups`, `auth_config_resolved.identityTraits.groups.key`, `auth_config_resolved.identityTraits.groups.label`, `auth_config_resolved.identityTraits.groups.labels`, `auth_config_resolved.identityTraits.traits`, `auth_config_resolved.identityTraits.traits.audiences`, `auth_config_resolved.identityTraits.traits.default`, `auth_config_resolved.identityTraits.traits.defaultFrom`, `auth_config_resolved.identityTraits.traits.description`, `auth_config_resolved.identityTraits.traits.editableBy`, `auth_config_resolved.identityTraits.traits.enum`, `auth_config_resolved.identityTraits.traits.group`, `auth_config_resolved.identityTraits.traits.indexed`, `auth_config_resolved.identityTraits.traits.items`, `auth_config_resolved.identityTraits.traits.key`, `auth_config_resolved.identityTraits.traits.label`, `auth_config_resolved.identityTraits.traits.labels`, `auth_config_resolved.identityTraits.traits.max`, `auth_config_resolved.identityTraits.traits.maxDate`, `auth_config_resolved.identityTraits.traits.maxItems`, `auth_config_resolved.identityTraits.traits.maxLength`, `auth_config_resolved.identityTraits.traits.min`, `auth_config_resolved.identityTraits.traits.minDate`, `auth_config_resolved.identityTraits.traits.minItems`, `auth_config_resolved.identityTraits.traits.minLength`, `auth_config_resolved.identityTraits.traits.pattern`, `auth_config_resolved.identityTraits.traits.properties`, `auth_config_resolved.identityTraits.traits.required`, `auth_config_resolved.identityTraits.traits.requiredWhen`, `auth_config_resolved.identityTraits.traits.type`, `auth_config_resolved.identityTraits.traits.userEditable`, `auth_config_resolved.identityTraits.traits.viewableBy`, `auth_config_resolved.jwtTemplates`, `auth_config_resolved.jwtTemplateSettings`, `auth_config_resolved.kerberos`, `auth_config_resolved.kerberos.allowJitProvisioning`, `auth_config_resolved.kerberos.emailDomain`, `auth_config_resolved.kerberos.principalHeader`, `auth_config_resolved.kerberos.realm`, `auth_config_resolved.ldap`, `auth_config_resolved.ldap.connections`, `auth_config_resolved.ldap.connections.attributes`, `auth_config_resolved.ldap.connections.baseDN`, `auth_config_resolved.ldap.connections.bindDN`, `auth_config_resolved.ldap.connections.id`, `auth_config_resolved.ldap.connections.requireConsentScreen`, `auth_config_resolved.ldap.connections.url`, `auth_config_resolved.ldap.connections.userFilter`, `auth_config_resolved.localization`, `auth_config_resolved.localization.defaultLocale`, `auth_config_resolved.localization.enabledLocales`, `auth_config_resolved.localization.requireFourEyes`, `auth_config_resolved.localization.requireReview`, `auth_config_resolved.mcpConnector`, `auth_config_resolved.mcpConnector.allowedRedirectHosts`, `auth_config_resolved.mcpConnector.dynamicRegistration`, `auth_config_resolved.mcpConnector.enabled`, `auth_config_resolved.mcpConnector.exposedScopes`, `auth_config_resolved.mcpConnector.name`, `auth_config_resolved.mfa`, `auth_config_resolved.mfa.backupCodes`, `auth_config_resolved.mfa.backupCodes.count`, `auth_config_resolved.mfa.duo`, `auth_config_resolved.mfa.duo.apiHost`, `auth_config_resolved.mfa.duo.clientId`, `auth_config_resolved.mfa.factors`, `auth_config_resolved.mfa.factors.customChallenge`, `auth_config_resolved.mfa.factors.duo`, `auth_config_resolved.mfa.factors.emailCode`, `auth_config_resolved.mfa.factors.hotp`, `auth_config_resolved.mfa.factors.passkey`, `auth_config_resolved.mfa.factors.push`, `auth_config_resolved.mfa.factors.sms`, `auth_config_resolved.mfa.factors.totp`, `auth_config_resolved.mfa.factors.yubikey`, `auth_config_resolved.mfa.hotp`, `auth_config_resolved.mfa.hotp.algorithm`, `auth_config_resolved.mfa.hotp.digits`, `auth_config_resolved.mfa.hotp.lookAhead`, `auth_config_resolved.mfa.push`, `auth_config_resolved.mfa.push.context`, `auth_config_resolved.mfa.push.context.showApp`, `auth_config_resolved.mfa.push.context.showIp`, `auth_config_resolved.mfa.push.context.showLocation`, `auth_config_resolved.mfa.push.denyStreak`, `auth_config_resolved.mfa.push.denyStreak.lockMinutes`, `auth_config_resolved.mfa.push.denyStreak.threshold`, `auth_config_resolved.mfa.recovery`, `auth_config_resolved.mfa.recovery.viaIdentityVerification`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.allowNeedsReview`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.enabled`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.minBaselineAgeHours`, `auth_config_resolved.mfa.recovery.viaIdentityVerification.requireNewPassword`, `auth_config_resolved.mfa.rememberDevice`, `auth_config_resolved.mfa.rememberDevice.days`, `auth_config_resolved.mfa.rememberDevice.enabled`, `auth_config_resolved.mfa.securityQuestions`, `auth_config_resolved.mfa.securityQuestions.enabled`, `auth_config_resolved.mfa.securityQuestions.maxAttempts`, `auth_config_resolved.mfa.securityQuestions.questions`, `auth_config_resolved.mfa.securityQuestions.required`, `auth_config_resolved.mfa.smartCard`, `auth_config_resolved.mfa.smartCard.certHeader`, `auth_config_resolved.mfa.smartCard.enabled`, `auth_config_resolved.mfa.smartCard.fingerprintHeader`, `auth_config_resolved.mfa.smartCard.mappingRules`, `auth_config_resolved.mfa.smartCard.satisfiesMfa`, `auth_config_resolved.mfa.smartCard.secretHeader`, `auth_config_resolved.mfa.smartCard.subjectHeader`, `auth_config_resolved.mfa.smartCard.verifyHeader`, `auth_config_resolved.mfa.totp`, `auth_config_resolved.mfa.totp.algorithm`, `auth_config_resolved.mfa.totp.digits`, `auth_config_resolved.mfa.totp.period`, `auth_config_resolved.mfa.totpEnrollmentCodes`, `auth_config_resolved.mfa.yubikey`, `auth_config_resolved.mfa.yubikey.apiUrls`, `auth_config_resolved.mfa.yubikey.clientId`, `auth_config_resolved.mfa.yubikey.mode`, `auth_config_resolved.mfaPolicy`, `auth_config_resolved.nativeApps`, `auth_config_resolved.nativeApps.androidApps`, `auth_config_resolved.nativeApps.androidApps.packageName`, `auth_config_resolved.nativeApps.androidApps.sha256CertFingerprints`, `auth_config_resolved.nativeApps.appleAppIds`, `auth_config_resolved.oauthProvider`, `auth_config_resolved.oauthProvider.accessTokenFormat`, `auth_config_resolved.oauthProvider.advanced`, `auth_config_resolved.oauthProvider.advanced.cibaPasswordFallback`, `auth_config_resolved.oauthProvider.advanced.clientAttestationIssuers`, `auth_config_resolved.oauthProvider.advanced.federation`, `auth_config_resolved.oauthProvider.advanced.federation.authorityHints`, `auth_config_resolved.oauthProvider.advanced.federation.automaticRegistration`, `auth_config_resolved.oauthProvider.advanced.federation.enabled`, `auth_config_resolved.oauthProvider.advanced.federation.explicitRegistration`, `auth_config_resolved.oauthProvider.advanced.federation.maxChainDepth`, `auth_config_resolved.oauthProvider.advanced.federation.organizationName`, `auth_config_resolved.oauthProvider.advanced.federation.statementTtlSeconds`, `auth_config_resolved.oauthProvider.advanced.federation.subordinates`, `auth_config_resolved.oauthProvider.advanced.federation.trustAnchors`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.allowSignUp`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.atlasClientIds`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.clientIds`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.enabled`, `auth_config_resolved.oauthProvider.advanced.googleTokenExchange.hostedDomains`, `auth_config_resolved.oauthProvider.advanced.mtlsEndpointHost`, `auth_config_resolved.oauthProvider.advanced.nativeSso`, `auth_config_resolved.oauthProvider.advanced.requireSoftwareStatement`, `auth_config_resolved.oauthProvider.advanced.sessionManagement`, `auth_config_resolved.oauthProvider.advanced.softwareStatementIssuers`, `auth_config_resolved.oauthProvider.advanced.spiffeTrustDomains`, `auth_config_resolved.oauthProvider.advanced.transactionTokens`, `auth_config_resolved.oauthProvider.advanced.transactionTokens.enabled`, `auth_config_resolved.oauthProvider.advanced.transactionTokens.trustDomains`, `auth_config_resolved.oauthProvider.advanced.transactionTokens.ttlSeconds`, `auth_config_resolved.oauthProvider.authorizationDetailsTypesSupported`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.allowedHosts`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.blockedHosts`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.enabled`, `auth_config_resolved.oauthProvider.clientIdMetadataDocuments.trustedHosts`, `auth_config_resolved.oauthProvider.consentUrl`, `auth_config_resolved.oauthProvider.customScopes`, `auth_config_resolved.oauthProvider.customScopes.claims`, `auth_config_resolved.oauthProvider.customScopes.description`, `auth_config_resolved.oauthProvider.customScopes.descriptions`, `auth_config_resolved.oauthProvider.customScopes.labels`, `auth_config_resolved.oauthProvider.customScopes.name`, `auth_config_resolved.oauthProvider.customScopes.parameters`, `auth_config_resolved.oauthProvider.customScopes.requiresVerifiedClient`, `auth_config_resolved.oauthProvider.customScopes.sensitive`, `auth_config_resolved.oauthProvider.deviceApprovalRequiresStepUp`, `auth_config_resolved.oauthProvider.dynamicClientSecretTtlSeconds`, `auth_config_resolved.oauthProvider.dynamicRegistration`, `auth_config_resolved.oauthProvider.loginUrl`, `auth_config_resolved.oauthProvider.requireInitialAccessToken`, `auth_config_resolved.oauthProvider.requirePkce`, `auth_config_resolved.oauthProvider.requirePushedAuthorizationRequests`, `auth_config_resolved.oauthProvider.tokenClaims`, `auth_config_resolved.oauthProvider.tokenClaims.scope`, `auth_config_resolved.oauthProvider.tokenClaims.template`, `auth_config_resolved.oauthProvider.tokenClaims.tokens`, `auth_config_resolved.oauthProvider.tokenLifetimes`, `auth_config_resolved.oauthProvider.tokenLifetimes.accessTokenSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.authorizationCodeSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.deviceCodeSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.idTokenSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.refreshTokenAbsoluteSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.refreshTokenIdleSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.sessionAbsoluteSeconds`, `auth_config_resolved.oauthProvider.tokenLifetimes.sessionIdleSeconds`, `auth_config_resolved.oauthProvider.umaEnabled`, `auth_config_resolved.organizations`, `auth_config_resolved.organizations.allowCustomRolesFromApp`, `auth_config_resolved.organizations.allowDeletionFromApp`, `auth_config_resolved.organizations.creatorRole`, `auth_config_resolved.organizations.defaultMaxAllowedMemberships`, `auth_config_resolved.organizations.inheritAncestorRoles`, `auth_config_resolved.organizations.invitationAccept`, `auth_config_resolved.organizations.invitationEmail`, `auth_config_resolved.organizations.invitationRedirectUrl`, `auth_config_resolved.organizations.invitationTtlSeconds`, `auth_config_resolved.organizations.maxCustomRolesPerOrganization`, `auth_config_resolved.organizations.maxMembersPerTeam`, `auth_config_resolved.organizations.maxOrganizationsPerUser`, `auth_config_resolved.organizations.maxPendingInvitationsPerOrganization`, `auth_config_resolved.organizations.maxTeamsPerOrganization`, `auth_config_resolved.passkeyPolicy`, `auth_config_resolved.passkeyPolicy.attachment`, `auth_config_resolved.passkeyPolicy.attestation`, `auth_config_resolved.passkeyPolicy.authenticatorAllowlist`, `auth_config_resolved.passkeyPolicy.authenticatorBlocklist`, `auth_config_resolved.passkeyPolicy.mds`, `auth_config_resolved.passkeyPolicy.mds.blockStatuses`, `auth_config_resolved.passkeyPolicy.mds.enabled`, `auth_config_resolved.passkeyPolicy.mds.enforceAtSignIn`, `auth_config_resolved.passkeyPolicy.requireUserVerification`, `auth_config_resolved.passkeyPolicy.requireUserVerificationForFirstFactor`, `auth_config_resolved.passkeyPolicy.timeoutSeconds`, `auth_config_resolved.passwordPolicy`, `auth_config_resolved.passwordPolicy.bannedPasswords`, `auth_config_resolved.passwordPolicy.breachCheckOnSignIn`, `auth_config_resolved.passwordPolicy.checkBreaches`, `auth_config_resolved.passwordPolicy.historyCount`, `auth_config_resolved.passwordPolicy.maxAgeDays`, `auth_config_resolved.passwordPolicy.maxLength`, `auth_config_resolved.passwordPolicy.minLength`, `auth_config_resolved.passwordPolicy.rejectCommonPasswords`, `auth_config_resolved.passwordPolicy.rejectIdentifierSubstring`, `auth_config_resolved.passwordPolicy.requireLowercase`, `auth_config_resolved.passwordPolicy.requireNumber`, `auth_config_resolved.passwordPolicy.requireSymbol`, `auth_config_resolved.passwordPolicy.requireUppercase`, `auth_config_resolved.pca`, `auth_config_resolved.pca.enabled`, `auth_config_resolved.pca.maxPlanNodes`, `auth_config_resolved.pca.publicRateLimitPerMin`, `auth_config_resolved.phoneChannels`, `auth_config_resolved.phoneChannels.sms`, `auth_config_resolved.phoneChannels.voice`, `auth_config_resolved.phoneChannels.whatsapp`, `auth_config_resolved.qrSignIn`, `auth_config_resolved.qrSignIn.enabled`, `auth_config_resolved.qrSignIn.matchCodeDigits`, `auth_config_resolved.qrSignIn.ttlMinutes`, `auth_config_resolved.rateLimit`, `auth_config_resolved.rateLimit.bapiPerMin`, `auth_config_resolved.rateLimit.fapiCreatePerMin`, `auth_config_resolved.rateLimit.fapiVerifyPerMin`, `auth_config_resolved.rateLimit.ldapPerIpPerMin`, `auth_config_resolved.rateLimit.ldapPerUserPerMin`, `auth_config_resolved.rateLimit.rules`, `auth_config_resolved.rateLimit.rules.group`, `auth_config_resolved.rateLimit.rules.key`, `auth_config_resolved.rateLimit.rules.max`, `auth_config_resolved.rateLimit.rules.windowSeconds`, `auth_config_resolved.requireEmailVerification`, `auth_config_resolved.restrictions`, `auth_config_resolved.restrictions.allowlistOnly`, `auth_config_resolved.riskBasedMfa`, `auth_config_resolved.riskBasedMfa.baseline`, `auth_config_resolved.riskBasedMfa.baseline.enabled`, `auth_config_resolved.riskBasedMfa.baseline.weight`, `auth_config_resolved.riskBasedMfa.enabled`, `auth_config_resolved.riskBasedMfa.fraud`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit.adaptive`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit.enabled`, `auth_config_resolved.riskBasedMfa.fraud.deviceRateLimit.perHour`, `auth_config_resolved.riskBasedMfa.fraud.rules`, `auth_config_resolved.riskBasedMfa.fraud.sanctionedCountries`, `auth_config_resolved.riskBasedMfa.levelActions`, `auth_config_resolved.riskBasedMfa.levelActions.high`, `auth_config_resolved.riskBasedMfa.levelActions.medium`, `auth_config_resolved.riskBasedMfa.midSession`, `auth_config_resolved.riskBasedMfa.midSession.action`, `auth_config_resolved.riskBasedMfa.midSession.enabled`, `auth_config_resolved.riskBasedMfa.mode`, `auth_config_resolved.riskBasedMfa.onHighRiskNoFactor`, `auth_config_resolved.riskBasedMfa.reputation`, `auth_config_resolved.riskBasedMfa.reputation.emailChecks`, `auth_config_resolved.riskBasedMfa.reputation.emailWeight`, `auth_config_resolved.riskBasedMfa.reputation.flagAnonymizers`, `auth_config_resolved.riskBasedMfa.reputation.ipWeight`, `auth_config_resolved.riskBasedMfa.reputation.minScore`, `auth_config_resolved.riskBasedMfa.reputation.provider`, `auth_config_resolved.riskBasedMfa.signals`, `auth_config_resolved.riskBasedMfa.signals.dormantAccount`, `auth_config_resolved.riskBasedMfa.signals.impossibleTravel`, `auth_config_resolved.riskBasedMfa.signals.newDevice`, `auth_config_resolved.riskBasedMfa.signals.newIp`, `auth_config_resolved.riskBasedMfa.signals.newSubnet`, `auth_config_resolved.riskBasedMfa.signals.velocity`, `auth_config_resolved.riskBasedMfa.stepUpThreshold`, `auth_config_resolved.riskBasedMfa.weights`, `auth_config_resolved.riskBasedMfa.weights.dormantAccount`, `auth_config_resolved.riskBasedMfa.weights.impossibleTravel`, `auth_config_resolved.riskBasedMfa.weights.newDevice`, `auth_config_resolved.riskBasedMfa.weights.newIp`, `auth_config_resolved.riskBasedMfa.weights.newSubnet`, `auth_config_resolved.riskBasedMfa.weights.velocity`, `auth_config_resolved.samlIdp`, `auth_config_resolved.samlIdp.serviceProviders`, `auth_config_resolved.samlIdp.serviceProviders.acsUrl`, `auth_config_resolved.samlIdp.serviceProviders.acsUrls`, `auth_config_resolved.samlIdp.serviceProviders.allowedEmailDomains`, `auth_config_resolved.samlIdp.serviceProviders.artifactBinding`, `auth_config_resolved.samlIdp.serviceProviders.assertionLifetimeSeconds`, `auth_config_resolved.samlIdp.serviceProviders.assignment`, `auth_config_resolved.samlIdp.serviceProviders.attributeQuery`, `auth_config_resolved.samlIdp.serviceProviders.attributes`, `auth_config_resolved.samlIdp.serviceProviders.authnContextClassRef`, `auth_config_resolved.samlIdp.serviceProviders.digestAlgorithm`, `auth_config_resolved.samlIdp.serviceProviders.ecp`, `auth_config_resolved.samlIdp.serviceProviders.encryptAssertions`, `auth_config_resolved.samlIdp.serviceProviders.encryptionCert`, `auth_config_resolved.samlIdp.serviceProviders.entityId`, `auth_config_resolved.samlIdp.serviceProviders.id`, `auth_config_resolved.samlIdp.serviceProviders.name`, `auth_config_resolved.samlIdp.serviceProviders.nameIdField`, `auth_config_resolved.samlIdp.serviceProviders.nameIdFormat`, `auth_config_resolved.samlIdp.serviceProviders.presetId`, `auth_config_resolved.samlIdp.serviceProviders.requireSignedRequests`, `auth_config_resolved.samlIdp.serviceProviders.signatureAlgorithm`, `auth_config_resolved.samlIdp.serviceProviders.signingCerts`, `auth_config_resolved.samlIdp.serviceProviders.signResponse`, `auth_config_resolved.samlIdp.serviceProviders.sloBinding`, `auth_config_resolved.samlIdp.serviceProviders.sloUrl`, `auth_config_resolved.samlIdp.serviceProviders.staticAttributes`, `auth_config_resolved.samlIdp.serviceProviders.tokenFormat`, `auth_config_resolved.samlIdp.serviceProviders.wsTrust`, `auth_config_resolved.samlIdp.serviceProviders.wsTrustEncryptionCert`, `auth_config_resolved.session`, `auth_config_resolved.session.absoluteMs`, `auth_config_resolved.session.audience`, `auth_config_resolved.session.crossSubdomainCookies`, `auth_config_resolved.session.customData`, `auth_config_resolved.session.customData.claim`, `auth_config_resolved.session.customData.inToken`, `auth_config_resolved.session.deviceBoundSessions`, `auth_config_resolved.session.idleMs`, `auth_config_resolved.session.idleReconcileAcrossOrgs`, `auth_config_resolved.session.idleTimeout`, `auth_config_resolved.session.includeEmailClaim`, `auth_config_resolved.session.includeEndUserPoolClaim`, `auth_config_resolved.session.includeOrgsClaim`, `auth_config_resolved.session.includeRiskClaim`, `auth_config_resolved.session.jwtTtlSeconds`, `auth_config_resolved.session.longLived`, `auth_config_resolved.session.maxConcurrentSessions`, `auth_config_resolved.session.multiSession`, `auth_config_resolved.session.nonPersistentAbsoluteMs`, `auth_config_resolved.session.nonPersistentIdleMs`, `auth_config_resolved.session.refreshRotation`, `auth_config_resolved.session.rememberMe`, `auth_config_resolved.session.revokeOnPasswordChange`, `auth_config_resolved.session.tokenIncludedSettingsKeys`, `auth_config_resolved.session.tokenStrategy`, `auth_config_resolved.sessionBinding`, `auth_config_resolved.sessionBinding.mode`, `auth_config_resolved.sessionBinding.requireAttestation`, `auth_config_resolved.signals`, `auth_config_resolved.signals.rawCapture`, `auth_config_resolved.signals.retentionDays`, `auth_config_resolved.signInAfterReset`, `auth_config_resolved.signUpMode`, `auth_config_resolved.srp`, `auth_config_resolved.srp.deviceTracking`, `auth_config_resolved.srp.enabled`, `auth_config_resolved.srp.poolName`, `auth_config_resolved.stepUp`, `auth_config_resolved.stepUp.enabled`, `auth_config_resolved.stepUp.windowMs`, `auth_config_resolved.strategies`, `auth_config_resolved.strategies.anonymous`, `auth_config_resolved.strategies.emailCode`, `auth_config_resolved.strategies.emailLink`, `auth_config_resolved.strategies.kerberos`, `auth_config_resolved.strategies.oauthProviders`, `auth_config_resolved.strategies.passkey`, `auth_config_resolved.strategies.password`, `auth_config_resolved.strategies.phoneCode`, `auth_config_resolved.strategies.siwb`, `auth_config_resolved.strategies.siwe`, `auth_config_resolved.strategies.siwf`, `auth_config_resolved.strategies.siws`, `auth_config_resolved.strategies.username`, `auth_config_resolved.strictRequestBodies`, `auth_config_resolved.verification`, `auth_config_resolved.verification.emailCode`, `auth_config_resolved.verification.emailCode.charset`, `auth_config_resolved.verification.emailCode.length`, `auth_config_resolved.verification.emailCode.maxAttempts`, `auth_config_resolved.verification.emailCode.resendCooldownSeconds`, `auth_config_resolved.verification.emailCode.resendHourlyLimit`, `auth_config_resolved.verification.emailCode.resendSameCode`, `auth_config_resolved.verification.emailCode.ttlMinutes`, `auth_config_resolved.verification.magicLink`, `auth_config_resolved.verification.magicLink.resendCooldownSeconds`, `auth_config_resolved.verification.magicLink.resendHourlyLimit`, `auth_config_resolved.verification.magicLink.ttlMinutes`, `auth_config_resolved.verification.smsCode`, `auth_config_resolved.verification.smsCode.length`, `auth_config_resolved.verification.smsCode.maxAttempts`, `auth_config_resolved.verification.smsCode.resendCooldownSeconds`, `auth_config_resolved.verification.smsCode.resendHourlyLimit`, `auth_config_resolved.verification.smsCode.ttlMinutes`, `auth_config_resolved.walletGating`, `auth_config_resolved.walletGating.enabled`, `auth_config_resolved.walletGating.rpcUrls`, `auth_config_resolved.walletGating.rules`, `auth_config_resolved.walletGating.rules.action`, `auth_config_resolved.walletGating.rules.chainId`, `auth_config_resolved.walletGating.rules.contract`, `auth_config_resolved.walletGating.rules.id`, `auth_config_resolved.walletGating.rules.label`, `auth_config_resolved.walletGating.rules.minBalance`, `auth_config_resolved.walletGating.rules.standard`, `auth_config_resolved.walletGating.rules.tokenId`, `auth_config_resolved.branding`, `auth_config_resolved.branding.audiences`, `warnings`, `warnings.code`, `warnings.message`, `warnings.field`, `warnings.hint`, `warnings.did_you_mean`, `warnings.origin`, `inactive_methods`, `inactive_methods.method`, `inactive_methods.reason`, `limited_methods`, `limited_methods.method`, `limited_methods.reason`, `limited_methods.unavailable`, `created_at`.
   """
   def update(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance", %{}, body, opts)
@@ -101,21 +275,27 @@ defmodule Atlas.Instance do
   The instance's published token-signing keys, newest first: the `current` key (signs every new token) and, inside a rotation's grace window, the `previous` key with `retires_at` (epoch ms) — when it leaves the JWKS.
 
   `GET /v1/instance/signing_keys`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kid`, `data.alg`, `data.status`, `data.role`, `data.retires_at`, `data.activates_at`, `data.provider`.
   """
   def get_signing_keys(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/signing_keys", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_signing_keys/1`, following the cursor page by page.
+  Lazy stream over every item of `get_signing_keys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_signing_keys(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/instance/signing_keys", %{}, opts)
 
   @doc ~S"""
-  Rotate the instance signing key, optionally switching its algorithm (`alg`: RS256 or ES256; RS256 is the default for new instances). A new key signs from now on, and a secondary key (for APIs set to the other algorithm) rotates with it; the previous public key stays in the JWKS for `grace_period_seconds` (default 86400, at most 2592000) so issued tokens and relying-party JWKS caches keep verifying. A second rotation inside a running grace window is a 409 unless `emergency: true`, which publishes ONLY the new key (every token signed by the old one stops verifying at once — for a suspected compromise) and discards a staged key. Audited as signing_key.rotated. `staged: true` (or the `prepublish_days` policy) instead pre-publishes: the new key goes into the JWKS after the current keys and starts signing at `activates_at`, when the old key becomes previous for 24 hours; listed as `status: next`, cancelled with DELETE /v1/instance/signing_keys/next, audited and sent as signing_key.staged, then signing_key.activated.
+  Rotate the instance signing key, optionally switching its algorithm (`alg`: RS256, ES256, ES384, PS256 or EdDSA; RS256 is the default for new instances; keys in a key management service support RS256 and ES256). A new key signs from now on, and a secondary key (for APIs set to the other algorithm) rotates with it; the previous public key stays in the JWKS for `grace_period_seconds` (default 86400, at most 2592000) so issued tokens and relying-party JWKS caches keep verifying. A second rotation inside a running grace window is a 409 unless `emergency: true`, which publishes ONLY the new key (every token signed by the old one stops verifying at once — for a suspected compromise) and discards a staged key. Audited as signing_key.rotated. `staged: true` (or the `prepublish_days` policy) instead pre-publishes: the new key goes into the JWKS after the current keys and starts signing at `activates_at`, when the old key becomes previous for 24 hours; listed as `status: next`, cancelled with DELETE /v1/instance/signing_keys/next, audited and sent as signing_key.staged, then signing_key.activated.
 
   `POST /v1/instance/signing_keys/rotate`. Required scope: `instance:write`.
+
+  Body fields: `grace_period_seconds` (integer), `emergency` (boolean), `alg` (enum), `key` (enum), `staged` (boolean), `activates_at` (string|integer).
+  Response fields: `object`, `kid`, `alg`, `previous_kid`, `previous_retires_at`, `emergency`, `provider`, `secondary_kid`, `staged`, `activates_at`.
   """
   def post_signing_keys_rotate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/signing_keys/rotate", %{}, body, opts)
@@ -124,6 +304,8 @@ defmodule Atlas.Instance do
   Cancel a staged rotation: the staged key leaves the JWKS and never signs. 404 when none is staged. Audited as signing_key.staged_canceled.
 
   `DELETE /v1/instance/signing_keys/next`. Required scope: `instance:write`.
+
+  Response fields: `object`, `kid`, `status`, `deleted`.
   """
   def delete_signing_keys_next(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/signing_keys/next", %{}, nil, opts)
@@ -132,6 +314,8 @@ defmodule Atlas.Instance do
   The staged-rotation policy: `prepublish_days` (null = off).
 
   `GET /v1/instance/signing_key_policy`. Required scope: `instance:read`.
+
+  Response fields: `object`, `prepublish_days`.
   """
   def get_signing_key_policy(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/signing_key_policy", %{}, nil, opts)
@@ -140,6 +324,9 @@ defmodule Atlas.Instance do
   Set the staged-rotation policy. With `prepublish_days` (1..90) every ordinary rotation is staged that many days ahead (its key published now, signing from then) unless the rotate call passes `staged: false`; null or 0 turns it off. Emergency rotations are never staged. Audited as signing_key.policy_updated.
 
   `PATCH /v1/instance/signing_key_policy`. Required scope: `instance:write`.
+
+  Body fields: `prepublish_days` (integer|null, required).
+  Response fields: `object`, `prepublish_days`.
   """
   def update_signing_key_policy(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/signing_key_policy", %{}, body, opts)
@@ -148,6 +335,8 @@ defmodule Atlas.Instance do
   The key management service the instance's token-signing key lives in: `local` (held by Atlas), or AWS KMS, Google Cloud KMS or Azure Key Vault with its non-secret settings and the key version in use. Credentials are never returned.
 
   `GET /v1/instance/signing_key_provider`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `provider`, `config`, `active`, `key_version`, `last_verified_at`, `created_at`, `updated_at`, `rotation`, `rotation.object`, `rotation.kid`, `rotation.alg`, `rotation.previous_kid`, `rotation.previous_retires_at`, `rotation.emergency`, `rotation.provider`, `rotation.secondary_kid`, `rotation.staged`, `rotation.activates_at`.
   """
   def get_signing_key_provider(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/signing_key_provider", %{}, nil, opts)
@@ -156,6 +345,9 @@ defmodule Atlas.Instance do
   Bring your own key: keep the signing key in AWS KMS, Google Cloud KMS or Azure Key Vault. Atlas validates the settings, reads (or creates) a key version, proves it can sign with it, saves the settings (credentials encrypted under the instance key) and rotates the main signing key to it — the previous key stays published for `grace_period_seconds` unless `emergency`. From then on every token is signed by the KMS (the private key never leaves it), the JWKS publishes its public key, and POST /v1/instance/signing_keys/rotate creates a new key version there. A KMS that refuses (bad credentials, missing permission, wrong key type) is a 422 naming the reason. SAML assertions, AuthnRequests and metadata certificates are signed by the KMS key too (an RS256 key when one is configured). Audited as signing_key.provider_configured.
 
   `PUT /v1/instance/signing_key_provider`. Required scope: `instance:write`.
+
+  Body fields: `provider` (enum, required), `config` (object, required), `credentials` (object, required), `grace_period_seconds` (integer), `emergency` (boolean).
+  Response fields: `object`, `id`, `provider`, `config`, `active`, `key_version`, `last_verified_at`, `created_at`, `updated_at`, `rotation`, `rotation.object`, `rotation.kid`, `rotation.alg`, `rotation.previous_kid`, `rotation.previous_retires_at`, `rotation.emergency`, `rotation.provider`, `rotation.secondary_kid`, `rotation.staged`, `rotation.activates_at`.
   """
   def put_signing_key_provider(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/signing_key_provider", %{}, body, opts)
@@ -164,6 +356,9 @@ defmodule Atlas.Instance do
   Stop using the key management service: rotate back to a new key Atlas holds (the KMS key stays published for `grace_period_seconds`, or not at all with `emergency`) and delete the saved settings and credentials. The KMS key itself is not deleted. Audited as signing_key.provider_removed.
 
   `DELETE /v1/instance/signing_key_provider`. Required scope: `instance:write`.
+
+  Body fields: `grace_period_seconds` (integer), `emergency` (boolean), `alg` (enum), `key` (enum).
+  Response fields: `object`, `provider`, `deleted`, `rotation`, `rotation.object`, `rotation.kid`, `rotation.alg`, `rotation.previous_kid`, `rotation.previous_retires_at`, `rotation.emergency`, `rotation.provider`, `rotation.secondary_kid`, `rotation.staged`, `rotation.activates_at`.
   """
   def delete_signing_key_provider(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/signing_key_provider", %{}, body, opts)
@@ -172,12 +367,15 @@ defmodule Atlas.Instance do
   The OpenID provider keys beyond the instance signing key: PS256, ES384 and EdDSA signing keys and the RSA-OAEP-256 / ECDH-ES keys request objects are encrypted to, with their status.
 
   `GET /v1/instance/op_keys`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kid`, `data.alg`, `data.use`, `data.status`, `data.retires_at`, `data.created_at`, `has_more`.
   """
   def get_op_keys(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/op_keys", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_op_keys/1`, following the cursor page by page.
+  Lazy stream over every item of `get_op_keys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_op_keys(client, opts \\ []),
@@ -187,6 +385,8 @@ defmodule Atlas.Instance do
   Rotate the key of one algorithm (`alg`). The previous public key stays published for `grace_period_seconds` (default 24 h) so tokens it signed keep verifying.
 
   `POST /v1/instance/op_keys/rotate`. Required scope: `instance:write`.
+
+  Body fields: `alg` (string), `grace_period_seconds` (number).
   """
   def post_op_keys_rotate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/op_keys/rotate", %{}, body, opts)
@@ -195,6 +395,9 @@ defmodule Atlas.Instance do
   Store (write-only, encrypted) the Yubico cloud API secret key (base64, from upgrade.yubico.com/getapikey). The client id is mfa.yubikey.clientId. Used when mfa.yubikey.mode is "cloud".
 
   `PUT /v1/instance/yubico_secret`. Required scope: `instance:write`.
+
+  Body fields: `secret` (string, required).
+  Response fields: `object`, `set`.
   """
   def put_yubico_secret(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/yubico_secret", %{}, body, opts)
@@ -203,6 +406,8 @@ defmodule Atlas.Instance do
   Remove the stored Yubico cloud secret. Cloud-mode YubiKey sign-ins then fail until a new one is stored.
 
   `DELETE /v1/instance/yubico_secret`. Required scope: `instance:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_yubico_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/yubico_secret", %{}, nil, opts)
@@ -211,6 +416,9 @@ defmodule Atlas.Instance do
   Store (write-only, encrypted) the Duo Web SDK / Universal Prompt client secret. The client id (integration key) and API host are mfa.duo.clientId and mfa.duo.apiHost.
 
   `PUT /v1/instance/duo_secret`. Required scope: `instance:write`.
+
+  Body fields: `secret` (string, required).
+  Response fields: `object`, `set`.
   """
   def put_duo_secret(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/duo_secret", %{}, body, opts)
@@ -219,6 +427,8 @@ defmodule Atlas.Instance do
   Remove the stored Duo client secret.
 
   `DELETE /v1/instance/duo_secret`. Required scope: `instance:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_duo_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/duo_secret", %{}, nil, opts)
@@ -227,6 +437,9 @@ defmodule Atlas.Instance do
   Store (write-only, encrypted) the shared secret your TLS proxy sends in the mfa.smartCard.secretHeader header, so Atlas believes the certificate headers only from your proxy. Use a random value of at least 24 characters.
 
   `PUT /v1/instance/smart_card_secret`. Required scope: `instance:write`.
+
+  Body fields: `secret` (string, required).
+  Response fields: `object`, `set`.
   """
   def put_smart_card_secret(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/smart_card_secret", %{}, body, opts)
@@ -235,6 +448,8 @@ defmodule Atlas.Instance do
   Remove the stored proxy secret. Smart card sign-in then refuses every request.
 
   `DELETE /v1/instance/smart_card_secret`. Required scope: `instance:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_smart_card_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/smart_card_secret", %{}, nil, opts)
@@ -243,6 +458,8 @@ defmodule Atlas.Instance do
   Ask Duo whether the configured integration key, stored secret and API host are accepted (Duo's health check). Reports ok and a message; nothing is changed.
 
   `POST /v1/instance/duo_health_check`. Required scope: `instance:read`.
+
+  Response fields: `object`, `ok`, `message`.
   """
   def post_duo_health_check(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/duo_health_check", %{}, nil, opts)
@@ -251,6 +468,8 @@ defmodule Atlas.Instance do
   Read the instance kill switches (per-flow on/off) and the customer IP allowlist.
 
   `GET /v1/instance/security`. Required scope: `instance:read`.
+
+  Response fields: `object`, `kill_switches`, `ip_allowlist`, `warning`.
   """
   def get_security(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/security", %{}, nil, opts)
@@ -259,6 +478,10 @@ defmodule Atlas.Instance do
   Set the instance kill switches and/or IP allowlist. Every CIDR is validated; a malformed one is refused rather than stored as a rule that never matches. An allowlist that excludes the calling IP would lock this API out, so it is refused with 422 unless you send confirm_lockout: true (the response then carries a `warning`). The dashboard is not subject to the allowlist, so an owner or admin can always correct it there.
 
   `PATCH /v1/instance/security`. Required scope: `instance:write`.
+
+  Body fields: `kill_switches` (object), `ip_allowlist` (array), `confirm_lockout` (boolean).
+  Nested body fields: `kill_switches.disableSignUps`, `kill_switches.disableSignIns`, `kill_switches.forceChallenge`, `kill_switches.disabledProviders`.
+  Response fields: `object`, `kill_switches`, `ip_allowlist`, `warning`.
   """
   def update_security(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/security", %{}, body, opts)
@@ -267,6 +490,9 @@ defmodule Atlas.Instance do
   Store a captcha provider secret (write-only, encrypted; never read back). Captcha always runs on your own provider keys, so store the secret first: `provider` names the provider it belongs to (default: the configured auth_config.captcha.provider), so it can be stored before the captcha is turned on. Without a provider in the body or the config, the call is refused. Key-only switch: send `site_key` too and the same call sets auth_config.captcha.provider and siteKey in one atomic write, so moving from the built-in atlas captcha to Turnstile is { provider: "turnstile", secret, site_key } (the same CAPTCHA_KEYS_REQUIRED and validation checks as PATCH /v1/instance apply; `switched: true` and the stored `captcha` come back). Flows or actions that name their own provider keep it. The two-step path (this call, then PATCH /v1/instance) still works.
 
   `PUT /v1/instance/captcha_secret`. Required scope: `instance:write`.
+
+  Body fields: `secret` (string), `provider` (string), `site_key` (string).
+  Response fields: `object`, `provider`, `set`, `switched`, `captcha`.
   """
   def put_captcha_secret(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/captcha_secret", %{}, body, opts)
@@ -275,6 +501,9 @@ defmodule Atlas.Instance do
   Clear a stored captcha provider secret (default: the configured provider). Refused with 409 CAPTCHA_IN_USE (meta.flows names them) while a flow runs a captcha on that provider; pass force=true to remove it anyway, which also turns the captcha off on those flows (flows_turned_off in the response).
 
   `DELETE /v1/instance/captcha_secret`. Required scope: `instance:write`.
+
+  Query params (`params:`): `provider`, `force`.
+  Response fields: `object`, `provider`, `deleted`.
   """
   def delete_captcha_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/captcha_secret", %{}, nil, opts)
@@ -283,6 +512,9 @@ defmodule Atlas.Instance do
   Store (write-only, encrypted) the wallet RPC endpoint for an EIP-155 chain: an https or wss JSON-RPC URL, usually carrying your node provider's key. Used by wallet token gating and by the Sign in with Ethereum ENS name lookup (chain 1 or 11155111). An empty url removes it. The URL is never returned.
 
   `PUT /v1/instance/wallet_rpc_secret`. Required scope: `instance:write`.
+
+  Body fields: `chain_id` (integer), `url` (string).
+  Response fields: `object`, `chain_id`, `set`.
   """
   def put_wallet_rpc_secret(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/wallet_rpc_secret", %{}, body, opts)
@@ -291,6 +523,9 @@ defmodule Atlas.Instance do
   Store the per-instance Kerberos/IWA trusted-proxy secret (write-only, encrypted; never read back). Refused while the kerberos strategy is off.
 
   `PUT /v1/instance/kerberos_secret`. Required scope: `instance:write`.
+
+  Body fields: `secret` (string).
+  Response fields: `object`, `set`.
   """
   def put_kerberos_secret(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/kerberos_secret", %{}, body, opts)
@@ -299,6 +534,8 @@ defmodule Atlas.Instance do
   Clear the stored Kerberos/IWA trusted-proxy secret for this instance.
 
   `DELETE /v1/instance/kerberos_secret`. Required scope: `instance:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_kerberos_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/kerberos_secret", %{}, nil, opts)
@@ -307,6 +544,9 @@ defmodule Atlas.Instance do
   Store an LDAP connection service-account bind password (write-only, encrypted; never read back). The connection must exist in auth_config.ldap.connections.
 
   `PUT /v1/instance/ldap_connections/{connectionId}/bind_password`. Required scope: `instance:write`.
+
+  Body fields: `bind_password` (string).
+  Response fields: `object`, `connection_id`, `set`.
   """
   def put_ldap_connections_bind_password(client, connection_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/ldap_connections/{connectionId}/bind_password", %{"connectionId" => connection_id}, body, opts)
@@ -315,14 +555,39 @@ defmodule Atlas.Instance do
   Clear the stored bind password for an LDAP connection.
 
   `DELETE /v1/instance/ldap_connections/{connectionId}/bind_password`. Required scope: `instance:write`.
+
+  Response fields: `object`, `connection_id`, `deleted`.
   """
   def delete_ldap_connections_bind_password(client, connection_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/ldap_connections/{connectionId}/bind_password", %{"connectionId" => connection_id}, nil, opts)
 
   @doc ~S"""
+  The instance user traits schema: a JSON Schema per metadata bag (public, unsafe and private user metadata; public and private organization metadata) and how strictly it applies. enforcement is off (the default and what an instance without a schema reports), warn or enforce. version is 0 until a schema is stored, then counts up on every change.
+
+  `GET /v1/instance/user_traits_schema`. Required scope: `instance:read`.
+
+  Response fields: `object`, `version`, `enforcement`, `schemas`, `updated_at`.
+  """
+  def get_user_traits_schema(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/user_traits_schema", %{}, nil, opts)
+
+  @doc ~S"""
+  Store the user traits schema and/or change its enforcement. Omit schemas or enforcement to keep the stored one. Each schema is checked before it is stored (a 422 names the offending path): a subset of JSON Schema 2020-12 with type, properties, required, enum, default, items, maxLength, pattern, description and additionalProperties (true or false); any other keyword is refused, a root must have type "object", patterns that repeat a repeated group are refused, and a default must satisfy its own schema (it is documentation, never written into metadata). Enforcement: off checks nothing; warn lets every write through and records each violation in the audit log (field paths and messages, never values); enforce answers 422 with one error per field path on a write that breaks the schema. It applies to backend (secret key) writes, the dashboard and a signed-in user writing their own unsafe_metadata. Imports, migrations, SCIM provisioning and other Atlas-internal writes are never checked, so a bulk job is never stopped halfway. Existing metadata is not re-validated. Send version (the one you last read) to refuse a concurrent change with 409; sending the same content again changes nothing.
+
+  `PUT /v1/instance/user_traits_schema`. Required scope: `instance:write`.
+
+  Body fields: `schemas` (object), `enforcement` (enum), `version` (integer).
+  Response fields: `object`, `version`, `enforcement`, `schemas`, `updated_at`.
+  """
+  def put_user_traits_schema(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/user_traits_schema", %{}, body, opts)
+
+  @doc ~S"""
   Whether the "Sign in with Atlas" button is on: enabled (what GET /v1/appearance reports, which is when the embedded <SignIn> and the hosted page draw "Continue with Atlas"), the connection it uses and how it came to be (managed_via: instance_toggle, provisioned by Atlas; linked, one of your own OIDC connections to the Atlas issuer), the Atlas issuer, and candidates: your active connections to that issuer that could be used.
 
   `GET /v1/instance/sign_in_with_atlas`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `connection_id`, `managed_via`, `turned_on`, `turned_off_by_you`, `connection_status`, `available`, `issuer`, `candidates`, `candidates.id`, `candidates.client_id`, `candidates.managed_by_this_instance`.
   """
   def get_sign_in_with_atlas(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/sign_in_with_atlas", %{}, nil, opts)
@@ -331,6 +596,9 @@ defmodule Atlas.Instance do
   Turn "Sign in with Atlas" on or off: the API for the dashboard toggle. enabled: true with connection_id links that connection (an active OIDC SSO connection of this instance to the Atlas issuer; 409 when another is already used). enabled: true alone keeps the connection in use, else links your one active connection to the Atlas issuer whose Atlas ID app this instance manages (its own or adopted with PUT /v1/platform/atlas_id_apps/{id}/managed_by), else provisions an Atlas ID app and a connection (503 when the deployment has no Atlas ID). enabled: false turns it off: a linked connection is only unmarked (never deleted, and not linked again on its own), a provisioned one is removed with its app. An active connection to the Atlas issuer whose app this instance manages is linked on its own when nothing is in use. Returns the same object as GET.
 
   `PATCH /v1/instance/sign_in_with_atlas`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean, required), `connection_id` (string|null).
+  Response fields: `object`, `enabled`, `connection_id`, `managed_via`, `turned_on`, `turned_off_by_you`, `connection_status`, `available`, `issuer`, `candidates`, `candidates.id`, `candidates.client_id`, `candidates.managed_by_this_instance`.
   """
   def update_sign_in_with_atlas(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/sign_in_with_atlas", %{}, body, opts)
@@ -339,14 +607,19 @@ defmodule Atlas.Instance do
   Your own sign-in, sign-up and account page URLs, when set: /hosted/sign-in, /hosted/sign-up and /hosted/user then answer 302 to them (see PATCH). null = Atlas's hosted page is served. hosted lists the Atlas page URLs these apply to.
 
   `GET /v1/instance/hosted_pages`. Required scope: `instance:read`.
+
+  Response fields: `object`, `sign_in_url`, `sign_up_url`, `user_url`, `device_url`, `hosted`, `hosted.sign_in`, `hosted.sign_up`, `hosted.user`, `hosted.device`.
   """
   def get_hosted_pages(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/hosted_pages", %{}, nil, opts)
 
   @doc ~S"""
-  Send the hosted pages to your own: with sign_in_url set, /hosted/sign-in answers 302 to it (sign_up_url: /hosted/sign-up, user_url: /hosted/user), carrying redirect_url (when it is on an allowed origin), ref and every ref_* parameter, and locale. Each URL must be https (http only for localhost on a development instance) on one of the instance's allowed origins, without credentials or a fragment; null clears it. The hosted page is still served whenever it is part of a flow Atlas is running, so these keep working: OAuth and SAML callbacks and email links returning to the page (__atlas_* parameters), /oauth2/authorize, device, SAML IdP, FedCM and Sign in with Atlas flows (a redirect_url on the Atlas host), delegated login (login_challenge) and template previews. The Frontend API, the sign-out pages and the email verification routes are not affected. A URL whose origin later leaves allowed_origins is ignored (the hosted page is served) until fixed.
+  Send the hosted pages to your own: with sign_in_url set, /hosted/sign-in answers 302 to it (sign_up_url: /hosted/sign-up, user_url: /hosted/user), carrying redirect_url (when it is on an allowed origin), ref and every ref_* parameter, and locale. Each URL must be https (http only for localhost on a development instance) on one of the instance's allowed origins, without credentials or a fragment; null clears it. The hosted page is still served whenever it is part of a flow Atlas is running, so these keep working: OAuth and SAML callbacks and email links returning to the page (__atlas_* parameters), /oauth2/authorize, device, SAML IdP, FedCM and Sign in with Atlas flows (a redirect_url on the Atlas host), delegated login (login_challenge) and template previews. The Frontend API, the sign-out pages and the email verification routes are not affected. A URL whose origin later leaves allowed_origins is ignored (the hosted page is served) until fixed. device_url is different: it redirects nothing. It is the page a device-flow user (a TV, a CLI) types the code on, returned by POST /oauth2/device_authorization as verification_uri and as verification_uri_complete (with ?user_code=); your page approves through GET/POST /v1/client/me/device_authorizations/lookup, /approve and /deny. Same URL rules; an origin that later leaves allowed_origins falls back to the Atlas page.
 
   `PATCH /v1/instance/hosted_pages`. Required scope: `instance:write`.
+
+  Body fields: `sign_in_url` (string|null), `sign_up_url` (string|null), `user_url` (string|null), `device_url` (string|null).
+  Response fields: `object`, `sign_in_url`, `sign_up_url`, `user_url`, `device_url`, `hosted`, `hosted.sign_in`, `hosted.sign_up`, `hosted.user`, `hosted.device`.
   """
   def update_hosted_pages(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/hosted_pages", %{}, body, opts)
@@ -355,6 +628,8 @@ defmodule Atlas.Instance do
   Whether this instance has a trusted reverse proxy secret, when it was created, and until when the previous one still works after a rotation. Never returns the secret.
 
   `GET /v1/instance/proxy_secret`. Required scope: `instance:read`.
+
+  Response fields: `object`, `set`, `created_at`, `previous_expires_at`, `secret_header`, `client_ip_header`.
   """
   def get_proxy_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/proxy_secret", %{}, nil, opts)
@@ -363,6 +638,9 @@ defmodule Atlas.Instance do
   Create (201) or rotate (200) the trusted reverse proxy secret. The secret is returned once; Atlas stores only a hash. A Frontend API request (`/v1/client*`, `/v1/appearance`, `/v1/oauth/*`) that carries it in `X-Atlas-Proxy-Secret` may name the browser's IP in `X-Atlas-Client-IP` (IPv4 or IPv6); Atlas then uses that IP for rate limits, lockout, risk signals, geo, audit logs and session metadata. Without a valid secret both headers are ignored. On rotation the replaced secret keeps working for `overlap_seconds` (default 86400, 0 = stop now, at most 604800).
 
   `POST /v1/instance/proxy_secret`. Required scope: `instance:write`.
+
+  Body fields: `overlap_seconds` (integer|null).
+  Response fields: `object`, `set`, `created_at`, `previous_expires_at`, `secret_header`, `client_ip_header`, `secret`, `rotated`.
   """
   def post_proxy_secret(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/proxy_secret", %{}, body, opts)
@@ -371,6 +649,8 @@ defmodule Atlas.Instance do
   Remove the trusted reverse proxy secret (current and previous). X-Atlas-Client-IP is ignored again from then on. 404 when none is set.
 
   `DELETE /v1/instance/proxy_secret`. Required scope: `instance:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_proxy_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/proxy_secret", %{}, nil, opts)
@@ -379,12 +659,15 @@ defmodule Atlas.Instance do
   The body fields your Backend API writes sent that the endpoint does not accept, aggregated over the last `days` per method, route, field and API key: how often each was ignored (lenient: named in the Atlas-Unknown-Fields response header) or refused (422 UNKNOWN_FIELD), and when it was last seen. Fix every caller listed with an ignored_count, then set auth_config.strictRequestBodies to true; `safe_to_enable_strict` is true when nothing in the window would be refused. Field names only, never values. Kept 90 days.
 
   `GET /v1/instance/unknown_fields_report`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `days`, `limit`, `starting_after`.
+  Response fields: `object`, `days`, `retention_days`, `strict_request_bodies`, `safe_to_enable_strict`, `data`, `data.method`, `data.path`, `data.field`, `data.count`, `data.ignored_count`, `data.rejected_count`, `data.last_seen_at`, `data.api_key_id`.
   """
   def get_unknown_fields_report(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/unknown_fields_report", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_unknown_fields_report/1`, following the cursor page by page.
+  Lazy stream over every item of `get_unknown_fields_report`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_unknown_fields_report(client, opts \\ []),
@@ -394,37 +677,60 @@ defmodule Atlas.Instance do
   Every preflight acknowledgement on the instance, lapsed ones included (active: false). An acknowledgement marks every finding with its code as known and accepted.
 
   `GET /v1/instance/preflight/acks`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.code`, `data.reason`, `data.by`, `data.at`, `data.expires_at`, `data.active`, `has_more`.
   """
   def get_preflight_acks(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/preflight/acks", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_preflight_acks/1`, following the cursor page by page.
+  Lazy stream over every item of `get_preflight_acks`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_preflight_acks(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/instance/preflight/acks", %{}, opts)
 
   @doc ~S"""
+  Acknowledge a preflight finding by code, in the body: the same as PUT /v1/instance/preflight/acks/{code}, with the reason optional. An acknowledged finding stays listed with acknowledged_at and acknowledged, drops out of the failing count, and GET /v1/integration-health reports it as a note (ok stays true when only notes and acknowledged findings remain). subject narrows it to one subject of the finding; expires_at makes it lapse. Errors cannot be acknowledged (422). Audited (preflight_ack.saved).
+
+  `POST /v1/instance/preflight/acks`. Required scope: `instance:write`.
+
+  Body fields: `code` (string, required), `subject` (string), `reason` (string), `expires_at` (integer|string|null).
+  Response fields: `object`, `code`, `reason`, `by`, `at`, `expires_at`, `active`.
+  """
+  def post_preflight_acks(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/preflight/acks", %{}, body, opts)
+
+  @doc ~S"""
   Acknowledge a preflight finding you know about and accept, with a reason: GET /v1/instance/preflight still lists every finding with this code, marked acknowledged: { reason, by, at, expires_at }, and it no longer counts as something to fix (the dashboard and atlas preflight --fail-on warning skip it). Replaces any earlier acknowledgement of the code. expires_at (epoch ms or ISO 8601, in the future; omit or null for no expiry) makes it lapse, after which the finding counts again. A code that can be an error-severity finding is refused with 422 VALIDATION_FAILED (param code, meta.reason error_severity_not_acknowledgeable): errors are fixed, never acknowledged. An unknown code is 400. Each change is a config-changelog entry (preflight_ack.saved). dry_run=true validates without saving.
 
   `PUT /v1/instance/preflight/acks/{code}`. Required scope: `instance:write`.
+
+  Body fields: `reason` (string, required), `expires_at` (integer|string|null), `subject` (string).
+  Response fields: `object`, `code`, `reason`, `by`, `at`, `expires_at`, `active`.
   """
   def put_preflight_acks(client, code, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/preflight/acks/{code}", %{"code" => code}, body, opts)
 
   @doc ~S"""
-  Remove an acknowledgement: the findings with this code count again. 404 when the code has none. A config-changelog entry (preflight_ack.removed).
+  Remove an acknowledgement (?subject= for a subject-specific one): the findings with this code count again. 404 when the code has none. A config-changelog entry (preflight_ack.removed).
 
   `DELETE /v1/instance/preflight/acks/{code}`. Required scope: `instance:write`.
+
+  Query params (`params:`): `subject`.
+  Response fields: `object`, `code`, `deleted`.
   """
   def delete_preflight_acks(client, code, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/preflight/acks/{code}", %{"code" => code}, nil, opts)
 
   @doc ~S"""
-  Check your setup in one call. Lists findings about configuration the server can see is broken or worth knowing — no sign-in method enabled, a social provider enabled without credentials, OAuth clients without redirect or post-logout URIs, a first-party client origin missing from allowed_origins, an allowed https origin that login readiness would fail (CORS or session cookie), sign-up that new users cannot complete, custom domains not serving yet, email or SMS sign-in without a provider, a Cookie Munch site that does not match the sign-in host, an OAuth client whose back-channel logout URI is failing (oauth_client_backchannel_failing: 3 consecutive failed deliveries, or one answered with a redirect, which Atlas never follows), a webhook endpoint whose last delivery was redirected (webhook_endpoint_redirecting), a webhook endpoint that is failing (webhook_endpoint_failing: a failure streak is running), switched off after repeated failures (webhook_endpoint_disabled: an error when it carries session or account events) or on a host that is not one of the instance origins or redirect hosts (webhook_endpoint_off_origin, unless it is marked external), a first-party client without a back-channel logout URI (oauth_client_no_backchannel_logout_uri), and the security posture group (group: security_posture — pkce_not_required, passkey_without_uv, auto_link_unverified) — each with a severity, a stable code, a plain message and the fix. A finding that does not apply to how the instance integrates (the embedded-component checks on an origin Atlas is confident signs in through the hosted redirect) is listed under suppressed with the reason, not in findings; integrations shows how each allowed origin was judged. ok is true when there are no errors. ok covers configuration; to confirm a browser can sign in on a given origin, use GET /v1/diagnostics/login_readiness?origin=… for each production origin. Every code is listed by GET /v1/instance/preflight/codes. A warning or info finding you have acknowledged (PUT /v1/instance/preflight/acks/{code}) is still listed, with acknowledged: { reason, by, at, expires_at }; count only the findings without it. Errors are never acknowledged. Read-only.
+  Check your setup in one call. Lists findings about configuration the server can see is broken or worth knowing — no sign-in method enabled, a social provider enabled without credentials, OAuth clients without redirect or post-logout URIs, a first-party client origin missing from allowed_origins, an allowed https origin that login readiness would fail (CORS or session cookie), sign-up that new users cannot complete, custom domains not serving yet, email or SMS sign-in without a provider, a Cookie Munch site that does not match the sign-in host, an OAuth client whose back-channel logout URI is failing (oauth_client_backchannel_failing: 3 consecutive failed deliveries, or one answered with a redirect, which Atlas never follows), a webhook endpoint whose last delivery was redirected (webhook_endpoint_redirecting), a webhook endpoint that is failing (webhook_endpoint_failing: a failure streak is running), switched off after repeated failures (webhook_endpoint_disabled: an error when it carries session or account events) or on a host that is not one of the instance origins or redirect hosts (webhook_endpoint_off_origin, unless it is marked external), a first-party client without a back-channel logout URI (oauth_client_no_backchannel_logout_uri), and the security posture group (group: security_posture — pkce_not_required, passkey_without_uv, auto_link_unverified) — each with a severity, a stable code, a plain message and the fix. A finding that does not apply to how the instance integrates (the embedded-component checks on an origin Atlas is confident signs in through the hosted redirect) is listed under suppressed with the reason, not in findings; integrations shows how each allowed origin was judged. ok is true when there are no errors. ok covers configuration; to confirm a browser can sign in on a given origin, use GET /v1/diagnostics/login_readiness?origin=… for each production origin. Every code is listed by GET /v1/instance/preflight/codes. A warning or info finding you have acknowledged (PUT /v1/instance/preflight/acks/{code}) is still listed, with acknowledged: { reason, by, at, expires_at } and acknowledged_at; count only the findings without it. Errors are never acknowledged. Read-only.
 
   `GET /v1/instance/preflight`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `min_severity`, `include_suppressed`.
+  Response fields: `sdk_versions_seen`, `sdk_versions_seen.package`, `sdk_versions_seen.version`, `sdk_versions_seen.origin`, `sdk_versions_seen.first_seen_at`, `sdk_versions_seen.last_seen_at`, `sdk_versions_seen.count`, `sdk_versions_seen.advisories`, `sdk_versions_seen.advisories.object`, `sdk_versions_seen.advisories.package`, `sdk_versions_seen.advisories.affected`, `sdk_versions_seen.advisories.fixed_in`, `sdk_versions_seen.advisories.reason`, `sdk_versions_seen.advisories.severity`, `sdk_versions_seen.advisories.summary`, `sdk_versions_seen.advisories.published_at`, `object`, `ok`, `checked_at`, `min_severity`, `findings`, `findings.severity`, `findings.code`, `findings.message`, `findings.fix`, `findings.fix_call`, `findings.fix_call.method`, `findings.fix_call.path`, `findings.fix_call.body`, `findings.safe_to_autofix`, `findings.subject`, `findings.group`, `findings.suppressed`, `findings.suppressed_reason`, `findings.acknowledged`, `findings.acknowledged.reason`, `findings.acknowledged.by`, `findings.acknowledged.at`, `findings.acknowledged.expires_at`, `suppressed`, `suppressed.code`, `suppressed.severity`, `suppressed.subject`, `suppressed.reason`, `integrations`, `integrations.origin`, `integrations.integration`, `integrations.source`, `integrations.confident`, `integrations.reason`.
   """
   def get_preflight(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/preflight", %{}, nil, opts)
@@ -433,12 +739,15 @@ defmodule Atlas.Instance do
   Behaviour changes that affect THIS instance: each with its date, type (behavior_change | deprecation | new), tags (breaking | behaviour | security), what it changes, a sentence about this instance (`detail`, and `count` when countable), when it was first seen, when the owners were emailed and whether it was acknowledged. Deprecated routes or fields your integration still calls appear here as `deprecated:<id>` notices. ?all=true lists every recent notice, including ones that do not apply (applies: false).
 
   `GET /v1/instance/notices`. Required scope: `instance:read`.
+
+  Query params (`params:`): `all`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.date`, `data.type`, `data.tags`, `data.title`, `data.summary`, `data.affects`, `data.docs_url`, `data.changelog_id`, `data.applies`, `data.detail`, `data.count`, `data.first_seen_at`, `data.emailed_at`, `data.acknowledged_at`, `has_more`, `unacknowledged`, `changelog_url`.
   """
   def get_notices(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/notices", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_notices/1`, following the cursor page by page.
+  Lazy stream over every item of `get_notices`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_notices(client, opts \\ []),
@@ -448,6 +757,8 @@ defmodule Atlas.Instance do
   Mark a notice that applies to the instance as read (acknowledged_at). Audited. 404 when the notice never applied.
 
   `POST /v1/instance/notices/{id}/acknowledge`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `date`, `type`, `tags`, `title`, `summary`, `affects`, `docs_url`, `changelog_id`, `applies`, `detail`, `count`, `first_seen_at`, `emailed_at`, `acknowledged_at`.
   """
   def post_notices_acknowledge(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/notices/{id}/acknowledge", %{"id" => id}, nil, opts)
@@ -456,6 +767,8 @@ defmodule Atlas.Instance do
   Who processes this instance's end-user data, and in which role: you (controller), Atlas (processor), Atlas's own sub-processors, and every recipient you engaged by enabling it — each integration (any provider, built-in preset or custom), the consent manager, the referral platform, your own email and SMS providers, log streams, audit exports and webhook endpoint hosts. Enabling an integration adds it; turning it off removes it.
 
   `GET /v1/instance/sub_processors`. Required scope: `instance:read`.
+
+  Response fields: `object`, `instance_id`, `roles`, `data_region`, `processor`, `processor.name`, `processor.role`, `processor.url`, `atlas_sub_processors`, `atlas_sub_processors.object`, `atlas_sub_processors.id`, `atlas_sub_processors.name`, `atlas_sub_processors.role`, `atlas_sub_processors.source`, `atlas_sub_processors.purpose`, `atlas_sub_processors.data`, `atlas_sub_processors.location`, `atlas_sub_processors.enabled_by`, `atlas_sub_processors.url`, `engaged_by_you`, `engaged_by_you.object`, `engaged_by_you.id`, `engaged_by_you.name`, `engaged_by_you.role`, `engaged_by_you.source`, `engaged_by_you.purpose`, `engaged_by_you.data`, `engaged_by_you.location`, `engaged_by_you.enabled_by`, `engaged_by_you.url`, `dpa_url`.
   """
   def get_sub_processors(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/sub_processors", %{}, nil, opts)
@@ -464,12 +777,15 @@ defmodule Atlas.Instance do
   This instance's links to other platforms and their health, one row per link in the shared shape {check, ok, severity, subject, fix_hint, last_checked_at} plus kind and details: privacy-request (data subject request) webhook endpoints with their last verified delivery, the consent-management platform on the hosted pages (with the Cookie Munch site check), the Sign in with Atlas apps the instance manages (account-registered apps are never listed to an instance key), and JWT templates that mint tokens for another service's audience. Only what Atlas can observe itself. ok is false when any warning or error row fails. Read-only.
 
   `GET /v1/instance/connections`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `ok`, `checked_at`, `data`, `data.object`, `data.kind`, `data.check`, `data.ok`, `data.severity`, `data.subject`, `data.fix_hint`, `data.last_checked_at`, `data.details`.
   """
   def get_connections(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_connections/1`, following the cursor page by page.
+  Lazy stream over every item of `get_connections`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_connections(client, opts \\ []),
@@ -479,37 +795,82 @@ defmodule Atlas.Instance do
   Move the instance from one origin to another in one call (a domain move). Rewrites every field that points at `from` (scheme + host + port) to `to`, keeping each URL's path: allowed_origins; the branding logo, font, background and legal URLs; every OAuth client's redirect_uris, post_logout_redirect_uris, backchannel_logout_uri, frontchannel_logout_uri, homepage_url, logo_url, jwks_uri and legal links; webhook endpoint URLs; the redirect-URL allowlist; and the same fields on the Sign in with Atlas apps this instance manages (apps the account registered itself are account resources: an instance key never lists or rewrites them; move those with POST /v1/platform/atlas_id_apps/{id}/move_origin). Returns the before → after diff. dry_run: true writes nothing. A rewritten value the field would refuse (e.g. a webhook moving to a loopback host) is listed in problems, and a real run then answers 422 without writing. A second run returns an empty diff. Each changed object gets a config-changelog entry (instance.origin_moved). The response lists moved_webhook_endpoints with the call that tests each; test_webhooks: true (on a real run) sends each one a webhook.test now and returns webhook_tests with each result.
 
   `POST /v1/instance/move_origin`. Required scope: `instance:write`.
+
+  Body fields: `from` (string, required), `to` (string, required), `dry_run` (boolean), `test_webhooks` (boolean).
+  Response fields: `object`, `from`, `to`, `dry_run`, `applied`, `changes`, `changes.object`, `changes.id`, `changes.field`, `changes.before`, `changes.after`, `problems`, `problems.object`, `problems.id`, `problems.field`, `problems.url`, `problems.message`, `app`, `moved_webhook_endpoints`, `moved_webhook_endpoints.id`, `moved_webhook_endpoints.url`, `moved_webhook_endpoints.test`, `moved_webhook_endpoints.test.method`, `moved_webhook_endpoints.test.path`, `webhook_tests`, `webhook_tests.object`, `webhook_tests.ok`, `webhook_tests.delivery_id`, `webhook_tests.event_id`, `webhook_tests.event_type`, `webhook_tests.url`, `webhook_tests.status`, `webhook_tests.http_status`, `webhook_tests.latency_ms`, `webhook_tests.response_snippet`, `webhook_tests.error`, `webhook_tests.error_kind`, `webhook_tests.signature_header_sent`, `webhook_tests.will_retry`, `webhook_tests.webhook_endpoint_id`, `next`.
   """
   def post_move_origin(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/move_origin", %{}, body, opts)
 
   @doc ~S"""
-  The hosted-page templates of the instance: for each page (sign-in, sign-up, user-profile) the live template and the draft waiting to be previewed or promoted.
+  Read the signing-key rotation schedule.
+
+  `GET /v1/instance/signing_key_schedule`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `interval_days`, `alg`, `grace_period_seconds`, `prepublish_hours`, `effective_grace_seconds`, `next_rotation_at`, `last_rotated_at`, `last_error`, `last_error_at`.
+  """
+  def get_signing_key_schedule(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/signing_key_schedule", %{}, nil, opts)
+
+  @doc ~S"""
+  Rotate the instance signing key automatically. Every interval_days the worker publishes a new key (prepublish_hours before it signs), switches to it, and keeps the previous key published until every token it signed has expired: at least the longest token lifetime the instance uses plus the key set cache, never under 24 hours, and never dropped while one of its tokens can still be presented. Keys in a cloud KMS rotate at the scheduled time (they cannot be held back) and are limited to RS256 and ES256. An earlier rotation still inside its grace window postpones the next one. Needs a recent MFA sign-in.
+
+  `PUT /v1/instance/signing_key_schedule`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `interval_days` (integer, required), `alg` (enum), `grace_period_seconds` (integer|null), `prepublish_hours` (integer).
+  Response fields: `object`, `enabled`, `interval_days`, `alg`, `grace_period_seconds`, `prepublish_hours`, `effective_grace_seconds`, `next_rotation_at`, `last_rotated_at`, `last_error`, `last_error_at`.
+  """
+  def put_signing_key_schedule(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/signing_key_schedule", %{}, body, opts)
+
+  @doc ~S"""
+  Turn scheduled rotation off. Keys already published stay as they are.
+
+  `DELETE /v1/instance/signing_key_schedule`. Required scope: `instance:write`.
+
+  Response fields: `object`, `deleted`, `enabled`.
+  """
+  def delete_signing_key_schedule(client, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/signing_key_schedule", %{}, nil, opts)
+
+  @doc ~S"""
+  The hosted-page templates of the instance: for each page (sign-in, sign-up, user-profile, mfa, reset, verify, consent, device) the instance-wide live template and the draft waiting to be previewed or promoted, then one entry for every other audience (an OAuth client, an organization, a language) that has a template. client_id, organization_id or locale return only that audience's pages. Which template a page draws, most specific first: the client's for the visitor's language, the client's, the organization's for the language, the organization's, the instance's for the language, the instance's. Branding follows the same client, organization, instance order.
 
   `GET /v1/instance/page_templates`. Required scope: `instance:read`.
+
+  Query params (`params:`): `client_id`, `organization_id`, `locale`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.page`, `data.scope`, `data.scope.type`, `data.scope.id`, `data.locale`, `data.live`, `data.draft`, `has_more`, `next_cursor`.
   """
   def get_page_templates(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/page_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_page_templates/1`, following the cursor page by page.
+  Lazy stream over every item of `get_page_templates`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_page_templates(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/instance/page_templates", %{}, opts)
 
   @doc ~S"""
-  Read one page's live and draft template.
+  Read one page's live and draft template for an audience (the instance-wide one by default).
 
   `GET /v1/instance/page_templates/{page}`. Required scope: `instance:read`.
+
+  Query params (`params:`): `client_id`, `organization_id`, `locale`.
+  Response fields: `object`, `page`, `scope`, `scope.type`, `scope.id`, `locale`, `live`, `draft`.
   """
   def get_page_templates_by_page(client, page, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/page_templates/{page}", %{"page" => page}, nil, opts)
 
   @doc ~S"""
-  Save a page template as the page's draft. A template is data: components (heading, text, image, link, button_link, list, divider, spacer, columns) in four regions (header, above_form, below_form, footer). It is validated on save: no raw HTML, CSS or script, https and mailto links only. The live page is unchanged until you promote.
+  Save a page template as the page's draft. A template is data: components (heading, text, image, link, button_link, list, divider, spacer, columns, custom) in four regions (header, above_form, below_form, footer). It is validated on save: https and mailto links only, and no script ever. A custom component carries your own html and css (and a frame height in pixels, 40 to 1200): only an allowlisted set of tags, attributes and CSS properties is accepted (anything else is refused with the reason: a 400 naming the first problems), and it is drawn in a sandboxed frame that cannot reach the sign-in form. The live page is unchanged until you promote. mfa, reset and verify are the sign-in steps (second factor, password reset, email verification): their template replaces the page's while the step shows. consent and device are the OAuth consent and device pages. client_id, organization_id and locale save it for that audience.
 
   `PUT /v1/instance/page_templates/{page}`. Required scope: `instance:write`.
+
+  Query params (`params:`): `client_id`, `organization_id`, `locale`.
+  Body fields: `definition` (object).
+  Nested body fields: `definition.version`, `definition.regions`, `definition.regions.header`, `definition.regions.above_form`, `definition.regions.below_form`, `definition.regions.footer`.
+  Response fields: `object`, `page`, `scope`, `scope.type`, `scope.id`, `locale`, `live`, `draft`.
   """
   def put_page_templates(client, page, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/page_templates/{page}", %{"page" => page}, body, opts)
@@ -518,22 +879,31 @@ defmodule Atlas.Instance do
   Drop the draft or take the live template down (`status`).
 
   `DELETE /v1/instance/page_templates/{page}`. Required scope: `instance:write`.
+
+  Query params (`params:`): `client_id`, `organization_id`, `locale`, `status`.
+  Response fields: `object`, `page`, `scope`, `scope.type`, `scope.id`, `locale`, `live`, `draft`.
   """
   def delete_page_templates(client, page, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/page_templates/{page}", %{"page" => page}, nil, opts)
 
   @doc ~S"""
-  A signed link to the hosted page with the draft template applied (valid for one hour, noindex, with a preview banner). 409 when the page has no template.
+  A signed link to the hosted page with the draft template applied (valid for one hour, noindex, with a preview banner). The link names the audience (client_id, organization_id, locale) and unlocks only that one page. 409 when the page has no template.
 
   `POST /v1/instance/page_templates/{page}/preview`. Required scope: `instance:read`.
+
+  Query params (`params:`): `client_id`, `organization_id`, `locale`.
+  Response fields: `object`, `page`, `url`, `expires_at`.
   """
   def post_page_templates_preview(client, page, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/page_templates/{page}/preview", %{"page" => page}, nil, opts)
 
   @doc ~S"""
-  Make the draft the live template.
+  Make the draft the live template (for the audience named by client_id, organization_id and locale).
 
   `POST /v1/instance/page_templates/{page}/promote`. Required scope: `instance:write`.
+
+  Query params (`params:`): `client_id`, `organization_id`, `locale`.
+  Response fields: `object`, `page`, `scope`, `scope.type`, `scope.id`, `locale`, `live`, `draft`.
   """
   def post_page_templates_promote(client, page, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/page_templates/{page}/promote", %{"page" => page}, nil, opts)
@@ -542,6 +912,8 @@ defmodule Atlas.Instance do
   Read the instance's referral attribution settings: provider, endpoint, capture parameters, consent, auto-enroll and link template, with the connection status and the providers Atlas supports. Secrets are reported as *_set markers only.
 
   `GET /v1/instance/referrals`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `provider`, `endpoint_url`, `program_id`, `connection_id`, `provider_aliases`, `capabilities`, `capabilities.signup`, `capabilities.erase`, `capabilities.export`, `capabilities.partner`, `capabilities.auto_enroll`, `capabilities.signal`, `capabilities.alias`, `capabilities.user`, `capabilities.ping`, `capabilities.identity`, `capabilities.origins`, `capabilities.widget_token`, `capabilities.inbound`, `capabilities.accounts`, `one_click`, `one_click.id`, `one_click.name`, `one_click.available`, `one_click.provider`, `one_click.scope`, `one_click.redirect_uri`, `one_click_presets`, `one_click_presets.id`, `one_click_presets.name`, `one_click_presets.available`, `one_click_presets.provider`, `one_click_presets.scope`, `one_click_presets.redirect_uri`, `signing_secret_set`, `api_key_set`, `url_params`, `context_cookie`, `context_cookies`, `consent_category`, `consent_fallback_category`, `auto_enroll_users`, `link_template`, `partner_portal_url`, `timeout_ms`, `tracking_token`, `code_lookup_url`, `signup_code_field`, `browser_sources`, `browser_sources_default`, `consent_provider`, `security`, `security.challenge_referred_signups`, `security.on_high_risk`, `security.hold_until_email_verified`, `security.max_referred_signups_per_ip_hour`, `forward_lifecycle`, `mirror_to_public_metadata`, `hosted_panel`, `include_referral_claims`, `report_linked_atlas_id_signups`, `missing`, `connection`, `connection.last_test`, `connection.last_test.ok`, `connection.last_test.at`, `connection.last_test.http_status`, `connection.last_test.error`, `connection.last_ping`, `connection.last_ping.ok`, `connection.last_ping.at`, `connection.last_ping.http_status`, `connection.last_ping.error_code`, `connection.last_ping.error`, `connection.last_ping.latency_ms`, `connection.last_ping.connection_id`, `connection.last_ping.program_id`, `connection.last_ping.program_name`, `connection.last_ping.org_name`, `connection.last_ping.auto_enroll_users`, `connection.last_ping.server_time`, `connection.last_ping.clock_skew_ms`, `connection.last_ping.clock_skew_warning`, `connection.last_ping.advertised_capabilities`, `connection.alert`, `connection.alert.code`, `connection.alert.message`, `connection.alert.at`, `connection.alert.call_id`, `connection.rejected_call_kinds`, `connection.rejected_call_kinds.kind`, `connection.rejected_call_kinds.url`, `connection.rejected_call_kinds.http_status`, `connection.rejected_call_kinds.at`, `connection.rejected_call_kinds.call_id`, `connection.rejected_call_kinds.suppressed`, `connection.failed_calls_7d`, `connection.last_failed_call`, `connection.last_failed_call.id`, `connection.last_failed_call.kind`, `connection.last_failed_call.at`, `connection.last_failed_call.http_status`, `connection.last_failed_call.error`, `connection.retrying_calls`, `connection.last_success_at`, `inbound`, `inbound.url`, `inbound.secret_set`, `inbound.endpoint_id`, `inbound.last_event`, `inbound.last_event.at`, `inbound.last_event.type`, `inbound.last_event.outcome`, `providers`, `providers.id`, `providers.aliases`, `providers.name`, `providers.capabilities`, `providers.capabilities.signup`, `providers.capabilities.erase`, `providers.capabilities.export`, `providers.capabilities.partner`, `providers.capabilities.auto_enroll`, `providers.capabilities.signal`, `providers.capabilities.alias`, `providers.capabilities.user`, `providers.capabilities.ping`, `providers.capabilities.identity`, `providers.capabilities.origins`, `providers.capabilities.widget_token`, `providers.capabilities.inbound`, `providers.capabilities.accounts`, `providers.needs`, `providers.default_context_cookie`, `providers.default_context_cookies`, `providers.docs_url`, `updated_at`.
   """
   def get_referrals(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/referrals", %{}, nil, opts)
@@ -550,6 +922,10 @@ defmodule Atlas.Instance do
   Update the referral attribution settings. Only the fields you send change; null clears. signing_secret, api_key and inbound_secret are write-only. Enabling requires what the provider needs (422 REFERRALS_NOT_CONFIGURED, meta.missing). A body field this route does not know, top level or inside security, is 422 UNKNOWN_FIELD with param naming it, and nothing is saved; a known field with a bad value is 400 VALIDATION_FAILED with param. Every change is audit-logged without secret values. `warnings` says what was stored differently from what was sent: renamed (a retired provider spelling such as referally stored as referalli, in provider or browser_sources[i], with from and to; the write also carries Deprecation and Sunset headers) and defaulted (a newly picked platform's tracking cookies filled into context_cookies because the body named none).
 
   `PATCH /v1/instance/referrals`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `provider` (string), `endpoint_url` (string|null), `program_id` (string|null), `connection_id` (string|null), `signing_secret` (string|null), `inbound_secret` (string|null), `inbound_endpoint_id` (string|null), `api_key` (string|null), `url_params` (array), `context_cookie` (any), `context_cookies` (array|null), `consent_category` (string), `consent_fallback_category` (string|null), `auto_enroll_users` (boolean), `link_template` (string|null), `partner_portal_url` (string|null), `timeout_ms` (integer), `tracking_token` (string|null), `code_lookup_url` (string|null), `signup_code_field` (boolean), `browser_sources` (array|null), `consent_provider` (enum), `security` (object), `forward_lifecycle` (boolean), `mirror_to_public_metadata` (boolean), `include_referral_claims` (boolean), `report_linked_atlas_id_signups` (boolean), `hosted_panel` (enum), `backfill_existing_users` (boolean).
+  Nested body fields: `security.challenge_referred_signups`, `security.on_high_risk`, `security.hold_until_email_verified`, `security.max_referred_signups_per_ip_hour`.
+  Response fields: `object`, `enabled`, `provider`, `endpoint_url`, `program_id`, `connection_id`, `provider_aliases`, `capabilities`, `capabilities.signup`, `capabilities.erase`, `capabilities.export`, `capabilities.partner`, `capabilities.auto_enroll`, `capabilities.signal`, `capabilities.alias`, `capabilities.user`, `capabilities.ping`, `capabilities.identity`, `capabilities.origins`, `capabilities.widget_token`, `capabilities.inbound`, `capabilities.accounts`, `one_click`, `one_click.id`, `one_click.name`, `one_click.available`, `one_click.provider`, `one_click.scope`, `one_click.redirect_uri`, `one_click_presets`, `one_click_presets.id`, `one_click_presets.name`, `one_click_presets.available`, `one_click_presets.provider`, `one_click_presets.scope`, `one_click_presets.redirect_uri`, `signing_secret_set`, `api_key_set`, `url_params`, `context_cookie`, `context_cookies`, `consent_category`, `consent_fallback_category`, `auto_enroll_users`, `link_template`, `partner_portal_url`, `timeout_ms`, `tracking_token`, `code_lookup_url`, `signup_code_field`, `browser_sources`, `browser_sources_default`, `consent_provider`, `security`, `security.challenge_referred_signups`, `security.on_high_risk`, `security.hold_until_email_verified`, `security.max_referred_signups_per_ip_hour`, `forward_lifecycle`, `mirror_to_public_metadata`, `hosted_panel`, `include_referral_claims`, `report_linked_atlas_id_signups`, `missing`, `connection`, `connection.last_test`, `connection.last_test.ok`, `connection.last_test.at`, `connection.last_test.http_status`, `connection.last_test.error`, `connection.last_ping`, `connection.last_ping.ok`, `connection.last_ping.at`, `connection.last_ping.http_status`, `connection.last_ping.error_code`, `connection.last_ping.error`, `connection.last_ping.latency_ms`, `connection.last_ping.connection_id`, `connection.last_ping.program_id`, `connection.last_ping.program_name`, `connection.last_ping.org_name`, `connection.last_ping.auto_enroll_users`, `connection.last_ping.server_time`, `connection.last_ping.clock_skew_ms`, `connection.last_ping.clock_skew_warning`, `connection.last_ping.advertised_capabilities`, `connection.alert`, `connection.alert.code`, `connection.alert.message`, `connection.alert.at`, `connection.alert.call_id`, `connection.rejected_call_kinds`, `connection.rejected_call_kinds.kind`, `connection.rejected_call_kinds.url`, `connection.rejected_call_kinds.http_status`, `connection.rejected_call_kinds.at`, `connection.rejected_call_kinds.call_id`, `connection.rejected_call_kinds.suppressed`, `connection.failed_calls_7d`, `connection.last_failed_call`, `connection.last_failed_call.id`, `connection.last_failed_call.kind`, `connection.last_failed_call.at`, `connection.last_failed_call.http_status`, `connection.last_failed_call.error`, `connection.retrying_calls`, `connection.last_success_at`, `inbound`, `inbound.url`, `inbound.secret_set`, `inbound.endpoint_id`, `inbound.last_event`, `inbound.last_event.at`, `inbound.last_event.type`, `inbound.last_event.outcome`, `providers`, `providers.id`, `providers.aliases`, `providers.name`, `providers.capabilities`, `providers.capabilities.signup`, `providers.capabilities.erase`, `providers.capabilities.export`, `providers.capabilities.partner`, `providers.capabilities.auto_enroll`, `providers.capabilities.signal`, `providers.capabilities.alias`, `providers.capabilities.user`, `providers.capabilities.ping`, `providers.capabilities.identity`, `providers.capabilities.origins`, `providers.capabilities.widget_token`, `providers.capabilities.inbound`, `providers.capabilities.accounts`, `providers.needs`, `providers.default_context_cookie`, `providers.default_context_cookies`, `providers.docs_url`, `updated_at`, `warnings`, `warnings.code`, `warnings.field`, `warnings.from`, `warnings.to`, `warnings.message`.
   """
   def update_referrals(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/referrals", %{}, body, opts)
@@ -558,6 +934,9 @@ defmodule Atlas.Instance do
   Start a one-click connection to a referral platform (`:preset` is `referalli` or any platform listed in `one_click_presets` of the settings): returns the platform's authorize URL (OAuth, PKCE). The merchant picks an organization and program there; the platform creates the connection and returns its signing secret to Atlas server to server, so nothing is copied. For Referalli, Atlas then requires v2 signatures and registers the two-way sync webhook; it pings either way. Referrals stay off until you turn them on. 404 for an unknown preset; 422 REFERRALS_NOT_CONFIGURED when this deployment does not offer it (see `available` in `one_click_presets`): connect with a key or the signing secret instead. Any platform can implement the install: see the referral protocol guide.
 
   `POST /v1/instance/referrals/{preset}/install`. Required scope: `instance:write`.
+
+  Body fields: `return_to` (string|null).
+  Response fields: `object`, `preset`, `provider`, `authorize_url`, `redirect_uri`, `expires_at`.
   """
   def post_referrals_install(client, preset, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/{preset}/install", %{"preset" => preset}, body, opts)
@@ -566,6 +945,8 @@ defmodule Atlas.Instance do
   Test the connection. A provider that answers a ping is pinged (POST {endpoint}/ping): the answer reports the org, program, auto-enrol and the platform clock, cached as connection.last_ping, with a warning past 60 seconds of clock skew. Otherwise (or when the ping endpoint answers 404/405/501) a signed POST to the export endpoint with {"op":"export","customerRef":"atlas_connection_test","test":true}: 2xx or 404 is ok. 401/403 means the platform rejected the signature or key.
 
   `POST /v1/instance/referrals/test`. Required scope: `instance:write`.
+
+  Response fields: `ok`, `http_status`, `latency_ms`, `method`, `ping`, `ping.ok`, `ping.at`, `ping.http_status`, `ping.error_code`, `ping.error`, `ping.latency_ms`, `ping.connection_id`, `ping.program_id`, `ping.program_name`, `ping.org_name`, `ping.auto_enroll_users`, `ping.server_time`, `ping.clock_skew_ms`, `ping.clock_skew_warning`, `ping.advertised_capabilities`, `warnings`, `body_problems`, `body_problems.kind`, `body_problems.unknown_fields`, `signup_test`, `signup_test.ok`, `signup_test.http_status`, `signup_test.error`, `signup_test.error.code`, `signup_test.error.message`, `error`, `error.code`, `error.message`.
   """
   def post_referrals_test(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/test", %{}, nil, opts)
@@ -574,6 +955,9 @@ defmodule Atlas.Instance do
   Simulate a sign-up: sends a real sign-up call for a made-up customer (atlas_test_<random>) with the code you choose, and returns the platform's answer. No user is created. The call says it is a test (an `atlas-test: 1` header; on the Atlas referral protocol also `"test": true` in the body) so a platform can skip storing it, and Atlas erases the made-up customer right after (cleanup). Works before referrals are turned on.
 
   `POST /v1/instance/referrals/simulate`. Required scope: `instance:write`.
+
+  Body fields: `code` (string).
+  Response fields: `object`, `ok`, `call_id`, `customer_ref`, `http_status`, `latency_ms`, `result`, `result.referral`, `result.referral.partner_id`, `result.referral.partner_external_ref`, `result.referral.matched_via`, `result.referral.status`, `result.partner`, `result.partner.id`, `result.partner.code`, `result.partner.link`, `result.notes`, `response`, `error`, `error.code`, `error.message`, `cleanup`, `cleanup.erased`, `cleanup.call_id`.
   """
   def post_referrals_simulate(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/simulate", %{}, body, opts)
@@ -582,6 +966,9 @@ defmodule Atlas.Instance do
   Backfill: queue sign-up calls for existing users created since a date, each with its real sign-up time, so the platform dates the referrals correctly and replays the payments since. Codes come from `codes` or a metadata path; users with no code are reported only when auto_enroll_users is on; users already reported are skipped unless `force` is set. `user_ids` limits the job to those users (`since` is then optional). Calls go out at about 10 per second. Up to 10,000 users per request. Requires referrals to be on (422 REFERRALS_NOT_CONFIGURED).
 
   `POST /v1/instance/referrals/backfill`. Required scope: `instance:write`.
+
+  Body fields: `since` (string), `user_ids` (array), `force` (boolean), `codes` (object), `code_metadata_path` (string), `own_codes` (object), `own_code_metadata_path` (string).
+  Response fields: `object`, `id`, `status`, `since`, `user_ids_given`, `force`, `code_metadata_path`, `codes_given`, `own_code_metadata_path`, `own_codes_given`, `own_codes_set`, `own_codes_taken`, `own_codes_refused_by_platform`, `users_scanned`, `users_skipped`, `calls_queued`, `truncated`, `next_since`, `calls`, `calls.pending`, `calls.succeeded`, `calls.failed`, `calls.skipped`, `calls.held`, `created_at`, `finished_at`.
   """
   def post_referrals_backfill(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/backfill", %{}, body, opts)
@@ -590,6 +977,9 @@ defmodule Atlas.Instance do
   Send every organization's owner to the referral platform once (an `accounts` call per organization: accountRef = the organization's external_id, else its id; ownerCustomerRef = the owner's customerRef). The owner is the organization's creator while they hold the creator role or org:admin, else the longest-standing member holding one of those roles; organizations with no such member are counted in organizations_without_owner and skipped. Calls go out at about 10 per second through the delivery log (kind `accounts`), oldest first, up to 10,000 organizations per request (continue with `starting_after` = `next_starting_after`); the platform treats a repeat as a no-op. Atlas already sends these on its own when an organization is created, its external_id changes or its owner changes, and once when the platform first advertises `accounts`: use this after restoring data or to be sure. Requires referrals to be on and the platform to advertise `accounts` (422 REFERRALS_NOT_CONFIGURED otherwise).
 
   `POST /v1/instance/referrals/accounts/resync`. Required scope: `instance:write`.
+
+  Body fields: `starting_after` (string).
+  Response fields: `object`, `backfill_id`, `organizations_scanned`, `calls_queued`, `organizations_without_owner`, `truncated`, `next_starting_after`.
   """
   def post_referrals_accounts_resync(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/accounts/resync", %{}, body, opts)
@@ -598,6 +988,8 @@ defmodule Atlas.Instance do
   A backfill and the live progress of its calls.
 
   `GET /v1/instance/referrals/backfill/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `status`, `since`, `user_ids_given`, `force`, `code_metadata_path`, `codes_given`, `own_code_metadata_path`, `own_codes_given`, `own_codes_set`, `own_codes_taken`, `own_codes_refused_by_platform`, `users_scanned`, `users_skipped`, `calls_queued`, `truncated`, `next_since`, `calls`, `calls.pending`, `calls.succeeded`, `calls.failed`, `calls.skipped`, `calls.held`, `created_at`, `finished_at`.
   """
   def get_referrals_backfill(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/referrals/backfill/{id}", %{"id" => id}, nil, opts)
@@ -606,6 +998,9 @@ defmodule Atlas.Instance do
   Retry all failed calls: re-queues up to 1,000 of the newest failed calls (optionally only one kind or error code) for delivery, spread out over time. Tests, exports and simulated sign-ups are not re-queued. Each call is signed with the current secret when it goes out.
 
   `POST /v1/instance/referrals/calls/retry_failed`. Required scope: `instance:write`.
+
+  Body fields: `kind` (enum), `error_code` (string).
+  Response fields: `object`, `requeued`.
   """
   def post_referrals_calls_retry_failed(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/calls/retry_failed", %{}, body, opts)
@@ -614,12 +1009,15 @@ defmodule Atlas.Instance do
   The referral delivery log, newest first (default 50, up to 1,000 per page; page with starting_after): sign-up reports, erasures, exports, partner codes, signals, aliases, user updates and tests, with status, error code, latency, attempts, the next retry and the platform's answer (personal fields redacted; matched_via and notes highlighted).
 
   `GET /v1/instance/referrals/calls`. Required scope: `instance:read`.
+
+  Query params (`params:`): `trace`, `limit`, `starting_after`, `error_code`, `status`, `kind`, `user_id`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.status`, `data.outcome`, `data.customer_ref`, `data.user_id`, `data.trace_id`, `data.http_status`, `data.last_error`, `data.error_code`, `data.latency_ms`, `data.request_id`, `data.attempts`, `data.next_attempt_at`, `data.risk`, `data.risk.level`, `data.risk.score`, `data.risk.signals`, `data.risk.captcha`, `data.risk.emailVerified`, `data.payload`, `data.request`, `data.request.method`, `data.request.url`, `data.request.body`, `data.response`, `data.highlights`, `data.highlights.matched_via`, `data.highlights.partner_external_ref`, `data.highlights.notes`, `data.batch_id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_referrals_calls(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/referrals/calls", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_referrals_calls/1`, following the cursor page by page.
+  Lazy stream over every item of `get_referrals_calls`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_referrals_calls(client, opts \\ []),
@@ -629,6 +1027,8 @@ defmodule Atlas.Instance do
   One call from the referral delivery log, the same object the list returns (including the request as sent and the platform's answer). The id may also be the platform's request id for an answer (request_id); the newest matching call is returned.
 
   `GET /v1/instance/referrals/calls/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `kind`, `status`, `outcome`, `customer_ref`, `user_id`, `trace_id`, `http_status`, `last_error`, `error_code`, `latency_ms`, `request_id`, `attempts`, `next_attempt_at`, `risk`, `risk.level`, `risk.score`, `risk.signals`, `risk.captcha`, `risk.emailVerified`, `payload`, `request`, `request.method`, `request.url`, `request.body`, `response`, `highlights`, `highlights.matched_via`, `highlights.partner_external_ref`, `highlights.notes`, `batch_id`, `created_at`, `updated_at`.
   """
   def get_referrals_calls_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/referrals/calls/{id}", %{"id" => id}, nil, opts)
@@ -637,6 +1037,8 @@ defmodule Atlas.Instance do
   Retry a failed, retrying or skipped call now. A late sign-up answer emits user.referral_attributed. A succeeded sign-up whose answer names a since-fixable condition (reasoning code enroll_email_taken or no_email_for_enroll) can be retried too; any other succeeded call is a 409 that points at POST /v1/users/{id}/referral/resync.
 
   `POST /v1/instance/referrals/calls/{id}/retry`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `kind`, `status`, `outcome`, `customer_ref`, `user_id`, `trace_id`, `http_status`, `last_error`, `error_code`, `latency_ms`, `request_id`, `attempts`, `next_attempt_at`, `risk`, `risk.level`, `risk.score`, `risk.signals`, `risk.captcha`, `risk.emailVerified`, `payload`, `request`, `request.method`, `request.url`, `request.body`, `response`, `highlights`, `highlights.matched_via`, `highlights.partner_external_ref`, `highlights.notes`, `batch_id`, `created_at`, `updated_at`.
   """
   def post_referrals_calls_retry(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/referrals/calls/{id}/retry", %{"id" => id}, nil, opts)
@@ -645,6 +1047,8 @@ defmodule Atlas.Instance do
   Policy settings: the optional pol session claim.
 
   `GET /v1/instance/policy_settings`. Required scope: `instance:read`.
+
+  Response fields: `object`, `session_claim`.
   """
   def get_policy_settings(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/policy_settings", %{}, nil, opts)
@@ -653,6 +1057,9 @@ defmodule Atlas.Instance do
   Turn the pol session claim on or off (tokens minted after the change; up to 30 seconds to take effect everywhere).
 
   `PATCH /v1/instance/policy_settings`. Required scope: `instance:write`.
+
+  Body fields: `session_claim` (boolean).
+  Response fields: `object`, `session_claim`.
   """
   def update_policy_settings(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/policy_settings", %{}, body, opts)
@@ -661,6 +1068,8 @@ defmodule Atlas.Instance do
   The external policy source (Atlas policy source protocol v1): endpoint, sync mode, the webhook URL to give the source, and the last sync outcome. The signing secret is reported as signing_secret_set only.
 
   `GET /v1/instance/policy_source`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `endpoint_url`, `signing_secret_set`, `sync`, `poll_interval_minutes`, `webhook_url`, `protocol_version`, `last_synced_at`, `last_sync_ok`, `last_sync_error`, `next_poll_at`.
   """
   def get_policy_source(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/policy_source", %{}, nil, opts)
@@ -669,6 +1078,9 @@ defmodule Atlas.Instance do
   Configure the policy source. Only the fields sent change; null clears. Enabling needs endpoint_url and signing_secret. sync webhook: the source sends signed policy.published / policy.retired events to webhook_url and Atlas re-fetches; poll: Atlas fetches every poll_interval_minutes.
 
   `PUT /v1/instance/policy_source`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `endpoint_url` (string|null), `signing_secret` (string|null), `sync` (enum), `poll_interval_minutes` (integer).
+  Response fields: `object`, `enabled`, `endpoint_url`, `signing_secret_set`, `sync`, `poll_interval_minutes`, `webhook_url`, `protocol_version`, `last_synced_at`, `last_sync_ok`, `last_sync_error`, `next_poll_at`.
   """
   def put_policy_source(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/policy_source", %{}, body, opts)
@@ -677,6 +1089,8 @@ defmodule Atlas.Instance do
   Disconnect the policy source (its policies and their history stay; they stop syncing).
 
   `DELETE /v1/instance/policy_source`. Required scope: `instance:write`.
+
+  Response fields: `object`, `enabled`, `endpoint_url`, `signing_secret_set`, `sync`, `poll_interval_minutes`, `webhook_url`, `protocol_version`, `last_synced_at`, `last_sync_ok`, `last_sync_error`, `next_poll_at`.
   """
   def delete_policy_source(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/policy_source", %{}, nil, opts)
@@ -685,6 +1099,8 @@ defmodule Atlas.Instance do
   A signed GET {endpoint_url}/policies, validated but not stored: reports what the feed holds, warnings for unreadable entries, or why it failed. Logged as kind test.
 
   `POST /v1/instance/policy_source/test`. Required scope: `instance:write`.
+
+  Response fields: `object`, `ok`, `http_status`, `latency_ms`, `error`, `warnings`, `policies`, `policies.key`, `policies.title`, `policies.versions`, `delivery`, `delivery.object`, `delivery.id`, `delivery.direction`, `delivery.kind`, `delivery.status`, `delivery.http_status`, `delivery.error`, `delivery.event_type`, `delivery.policy`, `delivery.version`, `delivery.url`, `delivery.changes`, `delivery.latency_ms`, `delivery.created_at`.
   """
   def post_policy_source_test(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/policy_source/test", %{}, nil, opts)
@@ -693,6 +1109,8 @@ defmodule Atlas.Instance do
   Fetch the feed now and store it: new policies and versions are snapshotted (sanitised, hashed); a published version whose content changed at the source is refused (publish a new version there).
 
   `POST /v1/instance/policy_source/sync`. Required scope: `instance:write`.
+
+  Response fields: `object`, `ok`, `error`, `warnings`, `changes`, `changes.created`, `changes.updated`, `changes.published`, `changes.unchanged`, `changes.rejected`, `changes.retired`, `delivery`, `delivery.object`, `delivery.id`, `delivery.direction`, `delivery.kind`, `delivery.status`, `delivery.http_status`, `delivery.error`, `delivery.event_type`, `delivery.policy`, `delivery.version`, `delivery.url`, `delivery.changes`, `delivery.latency_ms`, `delivery.created_at`.
   """
   def post_policy_source_sync(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/policy_source/sync", %{}, nil, opts)
@@ -701,12 +1119,15 @@ defmodule Atlas.Instance do
   The policy source delivery log: every fetch, test, poll and inbound event (rejected signatures included), newest first.
 
   `GET /v1/instance/policy_source/deliveries`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `kind`, `status`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.direction`, `data.kind`, `data.status`, `data.http_status`, `data.error`, `data.event_type`, `data.policy`, `data.version`, `data.url`, `data.changes`, `data.latency_ms`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_policy_source_deliveries(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/policy_source/deliveries", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_policy_source_deliveries/1`, following the cursor page by page.
+  Lazy stream over every item of `get_policy_source_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_policy_source_deliveries(client, opts \\ []),
@@ -716,6 +1137,8 @@ defmodule Atlas.Instance do
   Which Atlas incidents notify this instance: regions, components, minimum impact, maintenance, channels (owner email, status_incident.* webhooks) and the private RSS / Atom URLs. Also lists the regions and components that can be chosen.
 
   `GET /v1/instance/status_subscription`. Required scope: `instance:read`.
+
+  Response fields: `object`, `subscribed`, `enabled`, `regions`, `component_ids`, `min_impact`, `include_maintenance`, `email_owners`, `webhook`, `rss_url`, `atom_url`, `available_regions`, `available_components`, `available_components.id`, `available_components.name`, `updated_at`.
   """
   def get_status_subscription(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/status_subscription", %{}, nil, opts)
@@ -724,6 +1147,9 @@ defmodule Atlas.Instance do
   Create or change the status subscription. Only the fields sent change. Unknown regions or components are a 400 naming the known ones. Creating it issues the private feed URL.
 
   `PUT /v1/instance/status_subscription`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `regions` (array), `component_ids` (array), `min_impact` (enum), `include_maintenance` (boolean), `email_owners` (boolean), `webhook` (boolean).
+  Response fields: `object`, `subscribed`, `enabled`, `regions`, `component_ids`, `min_impact`, `include_maintenance`, `email_owners`, `webhook`, `rss_url`, `atom_url`, `available_regions`, `available_components`, `available_components.id`, `available_components.name`, `updated_at`.
   """
   def put_status_subscription(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/status_subscription", %{}, body, opts)
@@ -732,6 +1158,8 @@ defmodule Atlas.Instance do
   Turn the subscription off (enabled: false): no more emails or webhooks and the private feed 404s. Its settings are kept; PUT enabled: true turns it back on.
 
   `DELETE /v1/instance/status_subscription`. Required scope: `instance:write`.
+
+  Response fields: `object`, `subscribed`, `enabled`, `regions`, `component_ids`, `min_impact`, `include_maintenance`, `email_owners`, `webhook`, `rss_url`, `atom_url`, `available_regions`, `available_components`, `available_components.id`, `available_components.name`, `updated_at`.
   """
   def delete_status_subscription(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/status_subscription", %{}, nil, opts)
@@ -740,6 +1168,8 @@ defmodule Atlas.Instance do
   Replace the private feed URL (the old one 404s at once). 404 when there is no subscription yet.
 
   `POST /v1/instance/status_subscription/rotate_feed`. Required scope: `instance:write`.
+
+  Response fields: `object`, `subscribed`, `enabled`, `regions`, `component_ids`, `min_impact`, `include_maintenance`, `email_owners`, `webhook`, `rss_url`, `atom_url`, `available_regions`, `available_components`, `available_components.id`, `available_components.name`, `updated_at`.
   """
   def post_status_subscription_rotate_feed(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/status_subscription/rotate_feed", %{}, nil, opts)
@@ -748,12 +1178,15 @@ defmodule Atlas.Instance do
   Atlas incidents and maintenance that concern this instance (its subscription filters; everything when it has none), newest first, with their timelines.
 
   `GET /v1/instance/status_incidents`. Required scope: `instance:read`.
+
+  Query params (`params:`): `open`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.title`, `data.status`, `data.impact`, `data.regions`, `data.component_ids`, `data.started_at`, `data.resolved_at`, `data.updated_at`, `data.source`, `data.scheduled_for`, `data.scheduled_until`, `data.updates`, `data.updates.id`, `data.updates.status`, `data.updates.body`, `data.updates.created_at`.
   """
   def get_status_incidents(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/status_incidents", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_status_incidents/1`, following the cursor page by page.
+  Lazy stream over every item of `get_status_incidents`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_status_incidents(client, opts \\ []),
@@ -763,12 +1196,15 @@ defmodule Atlas.Instance do
   The upstream status pages this instance depends on, each with its last known state, and the worst state of the enabled ones. Atlas re-reads each about every 5 minutes.
 
   `GET /v1/instance/status_dependencies`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.url`, `data.component_filter`, `data.enabled`, `data.state`, `data.indicator`, `data.description`, `data.components`, `data.components.id`, `data.components.name`, `data.components.status`, `data.incidents`, `data.incidents.id`, `data.incidents.name`, `data.incidents.status`, `data.incidents.impact`, `data.incidents.updatedAt`, `data.last_checked_at`, `data.last_success_at`, `data.last_error`, `data.stale`, `data.created_at`, `state`.
   """
   def get_status_dependencies(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/status_dependencies", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_status_dependencies/1`, following the cursor page by page.
+  Lazy stream over every item of `get_status_dependencies`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_status_dependencies(client, opts \\ []),
@@ -778,6 +1214,9 @@ defmodule Atlas.Instance do
   Declare a service your app depends on by the URL of its Statuspage-compatible status page (Statuspage, Instatus, Better Stack, a Forumulate space, Atlas itself, …). Atlas reads it at once and answers with its state, or with the reason it could not (last_error). 409 for a URL already declared or past 20 per instance.
 
   `POST /v1/instance/status_dependencies`. Required scope: `instance:write`.
+
+  Body fields: `name` (string, required), `url` (string, required), `component_filter` (array), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `url`, `component_filter`, `enabled`, `state`, `indicator`, `description`, `components`, `components.id`, `components.name`, `components.status`, `incidents`, `incidents.id`, `incidents.name`, `incidents.status`, `incidents.impact`, `incidents.updatedAt`, `last_checked_at`, `last_success_at`, `last_error`, `stale`, `created_at`.
   """
   def post_status_dependencies(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/status_dependencies", %{}, body, opts)
@@ -786,6 +1225,8 @@ defmodule Atlas.Instance do
   One status dependency.
 
   `GET /v1/instance/status_dependencies/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `name`, `url`, `component_filter`, `enabled`, `state`, `indicator`, `description`, `components`, `components.id`, `components.name`, `components.status`, `incidents`, `incidents.id`, `incidents.name`, `incidents.status`, `incidents.impact`, `incidents.updatedAt`, `last_checked_at`, `last_success_at`, `last_error`, `stale`, `created_at`.
   """
   def get_status_dependencies_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/status_dependencies/{id}", %{"id" => id}, nil, opts)
@@ -794,6 +1235,9 @@ defmodule Atlas.Instance do
   Rename, change the component filter (re-read at once) or enable / disable a dependency. The URL cannot change: delete and declare again.
 
   `PATCH /v1/instance/status_dependencies/{id}`. Required scope: `instance:write`.
+
+  Body fields: `name` (string), `component_filter` (array), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `url`, `component_filter`, `enabled`, `state`, `indicator`, `description`, `components`, `components.id`, `components.name`, `components.status`, `incidents`, `incidents.id`, `incidents.name`, `incidents.status`, `incidents.impact`, `incidents.updatedAt`, `last_checked_at`, `last_success_at`, `last_error`, `stale`, `created_at`.
   """
   def update_status_dependencies(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/status_dependencies/{id}", %{"id" => id}, body, opts)
@@ -802,6 +1246,8 @@ defmodule Atlas.Instance do
   Stop tracking a status dependency.
 
   `DELETE /v1/instance/status_dependencies/{id}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_status_dependencies(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/status_dependencies/{id}", %{"id" => id}, nil, opts)
@@ -810,6 +1256,8 @@ defmodule Atlas.Instance do
   Read the dependency status page now and answer with the result.
 
   `POST /v1/instance/status_dependencies/{id}/refresh`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `name`, `url`, `component_filter`, `enabled`, `state`, `indicator`, `description`, `components`, `components.id`, `components.name`, `components.status`, `incidents`, `incidents.id`, `incidents.name`, `incidents.status`, `incidents.impact`, `incidents.updatedAt`, `last_checked_at`, `last_success_at`, `last_error`, `stale`, `created_at`.
   """
   def post_status_dependencies_refresh(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/status_dependencies/{id}/refresh", %{"id" => id}, nil, opts)
@@ -818,14 +1266,20 @@ defmodule Atlas.Instance do
   Read the instance's before_user_create hook: the endpoint Atlas calls for every self-service sign-up so your app can set the user's external_id and metadata first. The signing secret is reported as signing_secret_set only.
 
   `GET /v1/instance/hooks/before_user_create`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `pending`, `pending_since`, `last_test_at`, `last_test_error`, `url`, `signing_secret_set`, `timeout_ms`, `fail_closed`, `last_call`, `last_call.at`, `last_call.status`, `last_call.error`, `recent`, `recent.calls_24h`, `recent.failed_24h`, `recent.timeouts_24h`, `recent.denied_24h`, `recent.p95_latency_ms`, `recent.last_failed_at`, `updated_at`.
   """
   def get_hooks_before_user_create(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/hooks/before_user_create", %{}, nil, opts)
 
   @doc ~S"""
-  Update the before_user_create hook. Only the fields you send change; null clears. The hook is called (signed like a webhook) after the user id is assigned and before user.created, the referral call and any session. It may answer {external_id, public_metadata, private_metadata, unsafe_metadata}, or deny the sign-up with {"deny": true, "reason": "..."} or HTTP 403: the person gets 403 SIGN_UP_DENIED with your reason, no user is kept and no user.created is sent. A slow or failing hook does not block the sign-up unless fail_closed is true. The body carries data.user, data.strategy, data.referral, data.request ({client_id, app_context, login_hint} of the authorize request, nulls when absent) and data.invitation (the pending instance invitation for the address, or null) and data.organization ({id, external_id, role, role_mapped, via: sso | domain} when the sign-up comes through an organization SSO connection or a captured auto-join domain, else null). Turning the hook on, or changing the url or signing_secret of a fail_closed enabled one (or turning fail_closed on for it), first sends the signed test call: unless it returns a valid answer (an answer object, possibly empty, or a deny) the change is refused with 409 HOOK_TEST_FAILED (meta: url, status, the first 200 bytes of the response body, outcome) and the hook stays as it was. ?force=true (or force in the body) skips the test and is audit-logged. A dry run (?dry_run=true) makes the same test call and changes nothing: it answers would_return (the hook exactly as the PATCH would leave it, e.g. enabled: true) and changes [{section, before, after}] with would_return_status 200, or would_return_status 409 with the refusal. An enabled hook that is not fail_closed is not re-tested when its url or secret changes.
+  Update the before_user_create hook. Only the fields you send change; null clears. The hook is called (signed like a webhook) after the user id is assigned and before user.created, the referral call and any session. It may answer {external_id, public_metadata, private_metadata, unsafe_metadata}, or deny the sign-up with {"deny": true, "reason": "..."} or HTTP 403: the person gets 403 SIGN_UP_DENIED with your reason, no user is kept and no user.created is sent. A slow or failing hook does not block the sign-up unless fail_closed is true. The body carries data.user, data.strategy, data.referral, data.request ({client_id, app_context, login_hint} of the authorize request, nulls when absent) and data.invitation (the pending instance invitation for the address, or null) and data.organization ({id, external_id, role, role_mapped, via: sso | domain} when the sign-up comes through an organization SSO connection or a captured auto-join domain, else null). Turning the hook on, or changing the url or signing_secret of a fail_closed enabled one (or turning fail_closed on for it), first sends the signed test call: unless it returns a valid answer (an answer object, possibly empty, or a deny) the change is refused with 409 HOOK_TEST_FAILED (meta: url, status, the first 200 bytes of the response body, outcome) and the hook stays as it was. ?force=true (or force in the body) skips the test and is audit-logged. enabled: "pending" stores the hook OFF without testing (sign-ups proceed and the hook is not called, fail_closed included) and Atlas turns it on in the background once the test passes (see GET: pending, pending_since, last_test_at, last_test_error). A dry run (?dry_run=true) makes the same test call and changes nothing: it answers would_return (the hook exactly as the PATCH would leave it, e.g. enabled: true) and changes [{section, before, after}] with would_return_status 200, or would_return_status 409 with the refusal. An enabled hook that is not fail_closed is not re-tested when its url or secret changes.
 
   `PATCH /v1/instance/hooks/before_user_create`. Required scope: `instance:write`.
+
+  Query params (`params:`): `force`.
+  Body fields: `enabled` (any), `url` (string|null), `signing_secret` (string|null), `timeout_ms` (integer), `fail_closed` (boolean), `force` (boolean).
+  Response fields: `object`, `enabled`, `pending`, `pending_since`, `last_test_at`, `last_test_error`, `url`, `signing_secret_set`, `timeout_ms`, `fail_closed`, `last_call`, `last_call.at`, `last_call.status`, `last_call.error`, `recent`, `recent.calls_24h`, `recent.failed_24h`, `recent.timeouts_24h`, `recent.denied_24h`, `recent.p95_latency_ms`, `recent.last_failed_at`, `updated_at`.
   """
   def update_hooks_before_user_create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/instance/hooks/before_user_create", %{}, body, opts)
@@ -834,6 +1288,8 @@ defmodule Atlas.Instance do
   Turn the before_user_create hook off and clear its url and signing secret, the same as PATCH with {enabled:false, url:null, signing_secret:null}. Audited. Idempotent: a hook that is already clear answers 200 the same way. timeout_ms and fail_closed are kept.
 
   `DELETE /v1/instance/hooks/before_user_create`. Required scope: `instance:write`.
+
+  Response fields: `object`, `enabled`, `pending`, `pending_since`, `last_test_at`, `last_test_error`, `url`, `signing_secret_set`, `timeout_ms`, `fail_closed`, `last_call`, `last_call.at`, `last_call.status`, `last_call.error`, `recent`, `recent.calls_24h`, `recent.failed_24h`, `recent.timeouts_24h`, `recent.denied_24h`, `recent.p95_latency_ms`, `recent.last_failed_at`, `updated_at`.
   """
   def delete_hooks_before_user_create(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/hooks/before_user_create", %{}, nil, opts)
@@ -842,6 +1298,8 @@ defmodule Atlas.Instance do
   Send a sample sign-up (a user that does not exist) to the hook and report its answer. Nothing is stored on any user; the call appears in the delivery log flagged test, and does not change last_call. The call says it is a test: `"test": true` in the body (real calls send false) and an `atlas-test: 1` header, so the hook answers without reserving an id or creating anything. Answers with the shared test-call fields ok, status (success | failed), http_status and latency_ms (the same four a webhook endpoint test returns), plus answer or error.
 
   `POST /v1/instance/hooks/before_user_create/test`. Required scope: `instance:write`.
+
+  Response fields: `ok`, `status`, `http_status`, `latency_ms`, `answer`, `answer.deny`, `answer.reason`, `answer.external_id`, `answer.public_metadata`, `answer.private_metadata_set`, `answer.unsafe_metadata`, `error`, `error.code`, `error.message`.
   """
   def post_hooks_before_user_create_test(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/hooks/before_user_create/test", %{}, nil, opts)
@@ -850,36 +1308,73 @@ defmodule Atlas.Instance do
   The hook's delivery log, newest first, kept 30 days: every call (sign-ups and tests, flagged) with its status, HTTP code, latency, error and what the hook answered (external_id and metadata keys only). A failed or timed-out call let the sign-up continue without your answer.
 
   `GET /v1/instance/hooks/before_user_create/calls`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `status`, `test`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.test`, `data.status`, `data.http_status`, `data.latency_ms`, `data.error`, `data.answer`, `data.answer.deny`, `data.answer.reason`, `data.answer.external_id`, `data.answer.public_metadata_keys`, `data.answer.private_metadata_keys`, `data.answer.unsafe_metadata_keys`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_hooks_before_user_create_calls(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/hooks/before_user_create/calls", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_hooks_before_user_create_calls/1`, following the cursor page by page.
+  Lazy stream over every item of `get_hooks_before_user_create_calls`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_hooks_before_user_create_calls(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/instance/hooks/before_user_create/calls", %{}, opts)
 
   @doc ~S"""
+  The event types third-party apps can subscribe to, each with the scope a user must have granted the app.
+
+  `GET /v1/instance/app_event_types`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.description`, `data.schema`, `data.deprecated`, `data.required_scope`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  """
+  def get_app_event_types(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/app_event_types", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_app_event_types`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_app_event_types(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/app_event_types", %{}, opts)
+
+  @doc ~S"""
+  Replace the event types third-party apps can subscribe to (send an array, or { types: [...] }). Each has a type (lowercase dotted, not an Atlas event name), an optional description and schema, and a required_scope that must exist in the scope catalogue. Publish with POST /v1/app_events { user_id }; subscribe a client with PUT /v1/oauth_clients/{id}/webhook.
+
+  `PUT /v1/instance/app_event_types`. Required scope: `instance:write`.
+
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.description`, `data.schema`, `data.deprecated`, `data.required_scope`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  """
+  def put_app_event_types(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/app_event_types", %{}, body, opts)
+
+  @doc ~S"""
   Alias of GET /v1/secret_keys. List this instance's secret keys with scopes, owner, expiry, last use, last-used IP and provisioning tags. Revoked keys stay listed. Filter by tag with ?metadata[key]=value.
 
   `GET /v1/instance/secret_keys`. Required scope: `secret_keys:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.format`, `data.prefix`, `data.name`, `data.owner`, `data.scopes`, `data.environment`, `data.resource`, `data.resource.type`, `data.resource.id`, `data.expires_at`, `data.expires_in_days`, `data.status`, `data.ip_allowlist`, `data.origin_allowlist`, `data.last_used_at`, `data.last_used_ip`, `data.created_at`, `data.revoked_at`, `data.allowed_ips`, `data.allowed_origins`, `data.organization_ids`, `data.rotated_from`, `data.metadata`, `data.external_ref`, `data.idempotent_replay`, `data.secret`, `has_more`, `next_cursor`.
   """
   def get_secret_keys(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/secret_keys", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_secret_keys/1`, following the cursor page by page.
+  Lazy stream over every item of `get_secret_keys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_secret_keys(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/instance/secret_keys", %{}, opts)
 
   @doc ~S"""
-  Alias of POST /v1/secret_keys. Create a scoped secret key: `name`, `scopes[]` (refused when unknown, or when the calling key does not hold them; presets `read_only`, `privacy:execute`, `privacy:grants:revoke`), `expires_at` (at most a year; default one year; "never" is refused), `allowed_ips` (CIDRs), `allowed_origins` (browser origins; a request with another Origin gets 403 ORIGIN_NOT_ALLOWED), `owner` (default: the creating person or key), `external_ref` (idempotent create: a repeat returns the existing key, 200, idempotent_replay, no secret), `metadata` (tags; filter the list with ?metadata[key]=value) and `key_format` (`atlas`, the default `atlas_<env>_sk_…`, or `legacy` `sk_<env>_…`). The secret is returned once. Minting with an operator token needs multi-factor sign-in within 5 minutes (403 STEP_UP_REQUIRED). Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext. Example: a data-rights tool's key, { "name": "DSAR executor", "scopes": ["privacy:execute", "privacy:grants:revoke"], "expires_at": "2027-04-01" }.
+  Alias of POST /v1/secret_keys. Create a scoped secret key: `name`, `scopes[]` (refused when unknown, or when the calling key does not hold them; presets `read_only`, `privacy:execute`, `privacy:grants:revoke`; or `preset: "app-runtime"` for an app server runtime key), `expires_at` (at most a year; default one year; "never" is refused), `allowed_ips` (CIDRs), `allowed_origins` (browser origins; a request with another Origin gets 403 ORIGIN_NOT_ALLOWED), `owner` (default: the creating person or key), `external_ref` (idempotent create: a repeat returns the existing key, 200, idempotent_replay, no secret), `metadata` (tags; filter the list with ?metadata[key]=value) and `key_format` (`atlas`, the default `atlas_<env>_sk_…`, or `legacy` `sk_<env>_…`). The secret is returned once. Minting with an operator token needs multi-factor sign-in within 5 minutes (403 STEP_UP_REQUIRED). Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext. Example: a data-rights tool's key, { "name": "DSAR executor", "scopes": ["privacy:execute", "privacy:grants:revoke"], "expires_at": "2027-04-01" }.
 
   `POST /v1/instance/secret_keys`. Required scope: `secret_keys:write`.
+
+  Body fields: `name` (string), `scopes` (array), `preset` (enum), `expires_at` (integer|string), `allowed_ips` (array), `ip_allowlist` (array), `allowed_origins` (array), `origin_allowlist` (array), `organization_ids` (array), `owner` (string|null), `key_format` (enum), `external_ref` (string), `metadata` (object).
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def post_secret_keys(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/secret_keys", %{}, body, opts)
@@ -904,6 +1399,8 @@ defmodule Atlas.Instance do
   Set the cache window: how long Atlas may use a loaded data key without your KMS confirming it, which is how long a revoked key keeps working (60 to 3,600 seconds, default 300). Shorter revokes faster but depends on the KMS being reachable more tightly: Atlas re-confirms every 20 seconds, so a KMS outage longer than the window takes the instance down.
 
   `PUT /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+
+  Body fields: `cache_window_seconds` (integer).
   """
   def put_data_key_provider(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/data_key_provider", %{}, body, opts)
@@ -912,9 +1409,21 @@ defmodule Atlas.Instance do
   Remove customer-managed encryption by deleting the wrapped data keys. This crypto-shreds everything encrypted under them and cannot be undone; send { "confirm": "shred" }.
 
   `DELETE /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+
+  Body fields: `confirm` (enum, required).
   """
   def delete_data_key_provider(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/data_key_provider", %{}, nil, opts)
+
+  @doc ~S"""
+  Remove customer-managed encryption by deleting the wrapped data keys. This crypto-shreds everything encrypted under them and cannot be undone; send { "confirm": "shred" }.
+
+  `DELETE /v1/instance/data_key_provider`. Required scope: `vault:manage`.
+
+  Body fields: `confirm` (enum, required).
+  """
+  def delete_data_key_provider_with_body(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/data_key_provider", %{}, body, opts)
 
   @doc ~S"""
   Create a new data key version. New data uses it; earlier versions stay until a re-encryption sweep reports none left on them.
@@ -928,9 +1437,52 @@ defmodule Atlas.Instance do
   Re-wrap data keys and vault versions wrapped by an earlier KMS key under the provider as configured now. Pass `previous` (provider, config, credentials) when the old key is no longer the configured one. Only small keys are unwrapped and wrapped again; no data is re-encrypted, and it is safe to repeat.
 
   `POST /v1/instance/data_key_provider/rewrap`. Required scope: `vault:manage`.
+
+  Body fields: `previous` (object).
+  Nested body fields: `previous.provider`, `previous.config`, `previous.credentials`.
   """
   def post_data_key_provider_rewrap(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/data_key_provider/rewrap", %{}, body, opts)
+
+  @doc ~S"""
+  A rotation drill: the re-wrap as a dry run. Every data key and vault version that would move is opened with the key that holds it, wrapped under the key as configured now and opened again; nothing is written. A KMS failure is reported as `ok: false` with its reason, not as an error. Sends data_key_provider.drill_completed.
+
+  `POST /v1/instance/data_key_provider/rotation_drill`. Required scope: `vault:manage`.
+
+  Body fields: `previous` (object).
+  Nested body fields: `previous.provider`, `previous.config`, `previous.credentials`.
+  Response fields: `object`, `id`, `ok`, `data_keys`, `vault_versions`, `vault_versions_not_examined`, `failed`, `failure_reason`, `used_previous`, `items`, `items.kind`, `items.id`, `items.ok`, `items.reason`, `created_at`.
+  """
+  def post_data_key_provider_rotation_drill(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/data_key_provider/rotation_drill", %{}, body, opts)
+
+  @doc ~S"""
+  The last 20 rotation drills, newest first.
+
+  `GET /v1/instance/data_key_provider/rotation_drills`. Required scope: `vault:manage`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.ok`, `data.data_keys`, `data.vault_versions`, `data.vault_versions_not_examined`, `data.failed`, `data.failure_reason`, `data.used_previous`, `data.items`, `data.items.kind`, `data.items.id`, `data.items.ok`, `data.items.reason`, `data.created_at`, `has_more`.
+  """
+  def get_data_key_provider_rotation_drills(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/data_key_provider/rotation_drills", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_data_key_provider_rotation_drills`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_data_key_provider_rotation_drills(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/data_key_provider/rotation_drills", %{}, opts)
+
+  @doc ~S"""
+  Read one key rotation drill: its outcome and what it checked.
+
+  `GET /v1/instance/data_key_provider/rotation_drills/{id}`. Required scope: `vault:manage`.
+
+  Response fields: `object`, `id`, `ok`, `data_keys`, `vault_versions`, `vault_versions_not_examined`, `failed`, `failure_reason`, `used_previous`, `items`, `items.kind`, `items.id`, `items.ok`, `items.reason`, `created_at`.
+  """
+  def get_data_key_provider_rotation_drills_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/data_key_provider/rotation_drills/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
   Check the customer key now: wrap and unwrap a random key through it and open the current data keys. `reason` names a failure: key_disabled, key_not_found, access_denied, unreachable or invalid_config.
@@ -944,6 +1496,8 @@ defmodule Atlas.Instance do
   Read the cookie-consent CMP injected into the hosted sign-in, sign-up and account pages (enabled:false when none) and where it comes from (source: a stored setting, an integration, or a consent manager's partner link), plus declared_cookies: every cookie and storage key Atlas writes for this instance, with the domain it lives on, ready to declare in the CMP as strictly necessary. Needs only cookie_consent:read (instance:read includes it), so a consent manager's privacy:* executor key can hold it. Without a key, the same declared_cookies are public: GET /v1/cookie_consent on the Frontend API host.
 
   `GET /v1/instance/cookie_consent`. Required scope: `cookie_consent:read`.
+
+  Response fields: `object`, `enabled`, `script_url`, `script_id`, `site_id`, `site`, `blocking_mode`, `extra_origins`, `settings_link`, `settings_link.label`, `settings_link.labels`, `settings_link.rendered_labels`, `settings_link.preset`, `settings_link.attributes`, `settings_link.rendered_attributes`, `culture`, `declared_cookies`, `declared_cookies.name`, `declared_cookies.pattern`, `declared_cookies.store`, `declared_cookies.domain`, `declared_cookies.path`, `declared_cookies.lifetime_seconds`, `declared_cookies.lifetime`, `declared_cookies.lifetime_range`, `declared_cookies.lifetime_range.setting`, `declared_cookies.lifetime_range.min_seconds`, `declared_cookies.lifetime_range.max_seconds`, `declared_cookies.lifetime_range.default_seconds`, `declared_cookies.http_only`, `declared_cookies.category`, `declared_cookies.purpose`, `declared_cookies.purposes`, `declared_cookies.written_when`, `declared_cookies.set_by`, `frontend_mode`, `frontend_mode.type`, `frontend_mode.host`, `frontend_mode.base_path`, `source`, `source_integration`, `host_aliases`.
   """
   def get_cookie_consent(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/cookie_consent", %{}, nil, opts)
@@ -952,6 +1506,10 @@ defmodule Atlas.Instance do
   Set the cookie-consent CMP for the hosted pages (any provider). Replaces the whole setting; a body of just { "enabled": false } (or true) switches the stored setting off (or on) instead. script_url and every extra_origins entry must be https URLs; only their exact origins are added to the page CSP. Optional settings_link adds a "Cookie settings" link to the page footer that reopens the CMP preferences. When the CMP is Cookie Munch (script on cookiemunch.net) and a site_id is set, the save also checks the site with Cookie Munch and returns warnings: cmp_site_unknown when Cookie Munch does not know the id, cmp_site_domain_mismatch when the site is not registered and verified for the sign-in host or a parent domain of it (unless that host is listed in host_aliases). The check has a short timeout and never fails the save. A body of just { "host_aliases": ["<slug>-fapi.atlasauth.net"] } declares the hosted-pages host as an alias of the site, for a product with no domain of its own to register at the consent manager.
 
   `PUT /v1/instance/cookie_consent`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `script_url` (string), `script_id` (string|null), `site_id` (string|null), `site` (object|null), `blocking_mode` (string|null), `extra_origins` (array), `settings_link` (object|null), `culture` (enum), `host_aliases` (array|null).
+  Nested body fields: `site.provider`, `site.host`, `settings_link.label`, `settings_link.labels`, `settings_link.preset`, `settings_link.attributes`.
+  Response fields: `object`, `enabled`, `script_url`, `script_id`, `site_id`, `site`, `blocking_mode`, `extra_origins`, `settings_link`, `settings_link.label`, `settings_link.labels`, `settings_link.rendered_labels`, `settings_link.preset`, `settings_link.attributes`, `settings_link.rendered_attributes`, `culture`, `declared_cookies`, `declared_cookies.name`, `declared_cookies.pattern`, `declared_cookies.store`, `declared_cookies.domain`, `declared_cookies.path`, `declared_cookies.lifetime_seconds`, `declared_cookies.lifetime`, `declared_cookies.lifetime_range`, `declared_cookies.lifetime_range.setting`, `declared_cookies.lifetime_range.min_seconds`, `declared_cookies.lifetime_range.max_seconds`, `declared_cookies.lifetime_range.default_seconds`, `declared_cookies.http_only`, `declared_cookies.category`, `declared_cookies.purpose`, `declared_cookies.purposes`, `declared_cookies.written_when`, `declared_cookies.set_by`, `frontend_mode`, `frontend_mode.type`, `frontend_mode.host`, `frontend_mode.base_path`, `source`, `source_integration`, `host_aliases`, `warnings`, `warnings.severity`, `warnings.code`, `warnings.message`, `warnings.fix`, `warnings.fix_call`, `warnings.fix_call.method`, `warnings.fix_call.path`, `warnings.fix_call.body`, `warnings.safe_to_autofix`, `warnings.subject`, `warnings.group`, `warnings.suppressed`, `warnings.suppressed_reason`, `warnings.acknowledged`, `warnings.acknowledged.reason`, `warnings.acknowledged.by`, `warnings.acknowledged.at`, `warnings.acknowledged.expires_at`.
   """
   def put_cookie_consent(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/cookie_consent", %{}, body, opts)
@@ -960,6 +1518,8 @@ defmodule Atlas.Instance do
   Turn off the hosted-page cookie-consent CMP: no script is injected and the CSP goes back to normal.
 
   `DELETE /v1/instance/cookie_consent`. Required scope: `instance:write`.
+
+  Response fields: `object`, `enabled`, `script_url`, `script_id`, `site_id`, `site`, `blocking_mode`, `extra_origins`, `settings_link`, `settings_link.label`, `settings_link.labels`, `settings_link.rendered_labels`, `settings_link.preset`, `settings_link.attributes`, `settings_link.rendered_attributes`, `culture`, `declared_cookies`, `declared_cookies.name`, `declared_cookies.pattern`, `declared_cookies.store`, `declared_cookies.domain`, `declared_cookies.path`, `declared_cookies.lifetime_seconds`, `declared_cookies.lifetime`, `declared_cookies.lifetime_range`, `declared_cookies.lifetime_range.setting`, `declared_cookies.lifetime_range.min_seconds`, `declared_cookies.lifetime_range.max_seconds`, `declared_cookies.lifetime_range.default_seconds`, `declared_cookies.http_only`, `declared_cookies.category`, `declared_cookies.purpose`, `declared_cookies.purposes`, `declared_cookies.written_when`, `declared_cookies.set_by`, `frontend_mode`, `frontend_mode.type`, `frontend_mode.host`, `frontend_mode.base_path`, `source`, `source_integration`, `host_aliases`.
   """
   def delete_cookie_consent(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/cookie_consent", %{}, nil, opts)
@@ -968,6 +1528,9 @@ defmodule Atlas.Instance do
   Every cookie and browser-storage key the hosted pages set for this instance as a CMP-neutral declaration (name, provider, domain, category, type cookie or localStorage, duration, description), with the domain computed from your sign-in host and cross-subdomain setting. A consent manager imports it once; no manual rows. Needs only cookie_consent:read. Without a key the same list is public: GET /v1/storage_declaration on the Frontend API host.
 
   `GET /v1/instance/storage_declaration`. Required scope: `cookie_consent:read`.
+
+  Query params (`params:`): `format`.
+  Response fields: `object`, `vendor`, `frontend_api_host`, `declarations`.
   """
   def get_storage_declaration(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/storage_declaration", %{}, nil, opts)
@@ -976,12 +1539,15 @@ defmodule Atlas.Instance do
   Every identity integration: the four presets (chatly, forumulate, cookiemunch, referalli; connected or not) and every custom integration, each with its health — last mint, mints and reported verify errors in the last 24 hours, the last verify error, and the event and back-channel logout receivers (state, failing_since, consecutive failures, 24-hour success rate).
 
   `GET /v1/instance/integrations`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.added_origins`, `data.warnings`, `data.warnings.code`, `data.warnings.message`, `data.warnings.space_ids`, `data.warnings.sign_in_url`, `data.events_secret_stored`, `data.events_secret_stored.providers`, `data.events_secret_stored.channel`, `data.replaced`, `data.replaced.sign_in_url_cleared`, `data.replaced.providers_removed`, `data.product`, `data.preset`, `data.name`, `data.role`, `data.enabled`, `data.connected`, `data.audience`, `data.audience_format`, `data.channel`, `data.template`, `data.identity_verification`, `data.identity_verification.mode`, `data.identity_verification.issuer`, `data.identity_verification.jwks_url`, `data.identity_verification.audience`, `data.org_id`, `data.site_id`, `data.spaces`, `data.spaces.id`, `data.spaces.redeem_url`, `data.spaces.redeem_urls`, `data.reader_auth_provider`, `data.reader_auth_provider.source`, `data.reader_auth_provider.note`, `data.reader_auth_provider.method`, `data.reader_auth_provider.order`, `data.reader_auth_provider.config`, `data.reader_auth_provider.config.jwksUrl`, `data.reader_auth_provider.config.issuer`, `data.reader_auth_provider.config.clientId`, `data.reader_auth_providers`, `data.reader_auth_providers.source`, `data.reader_auth_providers.method`, `data.reader_auth_providers.order`, `data.reader_auth_providers.config`, `data.reader_auth_providers.backchannel_logout_url`, `data.principal_claim`, `data.principal_claim_name`, `data.ext_claim`, `data.ext_claim_name`, `data.claims`, `data.claims.org`, `data.claims.org_role`, `data.claims.public_metadata`, `data.claims.context`, `data.extra_claim_names`, `data.ttl_seconds`, `data.token_ttl_seconds`, `data.issuer`, `data.jwks_url`, `data.token_schema`, `data.events_url`, `data.events_url_default`, `data.events`, `data.backchannel_logout_url`, `data.backchannel_logout_url_default`, `data.backchannel_logout_source`, `data.backchannel_logout_client_id`, `data.oauth_client_id`, `data.verify_error_report_url`, `data.cmp`, `data.cmp.script_url`, `data.cmp.script_id`, `data.cmp.site_id`, `data.cmp.blocking_mode`, `data.cmp.extra_origins`, `data.cmp.settings_preset`, `data.cmp.consent_api`, `data.cmp.consent_api.global`, `data.cmp.consent_api.has_method`, `data.cmp.consent_api.request_method`, `data.cmp.consent_api.category_map`, `data.atlas_id_users`, `data.per_call_audience`, `data.per_call_audience.param`, `data.per_call_audience.template`, `data.per_call_audience.allowed`, `data.per_call_audience.any_matching`, `data.per_call_audience.default`, `data.atlas_id_issuer`, `data.atlas_id_issuer.issuer`, `data.atlas_id_issuer.jwks_url`, `data.external_ref`, `data.metadata`, `data.enabled_at`, `data.updated_at`, `data.dry_run`, `data.health`, `data.health.last_minted_at`, `data.health.mints_24h`, `data.health.refusals_24h`, `data.health.last_refused_at`, `data.health.last_refused_reason`, `data.health.verify_errors_24h`, `data.health.last_verify_error`, `data.health.last_verify_error.error`, `data.health.last_verify_error.audience`, `data.health.last_verify_error.at`, `data.health.last_verify_error.reported_at`, `data.health.events`, `data.health.backchannel_logout`, `has_more`.
   """
   def get_integrations(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/integrations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_integrations/1`, following the cursor page by page.
+  Lazy stream over every item of `get_integrations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_integrations(client, opts \\ []),
@@ -991,6 +1557,8 @@ defmodule Atlas.Instance do
   One identity integration, with its health. For a preset or custom id that was never connected: enabled:false, connected:false. The integration id: a preset (chatly, forumulate, cookiemunch, referalli) or a custom integration id (2-40 lowercase letters, digits, "_" or "-", starting with a letter).
 
   `GET /v1/instance/integrations/{product}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `added_origins`, `warnings`, `warnings.code`, `warnings.message`, `warnings.space_ids`, `warnings.sign_in_url`, `events_secret_stored`, `events_secret_stored.providers`, `events_secret_stored.providers.method`, `events_secret_stored.providers.order`, `events_secret_stored.channel`, `replaced`, `replaced.sign_in_url_cleared`, `replaced.providers_removed`, `replaced.providers_removed.method`, `replaced.providers_removed.order`, `product`, `preset`, `name`, `role`, `enabled`, `connected`, `audience`, `audience_format`, `channel`, `template`, `identity_verification`, `identity_verification.mode`, `identity_verification.issuer`, `identity_verification.jwks_url`, `identity_verification.audience`, `org_id`, `site_id`, `spaces`, `spaces.id`, `spaces.redeem_url`, `spaces.redeem_urls`, `reader_auth_provider`, `reader_auth_provider.source`, `reader_auth_provider.note`, `reader_auth_provider.method`, `reader_auth_provider.order`, `reader_auth_provider.config`, `reader_auth_provider.config.jwksUrl`, `reader_auth_provider.config.issuer`, `reader_auth_provider.config.clientId`, `reader_auth_providers`, `reader_auth_providers.source`, `reader_auth_providers.method`, `reader_auth_providers.order`, `reader_auth_providers.config`, `reader_auth_providers.backchannel_logout_url`, `principal_claim`, `principal_claim_name`, `ext_claim`, `ext_claim_name`, `claims`, `claims.org`, `claims.org_role`, `claims.public_metadata`, `claims.context`, `extra_claim_names`, `ttl_seconds`, `token_ttl_seconds`, `issuer`, `jwks_url`, `token_schema`, `events_url`, `events_url_default`, `events`, `backchannel_logout_url`, `backchannel_logout_url_default`, `backchannel_logout_source`, `backchannel_logout_client_id`, `oauth_client_id`, `verify_error_report_url`, `cmp`, `cmp.script_url`, `cmp.script_id`, `cmp.site_id`, `cmp.blocking_mode`, `cmp.extra_origins`, `cmp.settings_preset`, `cmp.consent_api`, `cmp.consent_api.global`, `cmp.consent_api.has_method`, `cmp.consent_api.request_method`, `cmp.consent_api.category_map`, `atlas_id_users`, `per_call_audience`, `per_call_audience.param`, `per_call_audience.template`, `per_call_audience.allowed`, `per_call_audience.any_matching`, `per_call_audience.default`, `atlas_id_issuer`, `atlas_id_issuer.issuer`, `atlas_id_issuer.jwks_url`, `external_ref`, `metadata`, `enabled_at`, `updated_at`, `dry_run`, `health`, `health.last_minted_at`, `health.mints_24h`, `health.refusals_24h`, `health.last_refused_at`, `health.last_refused_reason`, `health.verify_errors_24h`, `health.last_verify_error`, `health.last_verify_error.error`, `health.last_verify_error.audience`, `health.last_verify_error.at`, `health.last_verify_error.reported_at`, `health.events`, `health.events.url`, `health.events.endpoint_id`, `health.events.state`, `health.events.failing_since`, `health.events.disabled_at`, `health.events.last_success_at`, `health.events.last_failure`, `health.events.last_failure.at`, `health.events.last_failure.status`, `health.events.last_failure.error`, `health.events.consecutive_failures`, `health.events.success_rate_24h`, `health.events.events`, `health.events.secret_missing`, `health.events.secret_handed_off_at`, `health.events.secret_fingerprint`, `health.events.reason`, `health.events.hint`, `health.events.undelivered_events`, `health.events.oldest_undelivered_at`, `health.events.auto_redelivered`, `health.events.auto_redelivered_at`, `health.backchannel_logout`, `health.backchannel_logout.url`, `health.backchannel_logout.endpoint_id`, `health.backchannel_logout.state`, `health.backchannel_logout.failing_since`, `health.backchannel_logout.disabled_at`, `health.backchannel_logout.last_success_at`, `health.backchannel_logout.last_failure`, `health.backchannel_logout.last_failure.at`, `health.backchannel_logout.last_failure.status`, `health.backchannel_logout.last_failure.error`, `health.backchannel_logout.consecutive_failures`, `health.backchannel_logout.success_rate_24h`, `health.backchannel_logout.events`, `health.backchannel_logout.secret_missing`, `health.backchannel_logout.secret_handed_off_at`, `health.backchannel_logout.secret_fingerprint`, `health.backchannel_logout.reason`, `health.backchannel_logout.hint`, `health.backchannel_logout.undelivered_events`, `health.backchannel_logout.oldest_undelivered_at`, `health.backchannel_logout.auto_redelivered`, `health.backchannel_logout.auto_redelivered_at`.
   """
   def get_integrations_by_product(client, product, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/integrations/{product}", %{"product" => product}, nil, opts)
@@ -999,6 +1567,10 @@ defmodule Atlas.Instance do
   Connect (or replace) an identity integration: any service that verifies a user with a JWT. getToken({ for: '<id>' }) then mints a token of at most 120 s with aud = audience, sub (the Atlas user id), ext (external_id), principal (the branding audience the user signed in under), sid, email, email_verified, name and locale, verifiable against the instance JWKS. Atlas also delivers user.updated / user.banned / user.unbanned / user.deleted / session.revoked to events_url and an OIDC Back-Channel Logout token to backchannel_logout_url on every session end. ?dry_run=true validates in full and answers { object: 'dry_run', changes, would_return } without saving. Also accepts metadata tags and external_ref. The OAuth client the service signs users in with (oauth_client_id, else the client tagged product=<integration id>) gets its https redirect-URI origins added to allowed_origins (append only, recorded in the config changelog); the response lists them in added_origins. For forumulate, warnings says when Forumulate already sends readers elsewhere (existing_sign_in_url_overrides: an org-level signInUrl; atlas_reader_provider_missing), read from its public reader sign-in settings. With replace_existing: true and forumulate_api_key (a Forumulate org admin's API key, used for this call only and never stored) Atlas clears the org-level signInUrl and removes every non-Atlas reader provider in Forumulate, and answers replaced. forumulate_api_key alone also reads each space's reader addresses, so spaces[].redeem_url is on the host its readers read. The integration id: a preset (chatly, forumulate, cookiemunch, referalli) or a custom integration id (2-40 lowercase letters, digits, "_" or "-", starting with a letter).
 
   `PUT /v1/instance/integrations/{product}`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `replace_existing` (boolean), `forumulate_api_key` (string), `chatly_api_key` (string), `audience` (string), `name` (string), `role` (enum), `audience_format` (string|null), `principal_claim` (enum), `ext_claim` (enum), `claims` (object|null), `ttl_seconds` (integer), `events_url` (string|null), `backchannel_logout_url` (string|null), `oauth_client_id` (string|null), `verify_error_report_url` (string|null), `cmp` (object|null), `atlas_id_users` (boolean), `per_call_audience` (object|null), `metadata` (object), `external_ref` (string|null), `channel` (string), `org_id` (string), `spaces` (array).
+  Nested body fields: `claims.org`, `claims.org_role`, `claims.public_metadata`, `claims.context`, `cmp.script_url`, `cmp.script_id`, `cmp.site_id`, `cmp.blocking_mode`, `cmp.extra_origins`, `cmp.settings_preset`, `cmp.consent_api`, `cmp.consent_api.global`, `cmp.consent_api.has_method`, `cmp.consent_api.request_method`, `cmp.consent_api.category_map`, `per_call_audience.param`, `per_call_audience.template`, `per_call_audience.allowed`, `per_call_audience.any_matching`, `per_call_audience.default`, `spaces.id`, `spaces.redeem_url`.
+  Response fields: `object`, `id`, `added_origins`, `warnings`, `warnings.code`, `warnings.message`, `warnings.space_ids`, `warnings.sign_in_url`, `events_secret_stored`, `events_secret_stored.providers`, `events_secret_stored.providers.method`, `events_secret_stored.providers.order`, `events_secret_stored.channel`, `replaced`, `replaced.sign_in_url_cleared`, `replaced.providers_removed`, `replaced.providers_removed.method`, `replaced.providers_removed.order`, `product`, `preset`, `name`, `role`, `enabled`, `connected`, `audience`, `audience_format`, `channel`, `template`, `identity_verification`, `identity_verification.mode`, `identity_verification.issuer`, `identity_verification.jwks_url`, `identity_verification.audience`, `org_id`, `site_id`, `spaces`, `spaces.id`, `spaces.redeem_url`, `spaces.redeem_urls`, `reader_auth_provider`, `reader_auth_provider.source`, `reader_auth_provider.note`, `reader_auth_provider.method`, `reader_auth_provider.order`, `reader_auth_provider.config`, `reader_auth_provider.config.jwksUrl`, `reader_auth_provider.config.issuer`, `reader_auth_provider.config.clientId`, `reader_auth_providers`, `reader_auth_providers.source`, `reader_auth_providers.method`, `reader_auth_providers.order`, `reader_auth_providers.config`, `reader_auth_providers.backchannel_logout_url`, `principal_claim`, `principal_claim_name`, `ext_claim`, `ext_claim_name`, `claims`, `claims.org`, `claims.org_role`, `claims.public_metadata`, `claims.context`, `extra_claim_names`, `ttl_seconds`, `token_ttl_seconds`, `issuer`, `jwks_url`, `token_schema`, `events_url`, `events_url_default`, `events`, `backchannel_logout_url`, `backchannel_logout_url_default`, `backchannel_logout_source`, `backchannel_logout_client_id`, `oauth_client_id`, `verify_error_report_url`, `cmp`, `cmp.script_url`, `cmp.script_id`, `cmp.site_id`, `cmp.blocking_mode`, `cmp.extra_origins`, `cmp.settings_preset`, `cmp.consent_api`, `cmp.consent_api.global`, `cmp.consent_api.has_method`, `cmp.consent_api.request_method`, `cmp.consent_api.category_map`, `atlas_id_users`, `per_call_audience`, `per_call_audience.param`, `per_call_audience.template`, `per_call_audience.allowed`, `per_call_audience.any_matching`, `per_call_audience.default`, `atlas_id_issuer`, `atlas_id_issuer.issuer`, `atlas_id_issuer.jwks_url`, `external_ref`, `metadata`, `enabled_at`, `updated_at`, `dry_run`, `health`, `health.last_minted_at`, `health.mints_24h`, `health.refusals_24h`, `health.last_refused_at`, `health.last_refused_reason`, `health.verify_errors_24h`, `health.last_verify_error`, `health.last_verify_error.error`, `health.last_verify_error.audience`, `health.last_verify_error.at`, `health.last_verify_error.reported_at`, `health.events`, `health.events.url`, `health.events.endpoint_id`, `health.events.state`, `health.events.failing_since`, `health.events.disabled_at`, `health.events.last_success_at`, `health.events.last_failure`, `health.events.last_failure.at`, `health.events.last_failure.status`, `health.events.last_failure.error`, `health.events.consecutive_failures`, `health.events.success_rate_24h`, `health.events.events`, `health.events.secret_missing`, `health.events.secret_handed_off_at`, `health.events.secret_fingerprint`, `health.events.reason`, `health.events.hint`, `health.events.undelivered_events`, `health.events.oldest_undelivered_at`, `health.events.auto_redelivered`, `health.events.auto_redelivered_at`, `health.backchannel_logout`, `health.backchannel_logout.url`, `health.backchannel_logout.endpoint_id`, `health.backchannel_logout.state`, `health.backchannel_logout.failing_since`, `health.backchannel_logout.disabled_at`, `health.backchannel_logout.last_success_at`, `health.backchannel_logout.last_failure`, `health.backchannel_logout.last_failure.at`, `health.backchannel_logout.last_failure.status`, `health.backchannel_logout.last_failure.error`, `health.backchannel_logout.consecutive_failures`, `health.backchannel_logout.success_rate_24h`, `health.backchannel_logout.events`, `health.backchannel_logout.secret_missing`, `health.backchannel_logout.secret_handed_off_at`, `health.backchannel_logout.secret_fingerprint`, `health.backchannel_logout.reason`, `health.backchannel_logout.hint`, `health.backchannel_logout.undelivered_events`, `health.backchannel_logout.oldest_undelivered_at`, `health.backchannel_logout.auto_redelivered`, `health.backchannel_logout.auto_redelivered_at`.
   """
   def put_integrations(client, product, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/instance/integrations/{product}", %{"product" => product}, body, opts)
@@ -1007,37 +1579,76 @@ defmodule Atlas.Instance do
   Remove an identity integration and its receivers; getToken({ for }) answers 404 for it from then on.
 
   `DELETE /v1/instance/integrations/{product}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `added_origins`, `warnings`, `warnings.code`, `warnings.message`, `warnings.space_ids`, `warnings.sign_in_url`, `events_secret_stored`, `events_secret_stored.providers`, `events_secret_stored.providers.method`, `events_secret_stored.providers.order`, `events_secret_stored.channel`, `replaced`, `replaced.sign_in_url_cleared`, `replaced.providers_removed`, `replaced.providers_removed.method`, `replaced.providers_removed.order`, `product`, `preset`, `name`, `role`, `enabled`, `connected`, `audience`, `audience_format`, `channel`, `template`, `identity_verification`, `identity_verification.mode`, `identity_verification.issuer`, `identity_verification.jwks_url`, `identity_verification.audience`, `org_id`, `site_id`, `spaces`, `spaces.id`, `spaces.redeem_url`, `spaces.redeem_urls`, `reader_auth_provider`, `reader_auth_provider.source`, `reader_auth_provider.note`, `reader_auth_provider.method`, `reader_auth_provider.order`, `reader_auth_provider.config`, `reader_auth_provider.config.jwksUrl`, `reader_auth_provider.config.issuer`, `reader_auth_provider.config.clientId`, `reader_auth_providers`, `reader_auth_providers.source`, `reader_auth_providers.method`, `reader_auth_providers.order`, `reader_auth_providers.config`, `reader_auth_providers.backchannel_logout_url`, `principal_claim`, `principal_claim_name`, `ext_claim`, `ext_claim_name`, `claims`, `claims.org`, `claims.org_role`, `claims.public_metadata`, `claims.context`, `extra_claim_names`, `ttl_seconds`, `token_ttl_seconds`, `issuer`, `jwks_url`, `token_schema`, `events_url`, `events_url_default`, `events`, `backchannel_logout_url`, `backchannel_logout_url_default`, `backchannel_logout_source`, `backchannel_logout_client_id`, `oauth_client_id`, `verify_error_report_url`, `cmp`, `cmp.script_url`, `cmp.script_id`, `cmp.site_id`, `cmp.blocking_mode`, `cmp.extra_origins`, `cmp.settings_preset`, `cmp.consent_api`, `cmp.consent_api.global`, `cmp.consent_api.has_method`, `cmp.consent_api.request_method`, `cmp.consent_api.category_map`, `atlas_id_users`, `per_call_audience`, `per_call_audience.param`, `per_call_audience.template`, `per_call_audience.allowed`, `per_call_audience.any_matching`, `per_call_audience.default`, `atlas_id_issuer`, `atlas_id_issuer.issuer`, `atlas_id_issuer.jwks_url`, `external_ref`, `metadata`, `enabled_at`, `updated_at`, `dry_run`, `health`, `health.last_minted_at`, `health.mints_24h`, `health.refusals_24h`, `health.last_refused_at`, `health.last_refused_reason`, `health.verify_errors_24h`, `health.last_verify_error`, `health.last_verify_error.error`, `health.last_verify_error.audience`, `health.last_verify_error.at`, `health.last_verify_error.reported_at`, `health.events`, `health.events.url`, `health.events.endpoint_id`, `health.events.state`, `health.events.failing_since`, `health.events.disabled_at`, `health.events.last_success_at`, `health.events.last_failure`, `health.events.last_failure.at`, `health.events.last_failure.status`, `health.events.last_failure.error`, `health.events.consecutive_failures`, `health.events.success_rate_24h`, `health.events.events`, `health.events.secret_missing`, `health.events.secret_handed_off_at`, `health.events.secret_fingerprint`, `health.events.reason`, `health.events.hint`, `health.events.undelivered_events`, `health.events.oldest_undelivered_at`, `health.events.auto_redelivered`, `health.events.auto_redelivered_at`, `health.backchannel_logout`, `health.backchannel_logout.url`, `health.backchannel_logout.endpoint_id`, `health.backchannel_logout.state`, `health.backchannel_logout.failing_since`, `health.backchannel_logout.disabled_at`, `health.backchannel_logout.last_success_at`, `health.backchannel_logout.last_failure`, `health.backchannel_logout.last_failure.at`, `health.backchannel_logout.last_failure.status`, `health.backchannel_logout.last_failure.error`, `health.backchannel_logout.consecutive_failures`, `health.backchannel_logout.success_rate_24h`, `health.backchannel_logout.events`, `health.backchannel_logout.secret_missing`, `health.backchannel_logout.secret_handed_off_at`, `health.backchannel_logout.secret_fingerprint`, `health.backchannel_logout.reason`, `health.backchannel_logout.hint`, `health.backchannel_logout.undelivered_events`, `health.backchannel_logout.oldest_undelivered_at`, `health.backchannel_logout.auto_redelivered`, `health.backchannel_logout.auto_redelivered_at`.
   """
   def delete_integrations(client, product, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/instance/integrations/{product}", %{"product" => product}, nil, opts)
 
   @doc ~S"""
+  The integration's mint log: every getToken({ for }) attempt, from the browser and from the server call, newest first, with its outcome (ok, or refused with the reason code), the route kind and the user id. No tokens are stored. Kept 7 days. Use it when health.last_minted_at stays null: an empty log means nothing is calling Atlas, a refused row says why.
+
+  `GET /v1/instance/integrations/{product}/mints`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.integration`, `data.id`, `data.at`, `data.route`, `data.outcome`, `data.reason`, `data.user_id`, `data.session_id`.
+  """
+  def get_integrations_mints(client, product, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/integrations/{product}/mints", %{"product" => product}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_integrations_mints`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_integrations_mints(client, product, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/integrations/{product}/mints", %{"product" => product}, opts)
+
+  @doc ~S"""
   The integration's delivery log: event deliveries to events_url and back-channel logout deliveries to backchannel_logout_url, newest first, each with its trace_id. Filter with ?trace= (a 32-hex W3C trace-id) and ?kind=.
 
   `GET /v1/instance/integrations/{product}/deliveries`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `trace`, `kind`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kind`, `data.integration`, `data.id`, `data.url`, `data.event_id`, `data.event_type`, `data.sid`, `data.trace_id`, `data.status`, `data.attempt_number`, `data.http_status`, `data.error`, `data.location`, `data.payload`, `data.response_snippet`, `data.next_retry_at`, `data.delivered_at`, `data.created_at`, `has_more`.
   """
   def get_integrations_deliveries(client, product, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/instance/integrations/{product}/deliveries", %{"product" => product}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_integrations_deliveries/2`, following the cursor page by page.
+  Lazy stream over every item of `get_integrations_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_integrations_deliveries(client, product, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/instance/integrations/{product}/deliveries", %{"product" => product}, opts)
 
   @doc ~S"""
-  Re-send what the integration's event receiver never got: every event since `since` with no successful delivery and no retry still scheduled, including events recorded while the receiver was disabled. Each goes out signed and addressed as of now, with its original event id. Switches a disabled receiver back on. At most 1,000 events per call (`has_more` + `next_since` to continue). Running it again queues nothing new, including two calls at once with no Idempotency-Key. 409 when `since` is older than the 90-day event retention; past the 30-day delivery log Atlas cannot tell what was delivered, so an older `since` can re-send delivered events. 404 when the integration has no event receiver. Honours Idempotency-Key.
+  Re-send what the integration's event receiver never got: every event since `since` with no successful delivery, including events recorded while the receiver was disabled. Each goes out signed and addressed as of now, with its original event id. A failed event already waiting on its retry schedule (for example after the receiver refused it) is not sent twice: its retry is moved to now (`retries_brought_forward`), so calling this again after fixing the receiver re-sends it at once. Switches a disabled receiver back on. At most 1,000 events per call (`has_more` + `next_since` to continue). Delivered events are never re-sent, including with two calls at once and no Idempotency-Key. 409 when `since` is older than the 90-day event retention; past the 30-day delivery log Atlas cannot tell what was delivered, so an older `since` can re-send delivered events. 404 when the integration has no event receiver. Honours Idempotency-Key.
 
   `POST /v1/instance/integrations/{product}/deliveries/redeliver`. Required scope: `instance:write`.
+
+  Body fields: `since` (integer|string, required), `status` (enum).
+  Response fields: `object`, `integration`, `endpoint_id`, `url`, `since`, `events_considered`, `queued`, `retries_brought_forward`, `has_more`, `next_since`, `retention`.
   """
   def post_integrations_deliveries_redeliver(client, product, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/deliveries/redeliver", %{"product" => product}, body, opts)
 
   @doc ~S"""
+  Send a signed webhook.test event to the integration's event receiver only, with its current signing secret, exactly like a real delivery. Use it to confirm a receiver after fixing it, without waiting for a real event. Without ?wait the delivery is queued (201, object webhook_delivery); with ?wait=10s the attempt is made now and the result returned (200, object webhook_test_result: status success | failed, http_status, latency_ms, response_snippet, error_kind, signature_header_sent). A failed attempt is still 200: read status. Audited. 404 when the integration has no event receiver.
+
+  `POST /v1/instance/integrations/{product}/test`. Required scope: `instance:write`.
+
+  Query params (`params:`): `wait`.
+  Response fields: `ok`, `status`, `http_status`, `latency_ms`, `object`, `delivery_id`, `event_id`, `event_type`, `url`, `response_snippet`, `error`, `error_kind`, `signature_header_sent`, `will_retry`, `id`, `note`.
+  """
+  def post_integrations_test(client, product, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/test", %{"product" => product}, nil, opts)
+
+  @doc ~S"""
   Reveal the signing secret of the integration's event receiver, so the service can verify the signature of each delivery. Forumulate's default receiver: a key that strict Standard Webhooks verifiers cannot read, and that no delivery has proven, is replaced here. Audited. 404 when the integration has no event receiver.
 
   `POST /v1/instance/integrations/{product}/events_secret`. Required scope: `instance:write`.
+
+  Response fields: `object`, `integration`, `endpoint_id`, `url`, `secret`.
   """
   def post_integrations_events_secret(client, product, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/events_secret", %{"product" => product}, nil, opts)
@@ -1046,6 +1657,9 @@ defmodule Atlas.Instance do
   Rotate the signing secret of the integration's event receiver. The new secret is revealed exactly once. By default (`overlap_seconds` 0) the old secret stops signing at once. With `overlap_seconds` (at most 604800 = 7 days) every delivery carries two signatures in `Atlas-Signature` (`v1,<new> v1,<old>`, the new one first), so the service verifies with either secret while it deploys the new one; after that only the new secret signs. `previous_secret_expires_at` says when the old secret stops signing (epoch ms), or null when it already has. Audited as integration.<id>.events_secret_rotated. 404 when the integration has no event receiver.
 
   `POST /v1/instance/integrations/{product}/events_secret/rotate`. Required scope: `instance:write`.
+
+  Body fields: `overlap_seconds` (integer).
+  Response fields: `object`, `integration`, `endpoint_id`, `url`, `secret`, `overlap_seconds`, `previous_secret_expires_at`, `warning`.
   """
   def post_integrations_events_secret_rotate(client, product, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/events_secret/rotate", %{"product" => product}, body, opts)
@@ -1054,9 +1668,239 @@ defmodule Atlas.Instance do
   An integration token for a user who signed in with Sign in with Atlas and is not on this instance: send the user's Sign in with Atlas access token. The token's iss is the Sign in with Atlas issuer and sub the subject your app sees; email and name follow the granted scopes. Needs atlas_id_users on the integration and an access token issued to a Sign in with Atlas app of this account.
 
   `POST /v1/instance/integrations/{product}/atlas_id_tokens`. Required scope: `sessions:write`.
+
+  Query params (`params:`): `audience`, `cbid`.
+  Body fields: `access_token` (string, required).
+  Response fields: `object`, `integration`, `product`, `jwt`, `expires_in`, `audience`, `org_id`, `space_id`, `redeem_url`, `issuer`, `jwks_uri`.
   """
   def post_integrations_atlas_id_tokens(client, product, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", %{"product" => product}, body, opts)
+
+  @doc ~S"""
+  The tenant exports of the instance, newest first.
+
+  `GET /v1/instance/exports`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.status`, `data.sections`, `data.counts`, `data.progress`, `data.errors`, `data.bundle_sha256`, `data.bundle_bytes`, `data.signature`, `data.signature_kid`, `data.downloadable`, `data.expires_at`, `data.created_by`, `data.created_at`, `data.completed_at`, `has_more`, `next_cursor`.
+  """
+  def get_exports(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/exports", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_exports`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_exports(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/exports", %{}, opts)
+
+  @doc ~S"""
+  Start a whole-instance export: configuration, roles, organizations, memberships, users (profile, metadata, addresses, linked identities), and the non-secret facts about API keys, provider connections and webhook endpoints. Never in it: password hashes, MFA secrets, recovery codes, API key hashes, provider tokens, signing keys, webhook secrets, or any string in the configuration that looks like a secret (their paths are listed in redacted_paths). Runs as a job (202); the bundle is kept for expires_in_hours (default 24, at most 168). Needs instance:write and users:read. A section of more than 100000 rows fails the job; leave it out of sections and page it with POST /v1/users/search/export. Honours Idempotency-Key. Emits instance_export.completed or .failed.
+
+  `POST /v1/instance/exports`. Required scope: `instance:write`.
+
+  Body fields: `sections` (array), `expires_in_hours` (integer).
+  Response fields: `object`, `id`, `kind`, `status`, `sections`, `counts`, `progress`, `errors`, `bundle_sha256`, `bundle_bytes`, `signature`, `signature_kid`, `downloadable`, `expires_at`, `created_by`, `created_at`, `completed_at`.
+  """
+  def post_exports(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/exports", %{}, body, opts)
+
+  @doc ~S"""
+  The tenant imports of the instance, newest first.
+
+  `GET /v1/instance/imports`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.status`, `data.sections`, `data.counts`, `data.progress`, `data.errors`, `data.bundle_sha256`, `data.bundle_bytes`, `data.signature`, `data.signature_kid`, `data.downloadable`, `data.expires_at`, `data.created_by`, `data.created_at`, `data.completed_at`, `has_more`, `next_cursor`.
+  """
+  def get_imports(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/imports", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_imports`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_imports(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/imports", %{}, opts)
+
+  @doc ~S"""
+  Load an export bundle into THIS instance (meant to be a new one). Runs as a job (202), in dependency order: configuration (validated like an ordinary config patch), roles, organizations, then users with their memberships. Additive and safe to repeat: what exists is left as it is. Users come in without passwords or second factors (they use password reset or another sign-in); webhook endpoints are created switched OFF with a new signing secret nobody has seen (rotate it, then enable); API keys and provider connections are never created (mint and connect them here). sha256, if sent, must match the bundle. Needs instance:write and users:write. Honours Idempotency-Key.
+
+  `POST /v1/instance/imports`. Required scope: `instance:write`.
+
+  Body fields: `bundle` (object, required), `sha256` (string), `sections` (array), `config_mode` (enum).
+  Response fields: `object`, `id`, `kind`, `status`, `sections`, `counts`, `progress`, `errors`, `bundle_sha256`, `bundle_bytes`, `signature`, `signature_kid`, `downloadable`, `expires_at`, `created_by`, `created_at`, `completed_at`.
+  """
+  def post_imports(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/imports", %{}, body, opts)
+
+  @doc ~S"""
+  One export: status, row counts per section, the bundle digest and signature. The bundle itself is not in this body.
+
+  `GET /v1/instance/exports/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `kind`, `status`, `sections`, `counts`, `progress`, `errors`, `bundle_sha256`, `bundle_bytes`, `signature`, `signature_kid`, `downloadable`, `expires_at`, `created_by`, `created_at`, `completed_at`.
+  """
+  def get_exports_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/exports/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  One import: status, what was created / already existed / failed per section, and what could not be placed.
+
+  `GET /v1/instance/imports/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `kind`, `status`, `sections`, `counts`, `progress`, `errors`, `bundle_sha256`, `bundle_bytes`, `signature`, `signature_kid`, `downloadable`, `expires_at`, `created_by`, `created_at`, `completed_at`.
+  """
+  def get_imports_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/imports/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Download the bundle (canonical JSON: keys sorted, so its SHA-256 holds for the bytes you receive). Headers x-atlas-bundle-sha256 and x-atlas-bundle-signature carry the digest and the JWS. Needs instance:read and users:read; audited. 409 until the export finished, and after it expired.
+
+  `GET /v1/instance/exports/{id}/bundle`. Required scope: `instance:read`.
+  """
+  def get_exports_bundle(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/exports/{id}/bundle", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  A signed link to the bundle that works for 15 minutes without a key (hand it to a person or a job that should not hold your secret key). Needs instance:read and users:read; audited.
+
+  `POST /v1/instance/exports/{id}/download_url`. Required scope: `instance:read`.
+
+  Response fields: `object`, `url`, `expires_at`.
+  """
+  def post_exports_download_url(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/exports/{id}/download_url", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Invalidate every signed download link handed out for this export.
+
+  `POST /v1/instance/exports/{id}/revoke_links`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `kind`, `status`, `sections`, `counts`, `progress`, `errors`, `bundle_sha256`, `bundle_bytes`, `signature`, `signature_kid`, `downloadable`, `expires_at`, `created_by`, `created_at`, `completed_at`.
+  """
+  def post_exports_revoke_links(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/exports/{id}/revoke_links", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The instance write budgets: writes (mutating Backend API requests), counter_writes (grant consume, refund and lease release), events and webhook_fanout, each per 60-second window, the mode (observe or enforce), and when a budget was last exceeded.
+
+  `GET /v1/instance/write_budget`. Required scope: `instance:read`.
+
+  Response fields: `object`, `mode`, `window_seconds`, `budgets`, `budgets.writes`, `budgets.writes.limit`, `budgets.writes.default`, `budgets.writes.custom`, `budgets.writes.used_on_this_node`, `budgets.counter_writes`, `budgets.counter_writes.limit`, `budgets.counter_writes.default`, `budgets.counter_writes.custom`, `budgets.counter_writes.used_on_this_node`, `budgets.events`, `budgets.events.limit`, `budgets.events.default`, `budgets.events.custom`, `budgets.events.used_on_this_node`, `budgets.webhook_fanout`, `budgets.webhook_fanout.limit`, `budgets.webhook_fanout.default`, `budgets.webhook_fanout.custom`, `budgets.webhook_fanout.used_on_this_node`, `exceeded_in_window`, `resets_in_seconds`, `last_exceeded_at`, `last_exceeded_budget`, `exceeded_total`, `updated_at`.
+  """
+  def get_write_budget(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/write_budget", %{}, nil, opts)
+
+  @doc ~S"""
+  Set the write-budget mode and any limit. A limit is an integer from 1 to 10,000,000 per minute; null returns one to its default. Unknown fields are refused.
+
+  `PUT /v1/instance/write_budget`. Required scope: `instance:write`.
+
+  Body fields: `mode` (enum), `writes_per_minute` (integer|null), `counter_writes_per_minute` (integer|null), `events_per_minute` (integer|null), `webhook_fanout_per_minute` (integer|null).
+  Response fields: `object`, `mode`, `window_seconds`, `budgets`, `budgets.writes`, `budgets.writes.limit`, `budgets.writes.default`, `budgets.writes.custom`, `budgets.writes.used_on_this_node`, `budgets.counter_writes`, `budgets.counter_writes.limit`, `budgets.counter_writes.default`, `budgets.counter_writes.custom`, `budgets.counter_writes.used_on_this_node`, `budgets.events`, `budgets.events.limit`, `budgets.events.default`, `budgets.events.custom`, `budgets.events.used_on_this_node`, `budgets.webhook_fanout`, `budgets.webhook_fanout.limit`, `budgets.webhook_fanout.default`, `budgets.webhook_fanout.custom`, `budgets.webhook_fanout.used_on_this_node`, `exceeded_in_window`, `resets_in_seconds`, `last_exceeded_at`, `last_exceeded_budget`, `exceeded_total`, `updated_at`.
+  """
+  def put_write_budget(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/instance/write_budget", %{}, body, opts)
+
+  @doc ~S"""
+  Back to the platform defaults in observe mode.
+
+  `DELETE /v1/instance/write_budget`. Required scope: `instance:write`.
+
+  Response fields: `object`, `mode`, `window_seconds`, `budgets`, `budgets.writes`, `budgets.writes.limit`, `budgets.writes.default`, `budgets.writes.custom`, `budgets.writes.used_on_this_node`, `budgets.counter_writes`, `budgets.counter_writes.limit`, `budgets.counter_writes.default`, `budgets.counter_writes.custom`, `budgets.counter_writes.used_on_this_node`, `budgets.events`, `budgets.events.limit`, `budgets.events.default`, `budgets.events.custom`, `budgets.events.used_on_this_node`, `budgets.webhook_fanout`, `budgets.webhook_fanout.limit`, `budgets.webhook_fanout.default`, `budgets.webhook_fanout.custom`, `budgets.webhook_fanout.used_on_this_node`, `exceeded_in_window`, `resets_in_seconds`, `last_exceeded_at`, `last_exceeded_budget`, `exceeded_total`, `updated_at`.
+  """
+  def delete_write_budget(client, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/write_budget", %{}, nil, opts)
+
+  @doc ~S"""
+  The deprecation list, each entry saying whether this instance still calls the deprecated route or sends the deprecated field (`in_use`, `first_seen_at`).
+
+  `GET /v1/instance/deprecations`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.method`, `data.path`, `data.field`, `data.replacement`, `data.announced`, `data.sunset`, `data.days_until_sunset`, `data.in_use`, `data.first_seen_at`, `has_more`, `in_use`, `policy`, `policy.window_months`, `policy.headers`.
+  """
+  def get_deprecations(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/deprecations", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_deprecations`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_deprecations(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/deprecations", %{}, opts)
+
+  @doc ~S"""
+  The configuration snapshots of the instance, newest first. Filter by source: manual, auto, pre_restore (saved before a restore), cli, clone.
+
+  `GET /v1/instance/config_snapshots`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `source`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.version`, `data.label`, `data.source`, `data.sha256`, `data.redacted_paths`, `data.created_by`, `data.created_at`, `data.auth_config`, `data.allowed_origins`, `has_more`, `next_cursor`.
+  """
+  def get_config_snapshots(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/config_snapshots", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_config_snapshots`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_config_snapshots(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/instance/config_snapshots", %{}, opts)
+
+  @doc ~S"""
+  Save the instance's configuration as it is now, with an optional label. Secrets are removed from the copy (their paths are listed in redacted_paths). The worker also saves a snapshot automatically after configuration changes, so you can go back to a state you never named. Needs instance:write. Honours Idempotency-Key. Audited.
+
+  `POST /v1/instance/config_snapshots`. Required scope: `instance:write`.
+
+  Body fields: `label` (string).
+  Response fields: `object`, `id`, `version`, `label`, `source`, `sha256`, `redacted_paths`, `created_by`, `created_at`, `auth_config`, `allowed_origins`.
+  """
+  def post_config_snapshots(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/config_snapshots", %{}, body, opts)
+
+  @doc ~S"""
+  What changed between two configurations, as a list of paths with the value before and after. `from` and `to` are snapshot ids, or `current` for the live configuration (to defaults to current). Secrets never appear; allowed origins are reported separately.
+
+  `GET /v1/instance/config_snapshots/diff`. Required scope: `instance:read`.
+
+  Query params (`params:`): `from`, `to`.
+  Response fields: `object`, `from`, `to`, `changes`, `changes.path`, `changes.before`, `changes.after`, `allowed_origins`, `allowed_origins.before`, `allowed_origins.after`, `unchanged`.
+  """
+  def get_config_snapshots_diff(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/config_snapshots/diff", %{}, nil, opts)
+
+  @doc ~S"""
+  One snapshot with its configuration (auth_config and allowed_origins). Secrets are never in it.
+
+  `GET /v1/instance/config_snapshots/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `version`, `label`, `source`, `sha256`, `redacted_paths`, `created_by`, `created_at`, `auth_config`, `allowed_origins`.
+  """
+  def get_config_snapshots_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/instance/config_snapshots/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Delete one snapshot. Audited.
+
+  `DELETE /v1/instance/config_snapshots/{id}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `deleted`.
+  """
+  def delete_config_snapshots(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/instance/config_snapshots/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Put a snapshot back: the configuration returns to what it was, the secrets the instance holds today stay, and the state being replaced is first saved as a pre_restore snapshot so the restore can be undone the same way. dry_run: true returns the changes and writes nothing; send its current_sha256 as expected_sha256 to apply exactly what you saw (409 if the configuration moved). Allowed origins are left alone unless include_allowed_origins is true. The restored configuration must pass the same checks as any configuration write (422 otherwise). Needs instance:write. Honours Idempotency-Key. Audited. Emits config_snapshot.restored.
+
+  `POST /v1/instance/config_snapshots/{id}/restore`. Required scope: `instance:write`.
+
+  Body fields: `dry_run` (boolean), `include_allowed_origins` (boolean), `expected_sha256` (string).
+  Response fields: `object`, `snapshot_id`, `version`, `dry_run`, `applied`, `current_sha256`, `changes`, `changes.path`, `changes.before`, `changes.after`, `allowed_origins_changed`.
+  """
+  def post_config_snapshots_restore(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/instance/config_snapshots/{id}/restore", %{"id" => id}, body, opts)
 
   @doc false
   def __operations__, do: [
@@ -1067,8 +1911,20 @@ defmodule Atlas.Instance do
     {:get_privacy_orchestrator, :get, "/v1/instance/privacy_orchestrator", 0, false, false},
     {:put_privacy_orchestrator, :put, "/v1/instance/privacy_orchestrator", 0, true, false},
     {:delete_privacy_orchestrator, :delete, "/v1/instance/privacy_orchestrator", 0, false, false},
+    {:get_privacy_orchestrator_cases, :get, "/v1/instance/privacy_orchestrator/cases", 0, false, true},
+    {:post_privacy_orchestrator_cases_retry, :post, "/v1/instance/privacy_orchestrator/cases/{id}/retry", 1, false, false},
+    {:post_privacy_orchestrator_cases_by_id_dismiss, :post, "/v1/instance/privacy_orchestrator/cases/{id}/dismiss", 1, true, false},
+    {:post_privacy_orchestrator_cases_dismiss, :post, "/v1/instance/privacy_orchestrator/cases/dismiss", 0, true, false},
     {:get_privacy_integrations, :get, "/v1/instance/privacy_integrations", 0, false, false},
     {:post_privacy_integrations_connect, :post, "/v1/instance/privacy_integrations/connect", 0, true, false},
+    {:get_scopes, :get, "/v1/instance/scopes", 0, false, true},
+    {:put_scopes, :put, "/v1/instance/scopes", 0, true, false},
+    {:get_impersonation_policy, :get, "/v1/instance/impersonation_policy", 0, false, false},
+    {:put_impersonation_policy, :put, "/v1/instance/impersonation_policy", 0, true, false},
+    {:get_org_role_entitlements, :get, "/v1/instance/org_role_entitlements", 0, false, false},
+    {:put_org_role_entitlements, :put, "/v1/instance/org_role_entitlements", 0, true, false},
+    {:get_org_departure_policy, :get, "/v1/instance/org_departure_policy", 0, false, false},
+    {:put_org_departure_policy, :put, "/v1/instance/org_departure_policy", 0, true, false},
     {:list, :get, "/v1/instance", 0, false, false},
     {:update, :patch, "/v1/instance", 0, true, false},
     {:get_signing_keys, :get, "/v1/instance/signing_keys", 0, false, true},
@@ -1097,6 +1953,8 @@ defmodule Atlas.Instance do
     {:delete_kerberos_secret, :delete, "/v1/instance/kerberos_secret", 0, false, false},
     {:put_ldap_connections_bind_password, :put, "/v1/instance/ldap_connections/{connectionId}/bind_password", 1, true, false},
     {:delete_ldap_connections_bind_password, :delete, "/v1/instance/ldap_connections/{connectionId}/bind_password", 1, false, false},
+    {:get_user_traits_schema, :get, "/v1/instance/user_traits_schema", 0, false, false},
+    {:put_user_traits_schema, :put, "/v1/instance/user_traits_schema", 0, true, false},
     {:get_sign_in_with_atlas, :get, "/v1/instance/sign_in_with_atlas", 0, false, false},
     {:update_sign_in_with_atlas, :patch, "/v1/instance/sign_in_with_atlas", 0, true, false},
     {:get_hosted_pages, :get, "/v1/instance/hosted_pages", 0, false, false},
@@ -1106,6 +1964,7 @@ defmodule Atlas.Instance do
     {:delete_proxy_secret, :delete, "/v1/instance/proxy_secret", 0, false, false},
     {:get_unknown_fields_report, :get, "/v1/instance/unknown_fields_report", 0, false, true},
     {:get_preflight_acks, :get, "/v1/instance/preflight/acks", 0, false, true},
+    {:post_preflight_acks, :post, "/v1/instance/preflight/acks", 0, true, false},
     {:put_preflight_acks, :put, "/v1/instance/preflight/acks/{code}", 1, true, false},
     {:delete_preflight_acks, :delete, "/v1/instance/preflight/acks/{code}", 1, false, false},
     {:get_preflight, :get, "/v1/instance/preflight", 0, false, false},
@@ -1114,6 +1973,9 @@ defmodule Atlas.Instance do
     {:get_sub_processors, :get, "/v1/instance/sub_processors", 0, false, false},
     {:get_connections, :get, "/v1/instance/connections", 0, false, true},
     {:post_move_origin, :post, "/v1/instance/move_origin", 0, true, false},
+    {:get_signing_key_schedule, :get, "/v1/instance/signing_key_schedule", 0, false, false},
+    {:put_signing_key_schedule, :put, "/v1/instance/signing_key_schedule", 0, true, false},
+    {:delete_signing_key_schedule, :delete, "/v1/instance/signing_key_schedule", 0, false, false},
     {:get_page_templates, :get, "/v1/instance/page_templates", 0, false, true},
     {:get_page_templates_by_page, :get, "/v1/instance/page_templates/{page}", 1, false, false},
     {:put_page_templates, :put, "/v1/instance/page_templates/{page}", 1, true, false},
@@ -1156,14 +2018,20 @@ defmodule Atlas.Instance do
     {:delete_hooks_before_user_create, :delete, "/v1/instance/hooks/before_user_create", 0, false, false},
     {:post_hooks_before_user_create_test, :post, "/v1/instance/hooks/before_user_create/test", 0, false, false},
     {:get_hooks_before_user_create_calls, :get, "/v1/instance/hooks/before_user_create/calls", 0, false, true},
+    {:get_app_event_types, :get, "/v1/instance/app_event_types", 0, false, true},
+    {:put_app_event_types, :put, "/v1/instance/app_event_types", 0, true, false},
     {:get_secret_keys, :get, "/v1/instance/secret_keys", 0, false, true},
     {:post_secret_keys, :post, "/v1/instance/secret_keys", 0, true, false},
     {:get_data_key_provider, :get, "/v1/instance/data_key_provider", 0, false, false},
     {:post_data_key_provider, :post, "/v1/instance/data_key_provider", 0, false, false},
     {:put_data_key_provider, :put, "/v1/instance/data_key_provider", 0, true, false},
     {:delete_data_key_provider, :delete, "/v1/instance/data_key_provider", 0, false, false},
+    {:delete_data_key_provider_with_body, :delete, "/v1/instance/data_key_provider", 0, true, false},
     {:post_data_key_provider_rotate, :post, "/v1/instance/data_key_provider/rotate", 0, false, false},
     {:post_data_key_provider_rewrap, :post, "/v1/instance/data_key_provider/rewrap", 0, true, false},
+    {:post_data_key_provider_rotation_drill, :post, "/v1/instance/data_key_provider/rotation_drill", 0, true, false},
+    {:get_data_key_provider_rotation_drills, :get, "/v1/instance/data_key_provider/rotation_drills", 0, false, true},
+    {:get_data_key_provider_rotation_drills_by_id, :get, "/v1/instance/data_key_provider/rotation_drills/{id}", 1, false, false},
     {:post_data_key_provider_check, :post, "/v1/instance/data_key_provider/check", 0, false, false},
     {:get_cookie_consent, :get, "/v1/instance/cookie_consent", 0, false, false},
     {:put_cookie_consent, :put, "/v1/instance/cookie_consent", 0, true, false},
@@ -1173,10 +2041,31 @@ defmodule Atlas.Instance do
     {:get_integrations_by_product, :get, "/v1/instance/integrations/{product}", 1, false, false},
     {:put_integrations, :put, "/v1/instance/integrations/{product}", 1, true, false},
     {:delete_integrations, :delete, "/v1/instance/integrations/{product}", 1, false, false},
+    {:get_integrations_mints, :get, "/v1/instance/integrations/{product}/mints", 1, false, true},
     {:get_integrations_deliveries, :get, "/v1/instance/integrations/{product}/deliveries", 1, false, true},
     {:post_integrations_deliveries_redeliver, :post, "/v1/instance/integrations/{product}/deliveries/redeliver", 1, true, false},
+    {:post_integrations_test, :post, "/v1/instance/integrations/{product}/test", 1, false, false},
     {:post_integrations_events_secret, :post, "/v1/instance/integrations/{product}/events_secret", 1, false, false},
     {:post_integrations_events_secret_rotate, :post, "/v1/instance/integrations/{product}/events_secret/rotate", 1, true, false},
-    {:post_integrations_atlas_id_tokens, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", 1, true, false}
+    {:post_integrations_atlas_id_tokens, :post, "/v1/instance/integrations/{product}/atlas_id_tokens", 1, true, false},
+    {:get_exports, :get, "/v1/instance/exports", 0, false, true},
+    {:post_exports, :post, "/v1/instance/exports", 0, true, false},
+    {:get_imports, :get, "/v1/instance/imports", 0, false, true},
+    {:post_imports, :post, "/v1/instance/imports", 0, true, false},
+    {:get_exports_by_id, :get, "/v1/instance/exports/{id}", 1, false, false},
+    {:get_imports_by_id, :get, "/v1/instance/imports/{id}", 1, false, false},
+    {:get_exports_bundle, :get, "/v1/instance/exports/{id}/bundle", 1, false, false},
+    {:post_exports_download_url, :post, "/v1/instance/exports/{id}/download_url", 1, false, false},
+    {:post_exports_revoke_links, :post, "/v1/instance/exports/{id}/revoke_links", 1, false, false},
+    {:get_write_budget, :get, "/v1/instance/write_budget", 0, false, false},
+    {:put_write_budget, :put, "/v1/instance/write_budget", 0, true, false},
+    {:delete_write_budget, :delete, "/v1/instance/write_budget", 0, false, false},
+    {:get_deprecations, :get, "/v1/instance/deprecations", 0, false, true},
+    {:get_config_snapshots, :get, "/v1/instance/config_snapshots", 0, false, true},
+    {:post_config_snapshots, :post, "/v1/instance/config_snapshots", 0, true, false},
+    {:get_config_snapshots_diff, :get, "/v1/instance/config_snapshots/diff", 0, false, false},
+    {:get_config_snapshots_by_id, :get, "/v1/instance/config_snapshots/{id}", 1, false, false},
+    {:delete_config_snapshots, :delete, "/v1/instance/config_snapshots/{id}", 1, false, false},
+    {:post_config_snapshots_restore, :post, "/v1/instance/config_snapshots/{id}/restore", 1, true, false}
   ]
 end

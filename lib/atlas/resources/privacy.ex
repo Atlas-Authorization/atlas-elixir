@@ -5,7 +5,8 @@ defmodule Atlas.Privacy do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,10 @@ defmodule Atlas.Privacy do
   Is this person a user of this instance? Lookup order: `atlas.sub` (with `iss`) alone when present, then `atlas.ext`, then `emails` (verified first, then unverified). An erased user, a foreign issuer or no match is `no_match`. Answers `X-Version: 2`; send a W3C `traceparent` to correlate (its trace-id is stored on the request and returned as `trace`). Errors carry `{ error, field }` next to `errors`.
 
   `POST /v1/privacy/lookup`. Required scope: `privacy:execute`.
+
+  Body fields: `emails` (array), `atlas` (object).
+  Nested body fields: `atlas.iss`, `atlas.sub`, `atlas.ext`, `atlas.principal`.
+  Response fields: `object`, `status`, `subjectId`, `matchedBy`, `detail`, `principal`, `principalMatched`, `canary`.
   """
   def post_lookup(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/privacy/lookup", %{}, body, opts)
@@ -21,6 +26,9 @@ defmodule Atlas.Privacy do
   Open a request for a subject from a lookup. `type` takes the canonical words or Atlas's aliases; the answer echoes `canonicalType`. A deletion or closure is `scheduled` until `executeAfter` (default: the instance erasure grace) and nothing is erased before it; restriction and rectification wait for an operator. The same `caseId` (or an erasure already in flight for the person) returns the existing request (200) instead of a second one (201). With `privacy:grants:revoke`, an erasure also revokes the Sign in with Atlas grant (step `grant_revoke`); without it the step is `skipped: insufficient_scope`. Send `Idempotency-Key` (16–128 characters); a retry with the same key replays the first answer, a different body is a 409. Answers `X-Version: 2`; send a W3C `traceparent` to correlate (its trace-id is stored on the request and returned as `trace`). Errors carry `{ error, field }` next to `errors`.
 
   `POST /v1/privacy/requests`. Required scope: `privacy:execute`.
+
+  Body fields: `subjectId` (string, required), `type` (enum, required), `executeAfter` (any), `caseId` (string, required), `reason` (string).
+  Response fields: `object`, `id`, `type`, `canonicalType`, `requestedType`, `status`, `subjectId`, `caseId`, `executeAfter`, `eta`, `detail`, `retention`, `retention.category`, `retention.basis`, `retention.until`, `steps`, `steps.name`, `steps.status`, `steps.reason`, `steps.at`, `trace`, `canary`, `createdAt`, `updatedAt`, `completedAt`, `result`.
   """
   def post_requests(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/privacy/requests", %{}, body, opts)
@@ -29,6 +37,8 @@ defmodule Atlas.Privacy do
   Read a request, with its `result` once done: an access package inline (`result.body`, with `bytes` and `sha256`), or the erasure record (`erased_at`, `personal_data_scrubbed_at`). Answers `X-Version: 2`; send a W3C `traceparent` to correlate (its trace-id is stored on the request and returned as `trace`). Errors carry `{ error, field }` next to `errors`.
 
   `GET /v1/privacy/requests/{id}`. Required scope: `privacy:execute`.
+
+  Response fields: `object`, `id`, `type`, `canonicalType`, `requestedType`, `status`, `subjectId`, `caseId`, `executeAfter`, `eta`, `detail`, `retention`, `retention.category`, `retention.basis`, `retention.until`, `steps`, `steps.name`, `steps.status`, `steps.reason`, `steps.at`, `trace`, `canary`, `createdAt`, `updatedAt`, `completedAt`, `result`.
   """
   def get_requests(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/privacy/requests/{id}", %{"id" => id}, nil, opts)
@@ -37,6 +47,8 @@ defmodule Atlas.Privacy do
   Cancel a request that has not run yet (`scheduled` or `pending`): nothing is erased, the account stays, and a case Atlas opened at its own orchestrator is cancelled there too. Cancelling a cancelled request is a no-op; a request already running or done is a 409. Send `Idempotency-Key` (16–128 characters); a retry with the same key replays the first answer, a different body is a 409. Answers `X-Version: 2`; send a W3C `traceparent` to correlate (its trace-id is stored on the request and returned as `trace`). Errors carry `{ error, field }` next to `errors`.
 
   `POST /v1/privacy/requests/{id}/cancel`. Required scope: `privacy:execute`.
+
+  Response fields: `object`, `id`, `type`, `canonicalType`, `requestedType`, `status`, `subjectId`, `caseId`, `executeAfter`, `eta`, `detail`, `retention`, `retention.category`, `retention.basis`, `retention.until`, `steps`, `steps.name`, `steps.status`, `steps.reason`, `steps.at`, `trace`, `canary`, `createdAt`, `updatedAt`, `completedAt`, `result`.
   """
   def post_requests_cancel(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/privacy/requests/{id}/cancel", %{"id" => id}, nil, opts)

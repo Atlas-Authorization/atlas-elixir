@@ -5,7 +5,8 @@ defmodule Atlas.PasskeyApi do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.PasskeyApi do
   Start registering a passkey for one of your users. Returns WebAuthn creation options for the browser.
 
   `POST /v1/passkey_api/registration/init`. Required scope: `passkey_api:write`.
+
+  Body fields: `user_id` (string, required), `username` (string), `display_name` (string).
+  Response fields: `object`, `handle`, `options`.
   """
   def post_registration_init(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/passkey_api/registration/init", %{}, body, opts)
@@ -21,6 +25,9 @@ defmodule Atlas.PasskeyApi do
   Verify the browser’s attestation and store the passkey for the user. 409 if the credential is already registered; 403 if the authenticator is blocked by the passkey policy.
 
   `POST /v1/passkey_api/registration/finalize`. Required scope: `passkey_api:write`.
+
+  Body fields: `user_id` (string, required), `challenge` (string, required), `attestation_object` (string, required), `client_data_json` (string, required), `name` (string), `transports` (array).
+  Response fields: `object`, `id`, `user_id`, `credential_id`, `name`, `aaguid`, `backed_up`, `transports`, `last_used_at`, `created_at`.
   """
   def post_registration_finalize(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/passkey_api/registration/finalize", %{}, body, opts)
@@ -29,6 +36,9 @@ defmodule Atlas.PasskeyApi do
   Start a passkey login. With user_id the user’s credentials are listed; without it the login is discoverable and the credential names the user.
 
   `POST /v1/passkey_api/login/init`. Required scope: `passkey_api:write`.
+
+  Body fields: `user_id` (string).
+  Response fields: `object`, `handle`, `options`.
   """
   def post_login_init(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/passkey_api/login/init", %{}, body, opts)
@@ -37,6 +47,9 @@ defmodule Atlas.PasskeyApi do
   Verify the browser’s assertion. Returns the user_id the passkey belongs to; your backend then starts its own session. Pass user_id to require that exact user. Challenges are single use.
 
   `POST /v1/passkey_api/login/finalize`. Required scope: `passkey_api:write`.
+
+  Body fields: `handle` (string, required), `challenge` (string, required), `credential_id` (string, required), `authenticator_data` (string, required), `client_data_json` (string, required), `signature` (string, required), `user_id` (string).
+  Response fields: `object`, `verified`, `user_id`, `credential_id`, `passkey_id`, `user_verified`, `cloned_warning`.
   """
   def post_login_finalize(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/passkey_api/login/finalize", %{}, body, opts)
@@ -45,12 +58,15 @@ defmodule Atlas.PasskeyApi do
   List the passkeys registered for one of your users.
 
   `GET /v1/passkey_api/users/{userId}/passkeys`. Required scope: `passkey_api:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.credential_id`, `data.name`, `data.aaguid`, `data.backed_up`, `data.transports`, `data.last_used_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_users_passkeys(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/passkey_api/users/{userId}/passkeys", %{"userId" => user_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_users_passkeys/2`, following the cursor page by page.
+  Lazy stream over every item of `get_users_passkeys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_users_passkeys(client, user_id, opts \\ []),
@@ -60,6 +76,8 @@ defmodule Atlas.PasskeyApi do
   Delete one of your user’s passkeys.
 
   `DELETE /v1/passkey_api/users/{userId}/passkeys/{id}`. Required scope: `passkey_api:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_users_passkeys(client, user_id, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/passkey_api/users/{userId}/passkeys/{id}", %{"userId" => user_id, "id" => id}, nil, opts)
@@ -68,6 +86,8 @@ defmodule Atlas.PasskeyApi do
   Passkeys stored through the Passkey API on this instance (the metered quantity).
 
   `GET /v1/passkey_api/usage`. Required scope: `passkey_api:read`.
+
+  Response fields: `object`, `passkeys`.
   """
   def get_usage(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/passkey_api/usage", %{}, nil, opts)

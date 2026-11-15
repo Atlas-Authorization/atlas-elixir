@@ -5,7 +5,8 @@ defmodule Atlas.JwtTemplates do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.JwtTemplates do
   List the defined JWT templates and their claim maps.
 
   `GET /v1/jwt_templates`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.name`, `data.claims`, `data.settings`, `data.settings.lifetime_seconds`, `data.settings.audience`, `data.settings.algorithm`, `data.settings.has_signing_secret`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jwt_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.JwtTemplates do
   Define a named custom-claims JWT template. These are minted ON DEMAND via POST /v1/sessions/{id}/tokens/{template} (Clerk getToken({template}) parity) — they do NOT alter the session cookie. To shape the session token itself, use auth_config (entitlements → `pla`/`fea`, identityTraits) and public_metadata (`progression`/`tier`/`flair`); see session-tokens-and-claims. Claims resolve per session at mint time (`{{org.id}}`, `{{org.membership_id}}`, `{{org.role}}` follow the session's active organization). Optional `settings.lifetime_seconds` (10–86400, default 60) sets the token lifetime. `preset` starts from a starter template (supabase, hasura, organization_membership, chatly-visitor, firebase). Every template token carries Atlas's own `anon` (true for a guest account) and `token_use: "template"`, which a template can never set. Reserved claims and private fields are refused.
 
   `POST /v1/jwt_templates`. Required scope: `instance:write`.
+
+  Body fields: `name` (string), `preset` (enum), `claims` (object), `settings` (object).
+  Nested body fields: `settings.lifetime_seconds`, `settings.audience`, `settings.algorithm`, `settings.signing_secret`.
+  Response fields: `object`, `name`, `claims`, `settings`, `settings.lifetime_seconds`, `settings.audience`, `settings.algorithm`, `settings.has_signing_secret`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/jwt_templates", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.JwtTemplates do
   Fetch one JWT template by name.
 
   `GET /v1/jwt_templates/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `name`, `claims`, `settings`, `settings.lifetime_seconds`, `settings.audience`, `settings.algorithm`, `settings.has_signing_secret`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jwt_templates/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.JwtTemplates do
   Replace a JWT template claim map and/or merge its settings (lifetime_seconds, audience, algorithm). Send claims, settings or both; omitted parts are kept. Reserved claims and private fields are refused.
 
   `PATCH /v1/jwt_templates/{id}`. Required scope: `instance:write`.
+
+  Body fields: `claims` (object), `settings` (object).
+  Nested body fields: `settings.lifetime_seconds`, `settings.audience`, `settings.algorithm`, `settings.signing_secret`.
+  Response fields: `object`, `name`, `claims`, `settings`, `settings.lifetime_seconds`, `settings.audience`, `settings.algorithm`, `settings.has_signing_secret`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/jwt_templates/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.JwtTemplates do
   Delete a JWT template so it can no longer be minted.
 
   `DELETE /v1/jwt_templates/{id}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `name`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/jwt_templates/{id}", %{"id" => id}, nil, opts)

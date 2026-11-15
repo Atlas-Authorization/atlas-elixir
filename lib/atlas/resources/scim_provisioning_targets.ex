@@ -5,7 +5,8 @@ defmodule Atlas.ScimProvisioningTargets do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ScimProvisioningTargets do
   List outbound SCIM provisioning targets (downstream SCIM 2.0 endpoints Atlas pushes users to). The downstream bearer is never returned, only has_bearer_token.
 
   `GET /v1/scim_provisioning_targets`. Required scope: `scim_provisioning:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.kind`, `data.connector_config`, `data.has_credentials`, `data.base_url`, `data.has_bearer_token`, `data.enabled`, `data.attribute_mapping`, `data.deprovision_action`, `data.status`, `data.cursor`, `data.consecutive_failures`, `data.last_error`, `data.last_synced_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_targets", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.ScimProvisioningTargets do
   Create an outbound SCIM provisioning target, optionally from a preset (preset + preset_params instead of base_url). base_url must be https; the downstream bearer_token is write-only; the cursor starts at the current event so only new users forward (use sync_user to backfill).
 
   `POST /v1/scim_provisioning_targets`. Required scope: `scim_provisioning:write`.
+
+  Body fields: `kind` (enum), `connector_config` (object), `credentials` (object), `name` (string, required), `base_url` (string), `bearer_token` (string), `attribute_mapping` (object), `deprovision_action` (enum), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `kind`, `connector_config`, `has_credentials`, `base_url`, `has_bearer_token`, `enabled`, `attribute_mapping`, `deprovision_action`, `status`, `cursor`, `consecutive_failures`, `last_error`, `last_synced_at`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.ScimProvisioningTargets do
   Read one outbound SCIM provisioning target, including its sync status, cursor and last error. Reports has_bearer_token only, never the bearer value.
 
   `GET /v1/scim_provisioning_targets/{id}`. Required scope: `scim_provisioning:read`.
+
+  Response fields: `object`, `id`, `name`, `kind`, `connector_config`, `has_credentials`, `base_url`, `has_bearer_token`, `enabled`, `attribute_mapping`, `deprovision_action`, `status`, `cursor`, `consecutive_failures`, `last_error`, `last_synced_at`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_targets/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.ScimProvisioningTargets do
   Update a target's name, base_url (https), attribute_mapping, deprovision_action, enabled flag, or status (active/paused). A bearer_token left out is preserved.
 
   `PATCH /v1/scim_provisioning_targets/{id}`. Required scope: `scim_provisioning:write`.
+
+  Body fields: `connector_config` (object), `credentials` (object), `name` (string), `base_url` (string), `bearer_token` (string), `attribute_mapping` (object), `deprovision_action` (enum), `enabled` (boolean), `status` (enum).
+  Response fields: `object`, `id`, `name`, `kind`, `connector_config`, `has_credentials`, `base_url`, `has_bearer_token`, `enabled`, `attribute_mapping`, `deprovision_action`, `status`, `cursor`, `consecutive_failures`, `last_error`, `last_synced_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/scim_provisioning_targets/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.ScimProvisioningTargets do
   Delete an outbound SCIM provisioning target. Pushing stops immediately; no further users are sent downstream.
 
   `DELETE /v1/scim_provisioning_targets/{id}`. Required scope: `scim_provisioning:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/scim_provisioning_targets/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.ScimProvisioningTargets do
   Verify connectivity and auth to the downstream (GET ServiceProviderConfig) with the target's real bearer, and return the result. Writes no data.
 
   `POST /v1/scim_provisioning_targets/{id}/test`. Required scope: `scim_provisioning:write`.
+
+  Response fields: `ok`, `status`, `error`.
   """
   def post_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets/{id}/test", %{"id" => id}, nil, opts)
@@ -68,6 +84,9 @@ defmodule Atlas.ScimProvisioningTargets do
   Force a single user's outbound sync now (backfill / re-push). A first sync POSTs and stores the remote id; a re-sync PUTs the same id. A downstream failure is reported, never thrown.
 
   `POST /v1/scim_provisioning_targets/{id}/sync_user`. Required scope: `scim_provisioning:write`.
+
+  Body fields: `user_id` (string, required).
+  Response fields: `action`, `ok`, `status`, `remote_id`, `error`.
   """
   def post_sync_user(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets/{id}/sync_user", %{"id" => id}, body, opts)
@@ -76,6 +95,9 @@ defmodule Atlas.ScimProvisioningTargets do
   Force a single group's (organization's) outbound sync now to the downstream /Groups. Members are the org's memberships, but only users already provisioned to this target (unprovisioned members are skipped). A first sync POSTs and stores the remote id; a re-sync PUTs the same id. A downstream failure is reported, never thrown.
 
   `POST /v1/scim_provisioning_targets/{id}/sync_group`. Required scope: `scim_provisioning:write`.
+
+  Body fields: `organization_id` (string, required).
+  Response fields: `action`, `ok`, `status`, `remote_id`, `error`.
   """
   def post_sync_group(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets/{id}/sync_group", %{"id" => id}, body, opts)
@@ -84,12 +106,15 @@ defmodule Atlas.ScimProvisioningTargets do
   The target's provisioning log, newest first (30 days): one entry per push with the operation, the downstream status and the error. Filter with failures=true or resource_id.
 
   `GET /v1/scim_provisioning_targets/{id}/logs`. Required scope: `scim_provisioning:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `failures`, `resource_id`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.resource_type`, `data.resource_id`, `data.operation`, `data.ok`, `data.status`, `data.remote_id`, `data.error`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_logs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_targets/{id}/logs", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_logs/2`, following the cursor page by page.
+  Lazy stream over every item of `get_logs`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_logs(client, id, opts \\ []),
@@ -99,12 +124,15 @@ defmodule Atlas.ScimProvisioningTargets do
   The failed-provision inbox: users and organizations whose last push to this target failed, with the error and the number of consecutive attempts.
 
   `GET /v1/scim_provisioning_targets/{id}/failures`. Required scope: `scim_provisioning:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.resource_type`, `data.resource_id`, `data.remote_id`, `data.error`, `data.attempts`, `data.last_attempt_at`, `has_more`.
   """
   def get_failures(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_targets/{id}/failures", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_failures/2`, following the cursor page by page.
+  Lazy stream over every item of `get_failures`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_failures(client, id, opts \\ []),
@@ -114,6 +142,8 @@ defmodule Atlas.ScimProvisioningTargets do
   Retry failed users and groups now (up to 50), or one with resource_type and resource_id. Each goes through the same sync as sync_user and sync_group; the result says how each went.
 
   `POST /v1/scim_provisioning_targets/{id}/retry_failed`. Required scope: `scim_provisioning:write`.
+
+  Body fields: `resource_type` (enum), `resource_id` (string).
   """
   def post_retry_failed(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_provisioning_targets/{id}/retry_failed", %{"id" => id}, body, opts)

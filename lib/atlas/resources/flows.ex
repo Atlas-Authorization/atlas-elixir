@@ -5,7 +5,8 @@ defmodule Atlas.Flows do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Flows do
   The sign-in journeys.
 
   `GET /v1/flows`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.is_default`, `data.applications`, `data.enabled`, `data.abandon_after_hours`, `data.active_version`, `data.latest_version`, `data.definition`, `data.definition.steps`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/flows", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.Flows do
   Create a sign-in journey (version 1, active unless activate is false). Steps run top to bottom once a sign-in has passed its factors: refusals (deny, require_method, require_mfa), required actions the user must finish first, Action calls that may refuse, session claims and the redirect after sign-in. Action steps must name workflow_step Actions. → 201.
 
   `POST /v1/flows`. Required scope: `actions:write`.
+
+  Body fields: `name` (string, required), `description` (string|null), `is_default` (boolean), `applications` (array), `enabled` (boolean), `definition` (object, required), `activate` (boolean), `abandon_after_hours` (integer|null).
+  Nested body fields: `definition.steps`, `definition.steps.id`, `definition.steps.on`, `definition.steps.i18n`, `definition.steps.type`, `definition.steps.when`, `definition.steps.methods`, `definition.steps.action`, `definition.steps.url`, `definition.steps.action_id`, `definition.steps.claim`, `definition.steps.value`, `definition.steps.message`, `definition.steps.title`, `definition.steps.intro`, `definition.steps.fields`, `definition.steps.once`, `definition.steps.if`, `definition.steps.then`, `definition.steps.else`, `definition.steps.delay_seconds`, `definition.steps.subject`, `definition.steps.body`, `definition.steps.channel`, `definition.steps.sms_body`, `definition.steps.flow_id`.
+  Response fields: `object`, `id`, `name`, `description`, `is_default`, `applications`, `enabled`, `abandon_after_hours`, `active_version`, `latest_version`, `definition`, `definition.steps`, `definition.steps.id`, `definition.steps.on`, `definition.steps.i18n`, `definition.steps.type`, `definition.steps.when`, `definition.steps.methods`, `definition.steps.action`, `definition.steps.url`, `definition.steps.action_id`, `definition.steps.claim`, `definition.steps.value`, `definition.steps.message`, `definition.steps.title`, `definition.steps.intro`, `definition.steps.fields`, `definition.steps.once`, `definition.steps.if`, `definition.steps.then`, `definition.steps.else`, `definition.steps.delay_seconds`, `definition.steps.subject`, `definition.steps.body`, `definition.steps.channel`, `definition.steps.sms_body`, `definition.steps.flow_id`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/flows", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.Flows do
   One journey with its active definition (else the latest).
 
   `GET /v1/flows/{id}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `id`, `name`, `description`, `is_default`, `applications`, `enabled`, `abandon_after_hours`, `active_version`, `latest_version`, `definition`, `definition.steps`, `definition.steps.id`, `definition.steps.on`, `definition.steps.i18n`, `definition.steps.type`, `definition.steps.when`, `definition.steps.methods`, `definition.steps.action`, `definition.steps.url`, `definition.steps.action_id`, `definition.steps.claim`, `definition.steps.value`, `definition.steps.message`, `definition.steps.title`, `definition.steps.intro`, `definition.steps.fields`, `definition.steps.once`, `definition.steps.if`, `definition.steps.then`, `definition.steps.else`, `definition.steps.delay_seconds`, `definition.steps.subject`, `definition.steps.body`, `definition.steps.channel`, `definition.steps.sms_body`, `definition.steps.flow_id`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/flows/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.Flows do
   Change a journey. A definition becomes the next version (immutable), active unless activate is false.
 
   `PATCH /v1/flows/{id}`. Required scope: `actions:write`.
+
+  Body fields: `name` (string), `description` (string|null), `is_default` (boolean), `applications` (array), `enabled` (boolean), `definition` (object), `activate` (boolean), `abandon_after_hours` (integer|null).
+  Nested body fields: `definition.steps`, `definition.steps.id`, `definition.steps.on`, `definition.steps.i18n`, `definition.steps.type`, `definition.steps.when`, `definition.steps.methods`, `definition.steps.action`, `definition.steps.url`, `definition.steps.action_id`, `definition.steps.claim`, `definition.steps.value`, `definition.steps.message`, `definition.steps.title`, `definition.steps.intro`, `definition.steps.fields`, `definition.steps.once`, `definition.steps.if`, `definition.steps.then`, `definition.steps.else`, `definition.steps.delay_seconds`, `definition.steps.subject`, `definition.steps.body`, `definition.steps.channel`, `definition.steps.sms_body`, `definition.steps.flow_id`.
+  Response fields: `object`, `id`, `name`, `description`, `is_default`, `applications`, `enabled`, `abandon_after_hours`, `active_version`, `latest_version`, `definition`, `definition.steps`, `definition.steps.id`, `definition.steps.on`, `definition.steps.i18n`, `definition.steps.type`, `definition.steps.when`, `definition.steps.methods`, `definition.steps.action`, `definition.steps.url`, `definition.steps.action_id`, `definition.steps.claim`, `definition.steps.value`, `definition.steps.message`, `definition.steps.title`, `definition.steps.intro`, `definition.steps.fields`, `definition.steps.once`, `definition.steps.if`, `definition.steps.then`, `definition.steps.else`, `definition.steps.delay_seconds`, `definition.steps.subject`, `definition.steps.body`, `definition.steps.channel`, `definition.steps.sms_body`, `definition.steps.flow_id`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/flows/{id}", %{"id" => id}, body, opts)
@@ -60,12 +74,15 @@ defmodule Atlas.Flows do
   Every version of a journey, newest first.
 
   `GET /v1/flows/{id}/versions`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.version`, `data.definition`, `data.definition.steps`, `data.created_by`, `data.created_at`.
   """
   def get_versions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/flows/{id}/versions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_versions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_versions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_versions(client, id, opts \\ []),
@@ -75,6 +92,9 @@ defmodule Atlas.Flows do
   Make a version the active one (roll forward or back).
 
   `POST /v1/flows/{id}/activate`. Required scope: `actions:write`.
+
+  Body fields: `version` (integer, required).
+  Response fields: `object`, `id`, `name`, `description`, `is_default`, `applications`, `enabled`, `abandon_after_hours`, `active_version`, `latest_version`, `definition`, `definition.steps`, `definition.steps.id`, `definition.steps.on`, `definition.steps.i18n`, `definition.steps.type`, `definition.steps.when`, `definition.steps.methods`, `definition.steps.action`, `definition.steps.url`, `definition.steps.action_id`, `definition.steps.claim`, `definition.steps.value`, `definition.steps.message`, `definition.steps.title`, `definition.steps.intro`, `definition.steps.fields`, `definition.steps.once`, `definition.steps.if`, `definition.steps.then`, `definition.steps.else`, `definition.steps.delay_seconds`, `definition.steps.subject`, `definition.steps.body`, `definition.steps.channel`, `definition.steps.sms_body`, `definition.steps.flow_id`, `created_at`, `updated_at`.
   """
   def post_activate(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/flows/{id}/activate", %{"id" => id}, body, opts)
@@ -83,9 +103,149 @@ defmodule Atlas.Flows do
   What-if: run a version (default the active one) for a user and a described sign-in (method, mfa_verified, ip, application_id) without changing anything. Returns the outcome (allowed, held or refused), the effects and a per-step trace.
 
   `POST /v1/flows/{id}/simulate`. Required scope: `actions:read`.
+
+  Body fields: `user_id` (string, required), `method` (string), `mfa_verified` (boolean), `ip` (string), `application_id` (string), `version` (integer), `stage` (enum).
+  Response fields: `object`, `journey_id`, `version`, `outcome`, `effects`, `trace`, `trace.step`, `trace.type`, `trace.matched`, `trace.outcome`, `trace.branch`.
   """
   def post_simulate(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/flows/{id}/simulate", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Users' runs through one journey, newest first (20 by default, at most 200): started when a step was first held for them, completed when every held step was finished, abandoned when untouched past the journey's window. Filter with status. Saved answers are not included; read them per user.
+
+  `GET /v1/flows/{id}/runs`. Required scope: `actions:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.journey_id`, `data.user_id`, `data.stage`, `data.status`, `data.open_steps`, `data.completed_steps`, `data.draft`, `data.started_at`, `data.updated_at`, `data.completed_at`, `data.abandoned_at`, `has_more`.
+  """
+  def get_runs(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/flows/{id}/runs", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_runs`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_runs(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/flows/{id}/runs", %{"id" => id}, opts)
+
+  @doc ~S"""
+  A journey's A/B experiments, newest first.
+
+  `GET /v1/flows/{id}/experiments`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.journey_id`, `data.name`, `data.hypothesis`, `data.status`, `data.variants`, `data.variants.key`, `data.variants.version`, `data.variants.weight`, `data.promoted_variant`, `data.started_at`, `data.stopped_at`, `data.created_at`, `data.updated_at`, `has_more`.
+  """
+  def get_experiments(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/flows/{id}/experiments", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_experiments`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_experiments(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/flows/{id}/experiments", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Create a draft A/B experiment on a journey. Each variant runs one saved version of the journey (the first variant is the control); weights are whole percents adding up to 100. Nothing changes for users until it is started. → 201.
+
+  `POST /v1/flows/{id}/experiments`. Required scope: `actions:write`.
+
+  Body fields: `name` (string, required), `hypothesis` (string|null), `variants` (array, required).
+  Nested body fields: `variants.key`, `variants.version`, `variants.weight`.
+  Response fields: `object`, `id`, `journey_id`, `name`, `hypothesis`, `status`, `variants`, `variants.key`, `variants.version`, `variants.weight`, `promoted_variant`, `started_at`, `stopped_at`, `created_at`, `updated_at`.
+  """
+  def post_experiments(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/flows/{id}/experiments", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Get one journey experiment with its variants and results.
+
+  `GET /v1/flows/{id}/experiments/{experimentId}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `id`, `journey_id`, `name`, `hypothesis`, `status`, `variants`, `variants.key`, `variants.version`, `variants.weight`, `promoted_variant`, `started_at`, `stopped_at`, `created_at`, `updated_at`.
+  """
+  def get_by_id_experiments_by_experiment_id(client, id, experiment_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/flows/{id}/experiments/{experimentId}", %{"id" => id, "experimentId" => experiment_id}, nil, opts)
+
+  @doc ~S"""
+  Change a draft experiment (name, hypothesis, variants). A started experiment keeps its variants so nobody is moved: 409.
+
+  `PATCH /v1/flows/{id}/experiments/{experimentId}`. Required scope: `actions:write`.
+
+  Body fields: `name` (string), `hypothesis` (string|null), `variants` (array).
+  Nested body fields: `variants.key`, `variants.version`, `variants.weight`.
+  Response fields: `object`, `id`, `journey_id`, `name`, `hypothesis`, `status`, `variants`, `variants.key`, `variants.version`, `variants.weight`, `promoted_variant`, `started_at`, `stopped_at`, `created_at`, `updated_at`.
+  """
+  def update_experiments(client, id, experiment_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/flows/{id}/experiments/{experimentId}", %{"id" => id, "experimentId" => experiment_id}, body, opts)
+
+  @doc ~S"""
+  Delete a draft or stopped experiment and its assignments. Stop a running one first.
+
+  `DELETE /v1/flows/{id}/experiments/{experimentId}`. Required scope: `actions:write`.
+  """
+  def delete_experiments(client, id, experiment_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/flows/{id}/experiments/{experimentId}", %{"id" => id, "experimentId" => experiment_id}, nil, opts)
+
+  @doc ~S"""
+  Start a draft experiment. From now on each user who reaches the journey gets a variant (by weight, from a hash of the experiment and the user, stored on first use so it never changes) and runs that variant's version. One experiment runs per journey at a time (409); the journey must be enabled with an active version. Sends journey.experiment_started. Audited.
+
+  `POST /v1/flows/{id}/experiments/{experimentId}/start`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `journey_id`, `name`, `hypothesis`, `status`, `variants`, `variants.key`, `variants.version`, `variants.weight`, `promoted_variant`, `started_at`, `stopped_at`, `created_at`, `updated_at`.
+  """
+  def post_experiments_start(client, id, experiment_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/flows/{id}/experiments/{experimentId}/start", %{"id" => id, "experimentId" => experiment_id}, nil, opts)
+
+  @doc ~S"""
+  Stop a running experiment: users go back to the journey's active version. promote_variant makes that variant's version the journey's active one. Sends journey.experiment_stopped. Audited.
+
+  `POST /v1/flows/{id}/experiments/{experimentId}/stop`. Required scope: `actions:write`.
+
+  Body fields: `promote_variant` (string|null).
+  Response fields: `object`, `id`, `journey_id`, `name`, `hypothesis`, `status`, `variants`, `variants.key`, `variants.version`, `variants.weight`, `promoted_variant`, `started_at`, `stopped_at`, `created_at`, `updated_at`.
+  """
+  def post_experiments_stop(client, id, experiment_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/flows/{id}/experiments/{experimentId}/stop", %{"id" => id, "experimentId" => experiment_id}, body, opts)
+
+  @doc ~S"""
+  Results per variant. Users are counted from when they were assigned: assigned (reached the journey), started (a run began, meaning the journey held them), completed, abandoned, in progress, completion and abandon rates, the 95% interval of the completion rate, average time to complete, and against the first variant the relative lift and a two-sided p-value (two-proportion z-test) with significant at 0.05. A difference is only worth acting on when significant is true and the sample is large enough.
+
+  `GET /v1/flows/{id}/experiments/{experimentId}/readout`. Required scope: `actions:read`.
+
+  Response fields: `object`, `experiment_id`, `journey_id`, `status`, `metric`, `control`, `significance_level`, `started_at`, `stopped_at`, `variants`, `variants.key`, `variants.version`, `variants.weight`, `variants.assigned`, `variants.started`, `variants.completed`, `variants.abandoned`, `variants.in_progress`, `variants.completion_rate`, `variants.abandon_rate`, `variants.avg_duration_ms`, `variants.completion_interval`, `variants.lift`, `variants.p_value`, `variants.significant`.
+  """
+  def get_experiments_readout(client, id, experiment_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/flows/{id}/experiments/{experimentId}/readout", %{"id" => id, "experimentId" => experiment_id}, nil, opts)
+
+  @doc ~S"""
+  Messages the journey's send_message steps scheduled, newest first (50 by default, at most 200). Filter by status and user_id. The text is not returned.
+
+  `GET /v1/flows/{id}/messages`. Required scope: `actions:read`.
+
+  Query params (`params:`): `status`, `user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.journey_id`, `data.step`, `data.user_id`, `data.channel`, `data.subject`, `data.status`, `data.send_at`, `data.attempts`, `data.last_error`, `data.sent_at`, `data.created_at`, `has_more`.
+  """
+  def get_messages(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/flows/{id}/messages", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_messages`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_messages(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/flows/{id}/messages", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Cancel a message that has not gone out (pending, or failed). 409 once it is sending, sent or canceled. Audited.
+
+  `POST /v1/flows/{id}/messages/{messageId}/cancel`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `journey_id`, `step`, `user_id`, `channel`, `subject`, `status`, `send_at`, `attempts`, `last_error`, `sent_at`, `created_at`.
+  """
+  def post_messages_cancel(client, id, message_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/flows/{id}/messages/{messageId}/cancel", %{"id" => id, "messageId" => message_id}, nil, opts)
 
   @doc false
   def __operations__, do: [
@@ -96,6 +256,17 @@ defmodule Atlas.Flows do
     {:delete, :delete, "/v1/flows/{id}", 1, false, false},
     {:get_versions, :get, "/v1/flows/{id}/versions", 1, false, true},
     {:post_activate, :post, "/v1/flows/{id}/activate", 1, true, false},
-    {:post_simulate, :post, "/v1/flows/{id}/simulate", 1, true, false}
+    {:post_simulate, :post, "/v1/flows/{id}/simulate", 1, true, false},
+    {:get_runs, :get, "/v1/flows/{id}/runs", 1, false, true},
+    {:get_experiments, :get, "/v1/flows/{id}/experiments", 1, false, true},
+    {:post_experiments, :post, "/v1/flows/{id}/experiments", 1, true, false},
+    {:get_by_id_experiments_by_experiment_id, :get, "/v1/flows/{id}/experiments/{experimentId}", 2, false, false},
+    {:update_experiments, :patch, "/v1/flows/{id}/experiments/{experimentId}", 2, true, false},
+    {:delete_experiments, :delete, "/v1/flows/{id}/experiments/{experimentId}", 2, false, false},
+    {:post_experiments_start, :post, "/v1/flows/{id}/experiments/{experimentId}/start", 2, false, false},
+    {:post_experiments_stop, :post, "/v1/flows/{id}/experiments/{experimentId}/stop", 2, true, false},
+    {:get_experiments_readout, :get, "/v1/flows/{id}/experiments/{experimentId}/readout", 2, false, false},
+    {:get_messages, :get, "/v1/flows/{id}/messages", 1, false, true},
+    {:post_messages_cancel, :post, "/v1/flows/{id}/messages/{messageId}/cancel", 2, false, false}
   ]
 end

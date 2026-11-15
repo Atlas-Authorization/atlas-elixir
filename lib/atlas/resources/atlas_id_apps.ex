@@ -5,7 +5,8 @@ defmodule Atlas.AtlasIdApps do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AtlasIdApps do
   The Sign in with Atlas apps this instance manages (managed_by_instance_id = this instance): the app of its Sign in with Atlas toggle, and every existing app the owner handed to it with PUT /v1/platform/atlas_id_apps/{id}/managed_by (`managed_via: "adopted"`).
 
   `GET /v1/atlas_id_apps`. Required scope: `atlas_id_grants:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.name`, `data.managed_by_instance_id`, `data.allowed_scopes`, `data.created_at`, `data.managed_via`, `data.button_rendered_origins`, `data.button_rendered_origins.origin`, `data.button_rendered_origins.last_seen_at`, `data.button_rendered_origins.requests`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/atlas_id_apps", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.AtlasIdApps do
   The setup check of a Sign in with Atlas app this instance manages, in the instance preflight's finding shape (the same report as GET /v1/platform/atlas_id_apps/{id}/preflight): findings, button_rendered_origins, authorize_requests_7d, fallback_origins and homepage_includes_script. atlas_id_button_never_rendered (info) fires when every authorize request of the last 7 days arrived without the button marker while the homepage includes the script. Takes diagnostics:read or atlas_id_grants:read. Other apps are 404. Read-only.
 
   `GET /v1/atlas_id_apps/{id}/preflight`. Required scope: `diagnostics:read`.
+
+  Response fields: `object`, `app_id`, `ok`, `checked_at`, `user_count`, `findings`, `findings.severity`, `findings.code`, `findings.message`, `findings.fix`, `findings.fix_call`, `findings.fix_call.method`, `findings.fix_call.path`, `findings.fix_call.body`, `findings.safe_to_autofix`, `findings.subject`, `findings.group`, `findings.suppressed`, `findings.suppressed_reason`, `findings.acknowledged`, `findings.acknowledged.reason`, `findings.acknowledged.by`, `findings.acknowledged.at`, `findings.acknowledged.expires_at`, `button_rendered_origins`, `button_rendered_origins.origin`, `button_rendered_origins.last_seen_at`, `button_rendered_origins.requests`, `authorize_requests_7d`, `authorize_requests_7d.button`, `authorize_requests_7d.js`, `authorize_requests_7d.fedcm`, `authorize_requests_7d.fallback`, `authorize_requests_7d.unmarked`, `fallback_origins`, `fallback_origins.origin`, `fallback_origins.last_seen_at`, `fallback_origins.requests`, `homepage_includes_script`.
   """
   def get_preflight(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/atlas_id_apps/{id}/preflight", %{"id" => id}, nil, opts)
@@ -36,12 +42,15 @@ defmodule Atlas.AtlasIdApps do
   Is this person a user of a Sign in with Atlas app this instance manages? Exact match on a verified email (?email=) of an account that approved the app; anyone else gets an empty list. Use the grant_id to revoke. Works with privacy:grants:revoke and privacy:execute keys and partner links.
 
   `GET /v1/atlas_id_apps/{id}/users`. Required scope: `atlas_id_grants:read`.
+
+  Query params (`params:`): `email`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.sub`, `data.grant_id`, `data.scopes`, `data.granted_at`, `has_more`, `next_cursor`.
   """
   def get_users(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/atlas_id_apps/{id}/users", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_users/2`, following the cursor page by page.
+  Lazy stream over every item of `get_users`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_users(client, id, opts \\ []),
@@ -51,15 +60,39 @@ defmodule Atlas.AtlasIdApps do
   Revoke a person's grant to a Sign in with Atlas app this instance manages: refresh tokens stop working, the app's back-channel logout endpoints are told, and the app hears grant.revoked. The same call is accepted with an instance key at /v1/platform/atlas_id_apps/:id/grants/:grantId.
 
   `DELETE /v1/atlas_id_apps/{id}/grants/{grantId}`. Required scope: `atlas_id_grants:write`.
+
+  Response fields: `object`, `id`, `sub`, `revoked`, `tokens_revoked`, `backchannel_logouts`.
   """
   def delete_grants(client, id, grant_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/atlas_id_apps/{id}/grants/{grantId}", %{"id" => id, "grantId" => grant_id}, nil, opts)
+
+  @doc ~S"""
+  Adopt an account-level Sign in with Atlas app with the one-time code its owner issued, using this instance's own secret key.
+
+  `POST /v1/atlas_id_apps/adopt`. Required scope: `atlas_id_grants:write`.
+
+  Body fields: `code` (string, required).
+  """
+  def post_adopt(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/atlas_id_apps/adopt", %{}, body, opts)
+
+  @doc ~S"""
+  Hand an adopted app back to its owner. The instance stops managing its grants.
+
+  `POST /v1/atlas_id_apps/{id}/release`. Required scope: `atlas_id_grants:write`.
+
+  Response fields: `object`, `app_id`, `released`.
+  """
+  def post_release(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/atlas_id_apps/{id}/release", %{"id" => id}, nil, opts)
 
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/atlas_id_apps", 0, false, true},
     {:get_preflight, :get, "/v1/atlas_id_apps/{id}/preflight", 1, false, false},
     {:get_users, :get, "/v1/atlas_id_apps/{id}/users", 1, false, true},
-    {:delete_grants, :delete, "/v1/atlas_id_apps/{id}/grants/{grantId}", 2, false, false}
+    {:delete_grants, :delete, "/v1/atlas_id_apps/{id}/grants/{grantId}", 2, false, false},
+    {:post_adopt, :post, "/v1/atlas_id_apps/adopt", 0, true, false},
+    {:post_release, :post, "/v1/atlas_id_apps/{id}/release", 1, false, false}
   ]
 end

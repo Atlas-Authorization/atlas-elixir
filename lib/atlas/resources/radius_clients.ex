@@ -5,7 +5,8 @@ defmodule Atlas.RadiusClients do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.RadiusClients do
   List the RADIUS NAS clients — the VPN/WiFi/firewall devices allowed to authenticate this instance's users over RADIUS. The per-NAS shared secret is never returned, only whether one is set.
 
   `GET /v1/radius_clients`. Required scope: `radius_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.nas_identifier`, `data.ip_address`, `data.ip_cidr`, `data.reply_attributes`, `data.reply_attributes.filterId`, `data.reply_attributes.vlan`, `data.has_secret`, `data.require_message_authenticator`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/radius_clients", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.RadiusClients do
   Register a RADIUS NAS client (name, NAS-Identifier, optional source-IP bind, write-only shared secret). The NAS-Identifier is unique across the deployment; a duplicate is a 409.
 
   `POST /v1/radius_clients`. Required scope: `radius_clients:write`.
+
+  Body fields: `name` (string), `nas_identifier` (string), `ip_address` (string|null), `ip_cidr` (string|null), `reply_attributes` (object|null), `shared_secret` (string), `require_message_authenticator` (boolean), `enabled` (boolean).
+  Nested body fields: `reply_attributes.filter_id`, `reply_attributes.vlan`.
+  Response fields: `object`, `id`, `name`, `nas_identifier`, `ip_address`, `ip_cidr`, `reply_attributes`, `reply_attributes.filterId`, `reply_attributes.vlan`, `has_secret`, `require_message_authenticator`, `enabled`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/radius_clients", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.RadiusClients do
   Read one RADIUS NAS client. The shared secret is never included.
 
   `GET /v1/radius_clients/{id}`. Required scope: `radius_clients:read`.
+
+  Response fields: `object`, `id`, `name`, `nas_identifier`, `ip_address`, `ip_cidr`, `reply_attributes`, `reply_attributes.filterId`, `reply_attributes.vlan`, `has_secret`, `require_message_authenticator`, `enabled`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/radius_clients/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.RadiusClients do
   Update a RADIUS NAS client's name, NAS-Identifier, source-IP bind, enabled flag or shared secret. An omitted or empty shared_secret keeps the stored one.
 
   `PATCH /v1/radius_clients/{id}`. Required scope: `radius_clients:write`.
+
+  Body fields: `name` (string), `nas_identifier` (string), `ip_address` (string|null), `ip_cidr` (string|null), `reply_attributes` (object|null), `shared_secret` (string), `require_message_authenticator` (boolean), `enabled` (boolean).
+  Nested body fields: `reply_attributes.filter_id`, `reply_attributes.vlan`.
+  Response fields: `object`, `id`, `name`, `nas_identifier`, `ip_address`, `ip_cidr`, `reply_attributes`, `reply_attributes.filterId`, `reply_attributes.vlan`, `has_secret`, `require_message_authenticator`, `enabled`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/radius_clients/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.RadiusClients do
   Delete a RADIUS NAS client. That NAS can no longer authenticate against the listener.
 
   `DELETE /v1/radius_clients/{id}`. Required scope: `radius_clients:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/radius_clients/{id}", %{"id" => id}, nil, opts)

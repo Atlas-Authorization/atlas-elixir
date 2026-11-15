@@ -5,7 +5,8 @@ defmodule Atlas.Connectors do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Connectors do
   List the caller's own community connector profiles (draft + published), with adoption counts.
 
   `GET /v1/connectors`. Required scope: `connectors:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.slug`, `data.display_name`, `data.logo_url`, `data.tagline`, `data.description`, `data.category`, `data.tags`, `data.website_url`, `data.docs_url`, `data.support_url`, `data.setup_guide`, `data.protocol`, `data.authorization_endpoint`, `data.token_endpoint`, `data.userinfo_endpoint`, `data.issuer`, `data.default_scopes`, `data.api_scopes`, `data.api_scopes.scope`, `data.api_scopes.label`, `data.api_scopes.gated`, `data.credential_fields`, `data.credential_fields.key`, `data.credential_fields.label`, `data.credential_fields.secret`, `data.credential_fields.multiline`, `data.credential_fields.optional`, `data.credential_fields.help`, `data.share_modes`, `data.shared_client_id`, `data.shared_revoked`, `data.idp_issuer`, `data.idp_auto_register`, `data.status`, `data.verified`, `data.featured`, `data.install_count`, `data.view_count`, `data.rating_avg`, `data.rating_count`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/connectors", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.Connectors do
   Create a community connector profile (SEO profile + OAuth config + share modes). Slug is globally unique and may not shadow a built-in.
 
   `POST /v1/connectors`. Required scope: `connectors:write`.
+
+  Body fields: `slug` (string, required), `display_name` (string, required), `logo_url` (string), `tagline` (string), `description` (string), `category` (string), `tags` (array), `website_url` (string), `docs_url` (string), `support_url` (string), `screenshots` (array), `setup_guide` (string), `protocol` (string), `authorization_endpoint` (string), `token_endpoint` (string), `userinfo_endpoint` (string), `issuer` (string), `default_scopes` (array), `api_scopes` (array), `credential_fields` (array), `authorization_params` (object), `quirks` (object), `share_modes` (array), `idp_instance_id` (string), `idp_issuer` (string), `idp_auto_register` (boolean).
+  Nested body fields: `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`.
+  Response fields: `object`, `id`, `slug`, `display_name`, `logo_url`, `tagline`, `description`, `category`, `tags`, `website_url`, `docs_url`, `support_url`, `setup_guide`, `protocol`, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `issuer`, `default_scopes`, `api_scopes`, `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`, `share_modes`, `shared_client_id`, `shared_revoked`, `idp_issuer`, `idp_auto_register`, `status`, `verified`, `featured`, `install_count`, `view_count`, `rating_avg`, `rating_count`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connectors", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.Connectors do
   Fetch one of the caller's own connector profiles. The shared secret is never returned.
 
   `GET /v1/connectors/{id}`. Required scope: `connectors:read`.
+
+  Response fields: `object`, `id`, `slug`, `display_name`, `logo_url`, `tagline`, `description`, `category`, `tags`, `website_url`, `docs_url`, `support_url`, `setup_guide`, `protocol`, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `issuer`, `default_scopes`, `api_scopes`, `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`, `share_modes`, `shared_client_id`, `shared_revoked`, `idp_issuer`, `idp_auto_register`, `status`, `verified`, `featured`, `install_count`, `view_count`, `rating_avg`, `rating_count`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/connectors/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.Connectors do
   Edit a connector profile — SEO fields, OAuth config, and share modes. Slug changes are re-checked for uniqueness + reserved brands.
 
   `PATCH /v1/connectors/{id}`. Required scope: `connectors:write`.
+
+  Body fields: `slug` (string), `display_name` (string), `logo_url` (string), `tagline` (string), `description` (string), `category` (string), `tags` (array), `website_url` (string), `docs_url` (string), `support_url` (string), `screenshots` (array), `setup_guide` (string), `protocol` (string), `authorization_endpoint` (string), `token_endpoint` (string), `userinfo_endpoint` (string), `issuer` (string), `default_scopes` (array), `api_scopes` (array), `credential_fields` (array), `authorization_params` (object), `quirks` (object), `share_modes` (array), `idp_instance_id` (string), `idp_issuer` (string), `idp_auto_register` (boolean).
+  Nested body fields: `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`.
+  Response fields: `object`, `id`, `slug`, `display_name`, `logo_url`, `tagline`, `description`, `category`, `tags`, `website_url`, `docs_url`, `support_url`, `setup_guide`, `protocol`, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `issuer`, `default_scopes`, `api_scopes`, `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`, `share_modes`, `shared_client_id`, `shared_revoked`, `idp_issuer`, `idp_auto_register`, `status`, `verified`, `featured`, `install_count`, `view_count`, `rating_avg`, `rating_count`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/connectors/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.Connectors do
   Delete one of the caller's own connector profiles and cascade its installs, reviews, and reports.
 
   `DELETE /v1/connectors/{id}`. Required scope: `connectors:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/connectors/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +76,8 @@ defmodule Atlas.Connectors do
   Publish a connector to the public directory. Requires the OAuth endpoints its share modes need; unverified until Atlas review.
 
   `POST /v1/connectors/{id}/publish`. Required scope: `connectors:write`.
+
+  Response fields: `object`, `id`, `slug`, `display_name`, `logo_url`, `tagline`, `description`, `category`, `tags`, `website_url`, `docs_url`, `support_url`, `setup_guide`, `protocol`, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `issuer`, `default_scopes`, `api_scopes`, `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`, `share_modes`, `shared_client_id`, `shared_revoked`, `idp_issuer`, `idp_auto_register`, `status`, `verified`, `featured`, `install_count`, `view_count`, `rating_avg`, `rating_count`, `created_at`, `updated_at`.
   """
   def post_publish(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connectors/{id}/publish", %{"id" => id}, nil, opts)
@@ -68,6 +86,8 @@ defmodule Atlas.Connectors do
   Remove a published connector from the directory (back to unlisted) without deleting it.
 
   `POST /v1/connectors/{id}/unlist`. Required scope: `connectors:write`.
+
+  Response fields: `object`, `id`, `slug`, `display_name`, `logo_url`, `tagline`, `description`, `category`, `tags`, `website_url`, `docs_url`, `support_url`, `setup_guide`, `protocol`, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `issuer`, `default_scopes`, `api_scopes`, `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`, `share_modes`, `shared_client_id`, `shared_revoked`, `idp_issuer`, `idp_auto_register`, `status`, `verified`, `featured`, `install_count`, `view_count`, `rating_avg`, `rating_count`, `created_at`, `updated_at`.
   """
   def post_unlist(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connectors/{id}/unlist", %{"id" => id}, nil, opts)
@@ -76,6 +96,9 @@ defmodule Atlas.Connectors do
   Set, rotate, or revoke the full_shared OAuth credentials. The secret is encrypted at rest and never returned; revoke stops all installs.
 
   `POST /v1/connectors/{id}/shared_credentials`. Required scope: `connectors:write`.
+
+  Body fields: `client_id` (string), `client_secret` (string), `revoke` (boolean).
+  Response fields: `object`, `id`, `slug`, `display_name`, `logo_url`, `tagline`, `description`, `category`, `tags`, `website_url`, `docs_url`, `support_url`, `setup_guide`, `protocol`, `authorization_endpoint`, `token_endpoint`, `userinfo_endpoint`, `issuer`, `default_scopes`, `api_scopes`, `api_scopes.scope`, `api_scopes.label`, `api_scopes.gated`, `credential_fields`, `credential_fields.key`, `credential_fields.label`, `credential_fields.secret`, `credential_fields.multiline`, `credential_fields.optional`, `credential_fields.help`, `share_modes`, `shared_client_id`, `shared_revoked`, `idp_issuer`, `idp_auto_register`, `status`, `verified`, `featured`, `install_count`, `view_count`, `rating_avg`, `rating_count`, `created_at`, `updated_at`.
   """
   def post_shared_credentials(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connectors/{id}/shared_credentials", %{"id" => id}, body, opts)
@@ -84,6 +107,9 @@ defmodule Atlas.Connectors do
   Enable a published connector on the caller's instance (prefill, full_shared, or full_idp), snapshotting its OAuth config into the connection.
 
   `POST /v1/connectors/{slug}/install`. Required scope: `connectors:write`.
+
+  Body fields: `share_mode` (string), `client_id` (string), `client_secret` (string), `scopes` (array).
+  Response fields: `object`, `connector`, `share_mode`, `provider_key`, `needs_credentials`.
   """
   def post_install(client, slug, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connectors/{slug}/install", %{"slug" => slug}, body, opts)
@@ -92,6 +118,9 @@ defmodule Atlas.Connectors do
   Rate a connector the caller installed (1–5, optional text). Aggregates into its rating and rank.
 
   `POST /v1/connectors/{slug}/reviews`. Required scope: `connectors:write`.
+
+  Body fields: `rating` (number), `body` (string).
+  Response fields: `object`, `connector`, `rating`.
   """
   def post_reviews(client, slug, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connectors/{slug}/reviews", %{"slug" => slug}, body, opts)

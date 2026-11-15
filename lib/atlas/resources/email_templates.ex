@@ -5,7 +5,8 @@ defmodule Atlas.EmailTemplates do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.EmailTemplates do
   List email templates with their defaults and any instance override.
 
   `GET /v1/email_templates`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.name`, `data.default`, `data.override`, `data.customised`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/email_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.EmailTemplates do
   Render an email template (an unsaved draft if supplied, else the stored one) with SAMPLE variables — never a real code — so an agent can see the result before saving.
 
   `POST /v1/email_templates/{name}/preview`. Required scope: `instance:read`.
+
+  Body fields: `subject` (string), `text` (string).
+  Response fields: `object`, `template`, `valid`, `problem`, `html`, `variables`.
   """
   def post_preview(client, name, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/email_templates/{name}/preview", %{"name" => name}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.EmailTemplates do
   Override a template. Dropping a required placeholder is refused.
 
   `PUT /v1/email_templates/{name}`. Required scope: `instance:write`.
+
+  Body fields: `subject` (string), `text` (string).
+  Response fields: `object`, `name`, `override`, `override.subject`, `override.text`, `customised`.
   """
   def put(client, name, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/email_templates/{name}", %{"name" => name}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.EmailTemplates do
   Revert a template to the Atlas built-in.
 
   `DELETE /v1/email_templates/{name}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `name`, `override`, `customised`.
   """
   def delete(client, name, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/email_templates/{name}", %{"name" => name}, nil, opts)

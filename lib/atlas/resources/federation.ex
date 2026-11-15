@@ -5,7 +5,8 @@ defmodule Atlas.Federation do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Federation do
   The OpenID Federation configuration of this instance: entity identifier, authority hints, trust anchors, subordinates and registration modes.
 
   `GET /v1/federation`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `entity_id`, `entity_configuration_url`, `federation_fetch_endpoint`, `federation_list_endpoint`, `federation_resolve_endpoint`, `federation_registration_endpoint`, `authority_hints`, `trust_anchors`, `subordinates`, `automatic_registration`, `explicit_registration`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/federation", %{}, nil, opts)
@@ -21,6 +24,8 @@ defmodule Atlas.Federation do
   Resolve and validate the trust chain of an entity against the configured trust anchors and return the resolved metadata, or why the chain is invalid. Nothing is registered.
 
   `POST /v1/federation/resolve`. Required scope: `instance:read`.
+
+  Body fields: `entity_id` (string), `trust_anchor` (string).
   """
   def post_resolve(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/federation/resolve", %{}, body, opts)

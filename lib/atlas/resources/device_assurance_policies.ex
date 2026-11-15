@@ -5,7 +5,8 @@ defmodule Atlas.DeviceAssurancePolicies do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.DeviceAssurancePolicies do
   List the device assurance policies.
 
   `GET /v1/device_assurance_policies`. Required scope: `device_assurance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.platform`, `data.enabled`, `data.min_os_version`, `data.os_latest_minus`, `data.require_disk_encryption`, `data.require_screen_lock`, `data.require_secure_hardware`, `data.block_jailbroken`, `data.require_firewall`, `data.require_edr`, `data.grace_hours`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/device_assurance_policies", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.DeviceAssurancePolicies do
   Create a device assurance policy: per-platform minimum OS version (or "newest major minus N"), disk encryption, screen lock, secure hardware, jailbreak/root, firewall and EDR checks, and a grace period. A device must pass every enabled policy for its platform; its `compliant` flag, and so the `deviceTrust` access-policy condition, follows the verdict. Existing devices are re-evaluated.
 
   `POST /v1/device_assurance_policies`. Required scope: `device_assurance:write`.
+
+  Body fields: `name` (string), `platform` (enum), `enabled` (boolean), `min_os_version` (string|null), `os_latest_minus` (integer|null), `require_disk_encryption` (boolean), `require_screen_lock` (boolean), `require_secure_hardware` (boolean), `block_jailbroken` (boolean), `require_firewall` (boolean), `require_edr` (boolean), `grace_hours` (integer).
+  Response fields: `object`, `id`, `name`, `platform`, `enabled`, `min_os_version`, `os_latest_minus`, `require_disk_encryption`, `require_screen_lock`, `require_secure_hardware`, `block_jailbroken`, `require_firewall`, `require_edr`, `grace_hours`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/device_assurance_policies", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.DeviceAssurancePolicies do
   Re-evaluate every device against the current assurance policies.
 
   `POST /v1/device_assurance_policies/evaluate`. Required scope: `device_assurance:write`.
+
+  Response fields: `object`, `evaluated`, `changed`.
   """
   def post_evaluate(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/device_assurance_policies/evaluate", %{}, nil, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.DeviceAssurancePolicies do
   Read one device assurance policy.
 
   `GET /v1/device_assurance_policies/{id}`. Required scope: `device_assurance:read`.
+
+  Response fields: `object`, `id`, `name`, `platform`, `enabled`, `min_os_version`, `os_latest_minus`, `require_disk_encryption`, `require_screen_lock`, `require_secure_hardware`, `block_jailbroken`, `require_firewall`, `require_edr`, `grace_hours`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/device_assurance_policies/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +63,9 @@ defmodule Atlas.DeviceAssurancePolicies do
   Update a device assurance policy. Devices are re-evaluated.
 
   `PATCH /v1/device_assurance_policies/{id}`. Required scope: `device_assurance:write`.
+
+  Body fields: `name` (string), `platform` (enum), `enabled` (boolean), `min_os_version` (string|null), `os_latest_minus` (integer|null), `require_disk_encryption` (boolean), `require_screen_lock` (boolean), `require_secure_hardware` (boolean), `block_jailbroken` (boolean), `require_firewall` (boolean), `require_edr` (boolean), `grace_hours` (integer).
+  Response fields: `object`, `id`, `name`, `platform`, `enabled`, `min_os_version`, `os_latest_minus`, `require_disk_encryption`, `require_screen_lock`, `require_secure_hardware`, `block_jailbroken`, `require_firewall`, `require_edr`, `grace_hours`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/device_assurance_policies/{id}", %{"id" => id}, body, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.DeviceAssurancePolicies do
   Delete a device assurance policy. Devices are re-evaluated.
 
   `DELETE /v1/device_assurance_policies/{id}`. Required scope: `device_assurance:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/device_assurance_policies/{id}", %{"id" => id}, nil, opts)

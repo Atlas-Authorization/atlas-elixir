@@ -5,7 +5,8 @@ defmodule Atlas.Fraud do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,10 @@ defmodule Atlas.Fraud do
   Fraud decision for a sign-up, sign-in or checkout. Send the client IP, user agent, the SDK `device_id`, optional device features and email; get back signals (country, ASN, datacenter, Tor, headless/automation, client class human/crawler/ai_agent/automation, bot score, disposable email, hourly IP/device/email velocity) and an allow / challenge / block verdict with reason codes from your `fraud.rules` and `fraud.sanctioned_countries` on /v1/risk_based_mfa. Every call counts toward the velocity signals.
 
   `POST /v1/fraud/lookup`. Required scope: `risk_based_mfa:read`.
+
+  Body fields: `ip` (string), `user_agent` (string), `device_id` (string), `email` (string), `user_id` (string), `org_id` (string), `device` (object).
+  Nested body fields: `device.screenWidth`, `device.screenHeight`, `device.colorDepth`, `device.pixelRatio`, `device.timezone`, `device.timezoneOffset`, `device.language`, `device.languages`, `device.languageCount`, `device.platform`, `device.hardwareConcurrency`, `device.deviceMemory`, `device.maxTouchPoints`, `device.touchSupport`, `device.cookieEnabled`, `device.doNotTrack`, `device.webglVendor`, `device.webglRenderer`, `device.pluginCount`, `device.fontCount`, `device.pointerType`, `device.webdriver`, `device.headless`, `device.hasChrome`, `device.languagesEmpty`, `device.webglSoftware`, `device.automationHint`.
+  Response fields: `object`, `verdict`, `reasons`, `matched_rules`, `device_id`, `signals`.
   """
   def post_lookup(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fraud/lookup", %{}, body, opts)
@@ -21,6 +26,9 @@ defmodule Atlas.Fraud do
   Email risk for one address: syntax, disposable domain, role account, MX (with the implicit-MX fallback), the suppression list and, when configured or `verify_mailbox` is true, a mailbox verdict from your own ZeroBounce or Kickbox account. Returns a score and an allow / review / block verdict.
 
   `POST /v1/fraud/email_risk`. Required scope: `email_suppressions:read`.
+
+  Body fields: `email` (string), `ip` (string), `verify_mailbox` (boolean).
+  Response fields: `object`, `verdict`, `score`, `reasons`, `email_domain`, `mode`, `checks`, `checks.syntax`, `checks.disposable`, `checks.role_account`, `checks.mx`, `checks.suppressed`, `checks.mailbox`.
   """
   def post_email_risk(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fraud/email_risk", %{}, body, opts)
@@ -29,6 +37,8 @@ defmodule Atlas.Fraud do
   Email risk settings: mode, provider, blocking policy and the sign-up gate.
 
   `GET /v1/fraud/email_risk/settings`. Required scope: `email_suppressions:read`.
+
+  Response fields: `object`, `mode`, `provider`, `has_credentials`, `block_disposable`, `block_suppressed`, `block_undeliverable`, `block_role`, `gate_sign_up`, `updated_at`.
   """
   def get_email_risk_settings(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fraud/email_risk/settings", %{}, nil, opts)
@@ -37,6 +47,9 @@ defmodule Atlas.Fraud do
   Change email risk settings. `mode`: off, mx or provider (your own verification account; the key is write-only). With `gate_sign_up` a `block` verdict refuses the sign-up.
 
   `PUT /v1/fraud/email_risk/settings`. Required scope: `email_suppressions:write`.
+
+  Body fields: `mode` (enum), `provider` (enum), `credentials` (object|null), `block_disposable` (boolean), `block_suppressed` (boolean), `block_undeliverable` (boolean), `block_role` (boolean), `gate_sign_up` (boolean).
+  Response fields: `object`, `mode`, `provider`, `has_credentials`, `block_disposable`, `block_suppressed`, `block_undeliverable`, `block_role`, `gate_sign_up`, `updated_at`.
   """
   def put_email_risk_settings(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/fraud/email_risk/settings", %{}, body, opts)

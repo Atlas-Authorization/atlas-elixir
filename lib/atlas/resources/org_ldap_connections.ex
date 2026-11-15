@@ -5,7 +5,8 @@ defmodule Atlas.OrgLdapConnections do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.OrgLdapConnections do
   List the organization-owned LDAP / AD connections. Never the bind password. Optional `?organization_id=` filters to one organization server-side.
 
   `GET /v1/org_ldap_connections`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.status`, `data.url`, `data.bind_dn`, `data.base_dn`, `data.user_filter`, `data.start_tls`, `data.require_consent_screen`, `data.attributes`, `data.attributes.email`, `data.attributes.firstName`, `data.attributes.lastName`, `data.attributes.username`, `data.attributes.groups`, `data.group_role_mappings`, `data.group_role_mappings.group`, `data.group_role_mappings.role`, `data.has_bind_password`, `data.default_role_id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.OrgLdapConnections do
   Create an organization-owned LDAP / AD connection (url, bind_dn, base_dn, user_filter, attributes). The service-account bind_password is write-only; one connection per organization.
 
   `POST /v1/org_ldap_connections`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string), `status` (enum), `url` (string), `bind_dn` (string), `base_dn` (string), `user_filter` (string), `start_tls` (boolean), `require_consent_screen` (boolean), `attributes` (object), `group_role_mappings` (array), `bind_password` (string), `default_role_id` (string|null).
+  Nested body fields: `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings.group`, `group_role_mappings.role`.
+  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/org_ldap_connections", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.OrgLdapConnections do
   Fetch one organization-owned LDAP connection. Another instance id is 404, never 403. Reports has_bind_password, never the password.
 
   `GET /v1/org_ldap_connections/{id}`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.OrgLdapConnections do
   Update an organization-owned LDAP connection. The bind password is only re-encrypted when a new one is supplied.
 
   `PATCH /v1/org_ldap_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string), `status` (enum), `url` (string), `bind_dn` (string), `base_dn` (string), `user_filter` (string), `start_tls` (boolean), `require_consent_screen` (boolean), `attributes` (object), `group_role_mappings` (array), `bind_password` (string), `default_role_id` (string|null).
+  Nested body fields: `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings.group`, `group_role_mappings.role`.
+  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/org_ldap_connections/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.OrgLdapConnections do
   Delete an organization-owned LDAP connection.
 
   `DELETE /v1/org_ldap_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/org_ldap_connections/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +76,9 @@ defmodule Atlas.OrgLdapConnections do
   Test an organization-owned LDAP connection: attempt a service-account bind and report ok/failure. Never returns the bind password.
 
   `POST /v1/org_ldap_connections/{id}/test`. Required scope: `sso_connections:write`.
+
+  Body fields: `bind_password` (string).
+  Response fields: `object`, `id`, `ok`, `error`.
   """
   def post_test(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/org_ldap_connections/{id}/test", %{"id" => id}, body, opts)
@@ -68,6 +87,8 @@ defmodule Atlas.OrgLdapConnections do
   Read the directory-sync settings of an organization LDAP / Active Directory connection (schedule, filters, group-to-role mapping, disable-on-removal).
 
   `GET /v1/org_ldap_connections/{id}/sync`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`.
   """
   def get_sync(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}/sync", %{"id" => id}, nil, opts)
@@ -76,6 +97,9 @@ defmodule Atlas.OrgLdapConnections do
   Set the directory-sync settings. Fields you omit keep their value. Enabling requires an active connection and schedules the first run immediately; disabling clears the schedule. Role mappings are matched in order, by group DN.
 
   `PUT /v1/org_ldap_connections/{id}/sync`. Required scope: `sso_connections:write`.
+
+  Body fields: `enabled` (boolean), `intervalMinutes` (number), `pageSize` (number), `idAttribute` (string), `userFilter` (string|null), `groupBaseDN` (string|null), `groupFilter` (string), `groupMemberAttribute` (string), `groupNameAttribute` (string), `syncGroups` (boolean), `roleMappings` (array), `disableOnRemoval` (boolean), `deltaAttribute` (string).
+  Nested body fields: `roleMappings.group`, `roleMappings.role`.
   """
   def put_sync(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/org_ldap_connections/{id}/sync", %{"id" => id}, body, opts)
@@ -84,12 +108,15 @@ defmodule Atlas.OrgLdapConnections do
   The sync run log, newest first, with per-run counts (seen, created, updated, skipped, disabled, role changes, groups, errors) and any failure message.
 
   `GET /v1/org_ldap_connections/{id}/sync_runs`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.connection_id`, `data.organization_id`, `data.kind`, `data.trigger`, `data.status`, `data.stats`, `data.error`, `data.created_at`, `data.started_at`, `data.finished_at`, `has_more`.
   """
   def get_by_id_sync_runs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}/sync_runs", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_sync_runs/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_sync_runs`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_sync_runs(client, id, opts \\ []),
@@ -99,6 +126,8 @@ defmodule Atlas.OrgLdapConnections do
   Queue a sync run now (202). `full` (default) lists the whole directory and, when disable-on-removal is on, bans users that left it; `delta` only reads entries changed since the last successful run. Refused with 409 while another run is queued or running.
 
   `POST /v1/org_ldap_connections/{id}/sync_runs`. Required scope: `sso_connections:write`.
+
+  Body fields: `kind` (string).
   """
   def post_sync_runs(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/org_ldap_connections/{id}/sync_runs", %{"id" => id}, body, opts)
@@ -107,6 +136,8 @@ defmodule Atlas.OrgLdapConnections do
   Read one LDAP directory sync run with its counts and error.
 
   `GET /v1/org_ldap_connections/{id}/sync_runs/{runId}`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `id`, `connection_id`, `organization_id`, `kind`, `trigger`, `status`, `stats`, `error`, `created_at`, `started_at`, `finished_at`.
   """
   def get_by_id_sync_runs_by_run_id(client, id, run_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}/sync_runs/{runId}", %{"id" => id, "runId" => run_id}, nil, opts)
@@ -115,6 +146,8 @@ defmodule Atlas.OrgLdapConnections do
   Which relay agent an organization LDAP connection reaches its directory through, if any.
 
   `GET /v1/org_ldap_connections/{id}/relay`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `agent_id`.
   """
   def get_relay(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}/relay", %{"id" => id}, nil, opts)
@@ -123,6 +156,8 @@ defmodule Atlas.OrgLdapConnections do
   Route an LDAP connection through a relay agent (agent_id), or back to a direct connection (null). The agent must be active and allow the LDAP server.
 
   `PUT /v1/org_ldap_connections/{id}/relay`. Required scope: `sso_connections:write`.
+
+  Body fields: `agent_id` (string|null).
   """
   def put_relay(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/org_ldap_connections/{id}/relay", %{"id" => id}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.TestInstance do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.TestInstance do
   Get (creating on first call) your production instance's paired test-mode (development) sibling — an isolated instance with its own pk_test/sk_test, user pool and JWKS. Self-serve with your sk_ (no dashboard / platform key). Singleton per app; call from the LIVE instance. Pass { rotate_secret: true } to mint a fresh sk_test. secret_key is revealed only on create/rotate.
 
   `POST /v1/test_instance`. Required scope: `instance:write`.
+
+  Body fields: `rotate_secret` (boolean).
+  Response fields: `object`, `instance_id`, `environment`, `publishable_key`, `created`, `secret_key`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/test_instance", %{}, body, opts)

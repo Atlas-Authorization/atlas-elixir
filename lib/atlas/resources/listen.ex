@@ -5,7 +5,8 @@ defmodule Atlas.Listen do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Listen do
   Start a local webhook forwarding session (what `atlas listen` uses). Returns a session id, a signing secret for that session only (it is unrelated to any registered endpoint's secret) and the stream URL. The session needs no storage: it expires at `expires_at` (default 1 hour, `ttl_seconds` 60 to 43200).
 
   `POST /v1/listen/sessions`. Required scope: `webhooks:write`.
+
+  Body fields: `events` (array), `ttl_seconds` (integer).
+  Response fields: `object`, `id`, `secret`, `events`, `expires_at`, `stream_url`.
   """
   def post_sessions(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/listen/sessions", %{}, body, opts)
@@ -21,6 +25,8 @@ defmodule Atlas.Listen do
   Server-Sent Events stream of the instance's new events for a listen session. Each `webhook` event carries `{id, type, headers, body}`: the headers (`atlas-id`, `atlas-timestamp`, `atlas-signature`) and the exact JSON body of a would-be delivery, signed with the session secret. Starts at "now" unless resumed with `Last-Event-ID` or `after`. Query: `events` (comma-separated types or patterns), `max_events` and `max_wait_seconds` (end the stream early, for scripts and CI). A `: keep-alive` comment is sent every 15 seconds; an `expired` event ends the stream at the session expiry. 404 for an unknown session id, 400 once expired.
 
   `GET /v1/listen/sessions/{id}/stream`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `events`, `after`, `max_events`, `poll_ms`, `max_wait_seconds`.
   """
   def get_sessions_stream(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/listen/sessions/{id}/stream", %{"id" => id}, nil, opts)

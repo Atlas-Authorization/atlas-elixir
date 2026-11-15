@@ -5,7 +5,8 @@ defmodule Atlas.Resources do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Resources do
   List resources, optionally filtered by `type` or `parent_id`.
 
   `GET /v1/resources`. Required scope: `resources:read`.
+
+  Query params (`params:`): `type`, `parent_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.external_id`, `data.name`, `data.parent_id`, `data.metadata`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resources", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Resources do
   Create or update one resource by `type` + `external_id` (your own id for it). `parent` is `{id}` or `{type, external_id}` of an existing resource, or null; it must match the type’s `parent_type`.
 
   `PUT /v1/resources`. Required scope: `resources:write`.
+
+  Body fields: `type` (string), `external_id` (string), `name` (string|null), `parent` (object|null), `metadata` (object).
+  Response fields: `object`, `id`, `type`, `external_id`, `name`, `parent_id`, `metadata`, `created_at`, `updated_at`.
   """
   def put(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/resources", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.Resources do
   Discovery sync: upsert up to 500 resources in order (list parents before children). Idempotent; call it whenever your app creates or moves resources.
 
   `POST /v1/resources/sync`. Required scope: `resources:write`.
+
+  Body fields: `resources` (array).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.external_id`, `data.name`, `data.parent_id`, `data.metadata`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def post_sync(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resources/sync", %{}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.Resources do
   Read one resource, with its type and parent.
 
   `GET /v1/resources/{id}`. Required scope: `resources:read`.
+
+  Response fields: `object`, `id`, `type`, `external_id`, `name`, `parent_id`, `metadata`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resources/{id}", %{"id" => id}, nil, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.RiskEvents do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.RiskEvents do
   List risk-scored sign-ins (the audit / shadow-mode timeline), newest first, with level, score, fired signals, the action decided, mode and any operator feedback. Filter by user_id or level; page with a `before` created_at cursor.
 
   `GET /v1/risk_events`. Required scope: `risk_based_mfa:read`.
+
+  Query params (`params:`): `user_id`, `level`, `limit`, `before`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.level`, `data.score`, `data.signals`, `data.action`, `data.mode`, `data.ip`, `data.feedback`, `data.feedback_at`, `data.created_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/risk_events", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.RiskEvents do
   Counts of risk-scored sign-ins per level / action / mode over the last `days` (default 7, max 90) — the dashboard view for judging audit-mode results before enforcing.
 
   `GET /v1/risk_events/metrics`. Required scope: `risk_based_mfa:read`.
+
+  Query params (`params:`): `days`.
+  Response fields: `object`, `days`, `total`, `buckets`, `buckets.level`, `buckets.action`, `buckets.mode`, `buckets.count`.
   """
   def get_metrics(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/risk_events/metrics", %{}, nil, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.RiskEvents do
   Mark a scored sign-in `legit` or `fraud`. The weight of every signal that fired on it moves by 5 (up for fraud, down for legit, clamped 0-100), so the engine tunes itself from review. Flipping a verdict undoes the previous adjustment.
 
   `POST /v1/risk_events/{id}/feedback`. Required scope: `risk_based_mfa:write`.
+
+  Body fields: `verdict` (enum).
+  Response fields: `object`, `id`, `user_id`, `level`, `score`, `signals`, `action`, `mode`, `ip`, `feedback`, `feedback_at`, `created_at`.
   """
   def post_feedback(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/risk_events/{id}/feedback", %{"id" => id}, body, opts)

@@ -5,14 +5,46 @@ defmodule Atlas.Diagnostics do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
+
+  @doc ~S"""
+  Explain a refusal. Every error response carries a `trace_id` (and an `Atlas-Trace-Id` header); this returns the decision chain behind it: the request, the credential, the checks it passed and the one that refused (`decided_by`: captcha, policy, risk, rate_limit, scope, step_up, access_policy, verification or validation), with the error `code`, `reason`, a plain `explanation` and safe details such as the limit or the missing scope. Traces name the user when the request acted for one. Kept 7 days; rate-limit refusals are sampled (one per route per 10 seconds). Another instance trace is 404. Needs diagnostics:read.
+
+  `GET /v1/diagnostics/traces/{id}`. Required scope: `diagnostics:read`.
+
+  Response fields: `object`, `id`, `user_id`, `method`, `path`, `status`, `code`, `reason`, `decided_by`, `explanation`, `chain`, `chain.step`, `chain.outcome`, `chain.detail`, `created_at`.
+  """
+  def get_traces_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/diagnostics/traces/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Search refusal traces of the last 7 days, newest first. Filters: `user_id`, `since` and `until` (epoch milliseconds or ISO 8601), `code` (an error code). Paged with `limit` and `starting_after` like every list. Each item is the same object GET /v1/diagnostics/traces/{id} returns. Needs diagnostics:read.
+
+  `GET /v1/diagnostics/traces`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `user_id`, `since`, `until`, `code`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.method`, `data.path`, `data.status`, `data.code`, `data.reason`, `data.decided_by`, `data.explanation`, `data.chain`, `data.chain.step`, `data.chain.outcome`, `data.chain.detail`, `data.created_at`.
+  """
+  def get_traces(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/diagnostics/traces", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_traces`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_traces(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/diagnostics/traces", %{}, opts)
 
   @doc ~S"""
   End-to-end login-readiness probe for a given `origin` (CORS, cookie domain, email claim, JWKS), reporting the observed effective runtime values with a per-hop pass/fail and a specific fix. Pass `live=true` to upgrade the signing hop from config-inferred to an actual JWKS round-trip (real HTTP status + key count). `integration` says which integration the checks assumed for the origin and why: for a hosted-redirect origin (declared in allowed_origins, or inferred because every OAuth client redirecting to it uses the authorization-code flow and no Atlas browser SDK called from it in the last 7 days) the cors and session_cookie checks carry applies:false and do not make ready false.
 
   `GET /v1/diagnostics/login_readiness`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `origin`, `live`.
+  Response fields: `object`, `origin`, `live`, `data_region`, `ready`, `integration`, `integration.assumed`, `integration.source`, `integration.reason`, `checks`, `checks.name`, `checks.pass`, `checks.applies`, `checks.observed`, `checks.detail`.
   """
   def get_login_readiness(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/diagnostics/login_readiness", %{}, nil, opts)
@@ -21,12 +53,17 @@ defmodule Atlas.Diagnostics do
   Explain why a specific browser request would be rejected: CORS origin, CORS method (the DELETE/PATCH class), session-cookie delivery, rate-limit bucket, captcha requirement, and — with an optional `token` — JWT verification against this instance. Each finding says whether it BLOCKS and names the fix. Inputs: `origin` (required), `method`+`path` (default POST /v1/client/sign_ins), `token`.
 
   `GET /v1/diagnostics/request_inspector`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `origin`, `method`, `path`, `token`.
+  Response fields: `object`, `origin`, `method`, `path`, `would_be_rejected`, `findings`, `findings.check`, `findings.blocks`, `findings.observed`, `findings.detail`.
   """
   def get_request_inspector(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/diagnostics/request_inspector", %{}, nil, opts)
 
   @doc false
   def __operations__, do: [
+    {:get_traces_by_id, :get, "/v1/diagnostics/traces/{id}", 1, false, false},
+    {:get_traces, :get, "/v1/diagnostics/traces", 0, false, true},
     {:get_login_readiness, :get, "/v1/diagnostics/login_readiness", 0, false, false},
     {:get_request_inspector, :get, "/v1/diagnostics/request_inspector", 0, false, false}
   ]

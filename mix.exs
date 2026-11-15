@@ -1,7 +1,7 @@
 defmodule AtlasAuth.MixProject do
   use Mix.Project
 
-  @version "0.16.0"
+  @version "0.17.0"
   @source_url "https://github.com/Atlas-Authorization/atlas-elixir"
 
   def project do
@@ -45,6 +45,12 @@ defmodule AtlasAuth.MixProject do
       {:plug, "~> 1.14", optional: true},
       # HTTP client for the Backend API (`Atlas.*` resource modules).
       {:req, "~> 0.5"},
+      # Optional: with it installed, every Backend API call emits `[:atlas, :request, ...]` events.
+      {:telemetry, "~> 1.0", optional: true},
+      # Optional: `AtlasAuth.Telemetry.metrics/0` definitions for telemetry_metrics reporters.
+      {:telemetry_metrics, "~> 1.0", optional: true},
+      # Optional: `AtlasAuth.WebhookDedupe.EctoStore`, the SQL webhook-dedupe store.
+      {:ecto_sql, "~> 3.10", optional: true},
       {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]
   end

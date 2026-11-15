@@ -5,7 +5,8 @@ defmodule Atlas.LegacyAuthConnection do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.LegacyAuthConnection do
   Read the instance's lazy-migration (legacy-auth / custom-DB) connection. Reports has_signing_secret, never the signing secret. Returns { configured: false } when none exists.
 
   `GET /v1/legacy_auth_connection`. Required scope: `legacy_auth:read`.
+
+  Response fields: `object`, `id`, `enabled`, `verify_url`, `has_signing_secret`, `import_on_login`, `timeout_ms`, `strategy`, `preset`, `preset_config`, `created_at`, `updated_at`, `configured`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/legacy_auth_connection", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.LegacyAuthConnection do
   Create or replace the instance's lazy-migration connection: your verify webhook (strategy password: verify_url + signing_secret) or a vendor preset (strategy preset: preset + preset_config + secret) that checks the password against your previous provider. enabled, import_on_login, timeout_ms apply to both. Secrets are write-only; one connection per instance; URLs must be public https in production. Fails closed; a vendor MFA challenge after a correct password counts as verified.
 
   `PUT /v1/legacy_auth_connection`. Required scope: `legacy_auth:write`.
+
+  Body fields: `enabled` (boolean), `verify_url` (string), `signing_secret` (string), `import_on_login` (boolean), `timeout_ms` (integer), `strategy` (enum), `preset` (string), `preset_config` (object), `secret` (string).
+  Response fields: `object`, `id`, `enabled`, `verify_url`, `has_signing_secret`, `import_on_login`, `timeout_ms`, `strategy`, `preset`, `preset_config`, `created_at`, `updated_at`, `configured`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/legacy_auth_connection", %{}, body, opts)
@@ -29,6 +35,8 @@ defmodule Atlas.LegacyAuthConnection do
   Delete the instance's lazy-migration (legacy-auth / custom-DB) connection.
 
   `DELETE /v1/legacy_auth_connection`. Required scope: `legacy_auth:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/legacy_auth_connection", %{}, nil, opts)

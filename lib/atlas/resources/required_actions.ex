@@ -5,7 +5,8 @@ defmodule Atlas.RequiredActions do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.RequiredActions do
   Owe the same action for many users at once: every member of one organization (organization_id) or an explicit user_ids list, at most 5000. Users outside the instance are skipped, and an already-open action counts as already_open. Emits user.required_action_requested per newly opened action.
 
   `POST /v1/required_actions/bulk`. Required scope: `users:write`.
+
+  Body fields: `action` (enum, required), `url` (string), `reason` (string), `organization_id` (string), `user_ids` (array).
   """
   def post_bulk(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/required_actions/bulk", %{}, body, opts)

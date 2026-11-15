@@ -5,7 +5,8 @@ defmodule Atlas.OrganizationConnections do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.OrganizationConnections do
   B2B connections between organizations, optionally those involving one organization.
 
   `GET /v1/organization_connections`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.supplier_organization_id`, `data.partner_organization_id`, `data.application_id`, `data.roles`, `data.status`, `data.expires_at`, `data.accepted_by`, `data.created_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organization_connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.OrganizationConnections do
   Invite a partner organization to use an application the supplier organization holds. Returns a one-time `token` for the partner's administrator; the invitation lasts 14 days.
 
   `POST /v1/organization_connections`. Required scope: `organizations:write`.
+
+  Body fields: `supplier_organization_id` (string, required), `partner_organization_id` (string, required), `application` (string, required), `roles` (array).
+  Response fields: `object`, `id`, `supplier_organization_id`, `partner_organization_id`, `application_id`, `roles`, `status`, `expires_at`, `accepted_by`, `created_at`, `token`, `note`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organization_connections", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.OrganizationConnections do
   Accept an invitation with its token: the partner organization gains access to the application. The token works once.
 
   `POST /v1/organization_connections/{id}/accept`. Required scope: `organizations:write`.
+
+  Body fields: `token` (string, required), `accepted_by` (string).
+  Response fields: `object`, `id`, `supplier_organization_id`, `partner_organization_id`, `application_id`, `roles`, `status`, `expires_at`, `accepted_by`, `created_at`.
   """
   def post_accept(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organization_connections/{id}/accept", %{"id" => id}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.OrganizationConnections do
   Revoke a connection (or a pending invitation). The partner organization loses access to the application.
 
   `DELETE /v1/organization_connections/{id}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `supplier_organization_id`, `partner_organization_id`, `application_id`, `roles`, `status`, `expires_at`, `accepted_by`, `created_at`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organization_connections/{id}", %{"id" => id}, nil, opts)

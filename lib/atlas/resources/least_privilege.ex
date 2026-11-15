@@ -5,7 +5,8 @@ defmodule Atlas.LeastPrivilege do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.LeastPrivilege do
   The least-privilege report: for every active secret key, OAuth client, MCP gateway and agent, what it is allowed to do against what it used over the window, the permissions never used, and the narrower grant that would still cover its use. Credentials with something unused come first. `format=csv` exports one row per permission.
 
   `GET /v1/least_privilege/report`. Required scope: `least_privilege:read`.
+
+  Query params (`params:`): `days`, `subject_type`, `subject_id`, `only_unused`, `limit`, `format`, `starting_after`.
+  Response fields: `object`, `generated_at`, `window_days`, `summary`, `summary.subjects`, `summary.with_unused`, `summary.unused_permissions`, `summary.applicable_suggestions`, `data`, `data.object`, `data.subject_type`, `data.subject_id`, `data.name`, `data.window_days`, `data.observed_days`, `data.confidence`, `data.granted`, `data.granted.permission`, `data.granted.kind`, `data.granted.detail`, `data.used`, `data.used.permission`, `data.used.uses`, `data.used.last_used_at`, `data.unused`, `data.unused.permission`, `data.unused.kind`, `data.unused.detail`, `data.unused.last_used_at`, `data.suggestion`, `data.suggestion.summary`, `data.suggestion.changes`, `data.suggestion.digest`, `data.applicable`, `data.note`.
   """
   def get_report(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/least_privilege/report", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_report/1`, following the cursor page by page.
+  Lazy stream over every item of `get_report`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_report(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.LeastPrivilege do
   The least-privilege report of one credential (`type` is api_key, oauth_client, mcp_gateway or agent). 404 for a credential the report does not cover, such as a revoked key.
 
   `GET /v1/least_privilege/report/{type}/{id}`. Required scope: `least_privilege:read`.
+
+  Query params (`params:`): `days`.
+  Response fields: `object`, `subject_type`, `subject_id`, `name`, `window_days`, `observed_days`, `confidence`, `granted`, `granted.permission`, `granted.kind`, `granted.detail`, `used`, `used.permission`, `used.uses`, `used.last_used_at`, `unused`, `unused.permission`, `unused.kind`, `unused.detail`, `unused.last_used_at`, `suggestion`, `suggestion.summary`, `suggestion.changes`, `suggestion.changes.field`, `suggestion.changes.before`, `suggestion.changes.after`, `suggestion.digest`, `applicable`, `note`.
   """
   def get_report_by_type_by_id(client, type, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/least_privilege/report/{type}/{id}", %{"type" => type, "id" => id}, nil, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.LeastPrivilege do
   Apply a credential's suggestion: narrow a secret key's scopes, an OAuth client's allowed scopes, an MCP gateway's tool policy, or revoke an agent's unused tool grants. Preview it first with `?dry_run=true`, then send the same body for real. `digest` (from the report) must match the current suggestion, else 409, so what you previewed is what is applied; the write is conditional on the credential being unchanged. A suggestion only ever removes permissions. Over a window the data does not fully cover (`confidence: low`) it needs `acknowledge_short_window: true`. Audited as `least_privilege.applied`.
 
   `POST /v1/least_privilege/apply`. Required scope: `least_privilege:write`.
+
+  Body fields: `subject_type` (enum), `subject_id` (string), `digest` (string), `days` (integer), `acknowledge_short_window` (boolean).
+  Response fields: `object`, `subject_type`, `subject_id`, `applied`, `summary`, `changes`, `changes.field`, `changes.before`, `changes.after`.
   """
   def post_apply(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/least_privilege/apply", %{}, body, opts)

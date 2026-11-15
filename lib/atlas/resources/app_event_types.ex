@@ -5,7 +5,8 @@ defmodule Atlas.AppEventTypes do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AppEventTypes do
   The app's own event catalog: the event types it publishes to its customers' webhook endpoints.
 
   `GET /v1/app_event_types`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.description`, `data.schema`, `data.deprecated`, `data.required_scope`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_event_types", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AppEventTypes do
   Register an app event type (e.g. call.completed), optionally with a JSON Schema for its data. 409 if already registered. At most 500 per instance.
 
   `POST /v1/app_event_types`. Required scope: `webhooks:write`.
+
+  Body fields: `type` (string, required), `description` (string|null), `schema` (object|null), `deprecated` (boolean).
+  Response fields: `object`, `id`, `type`, `description`, `schema`, `deprecated`, `required_scope`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_event_types", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AppEventTypes do
   Retrieve one app event type by its aet_ id or its name.
 
   `GET /v1/app_event_types/{id}`. Required scope: `webhooks:read`.
+
+  Response fields: `object`, `id`, `type`, `description`, `schema`, `deprecated`, `required_scope`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_event_types/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AppEventTypes do
   Change an app event type's description, schema or deprecated flag. A type cannot be renamed: register the new name and deprecate the old one.
 
   `PATCH /v1/app_event_types/{id}`. Required scope: `webhooks:write`.
+
+  Body fields: `description` (string|null), `schema` (object|null), `deprecated` (boolean).
+  Response fields: `object`, `id`, `type`, `description`, `schema`, `deprecated`, `required_scope`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/app_event_types/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.AppEventTypes do
   Delete an app event type. It can no longer be published; endpoints that named it never receive it again. Deprecate instead while customers still subscribe.
 
   `DELETE /v1/app_event_types/{id}`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `type`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/app_event_types/{id}", %{"id" => id}, nil, opts)

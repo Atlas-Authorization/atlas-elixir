@@ -5,7 +5,8 @@ defmodule Atlas.OauthClientProfiles do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.OauthClientProfiles do
   List the OAuth client policy profiles: the built-ins (fapi2_security, fapi2_message_signing, pkce_required, par_required, dpop_required) and your custom ones.
 
   `GET /v1/oauth_client_profiles`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.name`, `data.builtin`, `data.description`, `data.require_pkce`, `data.require_par`, `data.sender_constraint`, `data.require_signed_request`, `data.token_endpoint_auth_methods`, `data.signing_algs`, `data.https_redirects_only`, `data.allowed_claims`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_client_profiles", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.OauthClientProfiles do
   Create or replace a custom client policy profile (rules: PKCE, PAR, sender constraint, signed request object, allowed auth methods and signing algorithms, https-only redirects, allowed claims). Built-in names are reserved.
 
   `PUT /v1/oauth_client_profiles/{name}`. Required scope: `oauth_clients:write`.
+
+  Body fields: `description` (string|null), `require_pkce` (boolean), `require_par` (boolean), `sender_constraint` (enum), `require_signed_request` (boolean), `token_endpoint_auth_methods` (array|null), `signing_algs` (array|null), `https_redirects_only` (boolean), `allowed_claims` (array|null).
+  Response fields: `object`, `name`, `builtin`, `description`, `require_pkce`, `require_par`, `sender_constraint`, `require_signed_request`, `token_endpoint_auth_methods`, `signing_algs`, `https_redirects_only`, `allowed_claims`.
   """
   def put(client, name, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_client_profiles/{name}", %{"name" => name}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.OauthClientProfiles do
   Delete a custom client policy profile. 409 while any client is assigned it.
 
   `DELETE /v1/oauth_client_profiles/{name}`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, name, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_client_profiles/{name}", %{"name" => name}, nil, opts)

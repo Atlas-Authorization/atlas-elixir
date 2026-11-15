@@ -5,7 +5,8 @@ defmodule Atlas.BotSignals do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.BotSignals do
   Export the anonymised anti-bot signal lake (device + behavioural + network features, risk verdict, heuristic score), newest first with a `before` epoch-ms cursor. Training data for an in-house bot-vs-human model. No raw IPs/PII.
 
   `GET /v1/bot_signals`. Required scope: `bot_signals:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.attempt_id`, `data.user_id`, `data.kind`, `data.source`, `data.ip_hash`, `data.ip_subnet`, `data.asn`, `data.geo_country`, `data.geo_city`, `data.is_datacenter`, `data.is_anonymizer`, `data.header_fingerprint`, `data.accept_language`, `data.device_id`, `data.device_fingerprint`, `data.device_features`, `data.device_features.screenWidth`, `data.device_features.screenHeight`, `data.device_features.colorDepth`, `data.device_features.pixelRatio`, `data.device_features.timezone`, `data.device_features.timezoneOffset`, `data.device_features.language`, `data.device_features.languages`, `data.device_features.languageCount`, `data.device_features.platform`, `data.device_features.hardwareConcurrency`, `data.device_features.deviceMemory`, `data.device_features.maxTouchPoints`, `data.device_features.touchSupport`, `data.device_features.cookieEnabled`, `data.device_features.doNotTrack`, `data.device_features.webglVendor`, `data.device_features.webglRenderer`, `data.device_features.pluginCount`, `data.device_features.fontCount`, `data.device_features.pointerType`, `data.device_features.webdriver`, `data.device_features.headless`, `data.device_features.hasChrome`, `data.device_features.languagesEmpty`, `data.device_features.webglSoftware`, `data.device_features.automationHint`, `data.behavior_features`, `data.behavior_features.mouseMoves`, `data.behavior_features.mouseDistance`, `data.behavior_features.mouseAvgSpeed`, `data.behavior_features.mouseMaxSpeed`, `data.behavior_features.mouseSpeedVariance`, `data.behavior_features.mouseCurvatureEntropy`, `data.behavior_features.mouseStraightLineRatio`, `data.behavior_features.keyCount`, `data.behavior_features.keyAvgDwellMs`, `data.behavior_features.keyAvgFlightMs`, `data.behavior_features.keyDwellVariance`, `data.behavior_features.keyFlightVariance`, `data.behavior_features.pasteCount`, `data.behavior_features.backspaceCount`, `data.behavior_features.typingSpeedCps`, `data.behavior_features.timeToFirstInteractionMs`, `data.behavior_features.timeToSubmitMs`, `data.behavior_features.focusChanges`, `data.behavior_features.scrollCount`, `data.behavior_features.hadPointerMove`, `data.behavior_features.hadKeydown`, `data.behavior_features.interactionCount`, `data.captcha_provider`, `data.captcha_score`, `data.risk_level`, `data.risk_score`, `data.risk_signals`, `data.heuristic_score`, `data.heuristic_reasons`, `data.outcome`, `data.created_at`, `next_before`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/bot_signals", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

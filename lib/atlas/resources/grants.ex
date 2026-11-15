@@ -5,7 +5,8 @@ defmodule Atlas.Grants do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,61 @@ defmodule Atlas.Grants do
   Revoke one consent grant and cascade-revoke its access/refresh grants through the standard revocation path, so the app stops working on its next request.
 
   `DELETE /v1/grants/{id}`. Required scope: `grants:write`.
+
+  Response fields: `object`, `id`, `deleted`, `tokens_revoked`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/grants/{id}", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  Take an amount from one of a grant's counters, atomically. A denial is a 200 decision with `allowed: false`.
+
+  `POST /v1/grants/{grantType}/{id}/consume`. Required scope: `machines:write`.
+
+  Body fields: `counter` (string, required), `amount` (number), `idempotency_key` (string, required), `context` (object), `lease` (boolean), `ttl_seconds` (integer).
+  Response fields: `object`, `allowed`, `counter`, `amount`, `used`, `limit`, `remaining`, `window`, `window_start`, `resets_at`, `reason`, `lease`, `lease.id`, `lease.amount`, `lease.expires_at`, `replayed`.
+  """
+  def post_consume(client, grant_type, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/grants/{grantType}/{id}/consume", %{"grantType" => grant_type, "id" => id}, body, opts)
+
+  @doc ~S"""
+  Give back all or part of one earlier consume. Never more than that consume took.
+
+  `POST /v1/grants/{grantType}/{id}/refund`. Required scope: `machines:write`.
+
+  Body fields: `counter` (string, required), `amount` (number), `idempotency_key` (string, required), `consume_idempotency_key` (string, required).
+  Response fields: `object`, `refunded`, `counter`, `amount`, `used`, `reason`, `replayed`.
+  """
+  def post_refund(client, grant_type, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/grants/{grantType}/{id}/refund", %{"grantType" => grant_type, "id" => id}, body, opts)
+
+  @doc ~S"""
+  The current window of every counter a grant defines, and the leases still holding an amount.
+
+  `GET /v1/grants/{grantType}/{id}/usage`. Required scope: `machines:read`.
+
+  Response fields: `object`, `grant_type`, `grant_id`, `machine_id`, `live`, `counters`, `counters.counter`, `counters.limit`, `counters.window`, `counters.amount_field`, `counters.window_start`, `counters.resets_at`, `counters.used`, `counters.remaining`, `leases`, `leases.id`, `leases.counter`, `leases.amount`, `leases.expires_at`.
+  """
+  def get_usage(client, grant_type, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/grants/{grantType}/{id}/usage", %{"grantType" => grant_type, "id" => id}, nil, opts)
+
+  @doc ~S"""
+  Hand a lease back. What was not consumed returns to the counter. Safe to repeat.
+
+  `POST /v1/grants/{grantType}/{id}/leases/{leaseId}/release`. Required scope: `machines:write`.
+
+  Body fields: `consumed` (number).
+  Response fields: `object`, `id`, `counter`, `amount`, `consumed`, `returned`, `status`, `expires_at`.
+  """
+  def post_leases_release(client, grant_type, id, lease_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/grants/{grantType}/{id}/leases/{leaseId}/release", %{"grantType" => grant_type, "id" => id, "leaseId" => lease_id}, body, opts)
+
   @doc false
   def __operations__, do: [
-    {:delete, :delete, "/v1/grants/{id}", 1, false, false}
+    {:delete, :delete, "/v1/grants/{id}", 1, false, false},
+    {:post_consume, :post, "/v1/grants/{grantType}/{id}/consume", 2, true, false},
+    {:post_refund, :post, "/v1/grants/{grantType}/{id}/refund", 2, true, false},
+    {:get_usage, :get, "/v1/grants/{grantType}/{id}/usage", 2, false, false},
+    {:post_leases_release, :post, "/v1/grants/{grantType}/{id}/leases/{leaseId}/release", 3, true, false}
   ]
 end

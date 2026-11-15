@@ -5,7 +5,8 @@ defmodule Atlas.DeliveryHealth do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.DeliveryHealth do
   Delivery health of every outbound target of the instance — webhook endpoints, the referral connection, OAuth clients' back-channel logout receivers and integrations — in one shape: state, failing_since, last success and failure, consecutive failures, 24-hour success rate, alert contacts and which alerts were sent. Defaults to the unhealthy ones.
 
   `GET /v1/delivery_health`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `kind`, `state`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kind`, `data.target_id`, `data.url`, `data.label`, `data.state`, `data.failing_since`, `data.disabled_at`, `data.last_success_at`, `data.last_failure`, `data.consecutive_failures`, `data.success_rate_24h`, `data.attempts_24h`, `data.alert_contacts`, `data.alerts`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/delivery_health", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.DeliveryHealth do
   Delivery health of one target. 404 until a delivery to it has been recorded.
 
   `GET /v1/delivery_health/{kind}/{id}`. Required scope: `webhooks:read`.
+
+  Response fields: `object`, `kind`, `target_id`, `url`, `label`, `state`, `failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `alert_contacts`, `alerts`.
   """
   def get_by_kind_by_id(client, kind, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/delivery_health/{kind}/{id}", %{"kind" => kind, "id" => id}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.DeliveryHealth do
   Set who is emailed when this target fails (up to 20 addresses), or null for the account's owners. Audited.
 
   `PUT /v1/delivery_health/{kind}/{id}/alert_contacts`. Required scope: `webhooks:write`.
+
+  Body fields: `alert_contacts` (array|null, required).
+  Response fields: `object`, `kind`, `target_id`, `url`, `label`, `state`, `failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `alert_contacts`, `alerts`.
   """
   def put_alert_contacts(client, kind, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/delivery_health/{kind}/{id}/alert_contacts", %{"kind" => kind, "id" => id}, body, opts)

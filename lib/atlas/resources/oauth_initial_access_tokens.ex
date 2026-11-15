@@ -5,7 +5,8 @@ defmodule Atlas.OauthInitialAccessTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,27 @@ defmodule Atlas.OauthInitialAccessTokens do
   List the initial access tokens for dynamic client registration (RFC 7591 §3), newest first, with status (active, expired, used_up, revoked) and use counts. The tokens themselves are never returned.
 
   `GET /v1/oauth_initial_access_tokens`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.token_prefix`, `data.description`, `data.profile`, `data.owner`, `data.allowed_grant_types`, `data.https_redirects_only`, `data.max_clients`, `data.default_status`, `data.status`, `data.max_uses`, `data.use_count`, `data.expires_at`, `data.revoked_at`, `data.last_used_at`, `data.created_at`, `data.token`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_initial_access_tokens", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/oauth_initial_access_tokens", %{}, opts)
 
   @doc ~S"""
-  Mint an initial access token for dynamic client registration. Only holders can register clients at POST /oauth2/register (Authorization: Bearer <token>) once oauthProvider.requireInitialAccessToken is on. The token is returned exactly once and stored hashed; optional expiry and use limit. Audited as oauth_initial_access_token.created.
+  Mint an initial access token for dynamic client registration. Give it an `owner` (the developer), `allowed_grant_types`, `https_redirects_only` and `max_clients` to hand one developer a token that registers only conforming clients owned by them, starting in `default_status` (development). `login_url` / `consent_url` (https) set your own sign-in and consent pages on every client it registers. Only holders can register clients at POST /oauth2/register (Authorization: Bearer <token>) once oauthProvider.requireInitialAccessToken is on. The token is returned exactly once and stored hashed; optional expiry and use limit. Audited as oauth_initial_access_token.created.
 
   `POST /v1/oauth_initial_access_tokens`. Required scope: `oauth_clients:write`.
+
+  Body fields: `description` (string), `profile` (string|null), `expires_in_seconds` (integer), `max_uses` (integer), `owner` (string), `allowed_grant_types` (array), `https_redirects_only` (boolean), `max_clients` (integer), `default_status` (enum), `login_url` (string|null), `consent_url` (string|null).
+  Response fields: `object`, `id`, `token_prefix`, `description`, `profile`, `owner`, `allowed_grant_types`, `https_redirects_only`, `max_clients`, `default_status`, `status`, `max_uses`, `use_count`, `expires_at`, `revoked_at`, `last_used_at`, `created_at`, `token`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_initial_access_tokens", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.OauthInitialAccessTokens do
   Revoke an initial access token: it stops working at once. Clients it already registered are unaffected. Audited as oauth_initial_access_token.revoked.
 
   `DELETE /v1/oauth_initial_access_tokens/{id}`. Required scope: `oauth_clients:write`.
+
+  Response fields: `object`, `id`, `token_prefix`, `description`, `profile`, `owner`, `allowed_grant_types`, `https_redirects_only`, `max_clients`, `default_status`, `status`, `max_uses`, `use_count`, `expires_at`, `revoked_at`, `last_used_at`, `created_at`, `token`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_initial_access_tokens/{id}", %{"id" => id}, nil, opts)

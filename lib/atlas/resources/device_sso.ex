@@ -5,7 +5,8 @@ defmodule Atlas.DeviceSso do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.DeviceSso do
   List devices registered for device-bound SSO, optionally for one `user_id`.
 
   `GET /v1/device_sso/registrations`. Required scope: `desktop_mfa:read`.
+
+  Query params (`params:`): `user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.platform`, `data.hostname`, `data.agent_version`, `data.status`, `data.signing_key_id`, `data.user_key_registered`, `data.user_key_method`, `data.local_username`, `data.last_login_at`, `data.revoked_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_registrations(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/device_sso/registrations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_registrations/1`, following the cursor page by page.
+  Lazy stream over every item of `get_registrations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_registrations(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.DeviceSso do
   Read one device registration.
 
   `GET /v1/device_sso/registrations/{id}`. Required scope: `desktop_mfa:read`.
+
+  Response fields: `object`, `id`, `user_id`, `platform`, `hostname`, `agent_version`, `status`, `signing_key_id`, `user_key_registered`, `user_key_method`, `local_username`, `last_login_at`, `revoked_at`, `created_at`.
   """
   def get_registrations_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/device_sso/registrations/{id}", %{"id" => id}, nil, opts)
@@ -36,6 +42,8 @@ defmodule Atlas.DeviceSso do
   Delete a device registration and its sessions.
 
   `DELETE /v1/device_sso/registrations/{id}`. Required scope: `desktop_mfa:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_registrations(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/device_sso/registrations/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +52,8 @@ defmodule Atlas.DeviceSso do
   Revoke a device registration. Every refresh token it holds stops working at once and its next call is refused.
 
   `POST /v1/device_sso/registrations/{id}/revoke`. Required scope: `desktop_mfa:write`.
+
+  Response fields: `object`, `id`, `user_id`, `platform`, `hostname`, `agent_version`, `status`, `signing_key_id`, `user_key_registered`, `user_key_method`, `local_username`, `last_login_at`, `revoked_at`, `created_at`.
   """
   def post_registrations_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/device_sso/registrations/{id}/revoke", %{"id" => id}, nil, opts)

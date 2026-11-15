@@ -5,20 +5,24 @@ defmodule Atlas.Workflows do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
   @doc ~S"""
-  List lifecycle workflows: a trigger (cron, user created, inactive for N days, membership age, trial end, webhook event, manual) plus steps, run by the worker. Steps can branch (`if`, `switch`), loop (`for_each`), wait, retry, call connectors and HTTP endpoints, open tickets, request or revoke governed access, and pause for an approval.
+  List lifecycle workflows: a trigger (cron, user created, inactive for N days, membership age, trial end, webhook event, audit-log entry, application event, manual) plus steps, run by the worker. Steps can branch (`if`, `switch`), loop (`for_each`), wait, retry, call connectors and HTTP endpoints, open tickets, request or revoke governed access, and pause for an approval.
 
   `GET /v1/workflows`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.enabled`, `data.trigger`, `data.steps`, `data.next_run_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflows", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.Workflows do
   Create a lifecycle workflow. Steps are notify, disable, delete, invite, add_to_org, remove_from_org, add_to_team, remove_from_team, add_to_group, remove_from_group (an instance group by id or slug) and call_action (an Action with the `workflow_step` trigger, which may be an `http` Action), plus the graph steps: if, switch, for_each, wait, set_variable, http_request, call_connector, create_ticket, create_iga_request, start_campaign, revoke_grant, approval and kv. Expressions use `{{ user.email }}`, `event.*`, `input.*`, `vars.*` and `steps.<id>.output`. Each subject runs once per workflow; the first failing step stops the run unless it sets `on_error: continue` or a `retry`.
 
   `POST /v1/workflows`. Required scope: `actions:write`.
+
+  Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `trigger` (object), `steps` (array).
+  Nested body fields: `trigger.type`, `trigger.filter`, `trigger.action`, `trigger.cron`, `trigger.after_minutes`, `trigger.days`, `trigger.days_before`, `trigger.organization_id`, `trigger.event_type`, `steps.type`, `steps.id`, `steps.retry`, `steps.retry.max`, `steps.retry.backoff_seconds`, `steps.on_error`, `steps.condition`, `steps.then`, `steps.else`, `steps.steps`, `steps.items`, `steps.seconds`, `steps.until`, `steps.url`, `steps.connector`, `steps.operation`, `steps.input`, `steps.subject`, `steps.body`, `steps.to`, `steps.reason`, `steps.role`, `steps.organization_id`, `steps.team_id`, `steps.action_id`.
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `trigger`, `steps`, `next_run_at`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflows", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.Workflows do
   Read one lifecycle workflow.
 
   `GET /v1/workflows/{id}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `trigger`, `steps`, `next_run_at`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflows/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.Workflows do
   Update a workflow's name, enabled flag, trigger or steps. Changing the trigger resets its cron slot and event cursor.
 
   `PATCH /v1/workflows/{id}`. Required scope: `actions:write`.
+
+  Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `trigger` (object), `steps` (array).
+  Nested body fields: `trigger.type`, `trigger.filter`, `trigger.action`, `trigger.cron`, `trigger.after_minutes`, `trigger.days`, `trigger.days_before`, `trigger.organization_id`, `trigger.event_type`, `steps.type`, `steps.id`, `steps.retry`, `steps.retry.max`, `steps.retry.backoff_seconds`, `steps.on_error`, `steps.condition`, `steps.then`, `steps.else`, `steps.steps`, `steps.items`, `steps.seconds`, `steps.until`, `steps.url`, `steps.connector`, `steps.operation`, `steps.input`, `steps.subject`, `steps.body`, `steps.to`, `steps.reason`, `steps.role`, `steps.organization_id`, `steps.team_id`, `steps.action_id`.
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `trigger`, `steps`, `next_run_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/workflows/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.Workflows do
   Delete a workflow and its run history.
 
   `DELETE /v1/workflows/{id}`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/workflows/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +76,9 @@ defmodule Atlas.Workflows do
   Check what a workflow would do for a user (`user_id`; none for cron) without changing anything. Every step is validated against live data and reported as `would_run` or `failed`.
 
   `POST /v1/workflows/{id}/dry_run`. Required scope: `actions:write`.
+
+  Body fields: `user_id` (string), `organization_id` (string).
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
   """
   def post_dry_run(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/dry_run", %{"id" => id}, body, opts)
@@ -68,6 +87,9 @@ defmodule Atlas.Workflows do
   Run a workflow now for one user (`user_id`; none for cron), outside its trigger. Returns the finished run.
 
   `POST /v1/workflows/{id}/run`. Required scope: `actions:write`.
+
+  Body fields: `user_id` (string), `organization_id` (string).
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
   """
   def post_run(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/run", %{"id" => id}, body, opts)
@@ -76,12 +98,15 @@ defmodule Atlas.Workflows do
   Run history, newest first, dry runs included (`dry_run`).
 
   `GET /v1/workflows/{id}/runs`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.workflow_id`, `data.subject`, `data.user_id`, `data.dry_run`, `data.status`, `data.cancelled_at`, `data.cancelled_by`, `data.retry_count`, `data.resume_at`, `data.waiting_on`, `data.steps`, `data.steps.index`, `data.steps.type`, `data.steps.path`, `data.steps.status`, `data.steps.attempt`, `data.steps.at`, `data.steps.detail`, `data.steps.output`, `data.error`, `data.started_at`, `data.finished_at`, `has_more`, `next_cursor`.
   """
   def get_by_id_runs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflows/{id}/runs", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_runs/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_runs`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_runs(client, id, opts \\ []),
@@ -91,6 +116,9 @@ defmodule Atlas.Workflows do
   Create a workflow from a starter template. It is created disabled unless `enabled` is true, so you can look it over first.
 
   `POST /v1/workflows/from_template`. Required scope: `actions:write`.
+
+  Body fields: `template` (enum, required), `parameters` (object), `name` (string), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `trigger`, `steps`, `next_run_at`, `created_at`, `updated_at`.
   """
   def post_from_template(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflows/from_template", %{}, body, opts)
@@ -99,6 +127,9 @@ defmodule Atlas.Workflows do
   Start a workflow whose trigger is `manual` with an `input` object (read as `input.*` in steps). Runs until it finishes or parks on a wait, retry or approval; the returned run says which.
 
   `POST /v1/workflows/{id}/invoke`. Required scope: `actions:write`.
+
+  Body fields: `user_id` (string), `organization_id` (string), `input` (object).
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
   """
   def post_invoke(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/invoke", %{"id" => id}, body, opts)
@@ -107,6 +138,8 @@ defmodule Atlas.Workflows do
   One run with its per-step log: each step's path, status, attempt, detail and output.
 
   `GET /v1/workflows/{id}/runs/{runId}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
   """
   def get_by_id_runs_by_run_id(client, id, run_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflows/{id}/runs/{runId}", %{"id" => id, "runId" => run_id}, nil, opts)
@@ -115,6 +148,8 @@ defmodule Atlas.Workflows do
   Retry a failed run from the step that failed, keeping its variables and earlier outputs.
 
   `POST /v1/workflows/{id}/runs/{runId}/resume`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
   """
   def post_runs_resume(client, id, run_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/runs/{runId}/resume", %{"id" => id, "runId" => run_id}, nil, opts)
@@ -123,12 +158,15 @@ defmodule Atlas.Workflows do
   The workflow's key-value table (what `kv` steps read and write).
 
   `GET /v1/workflows/{id}/kv`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.key`, `data.value`, `data.deleted`, `has_more`.
   """
   def get_kv(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflows/{id}/kv", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_kv/2`, following the cursor page by page.
+  Lazy stream over every item of `get_kv`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_kv(client, id, opts \\ []),
@@ -138,6 +176,9 @@ defmodule Atlas.Workflows do
   Set a key in the workflow key-value table.
 
   `PUT /v1/workflows/{id}/kv/{key}`. Required scope: `actions:write`.
+
+  Body fields: `value` (any, required).
+  Response fields: `object`, `key`, `value`, `deleted`.
   """
   def put_kv(client, id, key, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/workflows/{id}/kv/{key}", %{"id" => id, "key" => key}, body, opts)
@@ -146,9 +187,32 @@ defmodule Atlas.Workflows do
   Delete a key from the workflow key-value table.
 
   `DELETE /v1/workflows/{id}/kv/{key}`. Required scope: `actions:write`.
+
+  Response fields: `object`, `key`, `value`, `deleted`.
   """
   def delete_kv(client, id, key, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/workflows/{id}/kv/{key}", %{"id" => id, "key" => key}, nil, opts)
+
+  @doc ~S"""
+  Cancel a run that is running or waiting (a timer, a retry back-off or an approval). The step in flight finishes; nothing after it runs, and any approval it was waiting on is closed. Fires `workflow.run_cancelled`. 400 for a run that already ended or a dry run.
+
+  `POST /v1/workflows/{id}/runs/{runId}/cancel`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
+  """
+  def post_runs_cancel(client, id, run_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/runs/{runId}/cancel", %{"id" => id, "runId" => run_id}, nil, opts)
+
+  @doc ~S"""
+  Retry a failed or cancelled run from a chosen step (`from_step`, a step path from the run's step log such as `2` or `1.then.0`). Variables and the outputs of earlier steps are kept; the chosen step and everything after it run again. The step must be where the run stopped or earlier. To retry from the step that failed, use POST /v1/workflows/{id}/runs/{runId}/resume.
+
+  `POST /v1/workflows/{id}/runs/{runId}/retry`. Required scope: `actions:write`.
+
+  Body fields: `from_step` (string, required).
+  Response fields: `object`, `id`, `workflow_id`, `subject`, `user_id`, `dry_run`, `status`, `cancelled_at`, `cancelled_by`, `retry_count`, `resume_at`, `waiting_on`, `steps`, `steps.index`, `steps.type`, `steps.path`, `steps.status`, `steps.attempt`, `steps.at`, `steps.detail`, `steps.output`, `error`, `started_at`, `finished_at`.
+  """
+  def post_runs_retry(client, id, run_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/workflows/{id}/runs/{runId}/retry", %{"id" => id, "runId" => run_id}, body, opts)
 
   @doc false
   def __operations__, do: [
@@ -166,6 +230,8 @@ defmodule Atlas.Workflows do
     {:post_runs_resume, :post, "/v1/workflows/{id}/runs/{runId}/resume", 2, false, false},
     {:get_kv, :get, "/v1/workflows/{id}/kv", 1, false, true},
     {:put_kv, :put, "/v1/workflows/{id}/kv/{key}", 2, true, false},
-    {:delete_kv, :delete, "/v1/workflows/{id}/kv/{key}", 2, false, false}
+    {:delete_kv, :delete, "/v1/workflows/{id}/kv/{key}", 2, false, false},
+    {:post_runs_cancel, :post, "/v1/workflows/{id}/runs/{runId}/cancel", 2, false, false},
+    {:post_runs_retry, :post, "/v1/workflows/{id}/runs/{runId}/retry", 2, true, false}
   ]
 end

@@ -5,7 +5,8 @@ defmodule Atlas.Mcp do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Mcp do
   MCP server descriptor and the tools this key may call.
 
   `GET /v1/mcp`. Required scope: `instance:read`.
+
+  Response fields: `object`, `protocol_version`, `server`, `server.name`, `server.version`, `capabilities`, `tools`, `rate_limit`, `rate_limit.limit`, `rate_limit.windowMs`, `recommended_agent_scopes`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.Mcp do
   MCP JSON-RPC endpoint: initialize, tools/list, tools/call, ping.
 
   `POST /v1/mcp`.
+
+  Body fields: `jsonrpc` (string), `id` (string|number|null), `method` (string), `params` (object).
+  Response fields: `jsonrpc`, `id`, `result`, `error`, `error.code`, `error.message`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp", %{}, body, opts)
@@ -29,6 +35,9 @@ defmodule Atlas.Mcp do
   Give another API key a short write elevation over the admin MCP server. A key with the mcp:read_only_default scope can only use read tools until it presents the returned token in the X-Atlas-MCP-Elevation header. Needs the mcp:elevate scope, which belongs on a key a person holds, not on the agent. The token is bound to that one key and expires by itself (at most 15 minutes).
 
   `POST /v1/mcp/elevations`. Required scope: `mcp:elevate`.
+
+  Body fields: `api_key_id` (string, required), `ttl_seconds` (integer), `reason` (string).
+  Response fields: `object`, `api_key_id`, `token`, `expires_at`, `header`.
   """
   def post_elevations(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp/elevations", %{}, body, opts)

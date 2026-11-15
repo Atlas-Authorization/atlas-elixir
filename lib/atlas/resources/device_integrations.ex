@@ -5,7 +5,8 @@ defmodule Atlas.DeviceIntegrations do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.DeviceIntegrations do
   List the device pull integrations. Credentials are never returned.
 
   `GET /v1/device_integrations`. Required scope: `device_assurance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.provider`, `data.name`, `data.status`, `data.config`, `data.has_credentials`, `data.interval_minutes`, `data.next_sync_at`, `data.last_sync_at`, `data.last_status`, `data.last_error`, `data.last_stats`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/device_integrations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.DeviceIntegrations do
   Connect a device source that Atlas pulls on a schedule: Microsoft Intune (Graph, `tenantId` + app client credentials with DeviceManagementManagedDevices.Read.All), Jamf Pro (`baseUrl` + API client), CrowdStrike Falcon (`cloud` + API client with Zero Trust Assessment and Hosts read; `minZtaScore`, `userEmailDomain`), Fleet (`baseUrl` + API token) or Google Chrome / ChromeOS (service account with domain-wide delegation). Credentials are write-only.
 
   `POST /v1/device_integrations`. Required scope: `device_assurance:write`.
+
+  Body fields: `provider` (enum), `name` (string), `config` (object), `credentials` (object), `interval_minutes` (integer), `status` (enum).
+  Response fields: `object`, `id`, `provider`, `name`, `status`, `config`, `has_credentials`, `interval_minutes`, `next_sync_at`, `last_sync_at`, `last_status`, `last_error`, `last_stats`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/device_integrations", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.DeviceIntegrations do
   Read one device integration and its last sync result.
 
   `GET /v1/device_integrations/{id}`. Required scope: `device_assurance:read`.
+
+  Response fields: `object`, `id`, `provider`, `name`, `status`, `config`, `has_credentials`, `interval_minutes`, `next_sync_at`, `last_sync_at`, `last_status`, `last_error`, `last_stats`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/device_integrations/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.DeviceIntegrations do
   Change a device integration (name, config, credentials, interval, paused or active).
 
   `PATCH /v1/device_integrations/{id}`. Required scope: `device_assurance:write`.
+
+  Body fields: `provider` (enum), `name` (string), `config` (object), `credentials` (object), `interval_minutes` (integer), `status` (enum).
+  Response fields: `object`, `id`, `provider`, `name`, `status`, `config`, `has_credentials`, `interval_minutes`, `next_sync_at`, `last_sync_at`, `last_status`, `last_error`, `last_stats`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/device_integrations/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.DeviceIntegrations do
   Delete a device integration. Devices already pulled stay in the registry.
 
   `DELETE /v1/device_integrations/{id}`. Required scope: `device_assurance:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/device_integrations/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.DeviceIntegrations do
   Pull the integration now.
 
   `POST /v1/device_integrations/{id}/sync`. Required scope: `device_assurance:write`.
+
+  Response fields: `object`, `integration_id`, `ok`, `seen`, `error`.
   """
   def post_sync(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/device_integrations/{id}/sync", %{"id" => id}, nil, opts)

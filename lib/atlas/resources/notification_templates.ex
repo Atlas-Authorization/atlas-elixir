@@ -5,7 +5,8 @@ defmodule Atlas.NotificationTemplates do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.NotificationTemplates do
   List this instance's tenant-defined notification templates.
 
   `GET /v1/notification_templates`. Required scope: `notifications:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.subject`, `data.body`, `data.category`, `data.created_at`, `data.updated_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/notification_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.NotificationTemplates do
   Create a tenant-defined notification template: a name (unique per instance), a subject and body with `{{variables}}`, and the category whose per-user preference gates it. A duplicate name is a 409.
 
   `POST /v1/notification_templates`. Required scope: `notifications:write`.
+
+  Body fields: `name` (string, required), `subject` (string, required), `body` (string, required), `category` (string, required).
+  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/notification_templates", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.NotificationTemplates do
   Retrieve one tenant-defined notification template by name.
 
   `GET /v1/notification_templates/{name}`. Required scope: `notifications:read`.
+
+  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `created_at`, `updated_at`.
   """
   def get(client, name, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/notification_templates/{name}", %{"name" => name}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.NotificationTemplates do
   Update a tenant-defined notification template's subject, body and category by name.
 
   `PUT /v1/notification_templates/{name}`. Required scope: `notifications:write`.
+
+  Body fields: `subject` (string, required), `body` (string, required), `category` (string, required).
+  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `created_at`, `updated_at`.
   """
   def put(client, name, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/notification_templates/{name}", %{"name" => name}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.NotificationTemplates do
   Delete a tenant-defined notification template by name.
 
   `DELETE /v1/notification_templates/{name}`. Required scope: `notifications:write`.
+
+  Response fields: `object`, `name`, `deleted`.
   """
   def delete(client, name, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/notification_templates/{name}", %{"name" => name}, nil, opts)

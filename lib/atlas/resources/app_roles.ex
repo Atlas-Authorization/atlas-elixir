@@ -5,7 +5,8 @@ defmodule Atlas.AppRoles do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AppRoles do
   List the instance's app-level user roles with how many users hold each.
 
   `GET /v1/app_roles`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.permissions`, `data.users_count`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_roles", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AppRoles do
   Create an app-level user role: a role not tied to any organization, granting permission keys. Users holding it carry app_roles / app_permissions on their session token. Emits appRole.created.
 
   `POST /v1/app_roles`. Required scope: `users:write`.
+
+  Body fields: `key` (string, required), `name` (string, required), `description` (string|null), `permissions` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `permissions`, `users_count`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_roles", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AppRoles do
   Fetch an app role by id or key.
 
   `GET /v1/app_roles/{id}`. Required scope: `users:read`.
+
+  Response fields: `object`, `id`, `key`, `name`, `description`, `permissions`, `users_count`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_roles/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AppRoles do
   Rename an app role or replace its description or permissions. Holders' tokens pick up the change at their next refresh. Emits appRole.updated.
 
   `PATCH /v1/app_roles/{id}`. Required scope: `users:write`.
+
+  Body fields: `name` (string), `description` (string|null), `permissions` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `permissions`, `users_count`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/app_roles/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.AppRoles do
   Delete an app role. Every holder loses it (and its permissions); user.app_roles_updated is sent for each and appRole.deleted once.
 
   `DELETE /v1/app_roles/{id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/app_roles/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +74,15 @@ defmodule Atlas.AppRoles do
   The users holding an app role, oldest assignment first.
 
   `GET /v1/app_roles/{id}/users`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `offset`.
+  Response fields: `object`, `data`, `data.object`, `data.user_id`, `data.role`, `has_more`, `next_cursor`.
   """
   def get_users(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_roles/{id}/users", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_users/2`, following the cursor page by page.
+  Lazy stream over every item of `get_users`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_users(client, id, opts \\ []),

@@ -5,7 +5,8 @@ defmodule Atlas.AuthzDecisions do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AuthzDecisions do
   Query the authorization decision log, newest first: ABAC, AuthZEN, FGA-check and access-policy decisions with their redacted input, result, the policy revision in force and latency. Only decisions that passed sampling are stored.
 
   `GET /v1/authz_decisions`. Required scope: `authz_decisions:read`.
+
+  Query params (`params:`): `source`, `decision`, `principal`, `action`, `resource`, `policy_revision`, `since`, `until`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.source`, `data.decision`, `data.principal`, `data.action`, `data.resource`, `data.input`, `data.result`, `data.policy_revision`, `data.policy_version`, `data.latency_ms`, `data.sample_rate`, `data.actor_id`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authz_decisions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AuthzDecisions do
   Decision counts per engine and outcome over a window (the last 24 hours by default), with a sampling-corrected estimate of the true volume and latency percentiles of the recorded decisions.
 
   `GET /v1/authz_decisions/stats`. Required scope: `authz_decisions:read`.
+
+  Query params (`params:`): `since`, `until`.
+  Response fields: `object`, `since`, `until`, `recorded`, `estimated_total`, `by_source`, `latency_ms`, `latency_ms.p50`, `latency_ms.p95`, `latency_ms.p99`, `latency_ms.max`.
   """
   def get_stats(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authz_decisions/stats", %{}, nil, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AuthzDecisions do
   Read one logged decision.
 
   `GET /v1/authz_decisions/{id}`. Required scope: `authz_decisions:read`.
+
+  Response fields: `object`, `id`, `source`, `decision`, `principal`, `action`, `resource`, `input`, `result`, `policy_revision`, `policy_version`, `latency_ms`, `sample_rate`, `actor_id`, `created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authz_decisions/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AuthzDecisions do
   A local policy decision point ships a batch of up to 500 of its decisions and checks in with its id and the bundle revision it runs. Decisions are sampled and redacted by the instance decision-log settings, exactly like server-side decisions; nothing is stored while capture is off.
 
   `POST /v1/authz_decisions/ingest`. Required scope: `authz_decisions:write`.
+
+  Body fields: `pdp` (object), `decisions` (array).
+  Response fields: `object`, `accepted`, `enabled`, `pdp`, `pdp.object`, `pdp.id`, `pdp.name`, `pdp.version`, `pdp.bundle_revision`, `pdp.decisions_total`, `pdp.first_seen_at`, `pdp.last_seen_at`.
   """
   def post_ingest(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authz_decisions/ingest", %{}, body, opts)

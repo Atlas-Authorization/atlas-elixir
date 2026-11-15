@@ -5,7 +5,8 @@ defmodule Atlas.Design do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Design do
   List this instance's uploaded design images, newest first.
 
   `GET /v1/design/assets`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.asset_id`, `data.kind`, `data.url`, `data.width`, `data.height`, `data.dominant_color`, `data.bytes`, `data.created_at`.
   """
   def get_assets(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/design/assets", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_assets/1`, following the cursor page by page.
+  Lazy stream over every item of `get_assets`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_assets(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Design do
   Upload a design image (a background or a logo) for this instance. Send the raw image bytes (PNG, JPEG, GIF or WebP; up to 8 MB and 40 megapixels) with a matching Content-Type. The file is checked, re-encoded as WebP and served by Atlas. 503 when image storage is not configured.
 
   `POST /v1/design/assets`. Required scope: `instance:write`.
+
+  Query params (`params:`): `kind`.
+  Response fields: `object`, `asset_id`, `kind`, `url`, `width`, `height`, `dominant_color`, `bytes`, `created_at`.
   """
   def post_assets(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/design/assets", %{}, body, Keyword.put_new(opts, :content_type, "image/png"))
@@ -36,6 +43,8 @@ defmodule Atlas.Design do
   Delete one of this instance's design images. Deletes the stored image. Refused with 409 (meta.used_by lists where) while a saved design still uses it; remove it from those designs first. The instance design and every organization design are checked.
 
   `DELETE /v1/design/assets/{id}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `asset_id`, `deleted`.
   """
   def delete_assets(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/design/assets/{id}", %{"id" => id}, nil, opts)

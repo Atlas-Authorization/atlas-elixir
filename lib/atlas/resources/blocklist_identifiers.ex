@@ -5,7 +5,8 @@ defmodule Atlas.BlocklistIdentifiers do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.BlocklistIdentifiers do
   List blocklist identifiers that cannot sign up or sign in.
 
   `GET /v1/blocklist_identifiers`. Required scope: `restrictions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.identifier`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/blocklist_identifiers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.BlocklistIdentifiers do
   Block an identifier (email, @domain, or E.164 phone) from signing up and signing in.
 
   `POST /v1/blocklist_identifiers`. Required scope: `restrictions:write`.
+
+  Body fields: `identifier` (string, required).
+  Response fields: `object`, `id`, `identifier`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/blocklist_identifiers", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.BlocklistIdentifiers do
   Remove a blocklist identifier. Another instance id is 404, never 403.
 
   `DELETE /v1/blocklist_identifiers/{id}`. Required scope: `restrictions:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/blocklist_identifiers/{id}", %{"id" => id}, nil, opts)

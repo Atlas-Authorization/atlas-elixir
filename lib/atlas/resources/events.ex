@@ -5,7 +5,8 @@ defmodule Atlas.Events do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Events do
   Read the event log (the same events webhooks deliver), filterable by type and time and cursor-paginated. For reconciliation after an outage, pass since= and walk forward with starting_after until has_more is false: events come oldest first. Events are kept 90 days (`retention.oldest_available_at` says what is still held). A type filter by any spelling matches every spelling.
 
   `GET /v1/events`. Required scope: `events:read`.
+
+  Query params (`params:`): `type`, `since`, `until`, `from`, `to`, `order`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.payload`, `data.payload.id`, `data.payload.type`, `data.payload.timestamp`, `data.payload.instance_id`, `data.payload.actor`, `data.payload.actor.type`, `data.payload.actor.id`, `data.payload.idempotency_key`, `data.payload.data`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/events", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

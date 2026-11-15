@@ -5,7 +5,8 @@ defmodule Atlas.AuditEvents do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.AuditEvents do
   Blank named fields of one audit event (replaced by [redacted]) without deleting it: `actor_id`, `target_id`, `target_name` or `metadata.<dotted.path>`. A `reason` is required. The redaction is recorded in its own log (GET /v1/audit_events/:id/redactions) and in Atlas's audit log as `audit_event.redacted` - the fields and the reason, never the removed values.
 
   `POST /v1/audit_events/{id}/redact`. Required scope: `audit_events:write`.
+
+  Body fields: `fields` (array, required), `reason` (string, required).
+  Response fields: `object`, `event_id`, `redacted`, `unchanged`, `reason`.
   """
   def post_redact(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_events/{id}/redact", %{"id" => id}, body, opts)
@@ -21,12 +25,15 @@ defmodule Atlas.AuditEvents do
   An audit event's redaction history: which fields were blanked, why, and by which key.
 
   `GET /v1/audit_events/{id}/redactions`. Required scope: `audit_events:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.event_id`, `data.fields`, `data.reason`, `data.redacted_by`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_redactions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_events/{id}/redactions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_redactions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_redactions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_redactions(client, id, opts \\ []),
@@ -36,12 +43,15 @@ defmodule Atlas.AuditEvents do
   Query the tenant's custom audit events, filterable by organization_id, actor_id, action, target_type, target_id and an occurred-at window (from/to), cursor-paginated with limit + starting_after. actor_id, action, target_type and target_id accept a comma-separated LIST (e.g. actor_id=a,b) for an IN(…) match. any_of=true combines the actor_id/target_type/target_id filters with OR ("events this subject did OR had done to them") instead of AND. metadata_key + metadata_value (both required) narrow to events whose metadata[key] equals the value. A blank organization_id is a 400 — omit it entirely to query across all organizations. Returns newest first.
 
   `GET /v1/audit_events`. Required scope: `audit_events:read`.
+
+  Query params (`params:`): `organization_id`, `actor_id`, `action`, `target_type`, `target_id`, `from`, `to`, `any_of`, `metadata_key`, `metadata_value`, `starting_after`, `limit`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.actor`, `data.actor.type`, `data.actor.id`, `data.action`, `data.target`, `data.target.type`, `data.target.id`, `data.target.name`, `data.occurred_at`, `data.metadata`, `data.schema_version`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_events", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -51,6 +61,10 @@ defmodule Atlas.AuditEvents do
   Write one of the tenant's OWN custom audit events (actor, action, optional target, optional metadata). Pass `organization_id` to scope it to an org and stream it to that org's SIEM. `occurred_at` is an epoch-ms NUMBER (a non-numeric value is a 400) and defaults to now; an unknown org id is a 404. When the action has a registered schema (see /v1/audit_event_schemas) the event is validated against its latest active version, or the `schema_version` you name, and a non-conforming event is a 422 listing every problem.
 
   `POST /v1/audit_events`. Required scope: `audit_events:write`.
+
+  Body fields: `actor` (object), `action` (string), `target` (object), `organization_id` (string), `occurred_at` (number), `metadata` (object), `schema_version` (number).
+  Nested body fields: `actor.type`, `actor.id`, `target.type`, `target.id`, `target.name`.
+  Response fields: `object`, `id`, `organization_id`, `actor`, `actor.type`, `actor.id`, `action`, `target`, `target.type`, `target.id`, `target.name`, `occurred_at`, `metadata`, `schema_version`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_events", %{}, body, opts)
@@ -59,6 +73,9 @@ defmodule Atlas.AuditEvents do
   Bulk-delete the instance's custom audit events — a TEST-MODE reset, allowed ONLY on a development instance (a production audit trail cannot be bulk-erased: 403). Optionally narrowed by organization_id and/or action.
 
   `DELETE /v1/audit_events`. Required scope: `audit_events:write`.
+
+  Query params (`params:`): `organization_id`, `action`.
+  Response fields: `object`, `deleted`.
   """
   def delete(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/audit_events", %{}, nil, opts)
@@ -67,6 +84,10 @@ defmodule Atlas.AuditEvents do
   Write up to 100 custom audit events in one call. The batch is stored atomically; each org-scoped event is then fanned out to its org's SIEM. A bad org id on any event fails the whole batch with a 404 before anything is written.
 
   `POST /v1/audit_events/batch`. Required scope: `audit_events:write`.
+
+  Body fields: `events` (array).
+  Nested body fields: `events.actor`, `events.actor.type`, `events.actor.id`, `events.action`, `events.target`, `events.target.type`, `events.target.id`, `events.target.name`, `events.organization_id`, `events.occurred_at`, `events.metadata`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.actor`, `data.actor.type`, `data.actor.id`, `data.action`, `data.target`, `data.target.type`, `data.target.id`, `data.target.name`, `data.occurred_at`, `data.metadata`, `data.schema_version`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def post_batch(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_events/batch", %{}, body, opts)
@@ -75,12 +96,14 @@ defmodule Atlas.AuditEvents do
   Bulk-export every matching custom audit event in one streamed response — `format=jsonl` (newline-delimited JSON, default) or `format=csv`. Accepts the same filters as the list endpoint. Streamed and capped; a truncated JSONL export ends with a `{"truncated":true,…}` line.
 
   `GET /v1/audit_events/export`. Required scope: `audit_events:read`.
+
+  Query params (`params:`): `organization_id`, `actor_id`, `action`, `target_type`, `target_id`, `from`, `to`, `any_of`, `metadata_key`, `metadata_value`, `starting_after`, `format`.
   """
   def get_export(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_events/export", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_export/1`, following the cursor page by page.
+  Lazy stream over every item of `get_export`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_export(client, opts \\ []),

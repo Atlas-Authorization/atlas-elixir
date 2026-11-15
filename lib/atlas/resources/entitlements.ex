@@ -5,7 +5,8 @@ defmodule Atlas.Entitlements do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,39 @@ defmodule Atlas.Entitlements do
   The standard entitlements read for a user or organization: `{plan, planSource, entitlements: [{key, enabled, limit?, used?, source}]}`, the shape any product can serve so one client gates features on all of them. `planSource` is `plan` (a subscription), `override` (a sales-led grant), `internal` (an owner-account grant marked internal, never revenue) or `none`. Validate against the published JSON Schema (GET /v1/public/schemas/entitlements-v1.json).
 
   `GET /v1/entitlements`. Required scope: `billing:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`.
+  Response fields: `$schema`, `object`, `subject`, `subject.type`, `subject.id`, `plan`, `planSource`, `entitlements`, `entitlements.key`, `entitlements.enabled`, `entitlements.limit`, `entitlements.used`, `entitlements.source`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/entitlements", %{}, nil, opts)
 
+  @doc ~S"""
+  Spend units of a plan feature for a user or organization, atomically and exactly once per `idempotency_key`. The answer is the decision (200 whether allowed or not; `reason` is `not_entitled` or `limit_reached`); a retry with the same key replays it and never spends twice. Who counts: when the subject's live subscription is on an entitlement provider (Autumn, Commet) that provider owns the balance and `source` is `provider`; otherwise Atlas counts (`source` `atlas`) against the plan's numeric limit for the feature (`-1` or no limit is unlimited) in the current billing period, or the UTC calendar month when there is no period. For `atlas` the limit check and the write are one transaction, so concurrent consumes can never pass the limit. A consume does not bill: report billable usage with POST /v1/billing/usage. Emits entitlement.limit_reached once, when a consume takes the window to its limit.
+
+  `POST /v1/entitlements/consume`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum, required), `subject_id` (string, required), `feature` (string, required), `amount` (integer), `idempotency_key` (string, required).
+  Response fields: `object`, `allowed`, `reason`, `feature`, `amount`, `source`, `provider`, `used`, `limit`, `remaining`, `unlimited`, `replayed`, `window_start`.
+  """
+  def post_consume(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/entitlements/consume", %{}, body, opts)
+
+  @doc ~S"""
+  Give back all or part of an earlier Atlas-counted consume (an operation that failed after it took its units). Never more than that consume took (409 with `refundable`). Idempotent on `idempotency_key`. A subject whose balances are held by its billing provider cannot be refunded here (422).
+
+  `POST /v1/entitlements/consume/refund`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum, required), `subject_id` (string, required), `feature` (string, required), `consume_idempotency_key` (string, required), `amount` (integer), `idempotency_key` (string, required).
+  Response fields: `object`, `refunded`, `feature`, `used`, `replayed`.
+  """
+  def post_consume_refund(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/entitlements/consume/refund", %{}, body, opts)
+
   @doc false
   def __operations__, do: [
-    {:list, :get, "/v1/entitlements", 0, false, false}
+    {:list, :get, "/v1/entitlements", 0, false, false},
+    {:post_consume, :post, "/v1/entitlements/consume", 0, true, false},
+    {:post_consume_refund, :post, "/v1/entitlements/consume/refund", 0, true, false}
   ]
 end

@@ -5,7 +5,8 @@ defmodule Atlas.Migrations do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Migrations do
   Server-to-server Better Auth session exchange (what the SDK middleware calls when given the secret key). Same resolution, single use, MFA and sign-in path as POST /v1/client/migrations/better_auth/exchange, always returning the tokens in the body (or a sign_in_attempt when a second factor is owed). Not limited per caller IP: limited per instance (6000/min) for a bulk cutover, per end-user IP (60/min) and per user (10/min); 429 RATE_LIMITED with meta.bridge_outcome rate_limited. Send the end user's IP in X-Atlas-Client-IP and their user agent in X-Atlas-Client-User-Agent so guards, risk, geo and the device record see the user, not your server.
 
   `POST /v1/migrations/better_auth/exchange`. Required scope: `legacy_auth:write`.
+
+  Body fields: `token` (string, required), `remember` (boolean).
+  Response fields: `object`, `id`, `session_id`, `user_id`, `jwt`, `refresh_token`, `expires_in`, `status`.
   """
   def post_better_auth_exchange(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/better_auth/exchange", %{}, body, opts)
@@ -21,14 +25,30 @@ defmodule Atlas.Migrations do
   Server-to-server exchange of an old `source` session for an Atlas session, once (what migrationBridge({ source }) calls with the secret key). The token is verified (vendor JWT against the bridge's issuer and keys, or sha256 matched against imported sessions), mapped to the imported user, spent in the single-use ledger and then takes the normal sign-in path (guards, MFA policy, post_login Actions, audit). Returns tokens in the body, or a sign_in_attempt when a second factor is owed. Limited per instance (6000/min), per end-user IP (60/min) and per user (10/min). Send the end user's IP / user agent in X-Atlas-Client-IP / X-Atlas-Client-User-Agent.
 
   `POST /v1/migrations/{source}/exchange`. Required scope: `legacy_auth:write`.
+
+  Body fields: `token` (string, required), `remember` (boolean).
+  Response fields: `object`, `id`, `session_id`, `user_id`, `jwt`, `refresh_token`, `expires_in`, `status`, `identifier`, `supported_first_factors`, `created_session_id`, `expires_at`.
   """
   def post_exchange(client, source, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/exchange", %{"source" => source}, body, opts)
 
   @doc ~S"""
+  Dual-run check: is this old `source` token valid? Answers only while the source's `dual_run_until` window is open (403 closed otherwise). Nothing is consumed and no session is created. Every call is counted per day in GET /v1/migrations/status. Returns `valid`, `reason` (invalid | expired | unavailable) and the mapped Atlas `user_id` when the user was imported.
+
+  `POST /v1/migrations/{source}/verify`. Required scope: `legacy_auth:read`.
+
+  Body fields: `token` (string, required).
+  Response fields: `object`, `source`, `valid`, `reason`, `subject`, `user_id`, `dual_run_until`.
+  """
+  def post_verify(client, source, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/verify", %{"source" => source}, body, opts)
+
+  @doc ~S"""
   The instance's import public key (created on first read). Seal the export to it; only this instance can open the bundle. One key serves every source. A key with jobs:write may read it too.
 
   `GET /v1/migrations/{source}/imports/public_key`. Required scope: `jobs:read`.
+
+  Response fields: `object`, `kid`, `public_key`, `alg`, `status`, `fingerprint`, `compact`, `created_at`, `retired_at`.
   """
   def get_imports_public_key(client, source, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/{source}/imports/public_key", %{"source" => source}, nil, opts)
@@ -37,6 +57,8 @@ defmodule Atlas.Migrations do
   Replace the import key. A bundle sealed to the old key no longer finalizes; export again with the new key.
 
   `POST /v1/migrations/{source}/imports/public_key/rotate`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `kid`, `public_key`, `alg`, `status`, `fingerprint`, `compact`, `created_at`, `retired_at`.
   """
   def post_imports_public_key_rotate(client, source, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/imports/public_key/rotate", %{"source" => source}, nil, opts)
@@ -45,12 +67,15 @@ defmodule Atlas.Migrations do
   List the imports from `source`, newest first (cursor pagination).
 
   `GET /v1/migrations/{source}/imports`. Required scope: `jobs:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.source`, `data.format`, `data.status`, `data.key_id`, `data.parts`, `data.bytes`, `data.bundle_sha256`, `data.bundle_purged`, `data.options`, `data.manifest`, `data.manifest.exported_at`, `data.manifest.exporter`, `data.manifest.exporter.name`, `data.manifest.exporter.version`, `data.manifest.origin`, `data.manifest.source_version`, `data.manifest.models`, `data.manifest.providers`, `data.manifest.rp_id`, `data.manifest.warnings`, `data.total`, `data.progress`, `data.progress.total`, `data.progress.processed`, `data.progress.succeeded`, `data.progress.failed`, `data.progress.percent`, `data.report`, `data.report.models`, `data.report.password_algorithms`, `data.report.skipped`, `data.report.skipped_total`, `data.report.skipped_by_code`, `data.report.conflicts`, `data.report.conflicts_total`, `data.report.action_items`, `data.report.warnings`, `data.report.notes`, `data.result`, `data.result.models`, `data.result.completed_at`, `data.result.skipped`, `data.result.skipped_total`, `data.result.skipped_by_code`, `data.result.conflicts`, `data.result.conflicts_total`, `data.result.action_items`, `data.result.warnings`, `data.result.notes`, `data.error`, `data.error.code`, `data.error.message`, `data.created_at`, `data.updated_at`, `data.analyzed_at`, `data.apply_started_at`, `data.completed_at`, `has_more`, `next_cursor`.
   """
   def get_by_source_imports(client, source, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/{source}/imports", %{"source" => source}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_source_imports/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_source_imports`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_source_imports(client, source, opts \\ []),
@@ -60,6 +85,10 @@ defmodule Atlas.Migrations do
   Start an import from `source` (status `uploading`). Then upload the sealed bundle with PUT …/parts/{part} and call …/finalize. Nothing is written to users until apply.
 
   `POST /v1/migrations/{source}/imports`. Required scope: `jobs:write`.
+
+  Body fields: `options` (object).
+  Nested body fields: `options.models`, `options.on_email_conflict`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_sessions`, `options.import_jwks`, `options.jwks_cutover_days`, `options.provider_map`, `options.password_hash_params`, `options.retain_bundle`.
+  Response fields: `object`, `id`, `source`, `format`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `manifest`, `manifest.exported_at`, `manifest.exporter`, `manifest.exporter.name`, `manifest.exporter.version`, `manifest.origin`, `manifest.source_version`, `manifest.models`, `manifest.providers`, `manifest.rp_id`, `manifest.warnings`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.password_algorithms`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_imports(client, source, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/imports", %{"source" => source}, body, opts)
@@ -68,6 +97,8 @@ defmodule Atlas.Migrations do
   Fetch one import: status, the dry-run report, live progress and the apply result.
 
   `GET /v1/migrations/{source}/imports/{id}`. Required scope: `jobs:read`.
+
+  Response fields: `object`, `id`, `source`, `format`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `manifest`, `manifest.exported_at`, `manifest.exporter`, `manifest.exporter.name`, `manifest.exporter.version`, `manifest.origin`, `manifest.source_version`, `manifest.models`, `manifest.providers`, `manifest.rp_id`, `manifest.warnings`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.password_algorithms`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def get_by_source_imports_by_id(client, source, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/{source}/imports/{id}", %{"source" => source, "id" => id}, nil, opts)
@@ -76,6 +107,8 @@ defmodule Atlas.Migrations do
   Delete an import and its stored bundle. Data it already imported stays. Refused (409) while analyzing or applying.
 
   `DELETE /v1/migrations/{source}/imports/{id}`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_imports(client, source, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/migrations/{source}/imports/{id}", %{"source" => source, "id" => id}, nil, opts)
@@ -84,6 +117,9 @@ defmodule Atlas.Migrations do
   Upload part `part` (1, 2, …) of the sealed bundle: whole lines, at most 10 MiB, as `{ "data": "…" }` or a text/plain body. Re-sending a part replaces it. Only while `uploading`.
 
   `PUT /v1/migrations/{source}/imports/{id}/parts/{part}`. Required scope: `jobs:write`.
+
+  Body fields: `data` (string, required).
+  Response fields: `object`, `import_id`, `part`, `bytes`, `sha256`.
   """
   def put_imports_parts(client, source, id, part, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/migrations/{source}/imports/{id}/parts/{part}", %{"source" => source, "id" => id, "part" => part}, body, opts)
@@ -92,6 +128,8 @@ defmodule Atlas.Migrations do
   Close the upload: every part 1..n present, the bundle sealed to the active import key and in a format `source` reads (else 400 or status `invalid`). The dry run follows: inline up to 4 MiB (200, `ready`), else in the background (202, `analyzing`; poll GET).
 
   `POST /v1/migrations/{source}/imports/{id}/finalize`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `id`, `source`, `format`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `manifest`, `manifest.exported_at`, `manifest.exporter`, `manifest.exporter.name`, `manifest.exporter.version`, `manifest.origin`, `manifest.source_version`, `manifest.models`, `manifest.providers`, `manifest.rp_id`, `manifest.warnings`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.password_algorithms`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_imports_finalize(client, source, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/imports/{id}/finalize", %{"source" => source, "id" => id}, nil, opts)
@@ -100,6 +138,10 @@ defmodule Atlas.Migrations do
   Run the dry run again, optionally with new options (they replace the stored ones). Reads only.
 
   `POST /v1/migrations/{source}/imports/{id}/dry_run`. Required scope: `jobs:write`.
+
+  Body fields: `options` (object).
+  Nested body fields: `options.models`, `options.on_email_conflict`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_sessions`, `options.import_jwks`, `options.jwks_cutover_days`, `options.provider_map`, `options.password_hash_params`, `options.retain_bundle`.
+  Response fields: `object`, `id`, `source`, `format`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `manifest`, `manifest.exported_at`, `manifest.exporter`, `manifest.exporter.name`, `manifest.exporter.version`, `manifest.origin`, `manifest.source_version`, `manifest.models`, `manifest.providers`, `manifest.rp_id`, `manifest.warnings`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.password_algorithms`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_imports_dry_run(client, source, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/imports/{id}/dry_run", %{"source" => source, "id" => id}, body, opts)
@@ -108,6 +150,9 @@ defmodule Atlas.Migrations do
   Import the bundle. Every record is an idempotent upsert keyed by its source id, so applying a failed import again resumes where it stopped. Up to 1,000 remaining records run inline (200), more are queued (202). With conflicts in the dry run, send confirm_conflicts: true.
 
   `POST /v1/migrations/{source}/imports/{id}/apply`. Required scope: `jobs:write`.
+
+  Body fields: `confirm_conflicts` (boolean).
+  Response fields: `object`, `id`, `source`, `format`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `manifest`, `manifest.exported_at`, `manifest.exporter`, `manifest.exporter.name`, `manifest.exporter.version`, `manifest.origin`, `manifest.source_version`, `manifest.models`, `manifest.providers`, `manifest.rp_id`, `manifest.warnings`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.password_algorithms`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_imports_apply(client, source, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/imports/{id}/apply", %{"source" => source, "id" => id}, body, opts)
@@ -116,6 +161,8 @@ defmodule Atlas.Migrations do
   Read the Better Auth session-bridge settings (migration window, cookie prefix, live fallback) and exchange counts. Reports live_fallback.has_secret, never the secret.
 
   `GET /v1/migrations/better_auth/bridge`. Required scope: `legacy_auth:read`.
+
+  Response fields: `object`, `enabled`, `ends_at`, `cookie_prefix`, `live_fallback`, `live_fallback.enabled`, `live_fallback.base_url`, `live_fallback.has_secret`, `exchange_path`, `stats`, `stats.exchanged`, `stats.from_import`, `stats.from_live`, `created_at`, `updated_at`.
   """
   def get_better_auth_bridge(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/better_auth/bridge", %{}, nil, opts)
@@ -124,6 +171,10 @@ defmodule Atlas.Migrations do
   Create or update the Better Auth session-bridge settings. Every field is optional and merged onto the stored ones; the Better Auth secret is write-only.
 
   `PUT /v1/migrations/better_auth/bridge`. Required scope: `legacy_auth:write`.
+
+  Body fields: `enabled` (boolean), `ends_at` (string|integer|null), `cookie_prefix` (string), `live_fallback` (object).
+  Nested body fields: `live_fallback.enabled`, `live_fallback.base_url`, `live_fallback.secret`.
+  Response fields: `object`, `enabled`, `ends_at`, `cookie_prefix`, `live_fallback`, `live_fallback.enabled`, `live_fallback.base_url`, `live_fallback.has_secret`, `exchange_path`, `stats`, `stats.exchanged`, `stats.from_import`, `stats.from_live`, `created_at`, `updated_at`.
   """
   def put_better_auth_bridge(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/migrations/better_auth/bridge", %{}, body, opts)
@@ -132,6 +183,8 @@ defmodule Atlas.Migrations do
   Remove the Better Auth session-bridge settings (the bridge is off and the stored secret is deleted).
 
   `DELETE /v1/migrations/better_auth/bridge`. Required scope: `legacy_auth:write`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_better_auth_bridge(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/migrations/better_auth/bridge", %{}, nil, opts)
@@ -140,21 +193,37 @@ defmodule Atlas.Migrations do
   Every migration source: what it exports, whether passwords move (or need lazy migration), its bridge preset and variables, and its lazy-migration preset.
 
   `GET /v1/migrations/sources`. Required scope: `jobs:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.source`, `data.label`, `data.models`, `data.passwords`, `data.export_via`, `data.bridge`, `data.bridge.mode`, `data.bridge.preset`, `data.bridge.vars`, `data.bridge.cookies`, `data.lazy_migration`, `data.lazy_migration.preset`, `data.lazy_migration.config`, `data.lazy_migration.secret`, `data.lazy_migration.secret.label`, `data.lazy_migration.secret.required`, `data.password_algorithms`, `data.limits`, `has_more`, `next_cursor`.
   """
   def get_sources(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/sources", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_sources/1`, following the cursor page by page.
+  Lazy stream over every item of `get_sources`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_sources(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/migrations/sources", %{}, opts)
 
   @doc ~S"""
+  Where the move stands: imported users by credential type (bcrypt, argon2, scrypt, pbkdf2, other, social, none; imported = has an external_id), bridged sessions, imported legacy sessions still live, failed bridge attempts by reason, daily use per source, and `safe_to_delete_old_auth` with the blockers that keep it false (recent use, live sessions, an open dual-run window, an enabled bridge, or `no_enabled_source` when no bridge or verifier was ever enabled or used, so nothing has been proven quiet). `quiet_days` (default 14, max 90) sets how long the old auth must be unused.
+
+  `GET /v1/migrations/status`. Required scope: `legacy_auth:read`.
+
+  Query params (`params:`): `quiet_days`.
+  Response fields: `object`.
+  """
+  def get_status(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/migrations/status", %{}, nil, opts)
+
+  @doc ~S"""
   Read the zero-logout bridge settings for `source` (window, JWT preset / issuer / keys, claims, cookie names) and exchange counts. Never returns a shared secret.
 
   `GET /v1/migrations/{source}/bridge`. Required scope: `legacy_auth:read`.
+
+  Response fields: `object`, `source`, `enabled`, `ends_at`, `dual_run_until`, `mode`, `preset`, `preset_vars`, `issuer`, `jwks_url`, `audience`, `algorithms`, `claim_map`, `expired_grace_seconds`, `cookie_names`, `create_users`, `has_shared_secret`, `exchange_path`, `stats`, `stats.exchanged`, `stats.from_import`, `stats.from_jwt`, `created_at`, `updated_at`.
   """
   def get_bridge(client, source, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/{source}/bridge", %{"source" => source}, nil, opts)
@@ -163,6 +232,10 @@ defmodule Atlas.Migrations do
   Create or update the bridge settings for `source`. Every field is optional and merged onto the stored ones; a preset fills the JWT settings from its variables, explicit fields override it. The keys URL must be public https on a production instance. `better_auth` takes the Better Auth bridge body (see /v1/migrations/better_auth/bridge).
 
   `PUT /v1/migrations/{source}/bridge`. Required scope: `legacy_auth:write`.
+
+  Body fields: `enabled` (boolean), `ends_at` (string|integer|null), `dual_run_until` (string|integer|null), `mode` (enum), `preset` (string|null), `preset_vars` (object), `issuer` (string|null), `jwks_url` (string|null), `audience` (array|null), `algorithms` (array|null), `claim_map` (object), `expired_grace_seconds` (integer), `cookie_names` (array), `create_users` (boolean), `shared_secret` (string|null).
+  Nested body fields: `claim_map.subject`, `claim_map.email`, `claim_map.email_verified`, `claim_map.name`, `claim_map.session_key`, `claim_map.mfa`.
+  Response fields: `object`, `source`, `enabled`, `ends_at`, `dual_run_until`, `mode`, `preset`, `preset_vars`, `issuer`, `jwks_url`, `audience`, `algorithms`, `claim_map`, `expired_grace_seconds`, `cookie_names`, `create_users`, `has_shared_secret`, `exchange_path`, `stats`, `stats.exchanged`, `stats.from_import`, `stats.from_jwt`, `created_at`, `updated_at`.
   """
   def put_bridge(client, source, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/migrations/{source}/bridge", %{"source" => source}, body, opts)
@@ -171,6 +244,8 @@ defmodule Atlas.Migrations do
   Remove the bridge settings for `source` (the bridge is off and any stored secret deleted).
 
   `DELETE /v1/migrations/{source}/bridge`. Required scope: `legacy_auth:write`.
+
+  Response fields: `object`, `source`, `deleted`.
   """
   def delete_bridge(client, source, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/migrations/{source}/bridge", %{"source" => source}, nil, opts)
@@ -179,6 +254,7 @@ defmodule Atlas.Migrations do
   def __operations__, do: [
     {:post_better_auth_exchange, :post, "/v1/migrations/better_auth/exchange", 0, true, false},
     {:post_exchange, :post, "/v1/migrations/{source}/exchange", 1, true, false},
+    {:post_verify, :post, "/v1/migrations/{source}/verify", 1, true, false},
     {:get_imports_public_key, :get, "/v1/migrations/{source}/imports/public_key", 1, false, false},
     {:post_imports_public_key_rotate, :post, "/v1/migrations/{source}/imports/public_key/rotate", 1, false, false},
     {:get_by_source_imports, :get, "/v1/migrations/{source}/imports", 1, false, true},
@@ -193,6 +269,7 @@ defmodule Atlas.Migrations do
     {:put_better_auth_bridge, :put, "/v1/migrations/better_auth/bridge", 0, true, false},
     {:delete_better_auth_bridge, :delete, "/v1/migrations/better_auth/bridge", 0, false, false},
     {:get_sources, :get, "/v1/migrations/sources", 0, false, true},
+    {:get_status, :get, "/v1/migrations/status", 0, false, false},
     {:get_bridge, :get, "/v1/migrations/{source}/bridge", 1, false, false},
     {:put_bridge, :put, "/v1/migrations/{source}/bridge", 1, true, false},
     {:delete_bridge, :delete, "/v1/migrations/{source}/bridge", 1, false, false}

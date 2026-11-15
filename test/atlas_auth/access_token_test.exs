@@ -39,7 +39,7 @@ defmodule AtlasAuth.AccessTokenTest do
     refute Claims.has_app_permission?(c, "tickets:write")
     assert {:ok, _} = Verifier.verify(TokenHelper.sign(), o)
     assert {:error, :invalid} = Verifier.verify(es256(ec, session(), TokenHelper.kid()), o)
-    assert Verifier.signing_algs() == ["RS256", "ES256"]
+    assert Verifier.signing_algs() == ["RS256", "ES256", "ES384", "PS256", "EdDSA"]
   end
 
   defp access(extra \\ %{}) do

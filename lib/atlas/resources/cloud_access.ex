@@ -5,7 +5,8 @@ defmodule Atlas.CloudAccess do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.CloudAccess do
   List the cloud access targets: AWS account and role tiles, Google Cloud workforce-pool tiles and Azure trust recipes.
 
   `GET /v1/cloud_access/targets`. Required scope: `app_catalog:read`.
+
+  Query params (`params:`): `provider`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.provider`, `data.name`, `data.config`, `data.assignment`, `data.launch_url`, `data.created_at`, `data.updated_at`.
   """
   def get_targets(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/cloud_access/targets", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_targets/1`, following the cursor page by page.
+  Lazy stream over every item of `get_targets`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_targets(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.CloudAccess do
   Add a cloud access target. An AWS or Google Cloud target becomes a launcher tile that signs people in to that account and role (AWS: the Role, RoleSessionName, SessionDuration and PrincipalTag attributes) or workforce pool; assignment limits who sees it. Azure stores a federated-credential trust recipe. Config: aws: account_id (12 digits), role_name, saml_provider_name, session_duration (900-43200 s), session_tags {tag key: user field}, transitive_tag_keys, partition (aws, aws-us-gov, aws-cn). gcp: pool_id, provider_id (a Workforce Identity Federation SAML provider). azure: app_object_id, subject, credential_name.
 
   `POST /v1/cloud_access/targets`. Required scope: `app_catalog:write`.
+
+  Body fields: `provider` (enum, required), `name` (string, required), `config` (object, required), `assignment` (object).
+  Response fields: `object`, `id`, `provider`, `name`, `config`, `assignment`, `launch_url`, `created_at`, `updated_at`.
   """
   def post_targets(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/cloud_access/targets", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.CloudAccess do
   Read one cloud access target with its launch URL and assignment.
 
   `GET /v1/cloud_access/targets/{id}`. Required scope: `app_catalog:read`.
+
+  Response fields: `object`, `id`, `provider`, `name`, `config`, `assignment`, `launch_url`, `created_at`, `updated_at`.
   """
   def get_targets_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/cloud_access/targets/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.CloudAccess do
   Change a target's name, config or assignment. The provider cannot change.
 
   `PATCH /v1/cloud_access/targets/{id}`. Required scope: `app_catalog:write`.
+
+  Body fields: `name` (string), `config` (object), `assignment` (object).
+  Response fields: `object`, `id`, `provider`, `name`, `config`, `assignment`, `launch_url`, `created_at`, `updated_at`.
   """
   def update_targets(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/cloud_access/targets/{id}", %{"id" => id}, body, opts)
@@ -60,6 +72,8 @@ defmodule Atlas.CloudAccess do
   What to configure on the cloud side for this target, with ready-to-run snippets: the AWS CLI command and role trust policy, the gcloud command for the workforce pool provider, or the Azure federated credential.
 
   `GET /v1/cloud_access/targets/{id}/setup`. Required scope: `app_catalog:read`.
+
+  Response fields: `object`, `target_id`.
   """
   def get_targets_setup(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/cloud_access/targets/{id}/setup", %{"id" => id}, nil, opts)

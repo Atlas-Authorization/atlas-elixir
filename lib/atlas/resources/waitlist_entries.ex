@@ -5,7 +5,8 @@ defmodule Atlas.WaitlistEntries do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.WaitlistEntries do
   List sign-up waitlist entries with per-status counts. Cursor-paginated.
 
   `GET /v1/waitlist_entries`. Required scope: `waitlist:read`.
+
+  Query params (`params:`): `status`, `query`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.email_address`, `data.status`, `data.note`, `data.decided_by`, `data.decided_at`, `data.created_at`, `counts`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/waitlist_entries", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.WaitlistEntries do
   Admin-create a waitlist entry (idempotent on address).
 
   `POST /v1/waitlist_entries`. Required scope: `waitlist:write`.
+
+  Body fields: `email_address` (string).
+  Response fields: `object`, `id`, `email_address`, `status`, `note`, `decided_by`, `decided_at`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/waitlist_entries", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.WaitlistEntries do
   Bulk-create waitlist entries (≤100 addresses); per-entry errors returned.
 
   `POST /v1/waitlist_entries/bulk`. Required scope: `waitlist:write`.
+
+  Body fields: `email_addresses` (array).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.email_address`, `data.status`, `data.note`, `data.decided_by`, `data.decided_at`, `data.created_at`, `errors`, `errors.index`, `errors.email_address`, `errors.code`, `errors.message`.
   """
   def post_bulk(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/waitlist_entries/bulk", %{}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.WaitlistEntries do
   Delete a waitlist entry.
 
   `DELETE /v1/waitlist_entries/{id}`. Required scope: `waitlist:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/waitlist_entries/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +64,9 @@ defmodule Atlas.WaitlistEntries do
   Approve or deny a waitlist entry, letting someone in or keeping them out.
 
   `POST /v1/waitlist_entries/{id}/decide`. Required scope: `waitlist:write`.
+
+  Body fields: `status` (string), `note` (string).
+  Response fields: `object`, `id`, `email_address`, `status`, `note`, `decided_by`, `decided_at`, `created_at`.
   """
   def post_decide(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/waitlist_entries/{id}/decide", %{"id" => id}, body, opts)

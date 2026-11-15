@@ -5,7 +5,8 @@ defmodule Atlas.Vault do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Vault do
   List vault objects (metadata only, never values), newest first. Filter by `name_prefix` or by `key_context` (a JSON object; objects whose context contains every given label).
 
   `GET /v1/vault/objects`. Required scope: `vault:list`.
+
+  Query params (`params:`): `name_prefix`, `key_context`, `starting_after`, `limit`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.key_context`, `data.metadata`, `data.version`, `data.key_provider`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_objects(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vault/objects", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_objects/1`, following the cursor page by page.
+  Lazy stream over every item of `get_objects`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_objects(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Vault do
   Store a secret. `key_context` (1–10 string labels) is mandatory and is authenticated into the encryption: the value can only be opened with the context it was written under. The value (up to 64 KiB) is sealed under a fresh data key wrapped by the instance key, or by your own cloud KMS key when one is configured. 409 when the name is taken.
 
   `POST /v1/vault/objects`. Required scope: `vault:write`.
+
+  Body fields: `name` (string), `value` (string), `key_context` (object), `metadata` (object).
+  Response fields: `object`, `id`, `name`, `key_context`, `metadata`, `version`, `key_provider`, `created_at`, `updated_at`.
   """
   def post_objects(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vault/objects", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Vault do
   Read a vault object's metadata without its value.
 
   `GET /v1/vault/objects/{id}/metadata`. Required scope: `vault:list`.
+
+  Response fields: `object`, `id`, `name`, `key_context`, `metadata`, `version`, `key_provider`, `created_at`, `updated_at`.
   """
   def get_objects_metadata(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vault/objects/{id}/metadata", %{"id" => id}, nil, opts)
@@ -44,12 +53,15 @@ defmodule Atlas.Vault do
   List the versions of a vault object (number, which key protects it, when written) — never values.
 
   `GET /v1/vault/objects/{id}/versions`. Required scope: `vault:list`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.version`, `data.current`, `data.key_provider`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_objects_versions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vault/objects/{id}/versions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_objects_versions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_objects_versions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_objects_versions(client, id, opts \\ []),
@@ -59,6 +71,9 @@ defmodule Atlas.Vault do
   Read a vault object with its decrypted value (the current version, or `version`). Every read is audited. 409 if the version's wrapping key provider is no longer configured; 502 VAULT_KMS_ERROR when your KMS refuses.
 
   `GET /v1/vault/objects/{id}`. Required scope: `vault:read`.
+
+  Query params (`params:`): `version`.
+  Response fields: `object`, `id`, `name`, `key_context`, `metadata`, `version`, `key_provider`, `created_at`, `updated_at`, `value`.
   """
   def get_objects_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vault/objects/{id}", %{"id" => id}, nil, opts)
@@ -67,6 +82,9 @@ defmodule Atlas.Vault do
   Append a new version with a new value. Earlier versions stay readable. Pass `version_check` (the version you last read) for optimistic concurrency: 409 if another update landed since.
 
   `PUT /v1/vault/objects/{id}`. Required scope: `vault:write`.
+
+  Body fields: `value` (string), `version_check` (number).
+  Response fields: `object`, `id`, `name`, `key_context`, `metadata`, `version`, `key_provider`, `created_at`, `updated_at`.
   """
   def put_objects(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/vault/objects/{id}", %{"id" => id}, body, opts)
@@ -75,6 +93,8 @@ defmodule Atlas.Vault do
   Delete a vault object and every version of it. Irreversible.
 
   `DELETE /v1/vault/objects/{id}`. Required scope: `vault:delete`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_objects(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/vault/objects/{id}", %{"id" => id}, nil, opts)
@@ -83,6 +103,8 @@ defmodule Atlas.Vault do
   The customer-managed key that wraps new vault data keys. 404 when none is configured (the instance key is used).
 
   `GET /v1/vault/key_provider`. Required scope: `vault:manage`.
+
+  Response fields: `object`, `id`, `provider`, `config`, `updated_at`.
   """
   def get_key_provider(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vault/key_provider", %{}, nil, opts)
@@ -91,6 +113,9 @@ defmodule Atlas.Vault do
   Bring your own key: wrap new vault data keys with your AWS KMS (`config.region`, `config.key_id`; symmetric key), Google Cloud KMS (`config.crypto_key`; symmetric key) or Azure Key Vault (`config.vault_url`, `config.key_name`; RSA key with wrap/unwrap) key. Atlas proves access with a wrap/unwrap round trip before saving (422 or 502 on refusal). Credentials are write-only. Existing versions stay on the key that wrapped them; switching provider type is a 409 while versions remain on the old one.
 
   `PUT /v1/vault/key_provider`. Required scope: `vault:manage`.
+
+  Body fields: `provider` (string), `config` (object), `credentials` (object).
+  Response fields: `object`, `id`, `provider`, `config`, `updated_at`.
   """
   def put_key_provider(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/vault/key_provider", %{}, body, opts)
@@ -99,6 +124,8 @@ defmodule Atlas.Vault do
   Stop using your own key for new versions. 409 while any version is still wrapped by it.
 
   `DELETE /v1/vault/key_provider`. Required scope: `vault:manage`.
+
+  Response fields: `object`, `deleted`.
   """
   def delete_key_provider(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/vault/key_provider", %{}, nil, opts)

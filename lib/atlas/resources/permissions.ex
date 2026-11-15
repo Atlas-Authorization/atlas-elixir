@@ -5,7 +5,8 @@ defmodule Atlas.Permissions do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,29 +14,38 @@ defmodule Atlas.Permissions do
   List permissions available to roles on this instance.
 
   `GET /v1/permissions`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.is_system`, `data.implies`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/permissions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/permissions", %{}, opts)
 
   @doc ~S"""
-  Define a custom permission. Keys look like org:invoices:manage.
+  Define a custom permission. Keys look like org:invoices:manage. `implies` lists permission keys held along with this one, transitively: org_permissions claims, has() and Protect, org settings checks and API key effective_scopes include them. Cycles are harmless. At most 50 per permission.
 
   `POST /v1/permissions`. Required scope: `organizations:write`.
+
+  Body fields: `key` (string, required), `name` (string), `description` (string), `implies` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `is_system`, `implies`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/permissions", %{}, body, opts)
 
   @doc ~S"""
-  Update a permission’s description or metadata.
+  Update a permission’s name, description or `implies` (the whole list is replaced). The key is immutable and system permissions cannot be changed.
 
   `PATCH /v1/permissions/{id}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `description` (string|null), `implies` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `is_system`, `implies`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/permissions/{id}", %{"id" => id}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.Permissions do
   Delete a permission; it is removed from every role that held it.
 
   `DELETE /v1/permissions/{id}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/permissions/{id}", %{"id" => id}, nil, opts)

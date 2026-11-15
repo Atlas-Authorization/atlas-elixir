@@ -5,7 +5,8 @@ defmodule Atlas.TelemetryExport do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.TelemetryExport do
   The instance's OTLP export settings for MCP gateway and connection relay calls.
 
   `GET /v1/telemetry_export`. Required scope: `instance:read`.
+
+  Response fields: `object`, `enabled`, `endpoint`, `has_headers`, `service_name`, `traces`, `metrics`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/telemetry_export", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.TelemetryExport do
   Configure OTLP/HTTP export of gateway tool calls and relay calls as spans and metrics (atlas.calls, atlas.call.duration) to your collector. The endpoint must be https and public; headers (for example an API token) are sealed and never returned. Delivery is batched and best effort.
 
   `PUT /v1/telemetry_export`. Required scope: `instance:write`.
+
+  Body fields: `enabled` (boolean), `endpoint` (string), `headers` (object|null), `service_name` (string), `traces` (boolean), `metrics` (boolean).
+  Response fields: `object`, `enabled`, `endpoint`, `has_headers`, `service_name`, `traces`, `metrics`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/telemetry_export", %{}, body, opts)
@@ -29,6 +35,8 @@ defmodule Atlas.TelemetryExport do
   Send one test span to the configured collector now. Answers ok or the collector's error; never fails the request.
 
   `POST /v1/telemetry_export/test`. Required scope: `instance:write`.
+
+  Response fields: `object`, `ok`, `error`.
   """
   def post_test(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/telemetry_export/test", %{}, nil, opts)

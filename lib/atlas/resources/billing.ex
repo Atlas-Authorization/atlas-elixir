@@ -5,7 +5,8 @@ defmodule Atlas.Billing do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Billing do
   List the plans the tenant defines for their app's users (end-user billing). Admin view — includes the Stripe price id.
 
   `GET /v1/billing/plans`. Required scope: `billing:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.slug`, `data.stripe_price_id`, `data.free`, `data.interval`, `data.amount`, `data.currency`, `data.features`, `data.limits`, `data.audience`, `data.active`, `data.pricing_model`, `data.trial_days`, `data.promotion`, `data.stripe_meter_id`, `data.usage_unit`, `data.provider`, `data.provider_price_id`, `data.kind`, `data.seat_feature_id`, `data.description`, `data.badge`, `data.sort_order`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_plans(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/plans", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_plans/1`, following the cursor page by page.
+  Lazy stream over every item of `get_plans`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_plans(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Billing do
   Create an end-user billing plan. The slug becomes the `pla` session claim and must be unique per instance. Omit `stripe_price_id` for a FREE plan (the tier with no subscription); include it for a paid plan.
 
   `POST /v1/billing/plans`. Required scope: `billing:write`.
+
+  Body fields: `name` (string, required), `slug` (string, required), `stripe_price_id` (string|null), `audience` (enum), `interval` (enum), `amount` (string|null), `currency` (string), `features` (array), `limits` (object), `active` (boolean), `pricing_model` (enum), `trial_days` (integer|null).
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `audience`, `features`, `limits`, `active`.
   """
   def post_plans(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/plans", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Billing do
   Read one end-user billing plan, including its Stripe price id and granted features.
 
   `GET /v1/billing/plans/{id}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
   """
   def get_plans_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/plans/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.Billing do
   Update an end-user billing plan's name, slug, price, interval, features, audience or active flag.
 
   `PATCH /v1/billing/plans/{id}`. Required scope: `billing:write`.
+
+  Body fields: `name` (string), `slug` (string), `stripe_price_id` (string), `interval` (string), `amount` (string), `currency` (string), `features` (array), `limits` (object), `audience` (string), `active` (boolean), `pricing_model` (string), `trial_days` (number|null), `grace_days` (number|null), `description` (string|null), `badge` (string|null), `sort_order` (number), `stripe_meter_id` (string|null), `usage_unit` (string|null), `provider` (enum), `provider_price_id` (string), `annual_price_id` (string|null), `annual_amount` (string|null), `kind` (enum), `seat_feature_id` (string|null), `promotion` (object).
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
   """
   def update_plans(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/billing/plans/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.Billing do
   Delete an end-user billing plan. A plan that any subscription still references cannot be deleted: returns 409 PLAN_IN_USE — retire it with PATCH active: false instead (existing subscribers keep it; it is no longer offered).
 
   `DELETE /v1/billing/plans/{id}`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_plans(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/billing/plans/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +74,15 @@ defmodule Atlas.Billing do
   List end-user subscriptions, optionally filtered by subject_type (user/org) and subject_id. Read-only — status is moved solely by the Stripe webhook.
 
   `GET /v1/billing/subscriptions`. Required scope: `billing:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.plan_id`, `data.status`, `data.stripe_subscription_id`, `data.stripe_customer_id`, `data.current_period_end`, `data.provider`, `data.cancel_at_period_end`, `data.entitlements`, `data.entitlements.features`, `data.entitlements.limits`, `data.subscriptions`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_subscriptions(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/subscriptions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_subscriptions/1`, following the cursor page by page.
+  Lazy stream over every item of `get_subscriptions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_subscriptions(client, opts \\ []),
@@ -75,6 +92,8 @@ defmodule Atlas.Billing do
   Read one end-user subscription by id — a subject may hold several (a base plan plus add-ons). Includes the provider ids and, for entitlement providers (Autumn, Commet), the features/limits the provider reports it grants.
 
   `GET /v1/billing/subscriptions/{id}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan_id`, `status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `provider`, `cancel_at_period_end`, `entitlements`, `entitlements.features`, `entitlements.limits`, `subscriptions`, `created_at`, `updated_at`.
   """
   def get_subscriptions_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/subscriptions/{id}", %{"id" => id}, nil, opts)
@@ -83,6 +102,8 @@ defmodule Atlas.Billing do
   Mirror a plan's features and numeric limits from its provider (an Autumn plan's items, a Commet plan's features), replacing the plan's own, so the pla/fea/ent claims match what the provider sells. 422 for a provider without feature definitions.
 
   `POST /v1/billing/plans/{id}/sync_entitlements`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
   """
   def post_plans_sync_entitlements(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/plans/{id}/sync_entitlements", %{"id" => id}, nil, opts)
@@ -91,6 +112,8 @@ defmodule Atlas.Billing do
   How numeric limits merge when a subject holds several entitling subscriptions: default_limit_merge (max | sum) and per-limit overrides in limit_merge.
 
   `GET /v1/billing/settings`. Required scope: `billing:read`.
+
+  Response fields: `object`, `default_limit_merge`, `limit_merge`.
   """
   def get_settings(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/settings", %{}, nil, opts)
@@ -99,6 +122,9 @@ defmodule Atlas.Billing do
   Set how numeric limits merge across a subject's entitling subscriptions. default_limit_merge is max (default) or sum; limit_merge maps a limit key to max or sum and replaces the stored map when sent. -1 (unlimited) always wins.
 
   `PUT /v1/billing/settings`. Required scope: `billing:write`.
+
+  Body fields: `default_limit_merge` (enum), `limit_merge` (object).
+  Response fields: `object`, `default_limit_merge`, `limit_merge`.
   """
   def put_settings(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/billing/settings", %{}, body, opts)
@@ -107,6 +133,9 @@ defmodule Atlas.Billing do
   May a subject use a feature (needing `required` units, default 1)? Asked live of the provider when the subject is on an entitlement provider (Autumn, Commet); otherwise answered from the subject's resolved entitlement and this period's reported usage.
 
   `POST /v1/billing/check`. Required scope: `billing:read`.
+
+  Body fields: `subject_type` (enum), `subject_id` (string), `feature` (string), `required` (number).
+  Response fields: `object`, `feature`, `allowed`, `source`, `provider`, `remaining`, `granted`, `usage`, `unlimited`.
   """
   def post_check(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/check", %{}, body, opts)
@@ -115,6 +144,9 @@ defmodule Atlas.Billing do
   Adopt an EXISTING Stripe subscription (same Stripe account) onto an Atlas user/org + plan, for migrating billing into Atlas without re-charging. Body: subject_type (user|org), subject_id, stripe_subscription_id, optional stripe_customer_id and plan_id (else resolved from the subscription price). Makes one read-only Stripe retrieve — never a checkout or new subscription — and records the row with the live status; the pla entitlement reflects it on the next session.
 
   `POST /v1/billing/subscriptions/import`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum), `subject_id` (string), `stripe_subscription_id` (string), `stripe_customer_id` (string), `plan_id` (string).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan_id`, `status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `provider`, `cancel_at_period_end`, `entitlements`, `entitlements.features`, `entitlements.limits`, `subscriptions`, `created_at`, `updated_at`.
   """
   def post_subscriptions_import(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/import", %{}, body, opts)
@@ -123,6 +155,9 @@ defmodule Atlas.Billing do
   Switch a subscription to another plan or billing interval on the billing provider, now (prorated) or at the end of the current period (`schedule_at_period_end: true`). Emits billing.subscription.updated.
 
   `POST /v1/billing/subscriptions/{id}/change`. Required scope: `billing:write`.
+
+  Body fields: `plan_id` (string, required), `interval` (enum), `schedule_at_period_end` (boolean).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan_id`, `status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `provider`, `cancel_at_period_end`, `entitlements`, `entitlements.features`, `entitlements.limits`, `subscriptions`, `created_at`, `updated_at`.
   """
   def post_subscriptions_change(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/{id}/change", %{"id" => id}, body, opts)
@@ -131,6 +166,9 @@ defmodule Atlas.Billing do
   Cancel a subscription at the end of the current period (default), or now with `immediately: true`. Emits billing.subscription.updated or billing.subscription.canceled.
 
   `POST /v1/billing/subscriptions/{id}/cancel`. Required scope: `billing:write`.
+
+  Body fields: `immediately` (boolean).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan_id`, `status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `provider`, `cancel_at_period_end`, `entitlements`, `entitlements.features`, `entitlements.limits`, `subscriptions`, `created_at`, `updated_at`.
   """
   def post_subscriptions_cancel(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/{id}/cancel", %{"id" => id}, body, opts)
@@ -139,20 +177,25 @@ defmodule Atlas.Billing do
   Undo a cancellation scheduled for the end of the period. A subscription that already ended cannot be restored.
 
   `POST /v1/billing/subscriptions/{id}/restore`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan_id`, `status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `provider`, `cancel_at_period_end`, `entitlements`, `entitlements.features`, `entitlements.limits`, `subscriptions`, `created_at`, `updated_at`.
   """
   def post_subscriptions_restore(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/{id}/restore", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  The billing providers this instance has credentials for (stripe, polar, dodo, creem, chargebee, autumn, commet). End-user billing runs on the instance's OWN provider account; secrets are reported as *_set markers only, never returned. Each entry carries the webhook URL to register with the provider.
+  The billing providers this instance has credentials for (stripe, polar, dodo, creem, chargebee, autumn, commet, paddle, lemonsqueezy, revenuecat, appstore, googleplay). End-user billing runs on the instance's OWN provider account; secrets are reported as *_set markers only, never returned. Each entry carries the webhook URL to register with the provider.
 
   `GET /v1/billing/providers`. Required scope: `billing:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.configured`, `data.provider`, `data.environment`, `data.status`, `data.config`, `data.secrets_set`, `data.webhook_url`, `data.capabilities`, `data.last_verified_at`, `data.last_webhook_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_providers(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/providers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_providers/1`, following the cursor page by page.
+  Lazy stream over every item of `get_providers`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_providers(client, opts \\ []),
@@ -162,14 +205,19 @@ defmodule Atlas.Billing do
   One billing provider's settings: environment, which credentials are set, public fields (e.g. Stripe publishable key), status and the webhook URL to register. When the provider has no credentials: 200 `{ object: "billing_provider", provider, configured: false }` (not a 404).
 
   `GET /v1/billing/providers/{provider}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `configured`, `provider`, `environment`, `status`, `config`, `secrets_set`, `webhook_url`, `capabilities`, `last_verified_at`, `last_webhook_at`, `updated_at`, `channel`, `message`.
   """
   def get_providers_by_provider(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/providers/{provider}", %{"provider" => provider}, nil, opts)
 
   @doc ~S"""
-  Set the instance's own credentials for a billing provider (merged onto what is stored; secrets are write-only and encrypted at rest). Stripe: secret_key (sk_/rk_), webhook_secret (whsec_), publishable_key. Polar: access_token, webhook_secret. Dodo Payments and Creem: api_key, webhook_secret. Chargebee: api_key, site (the site name), webhook_username + webhook_password (the Basic credentials set on the Chargebee webhook). Autumn: secret_key (am_sk_), webhook_secret (whsec_). Commet: api_key, webhook_secret, optional seat_feature_code. Stripe's environment follows the key's mode.
+  Set the instance's own credentials for a billing provider (merged onto what is stored; secrets are write-only and encrypted at rest). Stripe: secret_key (sk_/rk_), webhook_secret (whsec_), publishable_key. Polar: access_token, webhook_secret. Dodo Payments and Creem: api_key, webhook_secret. Chargebee: api_key, site (the site name), webhook_username + webhook_password (the Basic credentials set on the Chargebee webhook). Autumn: secret_key (am_sk_), webhook_secret (whsec_). Commet: api_key, webhook_secret, optional seat_feature_code. Paddle: api_key, webhook_secret. Lemon Squeezy: api_key, webhook_secret, store_id. RevenueCat: api_key (a v2 secret key), webhook_secret (the Authorization value RevenueCat sends), project_id. App Store: private_key (the App Store Connect API key, .p8), key_id, issuer_id, bundle_id. Google Play: service_account_json, package_name, push_audience (the audience of the Pub/Sub push subscription), push_service_account (the service account it authenticates as). Stripe's environment follows the key's mode.
 
   `PUT /v1/billing/providers/{provider}`. Required scope: `billing:write`.
+
+  Body fields: `environment` (enum), `config` (object).
+  Response fields: `object`, `configured`, `provider`, `environment`, `status`, `config`, `secrets_set`, `webhook_url`, `capabilities`, `last_verified_at`, `last_webhook_at`, `updated_at`.
   """
   def put_providers(client, provider, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/billing/providers/{provider}", %{"provider" => provider}, body, opts)
@@ -178,6 +226,9 @@ defmodule Atlas.Billing do
   Remove a provider's credentials. Refused while live subscriptions or plans depend on it, unless `force=true`.
 
   `DELETE /v1/billing/providers/{provider}`. Required scope: `billing:write`.
+
+  Query params (`params:`): `force`.
+  Response fields: `object`, `provider`, `deleted`.
   """
   def delete_providers(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/billing/providers/{provider}", %{"provider" => provider}, nil, opts)
@@ -186,6 +237,8 @@ defmodule Atlas.Billing do
   Make one read-only call to the provider with the stored credentials and report whether they work.
 
   `POST /v1/billing/providers/{provider}/test`. Required scope: `billing:write`.
+
+  Response fields: `object`, `provider`, `ok`, `error`, `account`.
   """
   def post_providers_test(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/providers/{provider}/test", %{"provider" => provider}, nil, opts)
@@ -194,12 +247,15 @@ defmodule Atlas.Billing do
   List the discount codes you offer.
 
   `GET /v1/billing/coupons`. Required scope: `billing:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.code`, `data.name`, `data.percent_off`, `data.amount_off`, `data.currency`, `data.duration`, `data.duration_months`, `data.max_redemptions`, `data.redeemed_count`, `data.expires_at`, `data.plan_ids`, `data.first_time_only`, `data.active`, `data.providers`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def get_coupons(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/coupons", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_coupons/1`, following the cursor page by page.
+  Lazy stream over every item of `get_coupons`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_coupons(client, opts \\ []),
@@ -209,6 +265,9 @@ defmodule Atlas.Billing do
   Create a discount code. Set exactly one of `percent_off` or `amount_off` (+ `currency`). It is created on your own Stripe account as a coupon and promotion code, so Stripe enforces and applies it; a provider without discount support refuses with 422.
 
   `POST /v1/billing/coupons`. Required scope: `billing:write`.
+
+  Body fields: `code` (string), `name` (string), `percent_off` (number), `amount_off` (integer), `currency` (string), `duration` (enum), `duration_months` (integer), `max_redemptions` (integer), `expires_at` (integer), `plan_ids` (array), `first_time_only` (boolean), `provider` (string).
+  Response fields: `object`, `id`, `code`, `name`, `percent_off`, `amount_off`, `currency`, `duration`, `duration_months`, `max_redemptions`, `redeemed_count`, `expires_at`, `plan_ids`, `first_time_only`, `active`, `providers`, `created_at`, `updated_at`.
   """
   def post_coupons(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/coupons", %{}, body, opts)
@@ -217,14 +276,19 @@ defmodule Atlas.Billing do
   Read one discount code.
 
   `GET /v1/billing/coupons/{id}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `id`, `code`, `name`, `percent_off`, `amount_off`, `currency`, `duration`, `duration_months`, `max_redemptions`, `redeemed_count`, `expires_at`, `plan_ids`, `first_time_only`, `active`, `providers`, `created_at`, `updated_at`.
   """
   def get_coupons_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/coupons/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Deactivate or reactivate a code, rename it, or change its redemption cap. The discount itself cannot change; create a new code for that.
+  Deactivate or reactivate a code, rename it, or change its redemption cap, expiry (`expires_at`, null removes it), eligible plans (`plan_ids`, null means every plan) or first-time-only rule. The discount itself cannot change; create a new code for that. Atlas enforces these when it validates a code at checkout; the promotion code on your payment provider keeps the limits it was created with, so the provider's own hosted page is still bound by those.
 
   `PATCH /v1/billing/coupons/{id}`. Required scope: `billing:write`.
+
+  Body fields: `active` (boolean), `name` (string), `max_redemptions` (integer|null), `expires_at` (integer|null), `plan_ids` (array|null), `first_time_only` (boolean).
+  Response fields: `object`, `id`, `code`, `name`, `percent_off`, `amount_off`, `currency`, `duration`, `duration_months`, `max_redemptions`, `redeemed_count`, `expires_at`, `plan_ids`, `first_time_only`, `active`, `providers`, `created_at`, `updated_at`.
   """
   def update_coupons(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/billing/coupons/{id}", %{"id" => id}, body, opts)
@@ -233,6 +297,8 @@ defmodule Atlas.Billing do
   Delete a code and stop it being used. Subscriptions that already have the discount keep it.
 
   `DELETE /v1/billing/coupons/{id}`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_coupons(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/billing/coupons/{id}", %{"id" => id}, nil, opts)
@@ -241,6 +307,8 @@ defmodule Atlas.Billing do
   Would this code work for this subject and plan? `reason`: unknown, inactive, expired, exhausted, plan_not_eligible, first_time_only or already_used.
 
   `POST /v1/billing/coupons/validate`. Required scope: `billing:read`.
+
+  Body fields: `code` (string), `plan_id` (string), `subject_type` (enum), `subject_id` (string).
   """
   def post_coupons_validate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/coupons/validate", %{}, body, opts)
@@ -249,12 +317,15 @@ defmodule Atlas.Billing do
   A subject's account-credit ledger and its balance per currency.
 
   `GET /v1/billing/credits`. Required scope: `billing:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `limit`, `starting_after`.
+  Response fields: `object`, `subject_type`, `subject_id`, `balance`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.amount`, `data.currency`, `data.reason`, `data.kind`, `data.source_ref`, `data.applied`, `data.provider`, `data.created_at`.
   """
   def get_credits(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/credits", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_credits/1`, following the cursor page by page.
+  Lazy stream over every item of `get_credits`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_credits(client, opts \\ []),
@@ -264,25 +335,223 @@ defmodule Atlas.Billing do
   Post account credit (or a negative adjustment) to a subject. Idempotent on `idempotency_key`. Once the subject has a customer on the provider the credit lands on their balance and is applied to their next invoices; before that it waits for their first completed checkout.
 
   `POST /v1/billing/credits`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum), `subject_id` (string), `amount` (integer), `currency` (string), `reason` (string), `idempotency_key` (string).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `amount`, `currency`, `reason`, `kind`, `source_ref`, `applied`, `provider`, `created_at`.
   """
   def post_credits(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/credits", %{}, body, opts)
 
   @doc ~S"""
+  Read back the usage Atlas recorded for a subject: the total and the total per feature over a time range, and with `events=true` the individual events (keyset-paged). `period=current` counts from the start of the subject's current billing period. Usage that only your payment provider holds is not here; ask the provider with POST /v1/billing/check.
+
+  `GET /v1/billing/usage`. Required scope: `billing:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `feature`, `since`, `until`, `period`, `events`, `limit`, `starting_after`.
+  Response fields: `object`, `subject_type`, `subject_id`, `since`, `until`, `total`, `by_feature`, `by_feature.feature`, `by_feature.total`, `by_feature.events`, `events`, `events.object`, `events.data`, `events.data.object`, `events.data.id`, `events.data.feature`, `events.data.quantity`, `events.data.source`, `events.data.idempotency_key`, `events.data.subscription_id`, `events.data.ref_key`, `events.data.reported_at`, `events.has_more`, `events.next_cursor`.
+  """
+  def get_usage(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/usage", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_usage`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_usage(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/billing/usage", %{}, opts)
+
+  @doc ~S"""
   Report metered usage for a subject (idempotent on idempotency_key). Mirrored to the provider's meter when the plan is metered and configured (a Stripe meter event, or a usage record on the Chargebee subscription for the metered item price, deduplicated on idempotency_key), or — with `feature` — to that provider feature (an Autumn feature id / Commet feature code). `subscription_id` attributes it to one of several subscriptions.
 
   `POST /v1/billing/usage`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (string), `subject_id` (string), `quantity` (number), `idempotency_key` (string), `feature` (string), `subscription_id` (string).
+  Response fields: `object`, `recorded`, `metered`, `total`.
   """
   def post_usage(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/usage", %{}, body, opts)
 
   @doc ~S"""
+  Report up to 100 usage events in one call. Each event is its own idempotent report with the fields of POST /v1/billing/usage, so a retried batch records only what is missing. The batch is not all-or-nothing: each result says `recorded`, `duplicate` or `failed` (with the error). The response is 200 whenever the batch itself was well formed.
+
+  `POST /v1/billing/usage/batch`. Required scope: `billing:write`.
+
+  Body fields: `events` (array, required).
+  Nested body fields: `events.subject_type`, `events.subject_id`, `events.quantity`, `events.idempotency_key`, `events.feature`, `events.subscription_id`.
+  Response fields: `object`, `recorded`, `duplicates`, `failed`, `results`, `results.index`, `results.idempotency_key`, `results.status`, `results.recorded`, `results.metered`, `results.total`, `results.error`, `results.error.code`, `results.error.message`, `results.error.param`.
+  """
+  def post_usage_batch(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/usage/batch", %{}, body, opts)
+
+  @doc ~S"""
   Sync a subject's seat-counting subscriptions to the org's current member count: the subscription quantity on Stripe, Chargebee, Dodo Payments, Creem and Commet (proration applied), or the usage of the plan's seat_feature_id on Autumn. Never changes the paid status.
 
   `POST /v1/billing/subjects/{type}/{id}/sync_seats`. Required scope: `billing:write`.
+
+  Response fields: `object`, `subject_type`, `subject_id`, `quantity`.
   """
   def post_subjects_sync_seats(client, type, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/subjects/{type}/{id}/sync_seats", %{"type" => type, "id" => id}, nil, opts)
+
+  @doc ~S"""
+  List the invoices recorded for the plans you sell, newest first, optionally for one subject or status. Invoices arrive from your payment provider's signed webhooks, so a very new invoice appears once the webhook has been delivered.
+
+  `GET /v1/billing/invoices`. Required scope: `billing:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.provider`, `data.number`, `data.status`, `data.amount_due`, `data.amount_paid`, `data.amount_refunded`, `data.currency`, `data.hosted_invoice_url`, `data.invoice_pdf`, `data.period_start`, `data.period_end`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_invoices(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/invoices", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_invoices`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_invoices(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/billing/invoices", %{}, opts)
+
+  @doc ~S"""
+  Read one invoice, with the refunds made against it.
+
+  `GET /v1/billing/invoices/{id}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `provider`, `number`, `status`, `amount_due`, `amount_paid`, `amount_refunded`, `currency`, `hosted_invoice_url`, `invoice_pdf`, `period_start`, `period_end`, `created_at`, `refunds`, `refunds.object`, `refunds.id`, `refunds.invoice_id`, `refunds.subject_type`, `refunds.subject_id`, `refunds.provider`, `refunds.provider_refund_id`, `refunds.amount`, `refunds.currency`, `refunds.reason`, `refunds.status`, `refunds.created_at`.
+  """
+  def get_invoices_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/invoices/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Refund all or part of a paid invoice on the payment provider that issued it (Stripe today; other providers answer 422 `unsupported`). `amount` is in minor units and defaults to what is left; the refunded total can never pass what was paid. A refund returns money only: it does not cancel the subscription or change an entitlement. `idempotency_key` is required: a retry with the same key returns the first refund (200) instead of making a second. Emits billing_refund.created.
+
+  `POST /v1/billing/invoices/{id}/refund`. Required scope: `billing:write`.
+
+  Body fields: `amount` (integer), `reason` (enum), `idempotency_key` (string, required).
+  Response fields: `object`, `id`, `invoice_id`, `subject_type`, `subject_id`, `provider`, `provider_refund_id`, `amount`, `currency`, `reason`, `status`, `created_at`.
+  """
+  def post_invoices_refund(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/invoices/{id}/refund", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Move a trialing subscription's trial end later, on the payment provider (Stripe today; others answer 422 `unsupported`). Send exactly one of `days` (added to the current trial end) or `trial_end` (an absolute time, epoch ms or ISO). A trial can be extended by at most 365 days in total. Only a `trialing` subscription qualifies (409 otherwise). `idempotency_key` is required: a retry returns the first extension. Emits billing_trial.extended.
+
+  `POST /v1/billing/subscriptions/{id}/extend_trial`. Required scope: `billing:write`.
+
+  Body fields: `days` (integer), `trial_end` (integer|string), `reason` (string), `idempotency_key` (string, required).
+  Response fields: `object`, `id`, `subscription_id`, `subject_type`, `subject_id`, `previous_trial_end`, `trial_end`, `status`, `extended_days_total`, `reason`, `created_at`.
+  """
+  def post_subscriptions_extend_trial(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/{id}/extend_trial", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Mint (or read back) the link token for an app-store subscription: pass `token` to the store when the person buys (StoreKit `appAccountToken`, Play Billing `obfuscatedExternalAccountId`) and the signed store notification is filed under this subject and plan. The same subject and plan always get the same token. `plan_id` must be an active plan sold through `appstore` or `googleplay` for this kind of subject. 201 on first mint, 200 after.
+
+  `POST /v1/billing/store_links`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum, required), `subject_id` (string, required), `plan_id` (string, required).
+  Response fields: `object`, `id`, `token`, `subject_type`, `subject_id`, `plan_id`, `provider`, `created_at`.
+  """
+  def post_store_links(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/store_links", %{}, body, opts)
+
+  @doc ~S"""
+  List the connected accounts, newest first.
+
+  `GET /v1/billing/connect/accounts`. Required scope: `billing:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.provider_account_id`, `data.country`, `data.details_submitted`, `data.charges_enabled`, `data.payouts_enabled`, `data.requirements_due`, `data.refreshed_at`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_connect_accounts(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/connect/accounts", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_connect_accounts`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_connect_accounts(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/billing/connect/accounts", %{}, opts)
+
+  @doc ~S"""
+  Create the Stripe Connect (Express) account a user or organization is paid out to, on YOUR Stripe account. One account per subject: a second call returns it (200). Idempotent on `idempotency_key`. Send the person to a link from `POST /v1/billing/connect/accounts/{id}/onboarding_link` to finish Stripe's onboarding.
+
+  `POST /v1/billing/connect/accounts`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum, required), `subject_id` (string, required), `email` (string), `country` (string), `idempotency_key` (string, required).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `provider_account_id`, `country`, `details_submitted`, `charges_enabled`, `payouts_enabled`, `requirements_due`, `refreshed_at`, `created_at`.
+  """
+  def post_connect_accounts(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/connect/accounts", %{}, body, opts)
+
+  @doc ~S"""
+  Read one connected account as Atlas last saw it. `POST .../refresh` re-reads it from Stripe.
+
+  `GET /v1/billing/connect/accounts/{id}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `provider_account_id`, `country`, `details_submitted`, `charges_enabled`, `payouts_enabled`, `requirements_due`, `refreshed_at`, `created_at`.
+  """
+  def get_connect_accounts_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/connect/accounts/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Re-read the account's onboarding and payout readiness from Stripe and store it.
+
+  `POST /v1/billing/connect/accounts/{id}/refresh`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `provider_account_id`, `country`, `details_submitted`, `charges_enabled`, `payouts_enabled`, `requirements_due`, `refreshed_at`, `created_at`.
+  """
+  def post_connect_accounts_refresh(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/connect/accounts/{id}/refresh", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  A one-time Stripe-hosted link where the account holder completes onboarding (`type: onboarding`, default) or edits their details (`update`). Both URLs must be https and, when your app lists allowed origins, on one of them. The link expires quickly and works once: mint a new one on `refresh_url`.
+
+  `POST /v1/billing/connect/accounts/{id}/onboarding_link`. Required scope: `billing:write`.
+
+  Body fields: `return_url` (string, required), `refresh_url` (string, required), `type` (enum).
+  Response fields: `object`, `account_id`, `url`, `expires_at`.
+  """
+  def post_connect_accounts_onboarding_link(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/connect/accounts/{id}/onboarding_link", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The transfer ledger, newest first, optionally for one account.
+
+  `GET /v1/billing/connect/transfers`. Required scope: `billing:read`.
+
+  Query params (`params:`): `account_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.account_id`, `data.subject_type`, `data.subject_id`, `data.amount`, `data.currency`, `data.description`, `data.status`, `data.provider_transfer_id`, `data.failure`, `data.source_ref`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_connect_transfers(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/connect/transfers", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_connect_transfers`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_connect_transfers(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/billing/connect/transfers", %{}, opts)
+
+  @doc ~S"""
+  Pay a connected account from your Stripe balance. Atlas re-reads the account first and refuses (409) until Stripe reports payouts enabled. Idempotent on `idempotency_key`: a retry returns the first transfer, and Stripe is called with the same key, so money moves once. The same key with a different account or amount is a 409. Emits `billing_transfer.created`.
+
+  `POST /v1/billing/connect/transfers`. Required scope: `billing:write`.
+
+  Body fields: `account_id` (string, required), `amount` (integer, required), `currency` (string, required), `description` (string), `source_ref` (string), `idempotency_key` (string, required).
+  Response fields: `object`, `id`, `account_id`, `subject_type`, `subject_id`, `amount`, `currency`, `description`, `status`, `provider_transfer_id`, `failure`, `source_ref`, `created_at`.
+  """
+  def post_connect_transfers(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/connect/transfers", %{}, body, opts)
+
+  @doc ~S"""
+  Read one Connect transfer by id: its amount, destination account and status.
+
+  `GET /v1/billing/connect/transfers/{id}`. Required scope: `billing:read`.
+
+  Response fields: `object`, `id`, `account_id`, `subject_type`, `subject_id`, `amount`, `currency`, `description`, `status`, `provider_transfer_id`, `failure`, `source_ref`, `created_at`.
+  """
+  def get_connect_transfers_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/billing/connect/transfers/{id}", %{"id" => id}, nil, opts)
 
   @doc false
   def __operations__, do: [
@@ -314,7 +583,22 @@ defmodule Atlas.Billing do
     {:post_coupons_validate, :post, "/v1/billing/coupons/validate", 0, true, false},
     {:get_credits, :get, "/v1/billing/credits", 0, false, true},
     {:post_credits, :post, "/v1/billing/credits", 0, true, false},
+    {:get_usage, :get, "/v1/billing/usage", 0, false, true},
     {:post_usage, :post, "/v1/billing/usage", 0, true, false},
-    {:post_subjects_sync_seats, :post, "/v1/billing/subjects/{type}/{id}/sync_seats", 2, false, false}
+    {:post_usage_batch, :post, "/v1/billing/usage/batch", 0, true, false},
+    {:post_subjects_sync_seats, :post, "/v1/billing/subjects/{type}/{id}/sync_seats", 2, false, false},
+    {:get_invoices, :get, "/v1/billing/invoices", 0, false, true},
+    {:get_invoices_by_id, :get, "/v1/billing/invoices/{id}", 1, false, false},
+    {:post_invoices_refund, :post, "/v1/billing/invoices/{id}/refund", 1, true, false},
+    {:post_subscriptions_extend_trial, :post, "/v1/billing/subscriptions/{id}/extend_trial", 1, true, false},
+    {:post_store_links, :post, "/v1/billing/store_links", 0, true, false},
+    {:get_connect_accounts, :get, "/v1/billing/connect/accounts", 0, false, true},
+    {:post_connect_accounts, :post, "/v1/billing/connect/accounts", 0, true, false},
+    {:get_connect_accounts_by_id, :get, "/v1/billing/connect/accounts/{id}", 1, false, false},
+    {:post_connect_accounts_refresh, :post, "/v1/billing/connect/accounts/{id}/refresh", 1, false, false},
+    {:post_connect_accounts_onboarding_link, :post, "/v1/billing/connect/accounts/{id}/onboarding_link", 1, true, false},
+    {:get_connect_transfers, :get, "/v1/billing/connect/transfers", 0, false, true},
+    {:post_connect_transfers, :post, "/v1/billing/connect/transfers", 0, true, false},
+    {:get_connect_transfers_by_id, :get, "/v1/billing/connect/transfers/{id}", 1, false, false}
   ]
 end

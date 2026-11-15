@@ -5,7 +5,8 @@ defmodule Atlas.OauthProviders do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.OauthProviders do
   List the social sign-in provider catalog with which are configured/enabled and each derived redirect URI. Never returns a client secret. Narrow it with `provider` and/or `configured`; other query parameters are ignored.
 
   `GET /v1/oauth_providers`. Required scope: `oauth_providers:read`.
+
+  Query params (`params:`): `provider`, `configured`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.provider`, `data.display_name`, `data.category`, `data.tier`, `data.setup_docs_url`, `data.default_scopes`, `data.api_scopes`, `data.credential_fields`, `data.settings`, `data.setting_values`, `data.native`, `data.mode`, `data.javascript_origins`, `data.redirect_uri`, `data.atlas_callback`, `data.native_client_ids`, `data.custom_redirect_uri`, `data.configured`, `data.client_id`, `data.has_secret`, `data.enabled`, `data.allow_sign_in`, `data.allow_sign_up`, `data.scopes`, `data.icon_url`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_providers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.OauthProviders do
   Fetch one social sign-in provider: its catalog entry and configured state, no secret.
 
   `GET /v1/oauth_providers/{provider}`. Required scope: `oauth_providers:read`.
+
+  Response fields: `object`, `provider`, `display_name`, `category`, `tier`, `setup_docs_url`, `default_scopes`, `api_scopes`, `credential_fields`, `settings`, `setting_values`, `native`, `mode`, `javascript_origins`, `redirect_uri`, `atlas_callback`, `native_client_ids`, `custom_redirect_uri`, `configured`, `client_id`, `has_secret`, `enabled`, `allow_sign_in`, `allow_sign_up`, `scopes`, `icon_url`, `updated_at`.
   """
   def get(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_providers/{provider}", %{"provider" => provider}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.OauthProviders do
   Set a social sign-in provider's client id/secret (and scopes/settings). The secret is write-only and stored encrypted. If the instance was using Atlas's shared development credentials for this provider (a dashboard option on development instances), saving your own replaces them. Does NOT enable the provider — use POST /v1/oauth_providers/{provider}/enabled for that. Accepts display-only fields with no credentials: display_name, icon_url, and mode ('native'|'redirect', to force a native provider like Google through the redirect flow; "" clears the override) — sent together with credentials, they are applied in the same call. Providers with no client credentials (steam, siwe, siws, siwb, siwf) accept display fields and, for the wallets, their verifier `settings` (siwe: domain, chain_ids, rpc_url; siws: domain, networks; siwf: domain, chain_ids, optimism_rpc_url, id_registry_address) — validated (hostnames, positive-integer chain ids, https RPC URLs) and returned as `setting_values`; a credential field (client_id, client_secret, scopes, values, custom_redirect_uri, native) is a 400 naming it. Turning a wallet sign-in on is the auth_config strategy toggle (PATCH /v1/instance strategies.siwe / siws / siwf).
 
   `PUT /v1/oauth_providers/{provider}`. Required scope: `oauth_providers:write`.
+
+  Body fields: `client_id` (string), `client_secret` (string), `scopes` (array), `values` (object), `settings` (object), `custom_redirect_uri` (string), `native` (boolean), `mode` (enum), `display_name` (string), `icon_url` (string).
+  Response fields: `object`, `provider`, `configured`, `enabled`, `setting_values`, `updated_fields`, `warning`.
   """
   def put(client, provider, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_providers/{provider}", %{"provider" => provider}, body, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.OauthProviders do
   Remove a social sign-in provider’s credentials. Existing linked accounts are preserved.
 
   `DELETE /v1/oauth_providers/{provider}`. Required scope: `oauth_providers:write`.
+
+  Response fields: `object`, `provider`, `deleted`, `note`.
   """
   def delete(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/oauth_providers/{provider}", %{"provider" => provider}, nil, opts)
@@ -52,6 +63,9 @@ defmodule Atlas.OauthProviders do
   Enable or disable a social sign-in provider — this is what turns it on (saving credentials via PUT does not). Enabling one with no credentials is refused.
 
   `POST /v1/oauth_providers/{provider}/enabled`. Required scope: `oauth_providers:write`.
+
+  Body fields: `enabled` (boolean).
+  Response fields: `object`, `provider`, `enabled`.
   """
   def post_enabled(client, provider, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_providers/{provider}/enabled", %{"provider" => provider}, body, opts)
@@ -60,6 +74,9 @@ defmodule Atlas.OauthProviders do
   Scope a provider to sign-in, sign-up, or both (allow_sign_in / allow_sign_up). Enforced at the §6.5 resolver, so a sign-in-only provider never JIT-creates an account. Refuses "neither" — disable the provider instead.
 
   `POST /v1/oauth_providers/{provider}/scope`. Required scope: `oauth_providers:write`.
+
+  Body fields: `allow_sign_in` (boolean), `allow_sign_up` (boolean).
+  Response fields: `object`, `provider`, `allow_sign_in`, `allow_sign_up`.
   """
   def post_scope(client, provider, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_providers/{provider}/scope", %{"provider" => provider}, body, opts)
@@ -68,6 +85,8 @@ defmodule Atlas.OauthProviders do
   Test a social sign-in provider's stored credentials against the provider's token endpoint. Proves the client id/secret only, not redirect-URI registration or scope approval.
 
   `POST /v1/oauth_providers/{provider}/test`. Required scope: `oauth_providers:read`.
+
+  Response fields: `object`, `provider`, `ok`, `reason`, `message`, `checked`, `not_checked`.
   """
   def post_test(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_providers/{provider}/test", %{"provider" => provider}, nil, opts)

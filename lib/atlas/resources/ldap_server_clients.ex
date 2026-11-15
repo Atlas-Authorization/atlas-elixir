@@ -5,7 +5,8 @@ defmodule Atlas.LdapServerClients do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.LdapServerClients do
   List the LDAP interface service accounts with their base DN, bind DN and allowed source networks. Secrets are never returned.
 
   `GET /v1/ldap_server_clients`. Required scope: `ldap_server:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.base_dn`, `data.bind_dn`, `data.user_dn_template`, `data.allowed_cidrs`, `data.allow_user_bind`, `data.size_limit`, `data.status`, `data.secret_prefix`, `data.last_bind_at`, `data.created_at`, `data.secret`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ldap_server_clients", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.LdapServerClients do
   Create a service account for the LDAPS interface: base_dn (dc=/o=/ou= parts, unique across Atlas), bind_cn, allowed_cidrs (empty = nobody may connect), allow_user_bind and size_limit. The secret is returned once as secret.
 
   `POST /v1/ldap_server_clients`. Required scope: `ldap_server:write`.
+
+  Body fields: `name` (string, required), `base_dn` (string, required), `bind_cn` (string, required), `allowed_cidrs` (array), `allow_user_bind` (boolean), `size_limit` (integer), `status` (enum).
+  Response fields: `object`, `id`, `name`, `base_dn`, `bind_dn`, `user_dn_template`, `allowed_cidrs`, `allow_user_bind`, `size_limit`, `status`, `secret_prefix`, `last_bind_at`, `created_at`, `secret`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ldap_server_clients", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.LdapServerClients do
   Read one LDAP interface service account.
 
   `GET /v1/ldap_server_clients/{id}`. Required scope: `ldap_server:read`.
+
+  Response fields: `object`, `id`, `name`, `base_dn`, `bind_dn`, `user_dn_template`, `allowed_cidrs`, `allow_user_bind`, `size_limit`, `status`, `secret_prefix`, `last_bind_at`, `created_at`, `secret`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ldap_server_clients/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.LdapServerClients do
   Change the name, allowed networks, user-bind switch, size limit or status (active or disabled).
 
   `PATCH /v1/ldap_server_clients/{id}`. Required scope: `ldap_server:write`.
+
+  Body fields: `name` (string), `base_dn` (string), `bind_cn` (string), `allowed_cidrs` (array), `allow_user_bind` (boolean), `size_limit` (integer), `status` (enum).
+  Response fields: `object`, `id`, `name`, `base_dn`, `bind_dn`, `user_dn_template`, `allowed_cidrs`, `allow_user_bind`, `size_limit`, `status`, `secret_prefix`, `last_bind_at`, `created_at`, `secret`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/ldap_server_clients/{id}", %{"id" => id}, body, opts)
@@ -60,6 +72,8 @@ defmodule Atlas.LdapServerClients do
   Issue a new service-account secret (returned once); the old one stops working immediately.
 
   `POST /v1/ldap_server_clients/{id}/rotate_secret`. Required scope: `ldap_server:write`.
+
+  Response fields: `object`, `id`, `name`, `base_dn`, `bind_dn`, `user_dn_template`, `allowed_cidrs`, `allow_user_bind`, `size_limit`, `status`, `secret_prefix`, `last_bind_at`, `created_at`, `secret`.
   """
   def post_rotate_secret(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ldap_server_clients/{id}/rotate_secret", %{"id" => id}, nil, opts)

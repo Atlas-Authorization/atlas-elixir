@@ -5,7 +5,8 @@ defmodule Atlas.Yubikeys do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Yubikeys do
   List the registered self-held YubiKeys (public id, owner, replay counter). The AES keys are never returned.
 
   `GET /v1/yubikeys`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.public_id`, `data.label`, `data.user_id`, `data.has_private_id`, `data.last_counter`, `data.created_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/yubikeys", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Yubikeys do
   Register a YubiKey's AES key for self-held Yubico OTP (mfa.yubikey.mode "self_held"). The key is stored encrypted and never returned. Give user_id to assign it; otherwise the first user to enrol it with a valid OTP claims it. 409 when the public id is already registered.
 
   `POST /v1/yubikeys`. Required scope: `users:write`.
+
+  Body fields: `public_id` (string, required), `aes_key` (string, required), `private_id` (string), `label` (string), `user_id` (string).
+  Response fields: `object`, `id`, `public_id`, `label`, `user_id`, `has_private_id`, `last_counter`, `created_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/yubikeys", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Yubikeys do
   Remove a registered YubiKey. A factor already enrolled with it stops verifying.
 
   `DELETE /v1/yubikeys/{id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/yubikeys/{id}", %{"id" => id}, nil, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.AgentRegistration do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.AgentRegistration do
   Read the agent registration settings (enabled, allowed identity kinds, untrusted and trusted scopes, claim code lifetime).
 
   `GET /v1/agent_registration`. Required scope: `machines:read`.
+
+  Response fields: `object`, `enabled`, `allow_anonymous`, `allow_service_auth`, `allow_refresh`, `untrusted_scopes`, `trusted_scopes`, `claim_ttl_seconds`, `auto_approve_rules`, `auto_approve_rules.kind`, `auto_approve_rules.resource`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agent_registration", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.AgentRegistration do
   Update the agent registration settings. Partial: only the fields sent change.
 
   `PUT /v1/agent_registration`. Required scope: `machines:write`.
+
+  Body fields: `enabled` (boolean), `allow_anonymous` (boolean), `allow_service_auth` (boolean), `allow_refresh` (boolean), `untrusted_scopes` (array), `trusted_scopes` (array), `claim_ttl_seconds` (integer), `auto_approve_rules` (array).
+  Nested body fields: `auto_approve_rules.kind`, `auto_approve_rules.resource`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/agent_registration", %{}, body, opts)

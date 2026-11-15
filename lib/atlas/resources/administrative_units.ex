@@ -5,7 +5,8 @@ defmodule Atlas.AdministrativeUnits do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AdministrativeUnits do
   List administrative units: named sets of users that a scoped organization administrator may manage.
 
   `GET /v1/administrative_units`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.organization_id`, `data.kind`, `data.filter`, `data.filter.group`, `data.filter.email_domain`, `data.filter.org_role`, `data.filter.metadata`, `data.member_count`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/administrative_units", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.AdministrativeUnits do
   Create an administrative unit. Without a `filter` it is static and you list its members; with one it is dynamic and its members are whoever match.
 
   `POST /v1/administrative_units`. Required scope: `organizations:write`.
+
+  Body fields: `key` (string, required), `name` (string, required), `description` (string), `organization_id` (string|null), `filter` (object).
+  Nested body fields: `filter.group`, `filter.email_domain`, `filter.org_role`, `filter.metadata`, `filter.metadata.key`, `filter.metadata.equals`.
+  Response fields: `object`, `id`, `key`, `name`, `description`, `organization_id`, `kind`, `filter`, `filter.group`, `filter.email_domain`, `filter.org_role`, `filter.metadata`, `filter.metadata.key`, `filter.metadata.equals`, `member_count`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/administrative_units", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.AdministrativeUnits do
   Read one unit by id or key.
 
   `GET /v1/administrative_units/{id}`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `id`, `key`, `name`, `description`, `organization_id`, `kind`, `filter`, `filter.group`, `filter.email_domain`, `filter.org_role`, `filter.metadata`, `filter.metadata.key`, `filter.metadata.equals`, `member_count`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/administrative_units/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.AdministrativeUnits do
   Change a unit's name, description or filter.
 
   `PATCH /v1/administrative_units/{id}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `description` (string|null), `filter` (any).
+  Nested body fields: `filter.group`, `filter.email_domain`, `filter.org_role`, `filter.metadata`, `filter.metadata.key`, `filter.metadata.equals`.
+  Response fields: `object`, `id`, `key`, `name`, `description`, `organization_id`, `kind`, `filter`, `filter.group`, `filter.email_domain`, `filter.org_role`, `filter.metadata`, `filter.metadata.key`, `filter.metadata.equals`, `member_count`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/administrative_units/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.AdministrativeUnits do
   Delete a unit. A membership scope that named it stops reaching those people.
 
   `DELETE /v1/administrative_units/{id}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/administrative_units/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +76,15 @@ defmodule Atlas.AdministrativeUnits do
   The listed members of a static unit (409 for a dynamic unit).
 
   `GET /v1/administrative_units/{id}/members`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.user_id`, `has_more`.
   """
   def get_members(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/administrative_units/{id}/members", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_members/2`, following the cursor page by page.
+  Lazy stream over every item of `get_members`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_members(client, id, opts \\ []),
@@ -75,6 +94,9 @@ defmodule Atlas.AdministrativeUnits do
   Add and remove people on a static unit.
 
   `POST /v1/administrative_units/{id}/members`. Required scope: `organizations:write`.
+
+  Body fields: `add` (array), `remove` (array).
+  Response fields: `object`, `added`, `removed`.
   """
   def post_members(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/administrative_units/{id}/members", %{"id" => id}, body, opts)

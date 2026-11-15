@@ -5,7 +5,8 @@ defmodule Atlas.PolicyBundles do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.PolicyBundles do
   The bundle revision the instance policy is at right now. Compare it with a deployed bundle’s revision to detect drift.
 
   `GET /v1/policy_bundles/current`. Required scope: `policy_bundles:read`.
+
+  Response fields: `object`, `revision`.
   """
   def get_current(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policy_bundles/current", %{}, nil, opts)
@@ -21,12 +24,15 @@ defmodule Atlas.PolicyBundles do
   List the signed policy bundles exported or imported on this instance, newest first (without the archives).
 
   `GET /v1/policy_bundles`. Required scope: `policy_bundles:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.revision`, `data.sha256`, `data.size`, `data.key_id`, `data.algorithm`, `data.signature`, `data.origin`, `data.manifest`, `data.bundle`, `data.media_type`, `data.created_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policy_bundles", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -36,6 +42,8 @@ defmodule Atlas.PolicyBundles do
   Export the instance policy — every ABAC policy (current version), the ABAC entity schema, templates and template links, and every FGA store’s latest authorization model — as a versioned tar.gz with a manifest of file digests, signed with the instance signing key (detached JWS). The same policy always has the same revision.
 
   `POST /v1/policy_bundles`. Required scope: `policy_bundles:write`.
+
+  Response fields: `object`, `revision`, `sha256`, `size`, `key_id`, `algorithm`, `signature`, `origin`, `manifest`, `bundle`, `media_type`, `created_at`.
   """
   def create(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policy_bundles", %{}, nil, opts)
@@ -44,6 +52,8 @@ defmodule Atlas.PolicyBundles do
   Read a stored bundle by revision, with the base64 archive and its signature.
 
   `GET /v1/policy_bundles/{revision}`. Required scope: `policy_bundles:read`.
+
+  Response fields: `object`, `revision`, `sha256`, `size`, `key_id`, `algorithm`, `signature`, `origin`, `manifest`, `bundle`, `media_type`, `created_at`.
   """
   def get(client, revision, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policy_bundles/{revision}", %{"revision" => revision}, nil, opts)
@@ -60,6 +70,10 @@ defmodule Atlas.PolicyBundles do
   Check a bundle without importing it: the detached signature against this instance's signing keys (plus any `trusted_jwks` you supply) and the archive's integrity. The SDK can do the same check offline.
 
   `POST /v1/policy_bundles/verify`. Required scope: `policy_bundles:read`.
+
+  Body fields: `bundle` (string, required), `signature` (string, required), `trusted_jwks` (object).
+  Nested body fields: `trusted_jwks.keys`.
+  Response fields: `object`, `valid`, `signature`, `signature.valid`, `signature.key_id`, `signature.algorithm`, `signature.error`, `integrity`, `integrity.valid`, `integrity.code`, `integrity.error`, `revision`, `manifest`.
   """
   def post_verify(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policy_bundles/verify", %{}, body, opts)
@@ -68,6 +82,10 @@ defmodule Atlas.PolicyBundles do
   Import a signed bundle. The signature and the archive integrity must both check out or nothing is touched (422). With `dry_run: true` it returns the diff of what would change and applies nothing (needs only policy_bundles:read). Otherwise it applies everything in one transaction: stores and models first, then the ABAC schema, templates, links and policies; a changed policy appends a version. `prune` also deletes ABAC policies, templates and links the bundle does not name (and the schema when it has none); FGA stores are never deleted.
 
   `POST /v1/policy_bundles/import`. Required scope: `policy_bundles:write`.
+
+  Body fields: `bundle` (string, required), `signature` (string, required), `trusted_jwks` (object), `dry_run` (boolean), `prune` (boolean).
+  Nested body fields: `trusted_jwks.keys`.
+  Response fields: `object`, `dry_run`, `applied`, `prune`, `revision`, `diff`, `diff.abac_policies`, `diff.abac_policies.create`, `diff.abac_policies.update`, `diff.abac_policies.update.name`, `diff.abac_policies.update.changed`, `diff.abac_policies.absent`, `diff.abac_policies.unchanged`, `diff.fga_stores`, `diff.fga_stores.create`, `diff.fga_stores.update`, `diff.fga_stores.update.name`, `diff.fga_stores.update.changed`, `diff.fga_stores.absent`, `diff.fga_stores.unchanged`, `diff.abac_templates`, `diff.abac_templates.create`, `diff.abac_templates.update`, `diff.abac_templates.update.name`, `diff.abac_templates.update.changed`, `diff.abac_templates.absent`, `diff.abac_templates.unchanged`, `diff.abac_links`, `diff.abac_links.create`, `diff.abac_links.update`, `diff.abac_links.update.name`, `diff.abac_links.update.changed`, `diff.abac_links.absent`, `diff.abac_links.unchanged`, `diff.abac_schema`, `diff.identical`.
   """
   def post_import(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policy_bundles/import", %{}, body, opts)

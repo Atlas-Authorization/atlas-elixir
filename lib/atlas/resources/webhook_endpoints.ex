@@ -5,7 +5,8 @@ defmodule Atlas.WebhookEndpoints do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.WebhookEndpoints do
   List webhook endpoints with their health (failing_since, disabled_at, last_success_at, last_failure, consecutive_failures, success_rate_24h, alert_contacts), plus the subscribable events (available_events: canonical names; event_catalog: each with description, relevant_for, payload_schema, version, since, and on an alias deprecated_alias_of + sunset_at), the retry schedule, the auto-disable rule, retention, signature versions and destination types. Never returns a secret. Filter with ?metadata[key]=value; each item carries `metadata` and `external_ref`.
 
   `GET /v1/webhook_endpoints`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `include_deprecated`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.url`, `data.description`, `data.enabled_events`, `data.event_naming`, `data.active`, `data.external`, `data.managed_by`, `data.signature_versions`, `data.filters`, `data.header_names`, `data.oauth`, `data.max_rps`, `data.destination`, `data.destination.type`, `data.destination.credentials_set`, `data.health`, `data.failing_since`, `data.last_failing_since`, `data.disabled_at`, `data.last_success_at`, `data.last_failure`, `data.last_failure.at`, `data.last_failure.status`, `data.last_failure.error`, `data.consecutive_failures`, `data.success_rate_24h`, `data.attempts_24h`, `data.attempts_24h.succeeded`, `data.attempts_24h.failed`, `data.alert_contacts`, `data.alerts_sent`, `data.alerts_sent.first_sent_at`, `data.alerts_sent.second_sent_at`, `data.alerts_sent.disabled_sent_at`, `data.auto_disable`, `data.auto_disable.after_failing_ms`, `data.auto_disable.after_consecutive_failures`, `data.auto_disable.consecutive_failures_min_failing_ms`, `data.auto_disable.description`, `data.previous_secret_expires_at`, `data.replay`, `data.replay.since`, `data.replay.method`, `data.replay.path`, `data.replay.note`, `data.created`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`, `available_events`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `retention`, `retention.events_days`, `retention.delivery_log_days`, `retention.replay_window_days`, `signature_versions`, `destination_types`, `event_catalog`, `event_catalog.name`, `event_catalog.description`, `event_catalog.relevant_for`, `event_catalog.deprecated_alias_of`, `event_catalog.alias_kind`, `event_catalog.deprecated_at`, `event_catalog.sunset_at`, `event_catalog.payload_schema`, `event_catalog.version`, `event_catalog.since`, `event_audiences`, `retry_schedule_ms`, `max_attempts`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/webhook_endpoints", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.WebhookEndpoints do
   Register a webhook endpoint: an HTTPS url (any receiver), or an event destination (AWS EventBridge, Google Cloud Pub/Sub, Cloudflare Queues) with your own credentials. Omit enabled_events for "*". `active: false` creates it switched off: nothing is delivered until PATCH { active: true }, and POST /v1/webhook_endpoints/{id}/test still works on it. `secret` sets your own signing secret (whsec_ + at least 32 characters; 422 otherwise); without it Atlas generates one. The signing secret is returned in this response only. Send Idempotency-Key to make a retried create return the first result. Idempotent create: `external_ref` returns the existing object on a repeat (200, `idempotent_replay: true`, no secret re-shown); `metadata` tags it (filter lists with ?metadata[key]=value).
 
   `POST /v1/webhook_endpoints`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string), `enabled_events` (array), `active` (boolean), `event_naming` (enum), `external` (boolean), `managed_by` (enum), `signature_versions` (array), `alert_contacts` (array|null), `description` (string|null), `filters` (object|null), `headers` (object|null), `oauth` (object|null), `max_rps` (integer|null), `destination` (object), `destination_credentials` (object), `metadata` (object), `external_ref` (string), `secret` (string).
+  Nested body fields: `filters.organization_ids`, `filters.metadata`, `filters.metadata.path`, `filters.metadata.equals`, `filters.metadata.in`, `filters.metadata.exists`, `oauth.token_url`, `oauth.client_id`, `oauth.client_secret`, `oauth.scope`, `oauth.audience`, `destination.type`.
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`, `secret`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints", %{}, body, opts)
@@ -36,6 +44,10 @@ defmodule Atlas.WebhookEndpoints do
   Find-or-create by url: updates the HTTPS endpoint with this url to the body (200, created: false, no secret), or creates it (201, created: true, with its secret). Run it on every deploy. Honours Idempotency-Key.
 
   `PUT /v1/webhook_endpoints/by_url`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string, required), `enabled_events` (array), `active` (boolean), `event_naming` (enum), `external` (boolean), `managed_by` (enum), `signature_versions` (array), `alert_contacts` (array|null), `description` (string|null), `filters` (object|null), `headers` (object|null), `oauth` (object|null), `max_rps` (integer|null), `destination` (object), `destination_credentials` (object).
+  Nested body fields: `filters.organization_ids`, `filters.metadata`, `filters.metadata.path`, `filters.metadata.equals`, `filters.metadata.in`, `filters.metadata.exists`, `oauth.token_url`, `oauth.client_id`, `oauth.client_secret`, `oauth.scope`, `oauth.audience`, `destination.type`.
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`, `secret`.
   """
   def put_by_url(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/webhook_endpoints/by_url", %{}, body, opts)
@@ -44,6 +56,8 @@ defmodule Atlas.WebhookEndpoints do
   One webhook endpoint with its health. Never returns the secret.
 
   `GET /v1/webhook_endpoints/{id}`. Required scope: `webhooks:read`.
+
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/webhook_endpoints/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +66,10 @@ defmodule Atlas.WebhookEndpoints do
   Update any endpoint setting in place; the signing secret is preserved (use rotate_secret to change it). active: true re-enables a disabled endpoint, clears its failure streak and returns `replay`: the call that re-sends what it missed. Accepts `metadata` (replaces the provisioning tags). ?dry_run=true changes nothing and answers would_return (the endpoint exactly as this PATCH would leave it, e.g. active: false) and changes [{section, before, after}], the same shape as every other dry run.
 
   `PATCH /v1/webhook_endpoints/{id}`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string), `enabled_events` (array), `active` (boolean), `event_naming` (enum), `external` (boolean), `managed_by` (enum), `signature_versions` (array), `alert_contacts` (array|null), `description` (string|null), `filters` (object|null), `headers` (object|null), `oauth` (object|null), `max_rps` (integer|null), `destination` (object), `destination_credentials` (object), `metadata` (object).
+  Nested body fields: `filters.organization_ids`, `filters.metadata`, `filters.metadata.path`, `filters.metadata.equals`, `filters.metadata.in`, `filters.metadata.exists`, `oauth.token_url`, `oauth.client_id`, `oauth.client_secret`, `oauth.scope`, `oauth.audience`, `destination.type`.
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/webhook_endpoints/{id}", %{"id" => id}, body, opts)
@@ -60,6 +78,8 @@ defmodule Atlas.WebhookEndpoints do
   Delete a webhook endpoint. Deliveries stop at once and its delivery log is deleted with it.
 
   `DELETE /v1/webhook_endpoints/{id}`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/webhook_endpoints/{id}", %{"id" => id}, nil, opts)
@@ -68,12 +88,15 @@ defmodule Atlas.WebhookEndpoints do
   Delivery log for an endpoint, newest first: the name it was sent as, status, HTTP status, latency, the payload sent and the first 1 KB of the response. Filter by status, event_type and time; page with starting_after / next_cursor. Each row carries trace_id (the W3C trace-id of the traceparent it was sent with); ?trace= finds one operation. Deliveries are kept 30 days, events 90.
 
   `GET /v1/webhook_endpoints/{id}/deliveries`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `status`, `event_type`, `since`, `until`, `trace`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.event_id`, `data.event_type`, `data.latency_ms`, `data.trace_id`, `data.attempt_number`, `data.max_attempts`, `data.payload`, `data.payload.id`, `data.payload.type`, `data.payload.timestamp`, `data.payload.instance_id`, `data.payload.actor`, `data.payload.idempotency_key`, `data.payload.data`, `data.status`, `data.http_status`, `data.error`, `data.location`, `data.response_snippet`, `data.next_retry_at`, `data.delivered_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_deliveries(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/webhook_endpoints/{id}/deliveries", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_deliveries/2`, following the cursor page by page.
+  Lazy stream over every item of `get_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_deliveries(client, id, opts \\ []),
@@ -83,6 +106,8 @@ defmodule Atlas.WebhookEndpoints do
   Show the endpoint's current signing secret again (for a verifier that lost it). Audited. Needs webhooks:reveal; until 2027-10-23 webhooks:write also works, with Deprecation and Sunset headers.
 
   `POST /v1/webhook_endpoints/{id}/reveal_secret`. Required scope: `webhooks:reveal`.
+
+  Response fields: `object`, `secret`.
   """
   def post_reveal_secret(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/reveal_secret", %{"id" => id}, nil, opts)
@@ -91,6 +116,9 @@ defmodule Atlas.WebhookEndpoints do
   Rotate the endpoint signing secret. The new secret is revealed exactly once. Send `secret` to rotate to a secret you chose (whsec_ + at least 32 characters, different from the current one; 422 otherwise). By default (`overlap_seconds` 0) the old secret stops signing at once. With `overlap_seconds` (at most 604800 = 7 days) every delivery carries two signatures in `atlas-signature` (`v1,<new> v1,<old>`, the new one first), so a verifier holding either secret passes while you deploy the new one; after that only the new secret signs. Set an overlap only once every receiver verifies with an SDK that accepts several signatures (@atlasauth/backend 0.9.1+, Python/Ruby/PHP/Go 0.7.0+, Java 1.5.0+, .NET 1.6.0+, Rust 0.13.0+, Elixir 0.4.0+) or a verifier that splits the header on spaces: a verifier that splits it on ',' rejects every delivery for the whole overlap, even with the new secret. `previous_secret_expires_at` says when the old secret stops signing (epoch ms), or null when it already has; endpoint reads show it too while the overlap is open.
 
   `POST /v1/webhook_endpoints/{id}/rotate_secret`. Required scope: `webhooks:write`.
+
+  Body fields: `overlap_seconds` (integer), `secret` (string).
+  Response fields: `object`, `secret`, `overlap_seconds`, `previous_secret_expires_at`, `warning`.
   """
   def post_rotate_secret(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/rotate_secret", %{"id" => id}, body, opts)
@@ -99,6 +127,8 @@ defmodule Atlas.WebhookEndpoints do
   Redeliver one past delivery as a fresh attempt (same event id, same delivered name). 409 if the event has passed its 90-day retention.
 
   `POST /v1/webhook_endpoints/{id}/deliveries/{deliveryId}/redeliver`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `event_id`, `status`, `note`.
   """
   def post_deliveries_redeliver(client, id, delivery_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/deliveries/{deliveryId}/redeliver", %{"id" => id, "deliveryId" => delivery_id}, nil, opts)
@@ -107,6 +137,9 @@ defmodule Atlas.WebhookEndpoints do
   Bulk redeliver: a fresh attempt for every event whose latest attempt to this endpoint in the window has `status` (default failed). At most 1,000 per call (has_more + next_since to continue). Running it again queues nothing new. 409 when since is older than the 90-day retention. Honours Idempotency-Key.
 
   `POST /v1/webhook_endpoints/{id}/redeliver`. Required scope: `webhooks:write`.
+
+  Body fields: `since` (integer|string), `until` (integer|string), `status` (enum).
+  Response fields: `object`, `endpoint_id`, `queued`, `events_considered`, `has_more`, `next_since`, `since`, `until`, `status`, `retention`, `retention.events_days`, `retention.delivery_log_days`, `retention.replay_window_days`.
   """
   def post_redeliver(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/redeliver", %{"id" => id}, body, opts)
@@ -115,6 +148,10 @@ defmodule Atlas.WebhookEndpoints do
   Replay: re-send every event recorded since `since` (typically the endpoint's failing_since) that the endpoint subscribes to and has not received — including events recorded while it was disabled. At most 1,000 events per call. since/until/event_type in the query or the body; `since=failing_since` resolves to the endpoint's failure streak (live, else the time it was disabled, else the streak before its last re-enable) and is 400 if it never failed. 409 if the endpoint is disabled, or since is older than 90 days.
 
   `POST /v1/webhook_endpoints/{id}/replay`. Required scope: `webhooks:write`.
+
+  Query params (`params:`): `since`, `until`, `event_type`.
+  Body fields: `since` (integer|string), `until` (integer|string), `event_type` (string).
+  Response fields: `object`, `endpoint_id`, `queued`, `events_considered`, `has_more`, `next_since`, `since`, `until`, `status`, `retention`, `retention.events_days`, `retention.delivery_log_days`, `retention.replay_window_days`.
   """
   def post_replay(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/replay", %{"id" => id}, body, opts)
@@ -123,9 +160,52 @@ defmodule Atlas.WebhookEndpoints do
   Send a synthetic webhook.test event to this endpoint only (never fanned out), also when the endpoint is switched off (active: false). It is signed exactly like a real delivery, with the endpoint's own signing secret (both secrets during a rotation overlap). Two answers, by status: without ?wait the delivery is queued for the worker and the answer is 201 Created (object webhook_delivery: id, event_id, url, status pending); with ?wait=10s the attempt is made now and the answer is 200 OK with the result (object webhook_test_result): delivery_id, event_id, event_type (webhook.test), url (the exact URL tried), status (success | failed), http_status, latency_ms, response_snippet (first 1 KB of the response), error (the delivery-log code), error_kind (non_2xx, redirect, timeout, tls, dns, connection_refused, network, url_blocked; null on success), signature_header_sent and will_retry. A failed attempt is still 200: read status. Check for 2xx, not for 200. Both answers carry the shared test-call fields ok, status, http_status and latency_ms (the same four a hook test returns); while queued, ok, http_status and latency_ms are null.
 
   `POST /v1/webhook_endpoints/{id}/test`. Required scope: `webhooks:write`.
+
+  Query params (`params:`): `wait`.
+  Response fields: `ok`, `status`, `http_status`, `latency_ms`, `object`, `delivery_id`, `event_id`, `event_type`, `url`, `response_snippet`, `error`, `error_kind`, `signature_header_sent`, `will_retry`, `id`, `note`.
   """
   def post_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/test", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The dead-letter queue of an endpoint: deliveries that used every attempt, newest first, each with the payload that was sent, the last response and the error. `depth` counts what nobody has acknowledged yet. Pull a page, handle it (or fix the receiver and requeue), then acknowledge, so a consumer that cannot take pushes can work failures off as a queue. Cursor: `starting_after` with the `next_cursor` of the previous page.
+
+  `GET /v1/webhook_endpoints/{id}/dlq`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.event_id`, `data.event_type`, `data.latency_ms`, `data.trace_id`, `data.attempt_number`, `data.max_attempts`, `data.payload`, `data.payload.id`, `data.payload.type`, `data.payload.timestamp`, `data.payload.instance_id`, `data.payload.actor`, `data.payload.idempotency_key`, `data.payload.data`, `data.status`, `data.http_status`, `data.error`, `data.location`, `data.response_snippet`, `data.next_retry_at`, `data.delivered_at`, `data.created_at`, `has_more`, `next_cursor`, `depth`, `max_attempts`, `retention`.
+  """
+  def get_dlq(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/webhook_endpoints/{id}/dlq", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_dlq`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_dlq(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/webhook_endpoints/{id}/dlq", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Acknowledge dead-lettered deliveries you handled: they stop appearing in the queue. Acknowledging a delivery that is not dead-lettered (or already acknowledged) is ignored, so a retry is harmless. Up to 100 ids a call.
+
+  `POST /v1/webhook_endpoints/{id}/dlq/ack`. Required scope: `webhooks:write`.
+
+  Body fields: `delivery_ids` (array, required).
+  Response fields: `object`, `endpoint_id`, `requested`, `acknowledged`.
+  """
+  def post_dlq_ack(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/dlq/ack", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Send dead-lettered deliveries again as fresh first attempts (flagged `atlas-redelivery: 1`) and take them out of the queue. An event past its 90-day retention cannot be sent again and stays in the queue (`skipped`). Up to 100 ids a call.
+
+  `POST /v1/webhook_endpoints/{id}/dlq/requeue`. Required scope: `webhooks:write`.
+
+  Body fields: `delivery_ids` (array, required).
+  Response fields: `object`, `endpoint_id`, `requested`, `queued`, `skipped`.
+  """
+  def post_dlq_requeue(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/webhook_endpoints/{id}/dlq/requeue", %{"id" => id}, body, opts)
 
   @doc false
   def __operations__, do: [
@@ -141,6 +221,9 @@ defmodule Atlas.WebhookEndpoints do
     {:post_deliveries_redeliver, :post, "/v1/webhook_endpoints/{id}/deliveries/{deliveryId}/redeliver", 2, false, false},
     {:post_redeliver, :post, "/v1/webhook_endpoints/{id}/redeliver", 1, true, false},
     {:post_replay, :post, "/v1/webhook_endpoints/{id}/replay", 1, true, false},
-    {:post_test, :post, "/v1/webhook_endpoints/{id}/test", 1, false, false}
+    {:post_test, :post, "/v1/webhook_endpoints/{id}/test", 1, false, false},
+    {:get_dlq, :get, "/v1/webhook_endpoints/{id}/dlq", 1, false, true},
+    {:post_dlq_ack, :post, "/v1/webhook_endpoints/{id}/dlq/ack", 1, true, false},
+    {:post_dlq_requeue, :post, "/v1/webhook_endpoints/{id}/dlq/requeue", 1, true, false}
   ]
 end

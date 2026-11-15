@@ -5,7 +5,8 @@ defmodule Atlas.Authzen do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Authzen do
   AuthZEN Access Evaluation: `{subject, resource, action, context}` → `{decision: boolean}`. Entity types map to PascalCase policy types.
 
   `POST /v1/authzen/access/v1/evaluation`. Required scope: `abac:evaluate`.
+
+  Body fields: `subject` (object), `resource` (object), `action` (object), `context` (object), `evaluations` (array), `options` (object).
+  Response fields: `decision`, `context`, `context.reasons`.
   """
   def post_access_v1_evaluation(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authzen/access/v1/evaluation", %{}, body, opts)
@@ -21,6 +25,9 @@ defmodule Atlas.Authzen do
   AuthZEN Access Evaluations (batch, up to 100): shared defaults plus an `evaluations` array, with `options.evaluations_semantic` of execute_all (default), deny_on_first_deny or permit_on_first_permit.
 
   `POST /v1/authzen/access/v1/evaluations`. Required scope: `abac:evaluate`.
+
+  Body fields: `subject` (object), `resource` (object), `action` (object), `context` (object), `evaluations` (array), `options` (object).
+  Response fields: `evaluations`, `evaluations.decision`, `decision`.
   """
   def post_access_v1_evaluations(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authzen/access/v1/evaluations", %{}, body, opts)
@@ -29,6 +36,10 @@ defmodule Atlas.Authzen do
   AuthZEN Subject Search: which subjects of `subject.type` may perform `action` on `resource` (give the resource a `type` and `id`). Answers from the same ABAC policies as an evaluation, reduced once by partial evaluation and applied to the candidates Atlas knows: your users (type `user`, their public metadata as attributes) and the users in the FGA stores the policies consult. `page.limit` and `page.token` page the result; the response carries `page.next_token` (empty on the last page), `count` and `total`.
 
   `POST /v1/authzen/access/v1/search/subject`. Required scope: `abac:evaluate`.
+
+  Body fields: `subject` (object, required), `action` (object, required), `resource` (object, required), `context` (object), `page` (object).
+  Nested body fields: `subject.type`, `subject.id`, `subject.properties`, `action.name`, `action.properties`, `resource.type`, `resource.id`, `resource.properties`, `page.limit`, `page.token`.
+  Response fields: `results`, `results.type`, `results.id`, `page`, `page.next_token`, `page.count`, `page.total`.
   """
   def post_access_v1_search_subject(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authzen/access/v1/search/subject", %{}, body, opts)
@@ -37,6 +48,10 @@ defmodule Atlas.Authzen do
   AuthZEN Resource Search: which resources of `resource.type` the `subject` may perform `action` on. Candidates are your synced Atlas resources of that type (their metadata are the attributes) and the objects of that type in the FGA stores the policies consult. Paged with `page.limit` and `page.token`.
 
   `POST /v1/authzen/access/v1/search/resource`. Required scope: `abac:evaluate`.
+
+  Body fields: `subject` (object, required), `action` (object, required), `resource` (object, required), `context` (object), `page` (object).
+  Nested body fields: `subject.type`, `subject.id`, `subject.properties`, `action.name`, `action.properties`, `resource.type`, `resource.id`, `resource.properties`, `page.limit`, `page.token`.
+  Response fields: `results`, `results.type`, `results.id`, `page`, `page.next_token`, `page.count`, `page.total`.
   """
   def post_access_v1_search_resource(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authzen/access/v1/search/resource", %{}, body, opts)
@@ -45,6 +60,10 @@ defmodule Atlas.Authzen do
   AuthZEN Action Search: which actions the `subject` may perform on the `resource`. The actions considered are the ones the policies name (and the entity schema declares), each evaluated in full; the result lists the permitted action names.
 
   `POST /v1/authzen/access/v1/search/action`. Required scope: `abac:evaluate`.
+
+  Body fields: `subject` (object, required), `resource` (object, required), `context` (object), `page` (object).
+  Nested body fields: `subject.type`, `subject.id`, `subject.properties`, `resource.type`, `resource.id`, `resource.properties`, `page.limit`, `page.token`.
+  Response fields: `results`, `results.name`, `page`, `page.next_token`, `page.count`, `page.total`.
   """
   def post_access_v1_search_action(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authzen/access/v1/search/action", %{}, body, opts)

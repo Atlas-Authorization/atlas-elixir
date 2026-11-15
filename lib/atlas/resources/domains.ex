@@ -5,7 +5,8 @@ defmodule Atlas.Domains do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,27 @@ defmodule Atlas.Domains do
   List custom domains with DNS/ACME/cookie-domain status and setup instructions.
 
   `GET /v1/domains`. Required scope: `domains:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.role`, `data.host`, `data.status`, `data.action`, `data.live`, `data.cname_target`, `data.last_checked_at`, `data.last_observed_target`, `data.failure_reason`, `data.certificate_expires_at`, `data.cookie_domain`, `data.method`, `data.base_path`, `data.routing`, `data.frontend_api_url`, `data.verification`, `data.verification.method`, `data.verification.url`, `data.verification.token`, `data.verification.content`, `data.verification.instructions`, `data.instructions`, `data.dns`, `data.dns.provider`, `data.dns.token_set`, `cname_target`, `instructions`, `cookie_checks`, `cookie_checks.origin`, `cookie_checks.first_party`, `required`, `environment`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/domains", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/domains", %{}, opts)
 
   @doc ~S"""
-  Claim a custom domain (fapi or accounts). Returns 201 with the full custom_domain object — including its `id` (dom_…), which you pass to POST /v1/domains/{id}/verify once DNS is published — plus the CNAME `instructions` to follow (or a `note` for a platform subdomain, which is live immediately). Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the CNAME itself: it finds the zone, creates the record DNS-only (never proxied; `dns.proxied: true` is refused), waits briefly for it to resolve and verifies, so the domain can go from nothing to active in one call (`verified` in the response; otherwise call verify later). The token is stored encrypted and is never readable back (the response shows only `dns.provider` and `token_set`). An existing record that points elsewhere is not overwritten unless `dns.overwrite` is true (409 DNS_RECORD_CONFLICT); a rejected token is 422 DNS_TOKEN_REJECTED; no visible zone is 422 DNS_ZONE_NOT_FOUND.
+  Claim a custom domain (fapi or accounts). Returns 201 with the full custom_domain object — including its `id` (dom_…), which you pass to POST /v1/domains/{id}/verify once DNS is published — plus the CNAME `instructions` to follow (a subdomain of the Atlas platform domain is refused with 403: those are assigned by Atlas only). Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the CNAME itself: it finds the zone, creates the record DNS-only (never proxied; `dns.proxied: true` is refused), waits briefly for it to resolve and verifies, so the domain can go from nothing to active in one call (`verified` in the response; otherwise call verify later). The token is stored encrypted and is never readable back (the response shows only `dns.provider` and `token_set`). An existing record that points elsewhere is not overwritten unless `dns.overwrite` is true (409 DNS_RECORD_CONFLICT); a rejected token is 422 DNS_TOKEN_REJECTED; no visible zone is 422 DNS_ZONE_NOT_FOUND.
 
   `POST /v1/domains`. Required scope: `domains:write`.
+
+  Body fields: `role` (string), `host` (string), `hostname` (string), `method` (string), `base_path` (string), `dns` (object).
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `instructions`, `dns`, `dns.provider`, `dns.token_set`, `note`, `verified`, `dns_result`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/domains", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Domains do
   Check the domain's CNAME now (a path mount: fetch its https verification file); a verified fapi host is written onto the instance. With DNS automation, a missing record is written again first. ?dry_run=true changes nothing and checks no DNS record or file (validated: false): it answers what a passing verify would do to the issuer, as issuer_before, issuer_after (equal when the issuer would not move: the domain is already live, is not the instance's own fapi host, or is a platform subdomain) and previous_issuers_kept_until (Unix seconds; null when the issuer would not move).
 
   `POST /v1/domains/{id}/verify`. Required scope: `domains:write`.
+
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `instructions`, `dns`, `dns.provider`, `dns.token_set`, `verified`, `issuer`, `issuer_before`, `issuer_after`, `previous_issuers_kept_until`.
   """
   def post_verify(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/domains/{id}/verify", %{"id" => id}, nil, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.Domains do
   Remove a custom domain. Refused for a live production fapi host, which would sign everyone out.
 
   `DELETE /v1/domains/{id}`. Required scope: `domains:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/domains/{id}", %{"id" => id}, nil, opts)

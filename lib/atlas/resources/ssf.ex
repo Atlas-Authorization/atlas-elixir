@@ -5,7 +5,8 @@ defmodule Atlas.Ssf do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Ssf do
   List the Shared Signals streams this instance transmits on (push and poll), with their delivery method, requested events and status.
 
   `GET /v1/ssf/streams`. Required scope: `ssf:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `has_more`, `next_cursor`.
   """
   def get_streams(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/streams", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_streams/1`, following the cursor page by page.
+  Lazy stream over every item of `get_streams`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_streams(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.Ssf do
   Create a stream. `delivery_method` is `push` (we POST each signed SET to `endpoint_url`, with the optional `authorization_header`) or `poll` (the receiver pulls from the returned `poll_endpoint` with the one-time `poll_token`). `events_requested` limits the events sent (empty = all supported). SETs are signed with the instance signing key.
 
   `POST /v1/ssf/streams`. Required scope: `ssf:write`.
+
+  Body fields: `delivery_method` (enum), `endpoint_url` (string), `authorization_header` (string), `audience` (string), `description` (string), `events_requested` (array), `default_subjects` (enum).
   """
   def post_streams(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/streams", %{}, body, opts)
@@ -36,6 +42,8 @@ defmodule Atlas.Ssf do
   Read a stream, including how many events are waiting to be delivered or acknowledged.
 
   `GET /v1/ssf/streams/{id}`. Required scope: `ssf:read`.
+
+  Response fields: `object`.
   """
   def get_streams_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/streams/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +52,8 @@ defmodule Atlas.Ssf do
   Change a stream: its events, endpoint, authorization header, description, or status (`enabled`, `paused`, `disabled`). A paused stream stops receiving new events.
 
   `PATCH /v1/ssf/streams/{id}`. Required scope: `ssf:write`.
+
+  Body fields: `endpoint_url` (string), `authorization_header` (string), `description` (string), `events_requested` (array), `status` (enum).
   """
   def update_streams(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/ssf/streams/{id}", %{"id" => id}, body, opts)
@@ -60,6 +70,8 @@ defmodule Atlas.Ssf do
   Queue an SSF verification event carrying `state`, so a receiver can confirm the stream works end to end.
 
   `POST /v1/ssf/streams/{id}/verify`. Required scope: `ssf:write`.
+
+  Body fields: `state` (string).
   """
   def post_streams_verify(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/streams/{id}/verify", %{"id" => id}, body, opts)
@@ -68,6 +80,8 @@ defmodule Atlas.Ssf do
   The stream's delivery status: enabled, paused or disabled (SSF stream status).
 
   `GET /v1/ssf/streams/{id}/status`. Required scope: `ssf:read`.
+
+  Response fields: `object`.
   """
   def get_streams_status(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/streams/{id}/status", %{"id" => id}, nil, opts)
@@ -76,6 +90,9 @@ defmodule Atlas.Ssf do
   Set the stream's delivery status to enabled, paused or disabled. A paused stream collects nothing.
 
   `POST /v1/ssf/streams/{id}/status`. Required scope: `ssf:write`.
+
+  Body fields: `status` (enum).
+  Response fields: `object`.
   """
   def post_streams_status(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/streams/{id}/status", %{"id" => id}, body, opts)
@@ -84,6 +101,8 @@ defmodule Atlas.Ssf do
   SSF 1.0 add subject: start (or, on an ALL stream, resume) events for one subject on a stream. Subject formats: iss_sub (this issuer), email, phone_number, opaque, account, did, uri. 200 with an empty body.
 
   `POST /v1/ssf/subjects/add`. Required scope: `ssf:write`.
+
+  Body fields: `stream_id` (string), `subject` (object), `verified` (boolean).
   """
   def post_subjects_add(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/subjects/add", %{}, body, opts)
@@ -92,6 +111,8 @@ defmodule Atlas.Ssf do
   SSF 1.0 remove subject: stop events for one subject on a stream (on an ALL stream), or drop an earlier add (on a NONE stream). 204.
 
   `POST /v1/ssf/subjects/remove`. Required scope: `ssf:write`.
+
+  Body fields: `stream_id` (string), `subject` (object).
   """
   def post_subjects_remove(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/subjects/remove", %{}, body, opts)
@@ -100,12 +121,15 @@ defmodule Atlas.Ssf do
   The subjects a receiver added to or removed from a stream, with the stream's `default_subjects` (ALL or NONE).
 
   `GET /v1/ssf/streams/{id}/subjects`. Required scope: `ssf:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.subject`, `data.mode`, `data.created_at`, `has_more`, `default_subjects`.
   """
   def get_streams_subjects(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/streams/{id}/subjects", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_streams_subjects/2`, following the cursor page by page.
+  Lazy stream over every item of `get_streams_subjects`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_streams_subjects(client, id, opts \\ []),
@@ -115,6 +139,8 @@ defmodule Atlas.Ssf do
   SSF 1.0 verification endpoint: queue a verification event carrying `state` for the stream named by `stream_id`. 204.
 
   `POST /v1/ssf/verify`. Required scope: `ssf:write`.
+
+  Body fields: `stream_id` (string), `state` (string).
   """
   def post_verify(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/verify", %{}, body, opts)
@@ -123,6 +149,9 @@ defmodule Atlas.Ssf do
   SSF 1.0 stream status endpoint: the status (enabled, paused, disabled) of the stream named by the `stream_id` query parameter.
 
   `GET /v1/ssf/status`. Required scope: `ssf:read`.
+
+  Query params (`params:`): `stream_id`.
+  Response fields: `stream_id`, `status`.
   """
   def get_status(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/status", %{}, nil, opts)
@@ -131,6 +160,8 @@ defmodule Atlas.Ssf do
   SSF 1.0 stream status endpoint: set the status of the stream named by `stream_id`.
 
   `POST /v1/ssf/status`. Required scope: `ssf:write`.
+
+  Body fields: `stream_id` (string), `status` (enum), `reason` (string).
   """
   def post_status(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/status", %{}, body, opts)
@@ -139,6 +170,8 @@ defmodule Atlas.Ssf do
   Raise a Shared Signals event for one of your users: the CAEP and RISC events Atlas has no flow for (opt-in, opt-out-initiated, opt-out-cancelled, opt-out-effective, identifier-recycled, recovery-activated ...). It reaches every stream that asked for the event and whose subject rules allow the user. 202.
 
   `POST /v1/ssf/events`. Required scope: `ssf:write`.
+
+  Body fields: `user_id` (string), `event` (string), `subject` (object), `data` (object).
   """
   def post_events(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/events", %{}, body, opts)
@@ -147,12 +180,15 @@ defmodule Atlas.Ssf do
   The stream's recent events with delivery status, attempts and the last error (the dashboard activity view).
 
   `GET /v1/ssf/streams/{id}/events`. Required scope: `ssf:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `has_more`, `next_cursor`.
   """
   def get_streams_events(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/streams/{id}/events", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_streams_events/2`, following the cursor page by page.
+  Lazy stream over every item of `get_streams_events`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_streams_events(client, id, opts \\ []),
@@ -162,12 +198,15 @@ defmodule Atlas.Ssf do
   List inbound Shared Signals receivers: transmitters whose signed events act on this instance's users.
 
   `GET /v1/ssf/receivers`. Required scope: `ssf:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `has_more`, `next_cursor`.
   """
   def get_receivers(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/ssf/receivers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_receivers/1`, following the cursor page by page.
+  Lazy stream over every item of `get_receivers`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_receivers(client, opts \\ []),
@@ -177,6 +216,8 @@ defmodule Atlas.Ssf do
   Register a transmitter. Its SETs are POSTed (`application/secevent+jwt`) to the returned `receive_endpoint` and verified against `jwks_uri`, `issuer` and the optional `audience`. `actions` maps an event type URI to `revoke_sessions`, `refresh_claims` (invalidate minted tokens so the next refresh carries fresh claims, sessions stay), `ban` or `ignore`; unmapped events are ignored. The default maps session-revoked, credential-change, credential-compromise and device-compliance-change (only when the new status is not-compliant) to `revoke_sessions`, token-claims-change to `refresh_claims` and account-disabled to `ban`.
 
   `POST /v1/ssf/receivers`. Required scope: `ssf:write`.
+
+  Body fields: `name` (string), `issuer` (string), `jwks_uri` (string), `audience` (string), `actions` (object).
   """
   def post_receivers(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/ssf/receivers", %{}, body, opts)
@@ -185,6 +226,8 @@ defmodule Atlas.Ssf do
   Change a receiver: name, JWKS URI, audience, action mapping, or enabled.
 
   `PATCH /v1/ssf/receivers/{id}`. Required scope: `ssf:write`.
+
+  Body fields: `name` (string), `jwks_uri` (string), `audience` (string), `actions` (object), `enabled` (boolean).
   """
   def update_receivers(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/ssf/receivers/{id}", %{"id" => id}, body, opts)

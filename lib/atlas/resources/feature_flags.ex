@@ -5,7 +5,8 @@ defmodule Atlas.FeatureFlags do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.FeatureFlags do
   List feature flags ordered by key. `starting_after` is the key of the last flag of the previous page.
 
   `GET /v1/feature_flags`. Required scope: `flags:read`.
+
+  Query params (`params:`): `starting_after`, `limit`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.type`, `data.description`, `data.enabled`, `data.default_value`, `data.off_value`, `data.rules`, `data.rules.match`, `data.rules.percentage`, `data.rules.value`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/feature_flags", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.FeatureFlags do
   Create a feature flag: a typed value (`boolean`, `string`, `int` or `json`) with a `default_value`, an `off_value` (served while `enabled` is false; defaults to false for a boolean, else the default) and ordered targeting `rules` by org, user, plan and percentage. 409 when the key exists.
 
   `POST /v1/feature_flags`. Required scope: `flags:write`.
+
+  Body fields: `key` (string, required), `type` (enum, required), `description` (string|null), `enabled` (boolean), `default_value` (boolean|string|integer|number|object|array|null, required), `off_value` (boolean|string|integer|number|object|array|null), `rules` (array).
+  Nested body fields: `rules.value`.
+  Response fields: `object`, `id`, `key`, `type`, `description`, `enabled`, `default_value`, `off_value`, `rules`, `rules.match`, `rules.match.user_ids`, `rules.match.org_ids`, `rules.match.plans`, `rules.percentage`, `rules.value`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/feature_flags", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.FeatureFlags do
   Read one feature flag.
 
   `GET /v1/feature_flags/{key}`. Required scope: `flags:read`.
+
+  Response fields: `object`, `id`, `key`, `type`, `description`, `enabled`, `default_value`, `off_value`, `rules`, `rules.match`, `rules.match.user_ids`, `rules.match.org_ids`, `rules.match.plans`, `rules.percentage`, `rules.value`, `created_at`, `updated_at`.
   """
   def get(client, key, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/feature_flags/{key}", %{"key" => key}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.FeatureFlags do
   Change a flag's description, kill switch, default or off value, or replace its rules. The type and key are fixed.
 
   `PATCH /v1/feature_flags/{key}`. Required scope: `flags:write`.
+
+  Body fields: `description` (string|null), `enabled` (boolean), `default_value` (boolean|string|integer|number|object|array|null), `off_value` (boolean|string|integer|number|object|array|null), `rules` (array).
+  Nested body fields: `rules.value`.
+  Response fields: `object`, `id`, `key`, `type`, `description`, `enabled`, `default_value`, `off_value`, `rules`, `rules.match`, `rules.match.user_ids`, `rules.match.org_ids`, `rules.match.plans`, `rules.percentage`, `rules.value`, `created_at`, `updated_at`.
   """
   def update(client, key, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/feature_flags/{key}", %{"key" => key}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.FeatureFlags do
   Delete a feature flag.
 
   `DELETE /v1/feature_flags/{key}`. Required scope: `flags:write`.
+
+  Response fields: `object`, `id`, `key`, `deleted`.
   """
   def delete(client, key, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/feature_flags/{key}", %{"key" => key}, nil, opts)
@@ -60,6 +76,9 @@ defmodule Atlas.FeatureFlags do
   Evaluate every flag (or the listed `keys`) for a subject (`user_id`, `org_id`, `plan`). When `plan` is omitted it is the organization's (else the user's) resolved plan. Each result carries the `value` and a `reason` (`off`, `default` or `rule:<index>`).
 
   `POST /v1/feature_flags/evaluate`. Required scope: `flags:read`.
+
+  Body fields: `user_id` (string), `org_id` (string), `plan` (string), `keys` (array).
+  Response fields: `object`, `subject`, `flags`.
   """
   def post_evaluate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/feature_flags/evaluate", %{}, body, opts)

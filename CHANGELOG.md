@@ -2,6 +2,34 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.17.0 — 2026-11-14
+
+### Added
+
+- **Complete Backend and Platform API surface.** Every public operation is now a function: 1,883 operations across 244 resource modules (the previous release covered 1,439). New modules include `Atlas.Changes`, `Atlas.RateLimitPolicies`, `Atlas.RateLimitOverrides`, `Atlas.StepUp`, `Atlas.WebBotAuth`, `Atlas.MachineTrustPolicies`, `Atlas.Suppressions`, `Atlas.Messages`, `Atlas.MfaCampaigns`, `Atlas.PasskeyCampaigns`, `Atlas.OrgTemplates`, `Atlas.OrgRoleSets`, `Atlas.Impersonations`, `Atlas.ApprovalRequests`, `Atlas.AgentDelegations`, `Atlas.Compliance`, `Atlas.ErasureConnectors`, `Atlas.Region` and the Platform API modules (`Atlas.PlatformApps`, `Atlas.PlatformKeys`, `Atlas.PlatformDomains`, `Atlas.PlatformAtlasIdApps`, and more). `Atlas.PlatformApps` is now generated like the rest; `list/2` and `reveal_initial_secret/3` keep their signatures.
+- Every function documents its query params, body fields (with types and which are required) and response fields.
+- A body that an operation gained after it shipped is passed through `<name>_with_body/…`; the original function keeps its signature.
+- **Hosted-redirect relying party.** `AtlasAuth.RP` (sign-in, callback, `touch_if_due/3`, `require_recent_auth/3`, `revoke_session/2`, `end_app_session/2`, `sign_out/2`, `bind_session/4`, `backchannel_handler/2`), `AtlasAuth.OIDC` (PKCE S256, state and nonce in one sealed 10-minute flow cookie, ID-token verification with `iss` / `aud` / `azp` / `nonce` / `at_hash` / algorithm pinning, RP-initiated logout), and `AtlasAuth.Plug.RP` mounting it as routes in any Plug or Phoenix app. `AtlasAuth.RP.SidStore` (with an in-memory store) maps an Atlas `sid` to your app sessions for back-channel logout.
+- **Verification primitives.** `AtlasAuth.KeyMirror` (a local, authoritative mirror of end-user API keys with a revocation feed and webhook application), `AtlasAuth.SidRevocation`, `AtlasAuth.ResourceRoleMirror`, `AtlasAuth.MachineClient`, `AtlasAuth.WebBotAuth`, `AtlasAuth.WebhookDedupe` and `AtlasAuth.TxnToken` (transaction-token verification).
+- **Step-up and MFA checks.** `AtlasAuth.RecentAuth.authenticated_within?/3`, `used_multi_factor?/1`, `mfa_satisfied?/1`, `mfa_org_satisfied?/2`.
+- **Device authorization flow** for CLIs and consoles: `AtlasAuth.DeviceFlow.start/1` and `poll/2` (RFC 8628, honouring `interval` and `slow_down`).
+- `Atlas.Helpers.rotate_events_secret/4` and `Atlas.Helpers.jwt_template_settings/1`.
+- **Status-aware resilience.** `Atlas.Client` retries a `429` for every method, honouring `Retry-After`, and `500` / `502` / `503` / `504` and transport failures for `GET`, `HEAD`, `PUT`, `DELETE` and calls with an idempotency key; `resilience:` tunes it (`max_retries`, `base_delay_ms`, `max_delay_ms`, `jitter`, `status_aware`, `sleep`). `Atlas.Client.status/1` reads the public status endpoint; `%Atlas.Error{}` carries `retry_after_ms`.
+- **Telemetry.** `[:atlas, :request, :start | :stop | :exception]` and `[:atlas, :request, :retry]` events when `:telemetry` is installed (route template, method, status, duration); nothing is emitted or loaded otherwise.
+- **`Atlas.Doctor.run/2`**: checks the key, configuration, API status, clock skew, an authenticated instance read and JWKS reachability, and `format/1` prints the report.
+
+- **Signed status list** for `AtlasAuth.SidRevocation` (`source: :status_list`): `AtlasAuth.StatusList` verifies the signed list against the instance JWKS (RS256, PS256, ES256, ES384, EdDSA) and the feed answers when the list is missing, unverifiable or truncated.
+- **SQL webhook dedupe**: `AtlasAuth.WebhookDedupe.EctoStore` (PostgreSQL, SQLite, MySQL; `:ecto_sql` is optional).
+- **ES256 / ES384 DPoP proofs** for `AtlasAuth.MachineClient` (`dpop_key: {:generate, :es256}`, or a P-256 / P-384 PEM; `generate_dpop_key/1`).
+- **Web Bot Auth allow and block lists**: `AtlasAuth.WebBotAuth.decide/2` and `AtlasAuth.WebBotAuth.Verifier` (cached directories, optional replay refusal).
+- **Metrics definitions**: `AtlasAuth.Telemetry.metrics/0` for `telemetry_metrics` reporters (request count and duration, retry count; optional dependency).
+
+### Changed
+
+- Session, ID, logout and transaction tokens verify with RS256, ES256, ES384, PS256 and EdDSA (`AtlasAuth.Verifier.signing_algs/0`). The key type must match the header algorithm (an RSA key only RS256 or PS256, P-256 only ES256, P-384 only ES384, Ed25519 only EdDSA); `none` and HS* are refused.
+- Retries are now decided by the SDK (`resilience:`) instead of Req's `:safe_transient` default, so a refused write (`429`) is retried too. Pass `req_options: [retry: false]` to turn them off, as before.
+- The code generator reads the checked-in OpenAPI snapshot by default (`python3 scripts/generate.py`; `--live` for the live document) and keeps every published function name stable through `scripts/name_pins.json`. CI regenerates and fails on a diff.
+
 ## 0.16.0 — 2026-11-02
 
 ### Added

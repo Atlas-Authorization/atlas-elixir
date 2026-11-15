@@ -5,7 +5,8 @@ defmodule Atlas.SmsTemplates do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.SmsTemplates do
   List SMS templates with their built-in defaults and any instance override.
 
   `GET /v1/sms_templates`. Required scope: `sms_templates:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.name`, `data.default`, `data.body`, `data.enabled`, `data.customised`, `data.variables`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sms_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.SmsTemplates do
   Set an SMS body template. A body dropping the code placeholder is refused.
 
   `POST /v1/sms_templates`. Required scope: `sms_templates:write`.
+
+  Body fields: `name` (string), `body` (string), `enabled` (boolean).
+  Response fields: `object`, `name`, `default`, `body`, `enabled`, `customised`, `variables`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sms_templates", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.SmsTemplates do
   Read one SMS template: its built-in default and the instance override.
 
   `GET /v1/sms_templates/{name}`. Required scope: `sms_templates:read`.
+
+  Response fields: `object`, `name`, `default`, `body`, `enabled`, `customised`, `variables`.
   """
   def get(client, name, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sms_templates/{name}", %{"name" => name}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.SmsTemplates do
   Update an SMS template body or its enabled flag. Re-validated on save.
 
   `PATCH /v1/sms_templates/{name}`. Required scope: `sms_templates:write`.
+
+  Body fields: `body` (string), `enabled` (boolean).
+  Response fields: `object`, `name`, `default`, `body`, `enabled`, `customised`, `variables`.
   """
   def update(client, name, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/sms_templates/{name}", %{"name" => name}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.SmsTemplates do
   Revert an SMS template to the Atlas built-in default body.
 
   `DELETE /v1/sms_templates/{name}`. Required scope: `sms_templates:write`.
+
+  Response fields: `object`, `name`, `default`, `body`, `enabled`, `customised`, `variables`.
   """
   def delete(client, name, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/sms_templates/{name}", %{"name" => name}, nil, opts)
@@ -60,6 +74,9 @@ defmodule Atlas.SmsTemplates do
   Render an SMS body with a sample code — never a live OTP — for review.
 
   `POST /v1/sms_templates/{name}/preview`. Required scope: `sms_templates:read`.
+
+  Body fields: `body` (string).
+  Response fields: `object`, `name`, `body`, `customised`.
   """
   def post_preview(client, name, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sms_templates/{name}/preview", %{"name" => name}, body, opts)

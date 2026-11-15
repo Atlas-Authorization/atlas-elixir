@@ -5,7 +5,8 @@ defmodule Atlas.SignInTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.SignInTokens do
   DEPRECATED (Sunset 2027-04-01) — use POST /v1/sessions, which mints a real redeemable session in one call. Mints a one-time sign-in token for impersonation; always audited; returns `id` so it can be revoked before use. Refused with 403 FORBIDDEN for a user marked impersonation-protected (409 for a banned/deleted user). Responses carry RFC 8594 `Deprecation`/`Sunset` headers.
 
   `POST /v1/sign_in_tokens`. Required scope: `sign_in_tokens:write`.
+
+  Body fields: `user_id` (string), `expires_in_seconds` (number).
+  Response fields: `object`, `id`, `user_id`, `token`, `expires_in`.
   """
   @doc deprecated: "Use Atlas.Sessions.create/3 with mode browser_ticket"
   def create(client, body \\ %{}, opts \\ []),
@@ -22,6 +26,8 @@ defmodule Atlas.SignInTokens do
   DEPRECATED (Sunset 2027-04-01) — revoke an unused sign-in token before its 60s window elapses. Part of the deprecated /v1/sign_in_tokens surface; prefer POST /v1/sessions.
 
   `POST /v1/sign_in_tokens/{id}/revoke`. Required scope: `sign_in_tokens:write`.
+
+  Response fields: `object`, `id`, `revoked`.
   """
   @doc deprecated: "Use Atlas.Sessions.create/3 with mode browser_ticket"
   def post_revoke(client, id, opts \\ []),

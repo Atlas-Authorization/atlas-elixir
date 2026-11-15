@@ -5,7 +5,8 @@ defmodule Atlas.ResourceServers do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ResourceServers do
   List resource servers (machine-to-machine APIs) and their scopes.
 
   `GET /v1/resource_servers`. Required scope: `resource_servers:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.identifier`, `data.name`, `data.scopes`, `data.scopes.value`, `data.scopes.description`, `data.scope_presets`, `data.token_ttl_seconds`, `data.publish_resource_metadata`, `data.signing_alg`, `data.access_token_format`, `data.refresh_token_absolute_ttl_seconds`, `data.refresh_token_idle_ttl_seconds`, `data.introspection_client_ids`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resource_servers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.ResourceServers do
   Register a resource server (API): its audience identifier, scopes, scope presets and token TTL.
 
   `POST /v1/resource_servers`. Required scope: `resource_servers:write`.
+
+  Body fields: `identifier` (string), `name` (string), `scopes` (array), `scope_presets` (object), `token_ttl_seconds` (number), `publish_resource_metadata` (boolean), `signing_alg` (object), `access_token_format` (enum), `refresh_token_absolute_ttl_seconds` (number|null), `refresh_token_idle_ttl_seconds` (number|null), `introspection_client_ids` (array).
+  Nested body fields: `scopes.value`, `scopes.description`.
+  Response fields: `object`, `id`, `identifier`, `name`, `scopes`, `scopes.value`, `scopes.description`, `scope_presets`, `token_ttl_seconds`, `publish_resource_metadata`, `signing_alg`, `access_token_format`, `refresh_token_absolute_ttl_seconds`, `refresh_token_idle_ttl_seconds`, `introspection_client_ids`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resource_servers", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.ResourceServers do
   Fetch one resource server. Another instance id is 404, never 403.
 
   `GET /v1/resource_servers/{id}`. Required scope: `resource_servers:read`.
+
+  Response fields: `object`, `id`, `identifier`, `name`, `scopes`, `scopes.value`, `scopes.description`, `scope_presets`, `token_ttl_seconds`, `publish_resource_metadata`, `signing_alg`, `access_token_format`, `refresh_token_absolute_ttl_seconds`, `refresh_token_idle_ttl_seconds`, `introspection_client_ids`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resource_servers/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.ResourceServers do
   Update a resource server. The identifier (audience) is immutable, and a scope that a preset names cannot be removed without changing the preset in the same request.
 
   `PATCH /v1/resource_servers/{id}`. Required scope: `resource_servers:write`.
+
+  Body fields: `name` (string), `scopes` (array), `scope_presets` (object), `token_ttl_seconds` (number), `identifier` (string), `publish_resource_metadata` (boolean), `signing_alg` (object), `access_token_format` (enum), `refresh_token_absolute_ttl_seconds` (number|null), `refresh_token_idle_ttl_seconds` (number|null), `introspection_client_ids` (array).
+  Nested body fields: `scopes.value`, `scopes.description`.
+  Response fields: `object`, `id`, `identifier`, `name`, `scopes`, `scopes.value`, `scopes.description`, `scope_presets`, `token_ttl_seconds`, `publish_resource_metadata`, `signing_alg`, `access_token_format`, `refresh_token_absolute_ttl_seconds`, `refresh_token_idle_ttl_seconds`, `introspection_client_ids`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/resource_servers/{id}", %{"id" => id}, body, opts)
@@ -52,9 +66,29 @@ defmodule Atlas.ResourceServers do
   Delete a resource server; its client and machine grants go with it.
 
   `DELETE /v1/resource_servers/{id}`. Required scope: `resource_servers:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/resource_servers/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The OAuth tokens revoked for this API, oldest first, for a resource server that polls this list instead of asking Atlas per request (`createAccessTokenVerifier({ revocation: true })`). Each item is a refresh-token family that ended (`family_id`, the `fid` claim of every access token minted from it: a refresh token was reused, the client called /oauth2/revoke, or an admin, the user or a logout ended the grant) or one access token revoked on its own (`jti`). Reject a token whose `fid` or `jti` is listed. Rows are kept for 48 hours (`retention_seconds`), longer than any access token can live. Page with `after` (the `next_cursor` of the previous page); `server_time` is when the answer was computed: poll again with `since` a little before it. The `oauth_tokens.revoked` webhook carries the same facts for a push.
+
+  `GET /v1/resource_servers/{id}/revoked_tokens`. Required scope: `resource_servers:read`.
+
+  Query params (`params:`): `since`, `limit`, `after`, `starting_after`.
+  Response fields: `object`, `data`, `data.family_id`, `data.jti`, `data.user_id`, `data.client_id`, `data.reason`, `data.revoked_at`, `has_more`, `next_cursor`, `server_time`, `window_start`, `retention_seconds`.
+  """
+  def get_revoked_tokens(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/resource_servers/{id}/revoked_tokens", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_revoked_tokens`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_revoked_tokens(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/resource_servers/{id}/revoked_tokens", %{"id" => id}, opts)
 
   @doc false
   def __operations__, do: [
@@ -62,6 +96,7 @@ defmodule Atlas.ResourceServers do
     {:create, :post, "/v1/resource_servers", 0, true, false},
     {:get, :get, "/v1/resource_servers/{id}", 1, false, false},
     {:update, :patch, "/v1/resource_servers/{id}", 1, true, false},
-    {:delete, :delete, "/v1/resource_servers/{id}", 1, false, false}
+    {:delete, :delete, "/v1/resource_servers/{id}", 1, false, false},
+    {:get_revoked_tokens, :get, "/v1/resource_servers/{id}/revoked_tokens", 1, false, true}
   ]
 end
