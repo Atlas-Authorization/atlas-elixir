@@ -5,7 +5,8 @@ defmodule Atlas.SsoOnboardingTickets do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.SsoOnboardingTickets do
   Revoke a pending onboarding ticket so it can no longer configure a connection.
 
   `POST /v1/sso_onboarding_tickets/{id}/revoke`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `id`, `revoked`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_onboarding_tickets/{id}/revoke", %{"id" => id}, nil, opts)

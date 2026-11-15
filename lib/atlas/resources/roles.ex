@@ -5,7 +5,8 @@ defmodule Atlas.Roles do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Roles do
   List roles with their permissions and how many members hold each.
 
   `GET /v1/roles`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.is_system`, `data.visibility`, `data.organization_id`, `data.permissions`, `data.member_count`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/roles", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Roles do
   Create a custom role. Keys are namespaced and sys_ is reserved. Pass visibility "internal" for a role only your backend may assign (hidden from org-admin role pickers, refused by the frontend API).
 
   `POST /v1/roles`. Required scope: `organizations:write`.
+
+  Body fields: `key` (string), `name` (string), `description` (string), `visibility` (string), `permissions` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `is_system`, `visibility`, `organization_id`, `permissions`, `member_count`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/roles", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.Roles do
   Relabel a role or change its visibility (public/internal). The key is immutable once published.
 
   `PATCH /v1/roles/{id}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `description` (string), `key` (string), `visibility` (string).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `is_system`, `visibility`, `organization_id`, `permissions`, `member_count`, `created_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/roles/{id}", %{"id" => id}, body, opts)
@@ -44,6 +54,9 @@ defmodule Atlas.Roles do
   Delete an unused custom role. A role members hold returns ROLE_IN_USE.
 
   `DELETE /v1/roles/{id}`. Required scope: `organizations:write`.
+
+  Query params (`params:`): `reassign_to`.
+  Response fields: `object`, `id`, `deleted`, `members_reassigned`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/roles/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +65,9 @@ defmodule Atlas.Roles do
   Replace a role permission set. System roles are fixed.
 
   `PUT /v1/roles/{id}/permissions`. Required scope: `organizations:write`.
+
+  Body fields: `permissions` (array).
+  Response fields: `object`, `id`, `key`, `permissions`, `ignored`.
   """
   def put_permissions(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/roles/{id}/permissions", %{"id" => id}, body, opts)

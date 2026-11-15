@@ -5,7 +5,8 @@ defmodule Atlas.UserExports do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.UserExports do
   Produce a job whose result is a present()-serialised array of the instance's users. Never contains a password hash, recovery code or provider token.
 
   `POST /v1/user_exports`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `id`, `type`, `status`, `total`, `processed`, `succeeded`, `failed`, `error_count`, `result`, `result.object`, `result.id`, `result.username`, `result.sign_in`, `result.first_name`, `result.last_name`, `result.image_url`, `result.email_addresses`, `result.email_addresses.id`, `result.email_addresses.object`, `result.email_addresses.email_address`, `result.email_addresses.verification`, `result.email_addresses.verified`, `result.email_addresses.primary`, `result.primary_email_address_id`, `result.primary_email`, `result.external_id`, `result.password_enabled`, `result.public_metadata`, `result.mfa_enabled`, `result.has_passkey`, `result.required_factors`, `result.is_anonymous`, `result.banned`, `result.ban_reason`, `result.ban_note`, `result.locked`, `result.status`, `result.deleted_at`, `result.last_sign_in_at`, `result.sessions_revoked_at`, `result.created_at`, `result.updated_at`, `result.version`, `result.referral`, `result.referral.status`, `result.referral.partner_id`, `result.referral.partner_external_ref`, `result.referral.referrer_external_id`, `result.referral.referrer_user_id`, `result.referral.matched_via`, `result.referral.referral_status`, `result.referral.notes`, `result.referral.risk_level`, `result.referral.flagged`, `result.referral_code`, `result.warnings`, `result.referral_link`, `result.external_accounts`, `result.external_accounts.object`, `result.external_accounts.id`, `result.external_accounts.provider`, `result.external_accounts.provider_user_id`, `result.external_accounts.provider_email`, `result.external_accounts.email_verified`, `result.external_accounts.first_name`, `result.external_accounts.last_name`, `result.external_accounts.image_url`, `result.external_accounts.connected_at`, `results`, `results.email_address`, `results.user_id`, `results.outcome`, `results.warnings`, `results.warnings.code`, `results.warnings.message`, `warnings`, `warnings.code`, `warnings.message`, `warnings.count`, `warnings.external_ids`, `created_at`, `updated_at`, `completed_at`.
   """
   def create(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/user_exports", %{}, nil, opts)

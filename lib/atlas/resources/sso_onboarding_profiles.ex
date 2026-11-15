@@ -5,7 +5,8 @@ defmodule Atlas.SsoOnboardingProfiles do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.SsoOnboardingProfiles do
   List self-service SSO onboarding profiles (the templates tickets are issued from). ?name= returns only the profiles with exactly that name.
 
   `GET /v1/sso_onboarding_profiles`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `name`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.allowed_connection_types`, `data.organization_id`, `data.company_name`, `data.allow_scim`, `data.intents`, `data.return_url`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_onboarding_profiles", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.SsoOnboardingProfiles do
   Create a self-service SSO onboarding profile: allowed connection types, an optional bound organization, and an optional `return_url` (where "Finish" on the hosted setup page sends the admin; https on one of your allowed origins).
 
   `POST /v1/sso_onboarding_profiles`. Required scope: `sso_connections:write`.
+
+  Body fields: `name` (string), `allowed_connection_types` (array), `organization_id` (string|null), `company_name` (string|null), `allow_scim` (boolean), `intents` (array), `return_url` (string|null).
+  Response fields: `object`, `id`, `name`, `allowed_connection_types`, `organization_id`, `company_name`, `allow_scim`, `intents`, `return_url`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_onboarding_profiles", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.SsoOnboardingProfiles do
   Fetch one onboarding profile. Another instance id is 404, never 403.
 
   `GET /v1/sso_onboarding_profiles/{id}`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `id`, `name`, `allowed_connection_types`, `organization_id`, `company_name`, `allow_scim`, `intents`, `return_url`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.SsoOnboardingProfiles do
   Update an onboarding profile in place. Only the fields sent change; the rest are kept. Same validation as create (an unknown organization, connection type or intent is 400). Tickets already issued keep working.
 
   `PATCH /v1/sso_onboarding_profiles/{id}`. Required scope: `sso_connections:write`.
+
+  Body fields: `name` (string), `allowed_connection_types` (array), `organization_id` (string|null), `company_name` (string|null), `allow_scim` (boolean), `intents` (array), `return_url` (string|null).
+  Response fields: `object`, `id`, `name`, `allowed_connection_types`, `organization_id`, `company_name`, `allow_scim`, `intents`, `return_url`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.SsoOnboardingProfiles do
   Delete an onboarding profile; its issued tickets cascade away with it.
 
   `DELETE /v1/sso_onboarding_profiles/{id}`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/sso_onboarding_profiles/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,9 @@ defmodule Atlas.SsoOnboardingProfiles do
   Create-or-update the onboarding profile with this exact name (the path segment, URL-encoded): 201 with the new profile when none has the name, else 200 with it updated in place (only the fields sent change). Body: the POST fields except name. Two calls racing for a new name create exactly one profile. 409 IDENTIFIER_EXISTS when two profiles already share the name (POST allows that): rename or delete the extras. Rename with PATCH /v1/sso_onboarding_profiles/{id}.
 
   `PUT /v1/sso_onboarding_profiles/by_name/{name}`. Required scope: `sso_connections:write`.
+
+  Body fields: `allowed_connection_types` (array), `organization_id` (string|null), `company_name` (string|null), `allow_scim` (boolean), `intents` (array), `return_url` (string|null).
+  Response fields: `object`, `id`, `name`, `allowed_connection_types`, `organization_id`, `company_name`, `allow_scim`, `intents`, `return_url`, `created_at`, `updated_at`.
   """
   def put_by_name(client, name, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/sso_onboarding_profiles/by_name/{name}", %{"name" => name}, body, opts)
@@ -68,6 +85,9 @@ defmodule Atlas.SsoOnboardingProfiles do
   Issue a scoped, one-time, expiring onboarding ticket for one organization. Returns the token and hosted URL exactly once. `expires_in_seconds` defaults to 259200 (3 days) and is clamped into [300, 2592000] (5 minutes to 30 days); `expires_in` says what was granted. `return_url` overrides the profile's for this ticket.
 
   `POST /v1/sso_onboarding_profiles/{id}/tickets`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `expires_in_seconds` (number), `return_url` (string|null).
+  Response fields: `object`, `id`, `profile_id`, `organization_id`, `sso_connection_id`, `status`, `return_url`, `expires_at`, `created_at`, `completed_at`, `token`, `url`, `expires_in`, `effective_return_url`.
   """
   def post_tickets(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_onboarding_profiles/{id}/tickets", %{"id" => id}, body, opts)

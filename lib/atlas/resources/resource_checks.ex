@@ -5,7 +5,8 @@ defmodule Atlas.ResourceChecks do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.ResourceChecks do
   Does `subject` hold `permission` on `resource`? A user subject also holds the roles of the organizations they belong to, plus any `groups` ids you pass. The response lists the grants that allow it.
 
   `POST /v1/resource_checks`. Required scope: `resources:check`.
+
+  Body fields: `subject` (object), `permission` (string), `resource` (object), `groups` (array).
+  Response fields: `object`, `allowed`, `resource_id`, `grants`, `grants.resource_id`, `grants.role`, `grants.subject`, `grants.inherited`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resource_checks", %{}, body, opts)
@@ -21,6 +25,9 @@ defmodule Atlas.ResourceChecks do
   Up to 100 resource checks in one call.
 
   `POST /v1/resource_checks/batch`. Required scope: `resources:check`.
+
+  Body fields: `checks` (array).
+  Response fields: `object`, `data`, `data.object`, `data.allowed`, `data.resource_id`, `data.grants`, `data.grants.resource_id`, `data.grants.role`, `data.grants.subject`, `data.grants.inherited`, `has_more`, `next_cursor`.
   """
   def post_batch(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resource_checks/batch", %{}, body, opts)
@@ -29,6 +36,9 @@ defmodule Atlas.ResourceChecks do
   List the resources of an optional `type` on which `subject` holds `permission`, paged with `limit` and `starting_after` (the response carries `has_more` and `next_cursor`).
 
   `POST /v1/resource_checks/list`. Required scope: `resources:check`.
+
+  Body fields: `subject` (object), `permission` (string), `type` (string), `groups` (array), `limit` (integer), `starting_after` (string).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.external_id`, `data.name`, `data.parent_id`, `data.metadata`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def post_list(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resource_checks/list", %{}, body, opts)

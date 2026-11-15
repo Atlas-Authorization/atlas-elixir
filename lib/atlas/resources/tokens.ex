@@ -5,7 +5,8 @@ defmodule Atlas.Tokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Tokens do
   Authoritatively verify a session token, including revocation.
 
   `POST /v1/tokens/verify`. Required scope: `sessions:read`.
+
+  Body fields: `token` (string), `authorized_parties` (array).
+  Response fields: `object`, `verified`, `reason`, `user_id`, `session_id`, `organization_id`, `organization_role`, `organization_permissions`, `mfa`, `checked_authoritatively`.
   """
   def post_verify(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/tokens/verify", %{}, body, opts)

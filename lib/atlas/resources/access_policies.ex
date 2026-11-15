@@ -5,7 +5,8 @@ defmodule Atlas.AccessPolicies do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AccessPolicies do
   List conditional-access policies, in evaluation order.
 
   `GET /v1/access_policies`. Required scope: `access_policies:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.mode`, `data.targets`, `data.id`, `data.name`, `data.description`, `data.enabled`, `data.priority`, `data.stages`, `data.conditions`, `data.grants`, `data.grants.type`, `data.grants.value`, `data.grants.seconds`, `data.grants.allow`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/access_policies", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AccessPolicies do
   Create a conditional-access policy. `conditions` (applications, userIds, groups, orgs, roles, networkZones {include, exclude}, countries, riskLevels, deviceTrust, authMethods, timeWindow) are ANDed; an empty condition matches anything. `grants` are allow, block, require_mfa, require_acr, require_policy_acceptance or require_action. `stages` limits it to sign_in, authorize and/or token (default all). Further conditions: devicePlatforms, osVersion {min, max}, clientTypes, userAttributes, userRiskLevels, signInRiskLevels and principalIds. Further grants: require_auth_strength (mfa, passwordless, phishing_resistant), require_device_bound_session, require_password_change, sign_in_frequency, max_session_age and persistent_session. `mode: report_only` logs `access_policy.would_block` and never denies. `targets` picks user, machine and/or agent principals (default user). A matching block wins; step-up grants are unioned.
 
   `POST /v1/access_policies`. Required scope: `access_policies:write`.
+
+  Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `priority` (integer), `stages` (array), `conditions` (object), `grants` (array), `mode` (enum), `targets` (array).
+  Response fields: `object`, `mode`, `targets`, `id`, `name`, `description`, `enabled`, `priority`, `stages`, `conditions`, `grants`, `grants.type`, `grants.value`, `grants.seconds`, `grants.allow`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/access_policies", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.AccessPolicies do
   What-if: describe a request (stage, ip, application, orgs, roles, country, risk level, device trust, auth methods, whether MFA was verified) and see the decision, the policies that matched and the unmet step-up requirements. Pass `policy_id` to test one policy even if it is disabled.
 
   `POST /v1/access_policies/simulate`. Required scope: `access_policies:read`.
+
+  Body fields: `policy_id` (string), `stage` (string), `ip` (string), `application_id` (string), `user_id` (string), `groups` (array), `orgs` (array), `roles` (array), `country` (string), `risk_level` (enum), `device_trust` (enum), `auth_methods` (array), `mfa_verified` (boolean), `acr` (array), `now` (integer), `target_type` (enum), `principal_id` (string), `device_platform` (string), `os_version` (string), `client_type` (enum), `user_attributes` (object), `user_risk_level` (enum), `last_auth_age_seconds` (integer), `session_age_seconds` (integer), `device_bound_session` (boolean).
+  Response fields: `object`, `decision`, `matched`, `blocked_by`, `requirements`, `requirements.mfa`, `requirements.acr`, `requirements.policy_acceptance`, `requirements.actions`, `requirements.auth_strength`, `requirements.sign_in_frequency_seconds`, `requirements.max_session_age_seconds`, `requirements.persistent_session`, `requirements.device_bound_session`, `unmet`, `report_only`, `report_only.decision`, `report_only.matched`, `report_only.blocked_by`.
   """
   def post_simulate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/access_policies/simulate", %{}, body, opts)
@@ -44,6 +54,9 @@ defmodule Atlas.AccessPolicies do
   Impact preview: replay a draft policy (`draft`: conditions, grants, stages, targets) against the sampled sign-ins of the last `days` (1-30, default 7) and get how many would have been allowed, stepped up or blocked, plus the affected users. Nothing is stored or enforced.
 
   `POST /v1/access_policies/impact`. Required scope: `access_policies:read`.
+
+  Body fields: `draft` (object), `days` (integer).
+  Response fields: `object`, `days`, `evaluated`, `would_allow`, `would_step_up`, `would_block`, `distinct_users`, `affected_users`, `samples`, `samples.user_id`, `samples.stage`, `samples.outcome`, `samples.unmet`, `samples.at`.
   """
   def post_impact(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/access_policies/impact", %{}, body, opts)
@@ -52,6 +65,9 @@ defmodule Atlas.AccessPolicies do
   Report-only insights: how often `report_only` policies would have blocked or stepped up a request in the last `days`, per policy and per day.
 
   `GET /v1/access_policies/insights`. Required scope: `access_policies:read`.
+
+  Query params (`params:`): `days`.
+  Response fields: `object`, `days`, `evaluated`, `would_block`, `would_step_up`, `by_policy`, `by_day`.
   """
   def get_insights(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/access_policies/insights", %{}, nil, opts)
@@ -60,6 +76,8 @@ defmodule Atlas.AccessPolicies do
   Read one access policy.
 
   `GET /v1/access_policies/{id}`. Required scope: `access_policies:read`.
+
+  Response fields: `object`, `mode`, `targets`, `id`, `name`, `description`, `enabled`, `priority`, `stages`, `conditions`, `grants`, `grants.type`, `grants.value`, `grants.seconds`, `grants.allow`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/access_policies/{id}", %{"id" => id}, nil, opts)
@@ -68,6 +86,9 @@ defmodule Atlas.AccessPolicies do
   Update an access policy. Sent fields replace the stored value.
 
   `PATCH /v1/access_policies/{id}`. Required scope: `access_policies:write`.
+
+  Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `priority` (integer), `stages` (array), `conditions` (object), `grants` (array), `mode` (enum), `targets` (array).
+  Response fields: `object`, `mode`, `targets`, `id`, `name`, `description`, `enabled`, `priority`, `stages`, `conditions`, `grants`, `grants.type`, `grants.value`, `grants.seconds`, `grants.allow`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/access_policies/{id}", %{"id" => id}, body, opts)

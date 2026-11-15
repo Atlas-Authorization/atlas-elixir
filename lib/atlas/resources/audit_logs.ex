@@ -5,7 +5,8 @@ defmodule Atlas.AuditLogs do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AuditLogs do
   Query the audit log, filterable and cursor-paginated. Pass `format=jsonl` to bulk-export every matching row as newline-delimited JSON in one streamed response (capped, with a trailing truncation marker) for SIEM ingest.
 
   `GET /v1/audit_logs`. Required scope: `audit:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `actor_id`, `action`, `target_type`, `target_id`, `format`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.actor_type`, `data.actor_id`, `data.action`, `data.target_type`, `data.target_id`, `data.metadata`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_logs", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

@@ -5,7 +5,8 @@ defmodule Atlas.JwtConnections do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.JwtConnections do
   List trusted-JWT connections.
 
   `GET /v1/jwt_connections`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.status`, `data.jwks_uri`, `data.issuer`, `data.audience`, `data.email_claim`, `data.max_age_seconds`, `data.default_role_id`, `data.login_url`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jwt_connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.JwtConnections do
   Add a trusted-JWT connection: your system signs a short-lived JWT for a person and sends them to login_url?token=…&redirect_url=…. Atlas checks the signature against jwks_uri, iss, aud, exp, the max age, and that the jti was never used before, then signs them in and seats them in organization_id. An active connection needs jwks_uri, issuer and audience.
 
   `POST /v1/jwt_connections`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `status` (enum), `jwks_uri` (string), `issuer` (string), `audience` (string), `email_claim` (string), `max_age_seconds` (integer), `default_role_id` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `status`, `jwks_uri`, `issuer`, `audience`, `email_claim`, `max_age_seconds`, `default_role_id`, `login_url`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/jwt_connections", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.JwtConnections do
   Read one trusted-JWT connection, with its login_url.
 
   `GET /v1/jwt_connections/{id}`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `status`, `jwks_uri`, `issuer`, `audience`, `email_claim`, `max_age_seconds`, `default_role_id`, `login_url`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jwt_connections/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.JwtConnections do
   Change a trusted-JWT connection.
 
   `PATCH /v1/jwt_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `status` (enum), `jwks_uri` (string), `issuer` (string), `audience` (string), `email_claim` (string), `max_age_seconds` (integer), `default_role_id` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `status`, `jwks_uri`, `issuer`, `audience`, `email_claim`, `max_age_seconds`, `default_role_id`, `login_url`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/jwt_connections/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.JwtConnections do
   Delete a trusted-JWT connection. Its login URL stops working at once.
 
   `DELETE /v1/jwt_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/jwt_connections/{id}", %{"id" => id}, nil, opts)

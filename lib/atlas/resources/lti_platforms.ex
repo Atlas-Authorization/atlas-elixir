@@ -5,7 +5,8 @@ defmodule Atlas.LtiPlatforms do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.LtiPlatforms do
   List the LTI 1.3 platform registrations allowed to launch this instance.
 
   `GET /v1/lti_platforms`. Required scope: `lti:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.issuer`, `data.client_id`, `data.auth_login_url`, `data.jwks_uri`, `data.deployment_ids`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/lti_platforms", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.LtiPlatforms do
   Register an LTI 1.3 platform (issuer, client_id, auth_login_url, jwks_uri, deployment_ids). https URLs required; a duplicate (issuer, client_id) is a 409.
 
   `POST /v1/lti_platforms`. Required scope: `lti:write`.
+
+  Body fields: `issuer` (string), `client_id` (string), `auth_login_url` (string), `jwks_uri` (string), `deployment_ids` (array), `organization_id` (string).
+  Response fields: `object`, `id`, `organization_id`, `issuer`, `client_id`, `auth_login_url`, `jwks_uri`, `deployment_ids`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/lti_platforms", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.LtiPlatforms do
   Fetch one LTI 1.3 platform registration.
 
   `GET /v1/lti_platforms/{id}`. Required scope: `lti:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `issuer`, `client_id`, `auth_login_url`, `jwks_uri`, `deployment_ids`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/lti_platforms/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.LtiPlatforms do
   Update an LTI 1.3 platform registration (URLs, deployment ids, org link).
 
   `PATCH /v1/lti_platforms/{id}`. Required scope: `lti:write`.
+
+  Body fields: `auth_login_url` (string), `jwks_uri` (string), `deployment_ids` (array), `organization_id` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `issuer`, `client_id`, `auth_login_url`, `jwks_uri`, `deployment_ids`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/lti_platforms/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.LtiPlatforms do
   Remove an LTI 1.3 platform registration.
 
   `DELETE /v1/lti_platforms/{id}`. Required scope: `lti:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/lti_platforms/{id}", %{"id" => id}, nil, opts)

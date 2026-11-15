@@ -5,7 +5,7 @@ defmodule Atlas.Error do
   (`:status` is `nil`, `:code` is `"TRANSPORT_ERROR"`). Also raised by the
   `stream_*` functions.
   """
-  defexception [:status, :code, :message, :required_scope, :docs_url, :request_id, :body]
+  defexception [:status, :code, :message, :required_scope, :docs_url, :request_id, :body, :retry_after_ms]
 
   @type t :: %__MODULE__{}
 
@@ -20,8 +20,28 @@ defmodule Atlas.Error do
       required_scope: parsed[:required_scope],
       docs_url: parsed[:docs_url],
       request_id: header(headers, "x-request-id"),
-      body: body
+      body: body,
+      retry_after_ms: retry_after_ms(header(headers, "retry-after"))
     }
+  end
+
+  # `Retry-After`: whole seconds or an HTTP date; nil when absent or unreadable.
+  defp retry_after_ms(nil), do: nil
+
+  defp retry_after_ms(value) do
+    case Integer.parse(String.trim(value)) do
+      {n, ""} when n >= 0 ->
+        n * 1000
+
+      _ ->
+        case :httpd_util.convert_request_date(String.to_charlist(value)) do
+          {{_, _, _}, {_, _, _}} = dt ->
+            max(:calendar.datetime_to_gregorian_seconds(dt) - :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()), 0) * 1000
+
+          _ ->
+            nil
+        end
+    end
   end
 
   @doc false

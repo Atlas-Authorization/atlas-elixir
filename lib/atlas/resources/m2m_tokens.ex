@@ -5,7 +5,8 @@ defmodule Atlas.M2mTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.M2mTokens do
   Verify a machine secret or machine JWT and report what it holds. Apps verifying a JWT against the JWKS do not need this call.
 
   `POST /v1/m2m_tokens/verify`. Required scope: `machines:read`.
+
+  Body fields: `token` (string).
+  Response fields: `object`, `valid`, `machine_id`, `name`, `audience`, `scopes`, `organization_id`, `org_role`, `org_permissions`, `expires_at`, `grants`, `grants.resource_server_id`, `grants.audience`, `grants.scopes`, `organization_memberships`, `organization_memberships.organization_id`, `organization_memberships.role`.
   """
   def post_verify(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/m2m_tokens/verify", %{}, body, opts)

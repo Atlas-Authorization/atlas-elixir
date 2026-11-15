@@ -5,7 +5,8 @@ defmodule Atlas.GrantManagement do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.GrantManagement do
   List OpenID Grant Management grants: what each OAuth client holds for each user under a `grant_id`, newest first. Filter by `user_id`, `client_id` (the public client id) and `status`.
 
   `GET /v1/grant_management/grants`. Required scope: `grants:read`.
+
+  Query params (`params:`): `user_id`, `client_id`, `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.user_id`, `data.organization_id`, `data.status`, `data.scopes`, `data.resource`, `data.authorization_details`, `data.revision`, `data.created_at`, `data.updated_at`, `data.revoked_at`, `data.revoked_by`.
   """
   def get_grants(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/grant_management/grants", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_grants/1`, following the cursor page by page.
+  Lazy stream over every item of `get_grants`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_grants(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.GrantManagement do
   Read one grant: its scopes, resource, authorization_details, status and revision.
 
   `GET /v1/grant_management/grants/{id}`. Required scope: `grants:read`.
+
+  Response fields: `object`, `id`, `client_id`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `created_at`, `updated_at`, `revoked_at`, `revoked_by`.
   """
   def get_grants_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/grant_management/grants/{id}", %{"id" => id}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.GrantManagement do
   Narrow a grant: send the `scopes` and/or `authorization_details` it should keep. Anything it does not already hold is a 400 (only the user widens a grant, by authorizing again with `grant_management_action=merge`). Refresh tokens under the grant are clamped to the narrower scope; a revoked grant is a 404.
 
   `PATCH /v1/grant_management/grants/{id}`. Required scope: `grants:write`.
+
+  Body fields: `scopes` (array), `authorization_details` (array).
+  Response fields: `object`, `id`, `client_id`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `created_at`, `updated_at`, `revoked_at`, `revoked_by`.
   """
   def update_grants(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/grant_management/grants/{id}", %{"id" => id}, body, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.GrantManagement do
   Revoke a grant and everything issued under it: refresh tokens stop refreshing and access tokens that carry the `grant_id` stop validating at once. `tokens_ended` counts the refresh grants that ended with it. Revoking an already-revoked grant answers 200 with `tokens_ended: 0`.
 
   `DELETE /v1/grant_management/grants/{id}`. Required scope: `grants:write`.
+
+  Response fields: `object`, `id`, `deleted`, `tokens_ended`.
   """
   def delete_grants(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/grant_management/grants/{id}", %{"id" => id}, nil, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.McpGateways do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -21,6 +22,9 @@ defmodule Atlas.McpGateways do
   Create an MCP gateway: one URL (`url` in the response) that fronts your MCP server. `tools` maps a tool name to its policy (allow, scopes the agent token must hold, argument conditions, approval, response masking); `default_policy` (deny by default) decides tools not listed. upstream_authorization is write-only and sent to the upstream as its Authorization header.
 
   `POST /v1/mcp_gateways`. Required scope: `machines:write`.
+
+  Body fields: `name` (string, required), `upstream_url` (string|null), `packs_enforced` (boolean), `registry_only` (boolean), `guard` (object), `user_auth` (object), `upstream_authorization` (string), `default_policy` (enum), `enabled` (boolean), `abac` (object), `tools` (object).
+  Nested body fields: `abac.enabled`, `abac.policy_ids`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_gateways", %{}, body, opts)
@@ -37,6 +41,9 @@ defmodule Atlas.McpGateways do
   Update an MCP gateway. Omitted fields keep their value; `tools` is replaced as a whole. `abac` turns on authorization of every tool call through the ABAC policy engine.
 
   `PATCH /v1/mcp_gateways/{id}`. Required scope: `machines:write`.
+
+  Body fields: `abac` (object).
+  Nested body fields: `abac.enabled`, `abac.policy_ids`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/mcp_gateways/{id}", %{"id" => id}, body, opts)
@@ -53,12 +60,15 @@ defmodule Atlas.McpGateways do
   The cross-call budgets of a gateway, newest first (at most 50): ceilings on how many calls, how much cost, or how many calls per window one agent or one session may make.
 
   `GET /v1/mcp_gateways/{id}/budgets`. Required scope: `machines:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.gateway_id`, `data.name`, `data.scope`, `data.agent_id`, `data.tool`, `data.metric`, `data.limit`, `data.window_seconds`, `data.cost_per_call`, `data.cost_arg`, `data.enabled`, `data.created_at`, `has_more`.
   """
   def get_by_id_budgets(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/budgets", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_budgets/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_budgets`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_budgets(client, id, opts \\ []),
@@ -68,6 +78,9 @@ defmodule Atlas.McpGateways do
   Add a budget. `metric` is `calls` (a count), `cost` (the sum of each call's cost: `cost_per_call`, or the number found at `cost_arg` in the call arguments, such as an amount) or `rate` (calls per `window_seconds`, required). `limit` is the ceiling. `window_seconds` makes the counter reset in fixed windows; without it a counter never resets (a per-session one ends with the session). `scope` is `agent` (each agent counts separately) or `session` (each session of each agent; the client must echo the `Mcp-Session-Id` from initialize). `agent_id` limits it to one agent and `tool` to one tool. A call is charged against every budget it touches at once, or against none; only a call that is allowed and about to run is charged.
 
   `POST /v1/mcp_gateways/{id}/budgets`. Required scope: `machines:write`.
+
+  Body fields: `name` (string), `scope` (enum), `metric` (enum), `limit` (number), `window_seconds` (integer|null), `agent_id` (string|null), `tool` (string|null), `cost_per_call` (number), `cost_arg` (string|null), `enabled` (boolean).
+  Response fields: `object`, `id`, `gateway_id`, `name`, `scope`, `agent_id`, `tool`, `metric`, `limit`, `window_seconds`, `cost_per_call`, `cost_arg`, `enabled`, `created_at`.
   """
   def post_budgets(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/budgets", %{"id" => id}, body, opts)
@@ -76,6 +89,8 @@ defmodule Atlas.McpGateways do
   Read one budget of an MCP gateway.
 
   `GET /v1/mcp_gateways/{id}/budgets/{budgetId}`. Required scope: `machines:read`.
+
+  Response fields: `object`, `id`, `gateway_id`, `name`, `scope`, `agent_id`, `tool`, `metric`, `limit`, `window_seconds`, `cost_per_call`, `cost_arg`, `enabled`, `created_at`.
   """
   def get_by_id_budgets_by_budget_id(client, id, budget_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/budgets/{budgetId}", %{"id" => id, "budgetId" => budget_id}, nil, opts)
@@ -84,6 +99,9 @@ defmodule Atlas.McpGateways do
   Change a budget. Omitted fields keep their value. Raising the limit takes effect on the next call; counters are kept.
 
   `PATCH /v1/mcp_gateways/{id}/budgets/{budgetId}`. Required scope: `machines:write`.
+
+  Body fields: `name` (string), `scope` (enum), `metric` (enum), `limit` (number), `window_seconds` (integer|null), `agent_id` (string|null), `tool` (string|null), `cost_per_call` (number), `cost_arg` (string|null), `enabled` (boolean).
+  Response fields: `object`, `id`, `gateway_id`, `name`, `scope`, `agent_id`, `tool`, `metric`, `limit`, `window_seconds`, `cost_per_call`, `cost_arg`, `enabled`, `created_at`.
   """
   def update_budgets(client, id, budget_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/mcp_gateways/{id}/budgets/{budgetId}", %{"id" => id, "budgetId" => budget_id}, body, opts)
@@ -100,6 +118,9 @@ defmodule Atlas.McpGateways do
   What one agent has used of a budget right now, with the room left and when the window resets. A per-session budget also needs the `session_id` (the Mcp-Session-Id of that session).
 
   `GET /v1/mcp_gateways/{id}/budgets/{budgetId}/usage`. Required scope: `machines:read`.
+
+  Query params (`params:`): `agent_id`, `session_id`.
+  Response fields: `object`, `budget_id`, `agent_id`, `used`, `limit`, `remaining`, `resets_at`.
   """
   def get_budgets_usage(client, id, budget_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/budgets/{budgetId}/usage", %{"id" => id, "budgetId" => budget_id}, nil, opts)
@@ -108,12 +129,15 @@ defmodule Atlas.McpGateways do
   The upstreams of a gateway: MCP servers and OpenAPI-described APIs, each exposed under its namespace.
 
   `GET /v1/mcp_gateways/{id}/upstreams`. Required scope: `machines:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.gateway_id`, `data.namespace`, `data.kind`, `data.url`, `data.action_names`, `data.auth_kind`, `data.has_authorization`, `data.connection_id`, `data.connection_owner`, `data.connect_redirect_url`, `data.tool_count`, `data.stream`, `data.enabled`, `data.created_at`, `has_more`.
   """
   def get_by_id_upstreams(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/upstreams", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_upstreams/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_upstreams`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_upstreams(client, id, opts \\ []),
@@ -123,6 +147,9 @@ defmodule Atlas.McpGateways do
   Add an upstream. An mcp upstream's tools are re-served as `<namespace>__<tool>`; an openapi upstream turns each operation of the document into a tool and calls the API itself (through a connection's relay when auth_kind is connection). At most 20 per gateway.
 
   `POST /v1/mcp_gateways/{id}/upstreams`. Required scope: `machines:write`.
+
+  Body fields: `namespace` (string), `kind` (enum), `action_names` (array), `url` (string), `openapi` (object), `auth_kind` (enum), `authorization` (string), `connection_id` (string), `connection_owner` (enum), `connect_redirect_url` (string|null), `stream` (boolean), `enabled` (boolean).
+  Response fields: `object`, `id`, `gateway_id`, `namespace`, `kind`, `url`, `action_names`, `auth_kind`, `has_authorization`, `connection_id`, `connection_owner`, `connect_redirect_url`, `tool_count`, `stream`, `enabled`, `created_at`.
   """
   def post_upstreams(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/upstreams", %{"id" => id}, body, opts)
@@ -131,6 +158,8 @@ defmodule Atlas.McpGateways do
   Read one upstream of an MCP gateway.
 
   `GET /v1/mcp_gateways/{id}/upstreams/{upstreamId}`. Required scope: `machines:read`.
+
+  Response fields: `object`, `id`, `gateway_id`, `namespace`, `kind`, `url`, `action_names`, `auth_kind`, `has_authorization`, `connection_id`, `connection_owner`, `connect_redirect_url`, `tool_count`, `stream`, `enabled`, `created_at`.
   """
   def get_by_id_upstreams_by_upstream_id(client, id, upstream_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", %{"id" => id, "upstreamId" => upstream_id}, nil, opts)
@@ -139,6 +168,9 @@ defmodule Atlas.McpGateways do
   Change an upstream. Omitted fields keep their value; sending `openapi` recompiles the tools.
 
   `PATCH /v1/mcp_gateways/{id}/upstreams/{upstreamId}`. Required scope: `machines:write`.
+
+  Body fields: `namespace` (string), `kind` (enum), `action_names` (array), `url` (string), `openapi` (object), `auth_kind` (enum), `authorization` (string), `connection_id` (string), `connection_owner` (enum), `connect_redirect_url` (string|null), `stream` (boolean), `enabled` (boolean).
+  Response fields: `object`, `id`, `gateway_id`, `namespace`, `kind`, `url`, `action_names`, `auth_kind`, `has_authorization`, `connection_id`, `connection_owner`, `connect_redirect_url`, `tool_count`, `stream`, `enabled`, `created_at`.
   """
   def update_upstreams(client, id, upstream_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", %{"id" => id, "upstreamId" => upstream_id}, body, opts)
@@ -147,6 +179,8 @@ defmodule Atlas.McpGateways do
   Remove an upstream and its tools from the gateway.
 
   `DELETE /v1/mcp_gateways/{id}/upstreams/{upstreamId}`. Required scope: `machines:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_upstreams(client, id, upstream_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}", %{"id" => id, "upstreamId" => upstream_id}, nil, opts)
@@ -155,6 +189,8 @@ defmodule Atlas.McpGateways do
   Reach the upstream with its own auth and list the tools it would add to the gateway. Never fails the request: `ok` is false with an `error` instead.
 
   `POST /v1/mcp_gateways/{id}/upstreams/{upstreamId}/test`. Required scope: `machines:write`.
+
+  Response fields: `object`, `ok`, `tools`, `error`.
   """
   def post_upstreams_test(client, id, upstream_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/upstreams/{upstreamId}/test", %{"id" => id, "upstreamId" => upstream_id}, nil, opts)
@@ -163,12 +199,15 @@ defmodule Atlas.McpGateways do
   The tool packs of a gateway: named tool sets assigned to agents, organizations or groups.
 
   `GET /v1/mcp_gateways/{id}/packs`. Required scope: `machines:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.gateway_id`, `data.name`, `data.description`, `data.tools`, `data.agent_ids`, `data.org_ids`, `data.groups`, `data.created_at`, `has_more`.
   """
   def get_by_id_packs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/packs", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_packs/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_packs`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_packs(client, id, opts \\ []),
@@ -178,6 +217,9 @@ defmodule Atlas.McpGateways do
   Create a tool pack. With the gateway's `packs_enforced` on, a caller sees and may call only the tools of packs assigned to them.
 
   `POST /v1/mcp_gateways/{id}/packs`. Required scope: `machines:write`.
+
+  Body fields: `name` (string), `description` (string|null), `tools` (array), `agent_ids` (array), `org_ids` (array), `groups` (array).
+  Response fields: `object`, `id`, `gateway_id`, `name`, `description`, `tools`, `agent_ids`, `org_ids`, `groups`, `created_at`.
   """
   def post_packs(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/packs", %{"id" => id}, body, opts)
@@ -186,6 +228,8 @@ defmodule Atlas.McpGateways do
   Read one tool pack of an MCP gateway.
 
   `GET /v1/mcp_gateways/{id}/packs/{packId}`. Required scope: `machines:read`.
+
+  Response fields: `object`, `id`, `gateway_id`, `name`, `description`, `tools`, `agent_ids`, `org_ids`, `groups`, `created_at`.
   """
   def get_by_id_packs_by_pack_id(client, id, pack_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/packs/{packId}", %{"id" => id, "packId" => pack_id}, nil, opts)
@@ -194,6 +238,9 @@ defmodule Atlas.McpGateways do
   Change a tool pack; omitted fields keep their value.
 
   `PATCH /v1/mcp_gateways/{id}/packs/{packId}`. Required scope: `machines:write`.
+
+  Body fields: `name` (string), `description` (string|null), `tools` (array), `agent_ids` (array), `org_ids` (array), `groups` (array).
+  Response fields: `object`, `id`, `gateway_id`, `name`, `description`, `tools`, `agent_ids`, `org_ids`, `groups`, `created_at`.
   """
   def update_packs(client, id, pack_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/mcp_gateways/{id}/packs/{packId}", %{"id" => id, "packId" => pack_id}, body, opts)
@@ -202,6 +249,8 @@ defmodule Atlas.McpGateways do
   Delete a tool pack from an MCP gateway.
 
   `DELETE /v1/mcp_gateways/{id}/packs/{packId}`. Required scope: `machines:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_packs(client, id, pack_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/mcp_gateways/{id}/packs/{packId}", %{"id" => id, "packId" => pack_id}, nil, opts)
@@ -210,12 +259,15 @@ defmodule Atlas.McpGateways do
   The pinned tool definitions of a gateway with `guard.pin_tools` on: each tool's description and schema is hashed when first seen; a changed definition is blocked (status changed) until approved.
 
   `GET /v1/mcp_gateways/{id}/pins`. Required scope: `machines:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.gateway_id`, `data.tool`, `data.status`, `data.approved_by`, `data.approved_at`, `data.changed_at`, `has_more`.
   """
   def get_pins(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_gateways/{id}/pins", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_pins/2`, following the cursor page by page.
+  Lazy stream over every item of `get_pins`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_pins(client, id, opts \\ []),
@@ -225,6 +277,8 @@ defmodule Atlas.McpGateways do
   Accept the definition the upstream serves now for a tool whose definition changed. Unblocks the tool.
 
   `POST /v1/mcp_gateways/{id}/pins/{tool}/approve`. Required scope: `machines:write`.
+
+  Response fields: `object`, `gateway_id`, `tool`, `status`, `approved_by`, `approved_at`, `changed_at`.
   """
   def post_pins_approve(client, id, tool, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_gateways/{id}/pins/{tool}/approve", %{"id" => id, "tool" => tool}, nil, opts)

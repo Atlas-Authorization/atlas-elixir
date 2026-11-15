@@ -5,7 +5,8 @@ defmodule Atlas.ConnectionActions do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ConnectionActions do
   The action catalog: typed operations per provider (GitHub, Slack, Notion, HubSpot, Google and more), first-party and your own definitions.
 
   `GET /v1/connection_actions`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `provider`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.provider`, `data.name`, `data.description`, `data.input_schema`, `data.output_schema`, `data.method`, `data.mutating`, `data.scopes`, `data.source`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/connection_actions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.ConnectionActions do
   One action with its input schema.
 
   `GET /v1/connection_actions/{provider}/{name}`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `provider`, `name`, `description`, `input_schema`, `output_schema`, `method`, `mutating`, `scopes`, `source`.
   """
   def get_by_provider_by_name(client, provider, name, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/connection_actions/{provider}/{name}", %{"provider" => provider, "name" => name}, nil, opts)
@@ -36,6 +42,10 @@ defmodule Atlas.ConnectionActions do
   Define or replace a custom action: data only (an input schema, a request template, a response mapping), never code. A definition with a first-party action's name replaces it for this instance.
 
   `PUT /v1/connection_actions/{provider}/{name}`. Required scope: `organizations:write`.
+
+  Body fields: `description` (string, required), `input` (object), `output` (object), `request` (object, required), `response` (object), `scopes` (array), `paginate` (object), `mutating` (boolean).
+  Nested body fields: `request.method`, `request.base_url`, `request.path`, `request.query`, `request.body`, `request.headers`, `response.path`, `response.ok_field`, `response.error_field`.
+  Response fields: `object`, `provider`, `name`, `description`, `input_schema`, `output_schema`, `method`, `mutating`, `scopes`, `source`.
   """
   def put(client, provider, name, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/connection_actions/{provider}/{name}", %{"provider" => provider, "name" => name}, body, opts)
@@ -48,11 +58,23 @@ defmodule Atlas.ConnectionActions do
   def delete(client, provider, name, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/connection_actions/{provider}/{name}", %{"provider" => provider, "name" => name}, nil, opts)
 
+  @doc ~S"""
+  TypeScript declarations for the action catalog (every provider, or one with `provider`): `ConnectionActionCatalog[provider][action] = { input, output }`, generated from the same schemas Atlas validates with, plus `ConnectionActionInput` and `ConnectionActionOutput` helpers. Save `source` to a .ts file to type `connections.runAction` end to end.
+
+  `GET /v1/connection_actions/types`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `provider`.
+  Response fields: `object`, `provider`, `actions`, `source`.
+  """
+  def get_types(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/connection_actions/types", %{}, nil, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/connection_actions", 0, false, true},
     {:get_by_provider_by_name, :get, "/v1/connection_actions/{provider}/{name}", 2, false, false},
     {:put, :put, "/v1/connection_actions/{provider}/{name}", 2, true, false},
-    {:delete, :delete, "/v1/connection_actions/{provider}/{name}", 2, false, false}
+    {:delete, :delete, "/v1/connection_actions/{provider}/{name}", 2, false, false},
+    {:get_types, :get, "/v1/connection_actions/types", 0, false, false}
   ]
 end

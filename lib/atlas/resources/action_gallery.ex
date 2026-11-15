@@ -5,7 +5,8 @@ defmodule Atlas.ActionGallery do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ActionGallery do
   Browse the Actions gallery (first-party and published community templates), best first.
 
   `GET /v1/action_gallery`. Required scope: `actions:read`.
+
+  Query params (`params:`): `q`, `category`, `trigger`, `source`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.source`, `data.slug`, `data.name`, `data.summary`, `data.trigger`, `data.category`, `data.tags`, `data.license`, `data.author`, `data.author.name`, `data.author.first_party`, `data.verified`, `data.featured`, `data.install_count`, `data.latest_version`, `data.uses_http`, `data.secrets`, `data.secrets.name`, `data.secrets.description`, `data.secrets.required`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/action_gallery", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.ActionGallery do
   One gallery template: description, code, the secret names it needs, licence and versions.
 
   `GET /v1/action_gallery/{slug}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `source`, `slug`, `name`, `summary`, `trigger`, `category`, `tags`, `license`, `author`, `author.name`, `author.first_party`, `verified`, `featured`, `install_count`, `latest_version`, `uses_http`, `secrets`, `secrets.name`, `secrets.description`, `secrets.required`, `updated_at`, `description`, `code`, `changelog`, `repository_url`, `versions`, `versions.version`, `versions.changelog`, `versions.released_at`.
   """
   def get(client, slug, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/action_gallery/{slug}", %{"slug" => slug}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.ActionGallery do
   Install a template: creates a DISABLED action (not bound to any flow) with its code and the secrets you pass. Returns the action and any required secrets still missing; set them, bind the action and enable it.
 
   `POST /v1/action_gallery/{slug}/install`. Required scope: `actions:write`.
+
+  Body fields: `version` (string), `name` (string), `secrets` (object).
+  Response fields: `object`, `action`, `action.object`, `action.id`, `action.name`, `action.trigger`, `action.code`, `action.runtime`, `action.http_target`, `action.http_target.url`, `action.http_target.timeout_ms`, `action.http_target.failure_mode`, `action.enabled`, `action.signing_secret`, `action.secret_names`, `action.current_version`, `action.egress_allowlist`, `action.rollout`, `action.rollout.version`, `action.rollout.percent`, `action.created_at`, `action.updated_at`, `template`, `template.slug`, `template.source`, `template.version`, `install_id`, `missing_secrets`.
   """
   def post_install(client, slug, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/action_gallery/{slug}/install", %{"slug" => slug}, body, opts)

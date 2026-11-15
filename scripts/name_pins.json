@@ -1,0 +1,7534 @@
+{
+ "DELETE /v1/abac_policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/abac_policy_links/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/abac_schema": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/abac_templates/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/access_policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/action_templates/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/action_templates/{id}/versions/{version}": [
+  "delete_versions",
+  "n"
+ ],
+ "DELETE /v1/actions/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/administrative_units/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/allowlist_identifiers/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/analytics/alert_rules/{id}": [
+  "delete_alert_rules",
+  "n"
+ ],
+ "DELETE /v1/api_keys/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/app_catalog/custom_presets/{id}": [
+  "delete_custom_presets",
+  "n"
+ ],
+ "DELETE /v1/app_catalog/installed/{id}": [
+  "delete_installed",
+  "n"
+ ],
+ "DELETE /v1/app_catalog/requests/{id}": [
+  "delete_requests",
+  "n"
+ ],
+ "DELETE /v1/app_event_types/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/app_roles/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/atlas_id_apps/{id}/grants/{grantId}": [
+  "delete_grants",
+  "n"
+ ],
+ "DELETE /v1/attack_protection/app_attestation_secret": [
+  "delete_app_attestation_secret",
+  "n"
+ ],
+ "DELETE /v1/audit_event_schemas/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/audit_events": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/audit_exports/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/authenticator_policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/authz/what_if/{id}": [
+  "delete_what_if",
+  "n"
+ ],
+ "DELETE /v1/authz_pdps/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/better_auth_imports/jwks/{kid}": [
+  "delete_jwks",
+  "n"
+ ],
+ "DELETE /v1/better_auth_imports/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/billing/coupons/{id}": [
+  "delete_coupons",
+  "n"
+ ],
+ "DELETE /v1/billing/plans/{id}": [
+  "delete_plans",
+  "n"
+ ],
+ "DELETE /v1/billing/providers/{provider}": [
+  "delete_providers",
+  "n"
+ ],
+ "DELETE /v1/blocklist_identifiers/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/chat_integrations/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/chat_integrations/{id}/user_links/{linkId}": [
+  "delete_user_links",
+  "n"
+ ],
+ "DELETE /v1/cloud_access/targets/{id}": [
+  "delete_targets",
+  "n"
+ ],
+ "DELETE /v1/connection_actions/{provider}/{name}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/connection_providers/{provider}/policy": [
+  "delete_policy",
+  "n"
+ ],
+ "DELETE /v1/connections/oauth_clients/{id}": [
+  "delete_oauth_clients",
+  "n"
+ ],
+ "DELETE /v1/connections/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/connections/{id}/access_rules": [
+  "delete_access_rules",
+  "n"
+ ],
+ "DELETE /v1/connections/{id}/triggers/{triggerId}": [
+  "delete_triggers",
+  "n"
+ ],
+ "DELETE /v1/connections/{id}/webhook_endpoints/{endpointId}": [
+  "delete_webhook_endpoints",
+  "n"
+ ],
+ "DELETE /v1/connectors/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/cookie_consents/subjects/{subject}": [
+  "delete_subjects",
+  "n"
+ ],
+ "DELETE /v1/custom_oauth_providers/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/design/assets/{id}": [
+  "delete_assets",
+  "n"
+ ],
+ "DELETE /v1/desktop_mfa/devices/{id}": [
+  "delete_devices",
+  "n"
+ ],
+ "DELETE /v1/desktop_mfa/devices/{id}/passkeys/{passkeyId}": [
+  "delete_devices_passkeys",
+  "n"
+ ],
+ "DELETE /v1/dev/emails": [
+  "delete_emails",
+  "n"
+ ],
+ "DELETE /v1/device_assurance_policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/device_integrations/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/device_sso/registrations/{id}": [
+  "delete_registrations",
+  "n"
+ ],
+ "DELETE /v1/devices/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/directory_pull_sources/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/domains/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/email_templates/{name}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/entitlement_overrides/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/erasure_connectors/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/feature_flags/{key}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/fga/stores/{id}": [
+  "delete_stores",
+  "n"
+ ],
+ "DELETE /v1/fga/stores/{id}/materializations/{mid}": [
+  "delete_stores_materializations",
+  "n"
+ ],
+ "DELETE /v1/flows/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/flows/{id}/experiments/{experimentId}": [
+  "delete_experiments",
+  "n"
+ ],
+ "DELETE /v1/grant_management/grants/{id}": [
+  "delete_grants",
+  "n"
+ ],
+ "DELETE /v1/grants/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/group_rules/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/groups/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/iga/birthright_rules/{id}": [
+  "delete_birthright_rules",
+  "n"
+ ],
+ "DELETE /v1/iga/bundles/{id}": [
+  "delete_bundles",
+  "n"
+ ],
+ "DELETE /v1/iga/campaigns/{id}": [
+  "delete_campaigns",
+  "n"
+ ],
+ "DELETE /v1/iga/delegations/{id}": [
+  "delete_delegations",
+  "n"
+ ],
+ "DELETE /v1/iga/eligibilities/{id}": [
+  "delete_eligibilities",
+  "n"
+ ],
+ "DELETE /v1/iga/entitlements/{id}": [
+  "delete_entitlements",
+  "n"
+ ],
+ "DELETE /v1/iga/sod_rules/{id}": [
+  "delete_sod_rules",
+  "n"
+ ],
+ "DELETE /v1/instance/captcha_secret": [
+  "delete_captcha_secret",
+  "n"
+ ],
+ "DELETE /v1/instance/config_snapshots/{id}": [
+  "delete_config_snapshots",
+  "n"
+ ],
+ "DELETE /v1/instance/cookie_consent": [
+  "delete_cookie_consent",
+  "n"
+ ],
+ "DELETE /v1/instance/data_key_provider": [
+  "delete_data_key_provider",
+  "n"
+ ],
+ "DELETE /v1/instance/duo_secret": [
+  "delete_duo_secret",
+  "n"
+ ],
+ "DELETE /v1/instance/hooks/before_user_create": [
+  "delete_hooks_before_user_create",
+  "n"
+ ],
+ "DELETE /v1/instance/integrations/{product}": [
+  "delete_integrations",
+  "n"
+ ],
+ "DELETE /v1/instance/kerberos_secret": [
+  "delete_kerberos_secret",
+  "n"
+ ],
+ "DELETE /v1/instance/ldap_connections/{connectionId}/bind_password": [
+  "delete_ldap_connections_bind_password",
+  "n"
+ ],
+ "DELETE /v1/instance/page_templates/{page}": [
+  "delete_page_templates",
+  "n"
+ ],
+ "DELETE /v1/instance/policy_source": [
+  "delete_policy_source",
+  "n"
+ ],
+ "DELETE /v1/instance/preflight/acks/{code}": [
+  "delete_preflight_acks",
+  "n"
+ ],
+ "DELETE /v1/instance/privacy_orchestrator": [
+  "delete_privacy_orchestrator",
+  "n"
+ ],
+ "DELETE /v1/instance/proxy_secret": [
+  "delete_proxy_secret",
+  "n"
+ ],
+ "DELETE /v1/instance/signing_key_provider": [
+  "delete_signing_key_provider",
+  "d"
+ ],
+ "DELETE /v1/instance/signing_key_schedule": [
+  "delete_signing_key_schedule",
+  "n"
+ ],
+ "DELETE /v1/instance/signing_keys/next": [
+  "delete_signing_keys_next",
+  "n"
+ ],
+ "DELETE /v1/instance/smart_card_secret": [
+  "delete_smart_card_secret",
+  "n"
+ ],
+ "DELETE /v1/instance/status_dependencies/{id}": [
+  "delete_status_dependencies",
+  "n"
+ ],
+ "DELETE /v1/instance/status_subscription": [
+  "delete_status_subscription",
+  "n"
+ ],
+ "DELETE /v1/instance/write_budget": [
+  "delete_write_budget",
+  "n"
+ ],
+ "DELETE /v1/instance/yubico_secret": [
+  "delete_yubico_secret",
+  "n"
+ ],
+ "DELETE /v1/jwt_connections/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/jwt_templates/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/ldap_server_clients/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/leads/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/legacy_auth_connection": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/localizations/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/log_streams/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/logout_notify_endpoints/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/lti_platforms/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/machine_enrolment_tokens/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/machine_trust_policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/machines/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/machines/{id}/grants/{grantId}": [
+  "delete_grants",
+  "n"
+ ],
+ "DELETE /v1/mcp_connector": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/mcp_gateways/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/mcp_gateways/{id}/budgets/{budgetId}": [
+  "delete_budgets",
+  "n"
+ ],
+ "DELETE /v1/mcp_gateways/{id}/packs/{packId}": [
+  "delete_packs",
+  "n"
+ ],
+ "DELETE /v1/mcp_gateways/{id}/pins/{tool}": [
+  "delete_pins",
+  "n"
+ ],
+ "DELETE /v1/mcp_gateways/{id}/upstreams/{upstreamId}": [
+  "delete_upstreams",
+  "n"
+ ],
+ "DELETE /v1/mcp_registry/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/message_receivers/{provider}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/messaging/country_routes/{country}": [
+  "delete_country_routes",
+  "n"
+ ],
+ "DELETE /v1/messaging/suppressions/{email}": [
+  "delete_suppressions",
+  "n"
+ ],
+ "DELETE /v1/messaging_providers/email/development": [
+  "delete_email_development",
+  "n"
+ ],
+ "DELETE /v1/messaging_providers/email/managed": [
+  "delete_email_managed",
+  "n"
+ ],
+ "DELETE /v1/messaging_providers/{channel}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/messaging_providers/{channel}/fallbacks/{id}": [
+  "delete_fallbacks",
+  "n"
+ ],
+ "DELETE /v1/mfa_campaigns/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/migrations/better_auth/bridge": [
+  "delete_better_auth_bridge",
+  "n"
+ ],
+ "DELETE /v1/migrations/{source}/bridge": [
+  "delete_bridge",
+  "n"
+ ],
+ "DELETE /v1/migrations/{source}/imports/{id}": [
+  "delete_imports",
+  "n"
+ ],
+ "DELETE /v1/network_acls/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/network_zones/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/notification_categories/{key}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/notification_templates/{name}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/oauth_client_profiles/{name}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/oauth_clients/{clientId}/grants/{grantId}": [
+  "delete_grants",
+  "n"
+ ],
+ "DELETE /v1/oauth_clients/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/oauth_clients/{id}/exchange_policy": [
+  "delete_exchange_policy",
+  "n"
+ ],
+ "DELETE /v1/oauth_clients/{id}/token_exchange_profiles/{profileId}": [
+  "delete_token_exchange_profiles",
+  "n"
+ ],
+ "DELETE /v1/oauth_clients/{id}/trusted_issuers/{issuerId}": [
+  "delete_trusted_issuers",
+  "n"
+ ],
+ "DELETE /v1/oauth_clients/{id}/webhook": [
+  "delete_webhook",
+  "n"
+ ],
+ "DELETE /v1/oauth_initial_access_tokens/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/oauth_providers/{provider}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/oauth_publishers/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/oauth_publishers/{id}/clients/{client_id}": [
+  "delete_clients",
+  "n"
+ ],
+ "DELETE /v1/org_ldap_connections/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/org_role_grants/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/org_role_grants/{id}/delegations/{delegationId}": [
+  "delete_delegations",
+  "n"
+ ],
+ "DELETE /v1/org_role_sets/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/org_templates/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/organization_connections/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/app_webhook_endpoints/{endpointId}": [
+  "delete_app_webhook_endpoints",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/applications/{clientId}": [
+  "delete_applications",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/audit_streams/{streamId}": [
+  "delete_audit_streams",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/connected_apps/{grantId}": [
+  "delete_connected_apps",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/domains/{domainId}": [
+  "delete_domains",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/machine_memberships/{machineId}": [
+  "delete_machine_memberships",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/memberships/{userId}": [
+  "delete_memberships",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/roles/{roleId}": [
+  "delete_roles",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/teams/{teamId}": [
+  "delete_teams",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/teams/{teamId}/members/{userId}": [
+  "delete_teams_members",
+  "n"
+ ],
+ "DELETE /v1/organizations/{id}/webhook_endpoints/{endpointId}": [
+  "delete_webhook_endpoints",
+  "n"
+ ],
+ "DELETE /v1/organizations/{orgId}/end_users/{userId}": [
+  "delete_end_users",
+  "n"
+ ],
+ "DELETE /v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}": [
+  "delete_groups_roles",
+  "n"
+ ],
+ "DELETE /v1/organizations/{orgId}/reader_domain": [
+  "delete_reader_domain",
+  "n"
+ ],
+ "DELETE /v1/partner_links/outbound/{partner}": [
+  "delete_outbound",
+  "n"
+ ],
+ "DELETE /v1/partner_links/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/partner_platforms/{partner}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/passkey_api/users/{userId}/passkeys/{id}": [
+  "delete_users_passkeys",
+  "n"
+ ],
+ "DELETE /v1/passkey_campaigns/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/pca/freeze": [
+  "delete_freeze",
+  "n"
+ ],
+ "DELETE /v1/permissions/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/platform/apps/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}": [
+  "delete_instances_clones",
+  "n"
+ ],
+ "DELETE /v1/platform/atlas_id_apps/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/platform/atlas_id_apps/{id}/adoption_codes/{codeId}": [
+  "delete_adoption_codes",
+  "n"
+ ],
+ "DELETE /v1/platform/atlas_id_apps/{id}/grants/{grantId}": [
+  "delete_grants",
+  "n"
+ ],
+ "DELETE /v1/platform/atlas_id_apps/{id}/provisioned_accounts/{testAccountId}": [
+  "delete_provisioned_accounts",
+  "n"
+ ],
+ "DELETE /v1/platform/atlas_id_publisher": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/platform/audit_streams/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/platform/design/assets/{id}": [
+  "delete_assets",
+  "n"
+ ],
+ "DELETE /v1/platform/domains/{domainId}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/policies/{id}/versions/{versionId}": [
+  "delete_versions",
+  "n"
+ ],
+ "DELETE /v1/policies/{id}/versions/{versionId}/translations/{locale}": [
+  "delete_versions_translations",
+  "n"
+ ],
+ "DELETE /v1/proxy_apps/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/radius_clients/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/rate_limit_overrides/{subject_type}/{subject_id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/rate_limit_policies/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/redirect_urls/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/relay_agents/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/resource_role_assignments/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/resource_servers/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/resource_types/{key}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/resources/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/risk_based_mfa/reputation_secret": [
+  "delete_reputation_secret",
+  "n"
+ ],
+ "DELETE /v1/risk_signals/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/roles/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/scim_provisioning_targets/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/scim_resource_types/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/service_connectors/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/session_exchange_apps/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/sessions/{id}/binding": [
+  "delete_binding",
+  "n"
+ ],
+ "DELETE /v1/sms_templates/{name}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/ssf/receivers/{id}": [
+  "delete_receivers",
+  "n"
+ ],
+ "DELETE /v1/ssf/streams/{id}": [
+  "delete_streams",
+  "n"
+ ],
+ "DELETE /v1/sso_connections/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/sso_connections/{id}/saml_encryption_key": [
+  "delete_saml_encryption_key",
+  "n"
+ ],
+ "DELETE /v1/sso_connections/{id}/saml_encryption_key/previous": [
+  "delete_saml_encryption_key_previous",
+  "n"
+ ],
+ "DELETE /v1/sso_onboarding_profiles/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/step_up/policies/{id}": [
+  "delete_policies",
+  "n"
+ ],
+ "DELETE /v1/suppressions/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/users/search/views/{id}": [
+  "delete_search_views",
+  "n"
+ ],
+ "DELETE /v1/users/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/app_roles/{roleId}": [
+  "delete_app_roles",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/approval_devices/{deviceId}": [
+  "delete_approval_devices",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/cookie_consents": [
+  "delete_cookie_consents",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/device_keys/{keyId}": [
+  "delete_device_keys",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/directives": [
+  "delete_directives",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/external_accounts/{account_id}": [
+  "delete_external_accounts",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/grants": [
+  "delete_grants",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/guardians/{linkId}": [
+  "delete_guardians",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/identities/by-provider/{provider}": [
+  "delete_identities_by_provider",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/identities/{identityId}": [
+  "delete_identities",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/journeys": [
+  "delete_journeys",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/mfa/{factorId}": [
+  "delete_mfa",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/notes/{noteId}": [
+  "delete_notes",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/passkeys/{passkeyId}": [
+  "delete_passkeys",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/password": [
+  "delete_password",
+  "r"
+ ],
+ "DELETE /v1/users/{id}/phone_numbers/{pid}": [
+  "delete_phone_numbers",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/profile_image": [
+  "delete_profile_image",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/required_actions/{rid}": [
+  "delete_required_actions",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/security_questions": [
+  "delete_security_questions",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/smartcard_mappings/{mappingId}": [
+  "delete_smartcard_mappings",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/temporary_access/{pass_id}": [
+  "delete_temporary_access",
+  "n"
+ ],
+ "DELETE /v1/vault/key_provider": [
+  "delete_key_provider",
+  "n"
+ ],
+ "DELETE /v1/vault/objects/{id}": [
+  "delete_objects",
+  "n"
+ ],
+ "DELETE /v1/vc/credential_types/{id}": [
+  "delete_credential_types",
+  "n"
+ ],
+ "DELETE /v1/waitlist_entries/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/web_bot_auth/directories/{id}": [
+  "delete_directories",
+  "n"
+ ],
+ "DELETE /v1/webhook_endpoints/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/workflows/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/workflows/{id}/kv/{key}": [
+  "delete_kv",
+  "n"
+ ],
+ "DELETE /v1/wsfed_connections/{id}": [
+  "delete",
+  "n"
+ ],
+ "DELETE /v1/yubikeys/{id}": [
+  "delete",
+  "n"
+ ],
+ "GET /v1/abac/token_mapping": [
+  "get_token_mapping",
+  "n"
+ ],
+ "GET /v1/abac_policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/abac_policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/abac_policies/{id}/cedar_json": [
+  "get_cedar_json",
+  "n"
+ ],
+ "GET /v1/abac_policies/{id}/diff": [
+  "get_diff",
+  "n"
+ ],
+ "GET /v1/abac_policies/{id}/versions": [
+  "get_versions",
+  "n"
+ ],
+ "GET /v1/abac_policy_links": [
+  "list",
+  "n"
+ ],
+ "GET /v1/abac_policy_links/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/abac_schema": [
+  "list",
+  "n"
+ ],
+ "GET /v1/abac_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/abac_templates/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/abuse_signals": [
+  "list",
+  "n"
+ ],
+ "GET /v1/abuse_signals/summary": [
+  "get_summary",
+  "n"
+ ],
+ "GET /v1/access_policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/access_policies/insights": [
+  "get_insights",
+  "n"
+ ],
+ "GET /v1/access_policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/action_gallery": [
+  "list",
+  "n"
+ ],
+ "GET /v1/action_gallery/{slug}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/action_gallery_installs": [
+  "list",
+  "n"
+ ],
+ "GET /v1/action_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/action_templates/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/actions": [
+  "list",
+  "n"
+ ],
+ "GET /v1/actions/bindings/{trigger}": [
+  "get_bindings",
+  "n"
+ ],
+ "GET /v1/actions/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/actions/{id}/calls": [
+  "get_calls",
+  "n"
+ ],
+ "GET /v1/actions/{id}/versions": [
+  "get_versions",
+  "n"
+ ],
+ "GET /v1/actions/{id}/versions/{version}": [
+  "get_by_id_versions_by_version",
+  "n"
+ ],
+ "GET /v1/administrative_units": [
+  "list",
+  "n"
+ ],
+ "GET /v1/administrative_units/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/administrative_units/{id}/members": [
+  "get_members",
+  "n"
+ ],
+ "GET /v1/agent_access_requests": [
+  "list",
+  "n"
+ ],
+ "GET /v1/agent_access_reviews": [
+  "list",
+  "n"
+ ],
+ "GET /v1/agent_access_reviews/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/agent_delegations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/agent_delegations/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/agent_delegations/{id}/graph": [
+  "get_graph",
+  "n"
+ ],
+ "GET /v1/agent_registration": [
+  "list",
+  "n"
+ ],
+ "GET /v1/agents": [
+  "list",
+  "n"
+ ],
+ "GET /v1/agents/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/agents/{id}/activity": [
+  "get_activity",
+  "n"
+ ],
+ "GET /v1/agents/{id}/lifecycle": [
+  "get_lifecycle",
+  "n"
+ ],
+ "GET /v1/allowlist_identifiers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/analytics/active_users": [
+  "get_active_users",
+  "n"
+ ],
+ "GET /v1/analytics/alert_rules": [
+  "get_alert_rules",
+  "n"
+ ],
+ "GET /v1/analytics/alert_rules/{id}": [
+  "get_alert_rules_by_id",
+  "n"
+ ],
+ "GET /v1/analytics/api_usage": [
+  "get_api_usage",
+  "n"
+ ],
+ "GET /v1/analytics/breakdown": [
+  "get_breakdown",
+  "n"
+ ],
+ "GET /v1/analytics/failures": [
+  "get_failures",
+  "n"
+ ],
+ "GET /v1/analytics/funnel": [
+  "get_funnel",
+  "n"
+ ],
+ "GET /v1/analytics/journey_funnel": [
+  "get_journey_funnel",
+  "n"
+ ],
+ "GET /v1/analytics/passkey_adoption": [
+  "get_passkey_adoption",
+  "n"
+ ],
+ "GET /v1/analytics/reports/access_by_app": [
+  "get_reports_access_by_app",
+  "n"
+ ],
+ "GET /v1/analytics/reports/inactive_users": [
+  "get_reports_inactive_users",
+  "n"
+ ],
+ "GET /v1/analytics/reports/mfa_coverage": [
+  "get_reports_mfa_coverage",
+  "n"
+ ],
+ "GET /v1/api_keys": [
+  "list",
+  "n"
+ ],
+ "GET /v1/api_keys/posture": [
+  "get_posture",
+  "n"
+ ],
+ "GET /v1/api_keys/revoked": [
+  "get_revoked",
+  "n"
+ ],
+ "GET /v1/api_keys/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/api_keys/{id}/callers": [
+  "get_callers",
+  "n"
+ ],
+ "GET /v1/api_keys/{id}/usage": [
+  "get_usage",
+  "n"
+ ],
+ "GET /v1/app_catalog": [
+  "list",
+  "n"
+ ],
+ "GET /v1/app_catalog/custom_presets": [
+  "get_custom_presets",
+  "n"
+ ],
+ "GET /v1/app_catalog/installed": [
+  "get_installed",
+  "n"
+ ],
+ "GET /v1/app_catalog/requests": [
+  "get_requests",
+  "n"
+ ],
+ "GET /v1/app_event_types": [
+  "list",
+  "n"
+ ],
+ "GET /v1/app_event_types/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/app_events": [
+  "list",
+  "n"
+ ],
+ "GET /v1/app_events/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/app_roles": [
+  "list",
+  "n"
+ ],
+ "GET /v1/app_roles/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/app_roles/{id}/users": [
+  "get_users",
+  "n"
+ ],
+ "GET /v1/approval_requests": [
+  "list",
+  "n"
+ ],
+ "GET /v1/approval_requests/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/atlas_id_apps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/atlas_id_apps/{id}/preflight": [
+  "get_preflight",
+  "n"
+ ],
+ "GET /v1/atlas_id_apps/{id}/users": [
+  "get_users",
+  "n"
+ ],
+ "GET /v1/attack_protection": [
+  "list",
+  "n"
+ ],
+ "GET /v1/audit/chain": [
+  "get_chain",
+  "n"
+ ],
+ "GET /v1/audit/chain/checkpoints": [
+  "get_chain_checkpoints",
+  "n"
+ ],
+ "GET /v1/audit/chain/links": [
+  "get_chain_links",
+  "n"
+ ],
+ "GET /v1/audit_event_schemas": [
+  "list",
+  "n"
+ ],
+ "GET /v1/audit_event_schemas/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/audit_events": [
+  "list",
+  "n"
+ ],
+ "GET /v1/audit_events/export": [
+  "get_export",
+  "n"
+ ],
+ "GET /v1/audit_events/{id}/redactions": [
+  "get_redactions",
+  "n"
+ ],
+ "GET /v1/audit_exports": [
+  "list",
+  "n"
+ ],
+ "GET /v1/audit_exports/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/audit_logs": [
+  "list",
+  "n"
+ ],
+ "GET /v1/audit_retention": [
+  "list",
+  "n"
+ ],
+ "GET /v1/authenticator_policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/authenticator_policies/effective/{user_id}": [
+  "get_effective",
+  "n"
+ ],
+ "GET /v1/authenticator_policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/authz/events": [
+  "get_events",
+  "n"
+ ],
+ "GET /v1/authz/what_if": [
+  "get_what_if",
+  "n"
+ ],
+ "GET /v1/authz/what_if/{id}": [
+  "get_what_if_by_id",
+  "n"
+ ],
+ "GET /v1/authz_decision_settings": [
+  "list",
+  "n"
+ ],
+ "GET /v1/authz_decisions": [
+  "list",
+  "n"
+ ],
+ "GET /v1/authz_decisions/stats": [
+  "get_stats",
+  "n"
+ ],
+ "GET /v1/authz_decisions/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/authz_pdps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/better_auth_imports": [
+  "list",
+  "n"
+ ],
+ "GET /v1/better_auth_imports/jwks": [
+  "get_jwks",
+  "n"
+ ],
+ "GET /v1/better_auth_imports/public_key": [
+  "get_public_key",
+  "n"
+ ],
+ "GET /v1/better_auth_imports/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/billing/connect/accounts": [
+  "get_connect_accounts",
+  "n"
+ ],
+ "GET /v1/billing/connect/accounts/{id}": [
+  "get_connect_accounts_by_id",
+  "n"
+ ],
+ "GET /v1/billing/connect/transfers": [
+  "get_connect_transfers",
+  "n"
+ ],
+ "GET /v1/billing/connect/transfers/{id}": [
+  "get_connect_transfers_by_id",
+  "n"
+ ],
+ "GET /v1/billing/coupons": [
+  "get_coupons",
+  "n"
+ ],
+ "GET /v1/billing/coupons/{id}": [
+  "get_coupons_by_id",
+  "n"
+ ],
+ "GET /v1/billing/credits": [
+  "get_credits",
+  "n"
+ ],
+ "GET /v1/billing/invoices": [
+  "get_invoices",
+  "n"
+ ],
+ "GET /v1/billing/invoices/{id}": [
+  "get_invoices_by_id",
+  "n"
+ ],
+ "GET /v1/billing/plans": [
+  "get_plans",
+  "n"
+ ],
+ "GET /v1/billing/plans/{id}": [
+  "get_plans_by_id",
+  "n"
+ ],
+ "GET /v1/billing/providers": [
+  "get_providers",
+  "n"
+ ],
+ "GET /v1/billing/providers/{provider}": [
+  "get_providers_by_provider",
+  "n"
+ ],
+ "GET /v1/billing/settings": [
+  "get_settings",
+  "n"
+ ],
+ "GET /v1/billing/subscriptions": [
+  "get_subscriptions",
+  "n"
+ ],
+ "GET /v1/billing/subscriptions/{id}": [
+  "get_subscriptions_by_id",
+  "n"
+ ],
+ "GET /v1/billing/usage": [
+  "get_usage",
+  "n"
+ ],
+ "GET /v1/blocklist_identifiers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/bot_labels": [
+  "list",
+  "n"
+ ],
+ "GET /v1/bot_signals": [
+  "list",
+  "n"
+ ],
+ "GET /v1/branding": [
+  "list",
+  "n"
+ ],
+ "GET /v1/changes": [
+  "list",
+  "n"
+ ],
+ "GET /v1/changes/consumers": [
+  "get_consumers",
+  "n"
+ ],
+ "GET /v1/changes/consumers/{name}": [
+  "get_consumers_by_name",
+  "n"
+ ],
+ "GET /v1/changes/snapshot/{resource_type}": [
+  "get_snapshot",
+  "n"
+ ],
+ "GET /v1/chat_integrations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/chat_integrations/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/chat_integrations/{id}/interactions": [
+  "get_interactions",
+  "n"
+ ],
+ "GET /v1/chat_integrations/{id}/user_links": [
+  "get_user_links",
+  "n"
+ ],
+ "GET /v1/cloud_access/targets": [
+  "get_targets",
+  "n"
+ ],
+ "GET /v1/cloud_access/targets/{id}": [
+  "get_targets_by_id",
+  "n"
+ ],
+ "GET /v1/cloud_access/targets/{id}/setup": [
+  "get_targets_setup",
+  "n"
+ ],
+ "GET /v1/compliance/inactive_users/preview": [
+  "get_inactive_users_preview",
+  "n"
+ ],
+ "GET /v1/compliance/posture": [
+  "get_posture",
+  "n"
+ ],
+ "GET /v1/compliance/reports": [
+  "get_reports",
+  "n"
+ ],
+ "GET /v1/compliance/reports/{id}": [
+  "get_reports_by_id",
+  "n"
+ ],
+ "GET /v1/compliance/ropa": [
+  "get_ropa",
+  "n"
+ ],
+ "GET /v1/config/limits": [
+  "get_limits",
+  "n"
+ ],
+ "GET /v1/config_changelog": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connection_actions": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connection_actions/types": [
+  "get_types",
+  "n"
+ ],
+ "GET /v1/connection_actions/{provider}/{name}": [
+  "get_by_provider_by_name",
+  "n"
+ ],
+ "GET /v1/connection_provider_changes": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connection_provider_changes/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/connection_provider_event_log": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connection_provider_topics": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connection_providers/{provider}/policy": [
+  "get_policy",
+  "n"
+ ],
+ "GET /v1/connection_reconnect_settings": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connections/oauth_clients": [
+  "get_oauth_clients",
+  "n"
+ ],
+ "GET /v1/connections/oauth_clients/{id}": [
+  "get_oauth_clients_by_id",
+  "n"
+ ],
+ "GET /v1/connections/relay_limits": [
+  "get_relay_limits",
+  "n"
+ ],
+ "GET /v1/connections/token_limits": [
+  "get_token_limits",
+  "n"
+ ],
+ "GET /v1/connections/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/connections/{id}/access_rules": [
+  "get_access_rules",
+  "n"
+ ],
+ "GET /v1/connections/{id}/actions": [
+  "get_actions",
+  "n"
+ ],
+ "GET /v1/connections/{id}/activity": [
+  "get_activity",
+  "n"
+ ],
+ "GET /v1/connections/{id}/credentials/versions": [
+  "get_credentials_versions",
+  "n"
+ ],
+ "GET /v1/connections/{id}/provider_events": [
+  "get_provider_events",
+  "n"
+ ],
+ "GET /v1/connections/{id}/provider_events/{eventId}": [
+  "get_by_id_provider_events_by_event_id",
+  "n"
+ ],
+ "GET /v1/connections/{id}/provider_subscriptions": [
+  "get_provider_subscriptions",
+  "n"
+ ],
+ "GET /v1/connections/{id}/secret": [
+  "get_secret",
+  "n"
+ ],
+ "GET /v1/connections/{id}/token": [
+  "get_token",
+  "n"
+ ],
+ "GET /v1/connections/{id}/triggers": [
+  "get_by_id_triggers",
+  "n"
+ ],
+ "GET /v1/connections/{id}/triggers/{triggerId}": [
+  "get_by_id_triggers_by_trigger_id",
+  "n"
+ ],
+ "GET /v1/connections/{id}/webhook_endpoints": [
+  "get_webhook_endpoints",
+  "n"
+ ],
+ "GET /v1/connectors": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connectors/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/containments": [
+  "list",
+  "n"
+ ],
+ "GET /v1/cookie_consents": [
+  "list",
+  "n"
+ ],
+ "GET /v1/cookie_consents/subjects/{subject}": [
+  "get_subjects",
+  "n"
+ ],
+ "GET /v1/cookie_consents/summary": [
+  "get_summary",
+  "n"
+ ],
+ "GET /v1/custom_oauth_providers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/custom_oauth_providers/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/custom_oauth_providers/{id}/signing_keys": [
+  "get_signing_keys",
+  "n"
+ ],
+ "GET /v1/data_subject_requests": [
+  "list",
+  "n"
+ ],
+ "GET /v1/data_subject_requests/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/data_subject_requests/{id}/downstream": [
+  "get_downstream",
+  "n"
+ ],
+ "GET /v1/data_subject_requests/{id}/notes": [
+  "get_notes",
+  "n"
+ ],
+ "GET /v1/data_subject_requests/{id}/receipt": [
+  "get_receipt",
+  "n"
+ ],
+ "GET /v1/delivery_health": [
+  "list",
+  "n"
+ ],
+ "GET /v1/delivery_health/{kind}/{id}": [
+  "get_by_kind_by_id",
+  "n"
+ ],
+ "GET /v1/design/assets": [
+  "get_assets",
+  "n"
+ ],
+ "GET /v1/desktop_mfa/devices": [
+  "get_devices",
+  "n"
+ ],
+ "GET /v1/desktop_mfa/devices/{id}": [
+  "get_devices_by_id",
+  "n"
+ ],
+ "GET /v1/desktop_mfa/devices/{id}/passkeys": [
+  "get_devices_passkeys",
+  "n"
+ ],
+ "GET /v1/desktop_mfa/policy": [
+  "get_policy",
+  "n"
+ ],
+ "GET /v1/dev/emails": [
+  "get_emails",
+  "n"
+ ],
+ "GET /v1/device_assurance_policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/device_assurance_policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/device_integrations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/device_integrations/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/device_sso/registrations": [
+  "get_registrations",
+  "n"
+ ],
+ "GET /v1/device_sso/registrations/{id}": [
+  "get_registrations_by_id",
+  "n"
+ ],
+ "GET /v1/devices": [
+  "list",
+  "n"
+ ],
+ "GET /v1/devices/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/devices/{id}/compliance_history": [
+  "get_compliance_history",
+  "n"
+ ],
+ "GET /v1/diagnostics/login_readiness": [
+  "get_login_readiness",
+  "n"
+ ],
+ "GET /v1/diagnostics/request_inspector": [
+  "get_request_inspector",
+  "n"
+ ],
+ "GET /v1/diagnostics/traces": [
+  "get_traces",
+  "n"
+ ],
+ "GET /v1/diagnostics/traces/{id}": [
+  "get_traces_by_id",
+  "n"
+ ],
+ "GET /v1/directory": [
+  "list",
+  "n"
+ ],
+ "GET /v1/directory_pull_sources": [
+  "list",
+  "n"
+ ],
+ "GET /v1/directory_pull_sources/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/directory_pull_sources/{id}/sync_runs": [
+  "get_by_id_sync_runs",
+  "n"
+ ],
+ "GET /v1/directory_pull_sources/{id}/sync_runs/{runId}": [
+  "get_by_id_sync_runs_by_run_id",
+  "n"
+ ],
+ "GET /v1/domains": [
+  "list",
+  "n"
+ ],
+ "GET /v1/dsr_console/requests": [
+  "get_requests",
+  "n"
+ ],
+ "GET /v1/dsr_console/summary": [
+  "get_summary",
+  "n"
+ ],
+ "GET /v1/email_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/entitlement_overrides": [
+  "list",
+  "n"
+ ],
+ "GET /v1/entitlements": [
+  "list",
+  "n"
+ ],
+ "GET /v1/erasure_connector_catalog": [
+  "list",
+  "n"
+ ],
+ "GET /v1/erasure_connectors": [
+  "list",
+  "n"
+ ],
+ "GET /v1/erasure_connectors/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/events": [
+  "list",
+  "n"
+ ],
+ "GET /v1/feature_flags": [
+  "list",
+  "n"
+ ],
+ "GET /v1/feature_flags/{key}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/federation": [
+  "list",
+  "n"
+ ],
+ "GET /v1/fga/settings": [
+  "get_settings",
+  "n"
+ ],
+ "GET /v1/fga/stores": [
+  "get_stores",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}": [
+  "get_stores_by_id",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/authorization-models": [
+  "get_stores_by_id_authorization_models",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/authorization-models/{mid}": [
+  "get_stores_by_id_authorization_models_by_mid",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/authorization-models/{mid}/diff": [
+  "get_stores_authorization_models_diff",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/authorization-models/{mid}/graph": [
+  "get_stores_authorization_models_graph",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/changes": [
+  "get_stores_changes",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/export": [
+  "get_stores_export",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/materializations": [
+  "get_stores_materializations",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/snapshot": [
+  "get_stores_snapshot",
+  "n"
+ ],
+ "GET /v1/fga/stores/{id}/watch": [
+  "get_stores_watch",
+  "n"
+ ],
+ "GET /v1/fga/sync": [
+  "get_sync",
+  "n"
+ ],
+ "GET /v1/fga/sync/runs": [
+  "get_sync_runs",
+  "n"
+ ],
+ "GET /v1/fga/sync/runs/{id}": [
+  "get_sync_runs_by_id",
+  "n"
+ ],
+ "GET /v1/flows": [
+  "list",
+  "n"
+ ],
+ "GET /v1/flows/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/flows/{id}/experiments": [
+  "get_experiments",
+  "n"
+ ],
+ "GET /v1/flows/{id}/experiments/{experimentId}": [
+  "get_by_id_experiments_by_experiment_id",
+  "n"
+ ],
+ "GET /v1/flows/{id}/experiments/{experimentId}/readout": [
+  "get_experiments_readout",
+  "n"
+ ],
+ "GET /v1/flows/{id}/messages": [
+  "get_messages",
+  "n"
+ ],
+ "GET /v1/flows/{id}/runs": [
+  "get_runs",
+  "n"
+ ],
+ "GET /v1/flows/{id}/versions": [
+  "get_versions",
+  "n"
+ ],
+ "GET /v1/fraud/email_risk/settings": [
+  "get_email_risk_settings",
+  "n"
+ ],
+ "GET /v1/grant_management/grants": [
+  "get_grants",
+  "n"
+ ],
+ "GET /v1/grant_management/grants/{id}": [
+  "get_grants_by_id",
+  "n"
+ ],
+ "GET /v1/grants/{grantType}/{id}/usage": [
+  "get_usage",
+  "n"
+ ],
+ "GET /v1/group_rules": [
+  "list",
+  "n"
+ ],
+ "GET /v1/group_rules/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/groups": [
+  "list",
+  "n"
+ ],
+ "GET /v1/groups/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/groups/{id}/members": [
+  "get_members",
+  "n"
+ ],
+ "GET /v1/identity_verification/settings": [
+  "get_settings",
+  "n"
+ ],
+ "GET /v1/identity_verifications": [
+  "list",
+  "n"
+ ],
+ "GET /v1/identity_verifications/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/iga/activations": [
+  "get_activations",
+  "n"
+ ],
+ "GET /v1/iga/approvals": [
+  "get_approvals",
+  "n"
+ ],
+ "GET /v1/iga/birthright_rules": [
+  "get_birthright_rules",
+  "n"
+ ],
+ "GET /v1/iga/bundles": [
+  "get_bundles",
+  "n"
+ ],
+ "GET /v1/iga/bundles/{id}": [
+  "get_bundles_by_id",
+  "n"
+ ],
+ "GET /v1/iga/campaign_templates": [
+  "get_campaign_templates",
+  "n"
+ ],
+ "GET /v1/iga/campaigns": [
+  "get_campaigns",
+  "n"
+ ],
+ "GET /v1/iga/campaigns/{id}": [
+  "get_campaigns_by_id",
+  "n"
+ ],
+ "GET /v1/iga/campaigns/{id}/evidence": [
+  "get_campaigns_evidence",
+  "n"
+ ],
+ "GET /v1/iga/campaigns/{id}/items": [
+  "get_campaigns_items",
+  "n"
+ ],
+ "GET /v1/iga/campaigns/{id}/progress": [
+  "get_campaigns_progress",
+  "n"
+ ],
+ "GET /v1/iga/campaigns/{id}/recommendations": [
+  "get_campaigns_recommendations",
+  "n"
+ ],
+ "GET /v1/iga/delegations": [
+  "get_delegations",
+  "n"
+ ],
+ "GET /v1/iga/eligibilities": [
+  "get_eligibilities",
+  "n"
+ ],
+ "GET /v1/iga/entitlements": [
+  "get_entitlements",
+  "n"
+ ],
+ "GET /v1/iga/entitlements/{id}": [
+  "get_entitlements_by_id",
+  "n"
+ ],
+ "GET /v1/iga/grants": [
+  "get_grants",
+  "n"
+ ],
+ "GET /v1/iga/requests": [
+  "get_requests",
+  "n"
+ ],
+ "GET /v1/iga/requests/{id}": [
+  "get_requests_by_id",
+  "n"
+ ],
+ "GET /v1/iga/settings": [
+  "get_settings",
+  "n"
+ ],
+ "GET /v1/iga/sod_rules": [
+  "get_sod_rules",
+  "n"
+ ],
+ "GET /v1/iga/sod_violations": [
+  "get_sod_violations",
+  "n"
+ ],
+ "GET /v1/impersonations/requests": [
+  "get_requests",
+  "n"
+ ],
+ "GET /v1/impersonations/requests/{id}": [
+  "get_requests_by_id",
+  "n"
+ ],
+ "GET /v1/instance": [
+  "list",
+  "n"
+ ],
+ "GET /v1/instance/app_event_types": [
+  "get_app_event_types",
+  "n"
+ ],
+ "GET /v1/instance/config_snapshots": [
+  "get_config_snapshots",
+  "n"
+ ],
+ "GET /v1/instance/config_snapshots/diff": [
+  "get_config_snapshots_diff",
+  "n"
+ ],
+ "GET /v1/instance/config_snapshots/{id}": [
+  "get_config_snapshots_by_id",
+  "n"
+ ],
+ "GET /v1/instance/connections": [
+  "get_connections",
+  "n"
+ ],
+ "GET /v1/instance/cookie_consent": [
+  "get_cookie_consent",
+  "n"
+ ],
+ "GET /v1/instance/data_key_provider": [
+  "get_data_key_provider",
+  "n"
+ ],
+ "GET /v1/instance/data_key_provider/rotation_drills": [
+  "get_data_key_provider_rotation_drills",
+  "n"
+ ],
+ "GET /v1/instance/data_key_provider/rotation_drills/{id}": [
+  "get_data_key_provider_rotation_drills_by_id",
+  "n"
+ ],
+ "GET /v1/instance/deprecations": [
+  "get_deprecations",
+  "n"
+ ],
+ "GET /v1/instance/design": [
+  "get_design",
+  "n"
+ ],
+ "GET /v1/instance/exports": [
+  "get_exports",
+  "n"
+ ],
+ "GET /v1/instance/exports/{id}": [
+  "get_exports_by_id",
+  "n"
+ ],
+ "GET /v1/instance/exports/{id}/bundle": [
+  "get_exports_bundle",
+  "n"
+ ],
+ "GET /v1/instance/hooks/before_user_create": [
+  "get_hooks_before_user_create",
+  "n"
+ ],
+ "GET /v1/instance/hooks/before_user_create/calls": [
+  "get_hooks_before_user_create_calls",
+  "n"
+ ],
+ "GET /v1/instance/hosted_pages": [
+  "get_hosted_pages",
+  "n"
+ ],
+ "GET /v1/instance/impersonation_policy": [
+  "get_impersonation_policy",
+  "n"
+ ],
+ "GET /v1/instance/imports": [
+  "get_imports",
+  "n"
+ ],
+ "GET /v1/instance/imports/{id}": [
+  "get_imports_by_id",
+  "n"
+ ],
+ "GET /v1/instance/integrations": [
+  "get_integrations",
+  "n"
+ ],
+ "GET /v1/instance/integrations/{product}": [
+  "get_integrations_by_product",
+  "n"
+ ],
+ "GET /v1/instance/integrations/{product}/deliveries": [
+  "get_integrations_deliveries",
+  "n"
+ ],
+ "GET /v1/instance/integrations/{product}/mints": [
+  "get_integrations_mints",
+  "n"
+ ],
+ "GET /v1/instance/notices": [
+  "get_notices",
+  "n"
+ ],
+ "GET /v1/instance/op_keys": [
+  "get_op_keys",
+  "n"
+ ],
+ "GET /v1/instance/org_departure_policy": [
+  "get_org_departure_policy",
+  "n"
+ ],
+ "GET /v1/instance/org_role_entitlements": [
+  "get_org_role_entitlements",
+  "n"
+ ],
+ "GET /v1/instance/page_templates": [
+  "get_page_templates",
+  "n"
+ ],
+ "GET /v1/instance/page_templates/{page}": [
+  "get_page_templates_by_page",
+  "n"
+ ],
+ "GET /v1/instance/policy_settings": [
+  "get_policy_settings",
+  "n"
+ ],
+ "GET /v1/instance/policy_source": [
+  "get_policy_source",
+  "n"
+ ],
+ "GET /v1/instance/policy_source/deliveries": [
+  "get_policy_source_deliveries",
+  "n"
+ ],
+ "GET /v1/instance/preflight": [
+  "get_preflight",
+  "n"
+ ],
+ "GET /v1/instance/preflight/acks": [
+  "get_preflight_acks",
+  "n"
+ ],
+ "GET /v1/instance/privacy_integrations": [
+  "get_privacy_integrations",
+  "n"
+ ],
+ "GET /v1/instance/privacy_orchestrator": [
+  "get_privacy_orchestrator",
+  "n"
+ ],
+ "GET /v1/instance/privacy_orchestrator/cases": [
+  "get_privacy_orchestrator_cases",
+  "n"
+ ],
+ "GET /v1/instance/proxy_secret": [
+  "get_proxy_secret",
+  "n"
+ ],
+ "GET /v1/instance/referrals": [
+  "get_referrals",
+  "n"
+ ],
+ "GET /v1/instance/referrals/backfill/{id}": [
+  "get_referrals_backfill",
+  "n"
+ ],
+ "GET /v1/instance/referrals/calls": [
+  "get_referrals_calls",
+  "n"
+ ],
+ "GET /v1/instance/referrals/calls/{id}": [
+  "get_referrals_calls_by_id",
+  "n"
+ ],
+ "GET /v1/instance/scopes": [
+  "get_scopes",
+  "n"
+ ],
+ "GET /v1/instance/secret_keys": [
+  "get_secret_keys",
+  "n"
+ ],
+ "GET /v1/instance/security": [
+  "get_security",
+  "n"
+ ],
+ "GET /v1/instance/sign_in_with_atlas": [
+  "get_sign_in_with_atlas",
+  "n"
+ ],
+ "GET /v1/instance/signing_key_policy": [
+  "get_signing_key_policy",
+  "n"
+ ],
+ "GET /v1/instance/signing_key_provider": [
+  "get_signing_key_provider",
+  "n"
+ ],
+ "GET /v1/instance/signing_key_schedule": [
+  "get_signing_key_schedule",
+  "n"
+ ],
+ "GET /v1/instance/signing_keys": [
+  "get_signing_keys",
+  "n"
+ ],
+ "GET /v1/instance/status_dependencies": [
+  "get_status_dependencies",
+  "n"
+ ],
+ "GET /v1/instance/status_dependencies/{id}": [
+  "get_status_dependencies_by_id",
+  "n"
+ ],
+ "GET /v1/instance/status_incidents": [
+  "get_status_incidents",
+  "n"
+ ],
+ "GET /v1/instance/status_subscription": [
+  "get_status_subscription",
+  "n"
+ ],
+ "GET /v1/instance/storage_declaration": [
+  "get_storage_declaration",
+  "n"
+ ],
+ "GET /v1/instance/sub_processors": [
+  "get_sub_processors",
+  "n"
+ ],
+ "GET /v1/instance/unknown_fields_report": [
+  "get_unknown_fields_report",
+  "n"
+ ],
+ "GET /v1/instance/user_traits_schema": [
+  "get_user_traits_schema",
+  "n"
+ ],
+ "GET /v1/instance/write_budget": [
+  "get_write_budget",
+  "n"
+ ],
+ "GET /v1/integration-health": [
+  "list",
+  "n"
+ ],
+ "GET /v1/integration-health/providers": [
+  "get_providers",
+  "n"
+ ],
+ "GET /v1/integrations/{integration}/card": [
+  "get_card",
+  "n"
+ ],
+ "GET /v1/invitations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/jobs": [
+  "list",
+  "n"
+ ],
+ "GET /v1/jobs/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/jobs/{id}/errors": [
+  "get_errors",
+  "n"
+ ],
+ "GET /v1/jwt_connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/jwt_connections/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/jwt_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/jwt_templates/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/keys": [
+  "list",
+  "n"
+ ],
+ "GET /v1/ldap_server_clients": [
+  "list",
+  "n"
+ ],
+ "GET /v1/ldap_server_clients/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/leads": [
+  "list",
+  "n"
+ ],
+ "GET /v1/least_privilege/report": [
+  "get_report",
+  "n"
+ ],
+ "GET /v1/least_privilege/report/{type}/{id}": [
+  "get_report_by_type_by_id",
+  "n"
+ ],
+ "GET /v1/legacy_auth_connection": [
+  "list",
+  "n"
+ ],
+ "GET /v1/legal_holds": [
+  "list",
+  "n"
+ ],
+ "GET /v1/listen/sessions/{id}/stream": [
+  "get_sessions_stream",
+  "n"
+ ],
+ "GET /v1/localizations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/localizations/review_summary": [
+  "get_review_summary",
+  "n"
+ ],
+ "GET /v1/localizations/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/localizations/{id}/reviews": [
+  "get_reviews",
+  "n"
+ ],
+ "GET /v1/log_streams": [
+  "list",
+  "n"
+ ],
+ "GET /v1/log_streams/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/logout_notify_endpoints": [
+  "list",
+  "n"
+ ],
+ "GET /v1/logout_notify_endpoints/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/logout_notify_endpoints/{id}/deliveries": [
+  "get_deliveries",
+  "n"
+ ],
+ "GET /v1/lti_platforms": [
+  "list",
+  "n"
+ ],
+ "GET /v1/lti_platforms/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/machine_enrolment_tokens": [
+  "list",
+  "n"
+ ],
+ "GET /v1/machine_trust_policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/machine_trust_policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/machines": [
+  "list",
+  "n"
+ ],
+ "GET /v1/machines/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/machines/{id}/grants": [
+  "get_grants",
+  "n"
+ ],
+ "GET /v1/machines/{id}/organization_memberships": [
+  "get_organization_memberships",
+  "n"
+ ],
+ "GET /v1/managed_waf": [
+  "list",
+  "n"
+ ],
+ "GET /v1/managed_waf/status": [
+  "get_status",
+  "n"
+ ],
+ "GET /v1/marketing_settings": [
+  "list",
+  "n"
+ ],
+ "GET /v1/mcp": [
+  "list",
+  "n"
+ ],
+ "GET /v1/mcp_connector": [
+  "list",
+  "n"
+ ],
+ "GET /v1/mcp_gateways": [
+  "list",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/budgets": [
+  "get_by_id_budgets",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/budgets/{budgetId}": [
+  "get_by_id_budgets_by_budget_id",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/budgets/{budgetId}/usage": [
+  "get_budgets_usage",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/packs": [
+  "get_by_id_packs",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/packs/{packId}": [
+  "get_by_id_packs_by_pack_id",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/pins": [
+  "get_pins",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/upstreams": [
+  "get_by_id_upstreams",
+  "n"
+ ],
+ "GET /v1/mcp_gateways/{id}/upstreams/{upstreamId}": [
+  "get_by_id_upstreams_by_upstream_id",
+  "n"
+ ],
+ "GET /v1/mcp_registry": [
+  "list",
+  "n"
+ ],
+ "GET /v1/message_receivers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/messages": [
+  "list",
+  "n"
+ ],
+ "GET /v1/messages/summary": [
+  "get_summary",
+  "n"
+ ],
+ "GET /v1/messages/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/messaging/country_routes": [
+  "get_country_routes",
+  "n"
+ ],
+ "GET /v1/messaging/settings": [
+  "get_settings",
+  "n"
+ ],
+ "GET /v1/messaging/suppressions": [
+  "get_suppressions",
+  "n"
+ ],
+ "GET /v1/messaging_providers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/messaging_providers/email/development": [
+  "get_email_development",
+  "n"
+ ],
+ "GET /v1/messaging_providers/email/managed": [
+  "get_email_managed",
+  "n"
+ ],
+ "GET /v1/messaging_providers/{channel}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/messaging_providers/{channel}/fallbacks": [
+  "get_fallbacks",
+  "n"
+ ],
+ "GET /v1/mfa_campaigns": [
+  "list",
+  "n"
+ ],
+ "GET /v1/mfa_campaigns/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/mfa_campaigns/{id}/users": [
+  "get_users",
+  "n"
+ ],
+ "GET /v1/mfa_campaigns/{id}/users/{user_id}": [
+  "get_by_id_users_by_user_id",
+  "n"
+ ],
+ "GET /v1/mfa_factor_quarantines": [
+  "list",
+  "n"
+ ],
+ "GET /v1/migrations/better_auth/bridge": [
+  "get_better_auth_bridge",
+  "n"
+ ],
+ "GET /v1/migrations/sources": [
+  "get_sources",
+  "n"
+ ],
+ "GET /v1/migrations/status": [
+  "get_status",
+  "n"
+ ],
+ "GET /v1/migrations/{source}/bridge": [
+  "get_bridge",
+  "n"
+ ],
+ "GET /v1/migrations/{source}/imports": [
+  "get_by_source_imports",
+  "n"
+ ],
+ "GET /v1/migrations/{source}/imports/public_key": [
+  "get_imports_public_key",
+  "n"
+ ],
+ "GET /v1/migrations/{source}/imports/{id}": [
+  "get_by_source_imports_by_id",
+  "n"
+ ],
+ "GET /v1/network_acls": [
+  "list",
+  "n"
+ ],
+ "GET /v1/network_acls/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/network_zones": [
+  "list",
+  "n"
+ ],
+ "GET /v1/network_zones/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/notification_categories": [
+  "list",
+  "n"
+ ],
+ "GET /v1/notification_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/notification_templates/{name}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/oauth_application_types": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_client_profiles": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_clients": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{clientId}/grants": [
+  "get_grants",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/app_settings": [
+  "get_app_settings",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/backchannel_deliveries": [
+  "get_backchannel_deliveries",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/exchange_policy": [
+  "get_exchange_policy",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/organizations": [
+  "get_organizations",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/token_exchange_profiles": [
+  "get_token_exchange_profiles",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/trusted_issuers": [
+  "get_trusted_issuers",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/usage": [
+  "get_usage",
+  "n"
+ ],
+ "GET /v1/oauth_clients/{id}/webhook": [
+  "get_webhook",
+  "n"
+ ],
+ "GET /v1/oauth_consent_requests": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_initial_access_tokens": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_login_requests": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_providers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_providers/{provider}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/oauth_publishers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_publishers/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/opa/bundles/{store}": [
+  "get_bundles",
+  "n"
+ ],
+ "GET /v1/openfga/stores": [
+  "get_stores",
+  "n"
+ ],
+ "GET /v1/openfga/stores/{store}": [
+  "get_stores_by_store",
+  "n"
+ ],
+ "GET /v1/openfga/stores/{store}/assertions/{model}": [
+  "get_stores_assertions",
+  "n"
+ ],
+ "GET /v1/openfga/stores/{store}/authorization-models": [
+  "get_stores_by_store_authorization_models",
+  "n"
+ ],
+ "GET /v1/openfga/stores/{store}/authorization-models/{mid}": [
+  "get_stores_by_store_authorization_models_by_mid",
+  "n"
+ ],
+ "GET /v1/openfga/stores/{store}/changes": [
+  "get_stores_changes",
+  "n"
+ ],
+ "GET /v1/org_ldap_connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/org_ldap_connections/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/org_ldap_connections/{id}/relay": [
+  "get_relay",
+  "n"
+ ],
+ "GET /v1/org_ldap_connections/{id}/sync": [
+  "get_sync",
+  "n"
+ ],
+ "GET /v1/org_ldap_connections/{id}/sync_runs": [
+  "get_by_id_sync_runs",
+  "n"
+ ],
+ "GET /v1/org_ldap_connections/{id}/sync_runs/{runId}": [
+  "get_by_id_sync_runs_by_run_id",
+  "n"
+ ],
+ "GET /v1/org_role_grants": [
+  "list",
+  "n"
+ ],
+ "GET /v1/org_role_grants/effective": [
+  "get_effective",
+  "n"
+ ],
+ "GET /v1/org_role_grants/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/org_role_grants/{id}/delegations": [
+  "get_delegations",
+  "n"
+ ],
+ "GET /v1/org_role_sets": [
+  "list",
+  "n"
+ ],
+ "GET /v1/org_role_sets/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/org_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/org_templates/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/organization_connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/organization_settings_schema": [
+  "list",
+  "n"
+ ],
+ "GET /v1/organizations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/organizations/by_domain/{domain}": [
+  "get_by_domain",
+  "n"
+ ],
+ "GET /v1/organizations/by_slug/{slug}": [
+  "get_by_slug",
+  "n"
+ ],
+ "GET /v1/organizations/check_slug": [
+  "get_check_slug",
+  "n"
+ ],
+ "GET /v1/organizations/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/app_event_types": [
+  "get_app_event_types",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/app_webhook_endpoints": [
+  "get_by_id_app_webhook_endpoints",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}": [
+  "get_by_id_app_webhook_endpoints_by_endpoint_id",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries": [
+  "get_app_webhook_endpoints_deliveries",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/applications": [
+  "get_applications",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/audit_logs": [
+  "get_audit_logs",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/audit_streams": [
+  "get_audit_streams",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/branding": [
+  "get_branding",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/connected_apps": [
+  "get_connected_apps",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/connections/{connectionId}/secret": [
+  "get_connections_secret",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/design": [
+  "get_design",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/directory_sync_runs": [
+  "get_directory_sync_runs",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/domains": [
+  "get_domains",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/entitlements": [
+  "get_entitlements",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/hierarchy": [
+  "get_hierarchy",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/invitations": [
+  "get_invitations",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/it_alerts": [
+  "get_it_alerts",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/it_health": [
+  "get_it_health",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/machine_memberships": [
+  "get_machine_memberships",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/memberships": [
+  "get_memberships",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/memberships/{userId}": [
+  "get_by_id_memberships_by_user_id",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/mfa_status": [
+  "get_mfa_status",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/policy": [
+  "get_policy",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/role_policy": [
+  "get_role_policy",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/roles": [
+  "get_roles",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/scim/requests": [
+  "get_scim_requests",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/seats": [
+  "get_seats",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/settings": [
+  "get_settings",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/teams": [
+  "get_by_id_teams",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/teams/{teamId}": [
+  "get_by_id_teams_by_team_id",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/teams/{teamId}/members": [
+  "get_teams_members",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/webhook_endpoints": [
+  "get_by_id_webhook_endpoints",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/webhook_endpoints/{endpointId}": [
+  "get_by_id_webhook_endpoints_by_endpoint_id",
+  "n"
+ ],
+ "GET /v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries": [
+  "get_webhook_endpoints_deliveries",
+  "n"
+ ],
+ "GET /v1/organizations/{orgId}/end_users": [
+  "get_end_users",
+  "n"
+ ],
+ "GET /v1/organizations/{orgId}/reader_domain": [
+  "get_reader_domain",
+  "n"
+ ],
+ "GET /v1/partner_links": [
+  "list",
+  "n"
+ ],
+ "GET /v1/partner_links/outbound": [
+  "get_outbound",
+  "n"
+ ],
+ "GET /v1/partner_links/requests": [
+  "get_requests",
+  "n"
+ ],
+ "GET /v1/partner_links/requests/{id}": [
+  "get_requests_by_id",
+  "n"
+ ],
+ "GET /v1/partner_links/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/partner_platforms": [
+  "list",
+  "n"
+ ],
+ "GET /v1/partner_platforms/{partner}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/partner_platforms/{partner}/deliveries": [
+  "get_deliveries",
+  "n"
+ ],
+ "GET /v1/partner_platforms/{partner}/registration": [
+  "get_registration",
+  "n"
+ ],
+ "GET /v1/passkey_api/usage": [
+  "get_usage",
+  "n"
+ ],
+ "GET /v1/passkey_api/users/{userId}/passkeys": [
+  "get_users_passkeys",
+  "n"
+ ],
+ "GET /v1/passkey_campaigns": [
+  "list",
+  "n"
+ ],
+ "GET /v1/passkey_campaigns/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/pca/attestors": [
+  "get_attestors",
+  "n"
+ ],
+ "GET /v1/permissions": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/apps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/apps/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/platform/apps/{id}/instances": [
+  "get_instances",
+  "n"
+ ],
+ "GET /v1/platform/apps/{id}/instances/{instanceId}/clones": [
+  "get_instances_clones",
+  "n"
+ ],
+ "GET /v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}": [
+  "get_by_id_instances_by_instance_id_clones_by_clone_id",
+  "n"
+ ],
+ "GET /v1/platform/apps/{id}/secret_keys": [
+  "get_secret_keys",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}/adoption_codes": [
+  "get_adoption_codes",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}/backchannel_deliveries": [
+  "get_backchannel_deliveries",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}/preflight": [
+  "get_preflight",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}/provisioned_accounts": [
+  "get_provisioned_accounts",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}/provisioned_accounts/{testAccountId}": [
+  "get_by_id_provisioned_accounts_by_test_account_id",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_apps/{id}/users": [
+  "get_users",
+  "n"
+ ],
+ "GET /v1/platform/atlas_id_publisher": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/audit_logs": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/audit_streams": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/config_changelog": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/design/assets": [
+  "get_assets",
+  "n"
+ ],
+ "GET /v1/platform/domains": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/keys": [
+  "list",
+  "n"
+ ],
+ "GET /v1/platform/whoami": [
+  "list",
+  "n"
+ ],
+ "GET /v1/policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/policies/{id}/acceptances": [
+  "get_acceptances",
+  "n"
+ ],
+ "GET /v1/policies/{id}/audience": [
+  "get_audience",
+  "n"
+ ],
+ "GET /v1/policies/{id}/versions": [
+  "get_by_id_versions",
+  "n"
+ ],
+ "GET /v1/policies/{id}/versions/{versionId}": [
+  "get_by_id_versions_by_version_id",
+  "n"
+ ],
+ "GET /v1/policies/{id}/versions/{versionId}/translations": [
+  "get_versions_translations",
+  "n"
+ ],
+ "GET /v1/policy_bundles": [
+  "list",
+  "n"
+ ],
+ "GET /v1/policy_bundles/current": [
+  "get_current",
+  "n"
+ ],
+ "GET /v1/policy_bundles/{revision}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/policy_bundles/{revision}/archive": [
+  "get_archive",
+  "n"
+ ],
+ "GET /v1/privacy/requests/{id}": [
+  "get_requests",
+  "n"
+ ],
+ "GET /v1/provisioning_connectors": [
+  "list",
+  "n"
+ ],
+ "GET /v1/proxy_apps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/proxy_apps/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/radius_clients": [
+  "list",
+  "n"
+ ],
+ "GET /v1/radius_clients/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/rate_limit_overrides": [
+  "list",
+  "n"
+ ],
+ "GET /v1/rate_limit_overrides/{subject_type}/{subject_id}": [
+  "get_by_subject_type_by_subject_id",
+  "n"
+ ],
+ "GET /v1/rate_limit_policies": [
+  "list",
+  "n"
+ ],
+ "GET /v1/rate_limit_policies/resolve": [
+  "get_resolve",
+  "n"
+ ],
+ "GET /v1/rate_limit_policies/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/rate_limit_policy": [
+  "list",
+  "n"
+ ],
+ "GET /v1/redirect_urls": [
+  "list",
+  "n"
+ ],
+ "GET /v1/redirect_urls/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/referral_reward_rules": [
+  "list",
+  "n"
+ ],
+ "GET /v1/referral_rewards": [
+  "list",
+  "n"
+ ],
+ "GET /v1/referral_rewards/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/refresh_tokens": [
+  "list",
+  "n"
+ ],
+ "GET /v1/region": [
+  "list",
+  "n"
+ ],
+ "GET /v1/region/failover": [
+  "get_failover",
+  "n"
+ ],
+ "GET /v1/relay_agents": [
+  "list",
+  "n"
+ ],
+ "GET /v1/relay_agents/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/resource_role_assignments": [
+  "list",
+  "n"
+ ],
+ "GET /v1/resource_role_assignments/changes": [
+  "get_changes",
+  "n"
+ ],
+ "GET /v1/resource_servers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/resource_servers/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/resource_servers/{id}/revoked_tokens": [
+  "get_revoked_tokens",
+  "n"
+ ],
+ "GET /v1/resource_types": [
+  "list",
+  "n"
+ ],
+ "GET /v1/resource_types/{key}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/resources": [
+  "list",
+  "n"
+ ],
+ "GET /v1/resources/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/risk_based_mfa": [
+  "list",
+  "n"
+ ],
+ "GET /v1/risk_events": [
+  "list",
+  "n"
+ ],
+ "GET /v1/risk_events/metrics": [
+  "get_metrics",
+  "n"
+ ],
+ "GET /v1/risk_signals": [
+  "list",
+  "n"
+ ],
+ "GET /v1/risk_signals/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/risky_users": [
+  "list",
+  "n"
+ ],
+ "GET /v1/risky_users/{user_id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/roles": [
+  "list",
+  "n"
+ ],
+ "GET /v1/saml_idp/service_providers": [
+  "get_service_providers",
+  "n"
+ ],
+ "GET /v1/saml_idp/service_providers/{id}": [
+  "get_service_providers_by_id",
+  "n"
+ ],
+ "GET /v1/scim_provisioning_presets": [
+  "list",
+  "n"
+ ],
+ "GET /v1/scim_provisioning_targets": [
+  "list",
+  "n"
+ ],
+ "GET /v1/scim_provisioning_targets/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/scim_provisioning_targets/{id}/failures": [
+  "get_failures",
+  "n"
+ ],
+ "GET /v1/scim_provisioning_targets/{id}/logs": [
+  "get_logs",
+  "n"
+ ],
+ "GET /v1/scim_resource_types": [
+  "list",
+  "n"
+ ],
+ "GET /v1/scim_resource_types/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/scim_tokens": [
+  "list",
+  "n"
+ ],
+ "GET /v1/secret_keys": [
+  "list",
+  "n"
+ ],
+ "GET /v1/secret_keys/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/security_advisories": [
+  "list",
+  "n"
+ ],
+ "GET /v1/security_advisories/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/service_connector_catalog": [
+  "list",
+  "n"
+ ],
+ "GET /v1/service_connectors": [
+  "list",
+  "n"
+ ],
+ "GET /v1/service_connectors/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/session_exchange_apps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/session_exchange_apps/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/sessions": [
+  "list",
+  "n"
+ ],
+ "GET /v1/sessions/export": [
+  "get_export",
+  "n"
+ ],
+ "GET /v1/sessions/revocations": [
+  "get_revocations",
+  "n"
+ ],
+ "GET /v1/sessions/revocations/status-list": [
+  "get_revocations_status_list",
+  "n"
+ ],
+ "GET /v1/sessions/revoke_jobs": [
+  "get_revoke_jobs",
+  "n"
+ ],
+ "GET /v1/sessions/revoke_jobs/{id}": [
+  "get_revoke_jobs_by_id",
+  "n"
+ ],
+ "GET /v1/sessions/revoked": [
+  "get_revoked",
+  "n"
+ ],
+ "GET /v1/sessions/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/sessions/{id}/binding": [
+  "get_binding",
+  "n"
+ ],
+ "GET /v1/sessions/{id}/events": [
+  "get_events",
+  "n"
+ ],
+ "GET /v1/sessions/{id}/risk": [
+  "get_risk",
+  "n"
+ ],
+ "GET /v1/sessions/{id}/status": [
+  "get_status",
+  "n"
+ ],
+ "GET /v1/sms_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/sms_templates/{name}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/ssf/receivers": [
+  "get_receivers",
+  "n"
+ ],
+ "GET /v1/ssf/status": [
+  "get_status",
+  "n"
+ ],
+ "GET /v1/ssf/streams": [
+  "get_streams",
+  "n"
+ ],
+ "GET /v1/ssf/streams/{id}": [
+  "get_streams_by_id",
+  "n"
+ ],
+ "GET /v1/ssf/streams/{id}/events": [
+  "get_streams_events",
+  "n"
+ ],
+ "GET /v1/ssf/streams/{id}/status": [
+  "get_streams_status",
+  "n"
+ ],
+ "GET /v1/ssf/streams/{id}/subjects": [
+  "get_streams_subjects",
+  "n"
+ ],
+ "GET /v1/sso_connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/sso_connections/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/sso_connections/{id}/login_history": [
+  "get_login_history",
+  "n"
+ ],
+ "GET /v1/sso_connections/{id}/saml_encryption_key": [
+  "get_saml_encryption_key",
+  "n"
+ ],
+ "GET /v1/sso_connections/{id}/saml_metadata": [
+  "get_saml_metadata",
+  "n"
+ ],
+ "GET /v1/sso_connections/{id}/signing_keys": [
+  "get_signing_keys",
+  "n"
+ ],
+ "GET /v1/sso_onboarding_profiles": [
+  "list",
+  "n"
+ ],
+ "GET /v1/sso_onboarding_profiles/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/step_up/policies": [
+  "get_policies",
+  "n"
+ ],
+ "GET /v1/step_up/policies/{id}": [
+  "get_policies_by_id",
+  "n"
+ ],
+ "GET /v1/suppressions": [
+  "list",
+  "n"
+ ],
+ "GET /v1/suppressions/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/telemetry_export": [
+  "list",
+  "n"
+ ],
+ "GET /v1/usage": [
+  "list",
+  "n"
+ ],
+ "GET /v1/usage/connections": [
+  "get_connections",
+  "n"
+ ],
+ "GET /v1/users": [
+  "list",
+  "n"
+ ],
+ "GET /v1/users/bulk_actions": [
+  "get_bulk_actions",
+  "n"
+ ],
+ "GET /v1/users/bulk_actions/{id}": [
+  "get_bulk_actions_by_id",
+  "n"
+ ],
+ "GET /v1/users/search/fields": [
+  "get_search_fields",
+  "n"
+ ],
+ "GET /v1/users/search/views": [
+  "get_search_views",
+  "n"
+ ],
+ "GET /v1/users/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/users/{id}/age_assurance": [
+  "get_age_assurance",
+  "n"
+ ],
+ "GET /v1/users/{id}/app_roles": [
+  "get_app_roles",
+  "n"
+ ],
+ "GET /v1/users/{id}/approval_devices": [
+  "get_approval_devices",
+  "n"
+ ],
+ "GET /v1/users/{id}/approval_requests/{approvalId}": [
+  "get_approval_requests",
+  "n"
+ ],
+ "GET /v1/users/{id}/consents": [
+  "get_consents",
+  "n"
+ ],
+ "GET /v1/users/{id}/device_keys": [
+  "get_device_keys",
+  "n"
+ ],
+ "GET /v1/users/{id}/erasure_export": [
+  "get_erasure_export",
+  "n"
+ ],
+ "GET /v1/users/{id}/grants": [
+  "get_grants",
+  "n"
+ ],
+ "GET /v1/users/{id}/groups": [
+  "get_groups",
+  "n"
+ ],
+ "GET /v1/users/{id}/history": [
+  "get_history",
+  "n"
+ ],
+ "GET /v1/users/{id}/identities": [
+  "get_identities",
+  "n"
+ ],
+ "GET /v1/users/{id}/identity_verifications": [
+  "get_identity_verifications",
+  "n"
+ ],
+ "GET /v1/users/{id}/identity_verifications/{attemptId}": [
+  "get_by_id_identity_verifications_by_attempt_id",
+  "n"
+ ],
+ "GET /v1/users/{id}/journeys": [
+  "get_journeys",
+  "n"
+ ],
+ "GET /v1/users/{id}/legal_hold": [
+  "get_legal_hold",
+  "n"
+ ],
+ "GET /v1/users/{id}/minor_status": [
+  "get_minor_status",
+  "n"
+ ],
+ "GET /v1/users/{id}/notes": [
+  "get_notes",
+  "n"
+ ],
+ "GET /v1/users/{id}/notification_preferences": [
+  "get_notification_preferences",
+  "n"
+ ],
+ "GET /v1/users/{id}/oauth_access_tokens/{provider}": [
+  "get_oauth_access_tokens",
+  "n"
+ ],
+ "GET /v1/users/{id}/organization_memberships": [
+  "get_organization_memberships",
+  "n"
+ ],
+ "GET /v1/users/{id}/owned_organizations": [
+  "get_owned_organizations",
+  "n"
+ ],
+ "GET /v1/users/{id}/policies": [
+  "get_policies",
+  "n"
+ ],
+ "GET /v1/users/{id}/referral": [
+  "get_referral",
+  "n"
+ ],
+ "GET /v1/users/{id}/required_actions": [
+  "get_required_actions",
+  "n"
+ ],
+ "GET /v1/users/{id}/resolved": [
+  "get_resolved",
+  "n"
+ ],
+ "GET /v1/users/{id}/sessions": [
+  "get_sessions",
+  "n"
+ ],
+ "GET /v1/users/{id}/sign_in_history": [
+  "get_sign_in_history",
+  "n"
+ ],
+ "GET /v1/users/{id}/smartcard_mappings": [
+  "get_smartcard_mappings",
+  "n"
+ ],
+ "GET /v1/users/{id}/state": [
+  "get_state",
+  "n"
+ ],
+ "GET /v1/users/{id}/temporary_access": [
+  "get_temporary_access",
+  "n"
+ ],
+ "GET /v1/vault/key_provider": [
+  "get_key_provider",
+  "n"
+ ],
+ "GET /v1/vault/objects": [
+  "get_objects",
+  "n"
+ ],
+ "GET /v1/vault/objects/{id}": [
+  "get_objects_by_id",
+  "n"
+ ],
+ "GET /v1/vault/objects/{id}/metadata": [
+  "get_objects_metadata",
+  "n"
+ ],
+ "GET /v1/vault/objects/{id}/versions": [
+  "get_objects_versions",
+  "n"
+ ],
+ "GET /v1/vc/credential_types": [
+  "get_credential_types",
+  "n"
+ ],
+ "GET /v1/vc/credential_types/{id}": [
+  "get_credential_types_by_id",
+  "n"
+ ],
+ "GET /v1/vc/credentials": [
+  "get_credentials",
+  "n"
+ ],
+ "GET /v1/vc/deferred": [
+  "get_deferred",
+  "n"
+ ],
+ "GET /v1/vc/presentation_requests/{id}": [
+  "get_presentation_requests",
+  "n"
+ ],
+ "GET /v1/vc/presentation_requests/{id}/dc_api_request": [
+  "get_presentation_requests_dc_api_request",
+  "n"
+ ],
+ "GET /v1/waitlist_entries": [
+  "list",
+  "n"
+ ],
+ "GET /v1/web_bot_auth": [
+  "list",
+  "n"
+ ],
+ "GET /v1/web_bot_auth/directories": [
+  "get_directories",
+  "n"
+ ],
+ "GET /v1/webhook_endpoints": [
+  "list",
+  "n"
+ ],
+ "GET /v1/webhook_endpoints/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/webhook_endpoints/{id}/deliveries": [
+  "get_deliveries",
+  "n"
+ ],
+ "GET /v1/webhook_endpoints/{id}/dlq": [
+  "get_dlq",
+  "n"
+ ],
+ "GET /v1/whoami": [
+  "list",
+  "n"
+ ],
+ "GET /v1/workflow_approvals": [
+  "list",
+  "n"
+ ],
+ "GET /v1/workflow_templates": [
+  "list",
+  "n"
+ ],
+ "GET /v1/workflow_triggers": [
+  "list",
+  "n"
+ ],
+ "GET /v1/workflows": [
+  "list",
+  "n"
+ ],
+ "GET /v1/workflows/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/workflows/{id}/kv": [
+  "get_kv",
+  "n"
+ ],
+ "GET /v1/workflows/{id}/runs": [
+  "get_by_id_runs",
+  "n"
+ ],
+ "GET /v1/workflows/{id}/runs/{runId}": [
+  "get_by_id_runs_by_run_id",
+  "n"
+ ],
+ "GET /v1/workload_identity/cloud_trust": [
+  "get_cloud_trust",
+  "n"
+ ],
+ "GET /v1/workload_identity/presets": [
+  "get_presets",
+  "n"
+ ],
+ "GET /v1/wsfed_connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/wsfed_connections/{id}": [
+  "get",
+  "n"
+ ],
+ "GET /v1/yubikeys": [
+  "list",
+  "n"
+ ],
+ "PATCH /v1/abac_policies/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/abac_policy_links/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/abac_templates/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/access_policies/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/action_templates/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/actions/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/actions/{id}/rollout": [
+  "update_rollout",
+  "r"
+ ],
+ "PATCH /v1/administrative_units/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/analytics/alert_rules/{id}": [
+  "update_alert_rules",
+  "r"
+ ],
+ "PATCH /v1/api_keys/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/app_catalog/installed/{id}": [
+  "update_installed",
+  "r"
+ ],
+ "PATCH /v1/app_catalog/requests/{id}": [
+  "update_requests",
+  "r"
+ ],
+ "PATCH /v1/app_event_types/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/app_roles/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/attack_protection": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/audit_event_schemas/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/audit_exports/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/authenticator_policies/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/billing/coupons/{id}": [
+  "update_coupons",
+  "d"
+ ],
+ "PATCH /v1/billing/plans/{id}": [
+  "update_plans",
+  "d"
+ ],
+ "PATCH /v1/branding": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/chat_integrations/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/cloud_access/targets/{id}": [
+  "update_targets",
+  "r"
+ ],
+ "PATCH /v1/connections/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/connections/{id}/triggers/{triggerId}": [
+  "update_triggers",
+  "r"
+ ],
+ "PATCH /v1/connections/{id}/webhook_endpoints/{endpointId}": [
+  "update_webhook_endpoints",
+  "r"
+ ],
+ "PATCH /v1/connectors/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/custom_oauth_providers/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/data_subject_requests/{id}/triage": [
+  "update_triage",
+  "r"
+ ],
+ "PATCH /v1/device_assurance_policies/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/device_integrations/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/directory_pull_sources/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/erasure_connectors/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/feature_flags/{key}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/flows/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/flows/{id}/experiments/{experimentId}": [
+  "update_experiments",
+  "r"
+ ],
+ "PATCH /v1/grant_management/grants/{id}": [
+  "update_grants",
+  "d"
+ ],
+ "PATCH /v1/group_rules/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/groups/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/iga/birthright_rules/{id}": [
+  "update_birthright_rules",
+  "r"
+ ],
+ "PATCH /v1/iga/bundles/{id}": [
+  "update_bundles",
+  "r"
+ ],
+ "PATCH /v1/iga/entitlements/{id}": [
+  "update_entitlements",
+  "r"
+ ],
+ "PATCH /v1/iga/sod_rules/{id}": [
+  "update_sod_rules",
+  "r"
+ ],
+ "PATCH /v1/instance": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/instance/design": [
+  "update_design",
+  "r"
+ ],
+ "PATCH /v1/instance/hooks/before_user_create": [
+  "update_hooks_before_user_create",
+  "r"
+ ],
+ "PATCH /v1/instance/hosted_pages": [
+  "update_hosted_pages",
+  "r"
+ ],
+ "PATCH /v1/instance/policy_settings": [
+  "update_policy_settings",
+  "r"
+ ],
+ "PATCH /v1/instance/referrals": [
+  "update_referrals",
+  "r"
+ ],
+ "PATCH /v1/instance/security": [
+  "update_security",
+  "d"
+ ],
+ "PATCH /v1/instance/sign_in_with_atlas": [
+  "update_sign_in_with_atlas",
+  "r"
+ ],
+ "PATCH /v1/instance/signing_key_policy": [
+  "update_signing_key_policy",
+  "r"
+ ],
+ "PATCH /v1/instance/status_dependencies/{id}": [
+  "update_status_dependencies",
+  "r"
+ ],
+ "PATCH /v1/jwt_connections/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/jwt_templates/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/ldap_server_clients/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/localizations/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/log_streams/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/logout_notify_endpoints/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/lti_platforms/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/machine_trust_policies/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/machines/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/machines/{id}/grants/{grantId}": [
+  "update_grants",
+  "r"
+ ],
+ "PATCH /v1/machines/{id}/metadata": [
+  "update_metadata",
+  "d"
+ ],
+ "PATCH /v1/mcp_gateways/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/mcp_gateways/{id}/budgets/{budgetId}": [
+  "update_budgets",
+  "r"
+ ],
+ "PATCH /v1/mcp_gateways/{id}/packs/{packId}": [
+  "update_packs",
+  "r"
+ ],
+ "PATCH /v1/mcp_gateways/{id}/upstreams/{upstreamId}": [
+  "update_upstreams",
+  "r"
+ ],
+ "PATCH /v1/mfa_campaigns/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/network_acls/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/network_zones/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/oauth_clients/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/oauth_clients/{id}/app_settings": [
+  "update_app_settings",
+  "r"
+ ],
+ "PATCH /v1/oauth_clients/{id}/token_exchange_profiles/{profileId}": [
+  "update_token_exchange_profiles",
+  "d"
+ ],
+ "PATCH /v1/oauth_publishers/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/org_ldap_connections/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/org_role_grants/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/org_role_sets/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/org_templates/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/organizations/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/organizations/{id}/app_webhook_endpoints/{endpointId}": [
+  "update_app_webhook_endpoints",
+  "r"
+ ],
+ "PATCH /v1/organizations/{id}/design": [
+  "update_design",
+  "r"
+ ],
+ "PATCH /v1/organizations/{id}/machine_memberships/{machineId}": [
+  "update_machine_memberships",
+  "d"
+ ],
+ "PATCH /v1/organizations/{id}/memberships/{userId}": [
+  "update_memberships",
+  "d"
+ ],
+ "PATCH /v1/organizations/{id}/policy": [
+  "update_policy",
+  "d"
+ ],
+ "PATCH /v1/organizations/{id}/roles/{roleId}": [
+  "update_roles",
+  "r"
+ ],
+ "PATCH /v1/organizations/{id}/settings": [
+  "update_settings",
+  "r"
+ ],
+ "PATCH /v1/organizations/{id}/teams/{teamId}": [
+  "update_teams",
+  "r"
+ ],
+ "PATCH /v1/organizations/{id}/webhook_endpoints/{endpointId}": [
+  "update_webhook_endpoints",
+  "r"
+ ],
+ "PATCH /v1/organizations/{orgId}/end_users/{userId}": [
+  "update_end_users",
+  "r"
+ ],
+ "PATCH /v1/partner_links/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/permissions/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/platform/apps/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/platform/atlas_id_apps/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/platform/atlas_id_publisher": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/platform/audit_streams/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/platform/keys/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/policies/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/policies/{id}/versions/{versionId}": [
+  "update_versions",
+  "r"
+ ],
+ "PATCH /v1/proxy_apps/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/radius_clients/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/rate_limit_policies/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/rate_limit_policy": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/relay_agents/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/resource_servers/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/resource_types/{key}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/risk_based_mfa": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/roles/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/saml_idp/service_providers/{id}": [
+  "update_service_providers",
+  "r"
+ ],
+ "PATCH /v1/scim_provisioning_targets/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/scim_tokens/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/secret_keys/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/service_connectors/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/session_exchange_apps/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/sessions/{id}/custom_data": [
+  "update_custom_data",
+  "r"
+ ],
+ "PATCH /v1/sms_templates/{name}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/ssf/receivers/{id}": [
+  "update_receivers",
+  "d"
+ ],
+ "PATCH /v1/ssf/streams/{id}": [
+  "update_streams",
+  "d"
+ ],
+ "PATCH /v1/sso_connections/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/sso_onboarding_profiles/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/step_up/policies/{id}": [
+  "update_policies",
+  "r"
+ ],
+ "PATCH /v1/users/search/views/{id}": [
+  "update_search_views",
+  "r"
+ ],
+ "PATCH /v1/users/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/users/{id}/notes/{noteId}": [
+  "update_notes",
+  "r"
+ ],
+ "PATCH /v1/users/{id}/notification_preferences": [
+  "update_notification_preferences",
+  "r"
+ ],
+ "PATCH /v1/webhook_endpoints/{id}": [
+  "update",
+  "r"
+ ],
+ "PATCH /v1/workflows/{id}": [
+  "update",
+  "d"
+ ],
+ "PATCH /v1/wsfed_connections/{id}": [
+  "update",
+  "r"
+ ],
+ "POST /v1/abac/accessible_resources": [
+  "post_accessible_resources",
+  "r"
+ ],
+ "POST /v1/abac/authorize_token": [
+  "post_authorize_token",
+  "d"
+ ],
+ "POST /v1/abac/cedar/export": [
+  "post_cedar_export",
+  "d"
+ ],
+ "POST /v1/abac/cedar/import": [
+  "post_cedar_import",
+  "d"
+ ],
+ "POST /v1/abac/diff": [
+  "post_diff",
+  "r"
+ ],
+ "POST /v1/abac/evaluate": [
+  "post_evaluate",
+  "d"
+ ],
+ "POST /v1/abac/partial_evaluate": [
+  "post_partial_evaluate",
+  "r"
+ ],
+ "POST /v1/abac_policies": [
+  "create",
+  "d"
+ ],
+ "POST /v1/abac_policies/{id}/test": [
+  "post_test",
+  "d"
+ ],
+ "POST /v1/abac_policy_links": [
+  "create",
+  "r"
+ ],
+ "POST /v1/abac_schema/validate": [
+  "post_validate",
+  "r"
+ ],
+ "POST /v1/abac_templates": [
+  "create",
+  "r"
+ ],
+ "POST /v1/access_policies": [
+  "create",
+  "d"
+ ],
+ "POST /v1/access_policies/impact": [
+  "post_impact",
+  "d"
+ ],
+ "POST /v1/access_policies/simulate": [
+  "post_simulate",
+  "d"
+ ],
+ "POST /v1/action_gallery/{slug}/install": [
+  "post_install",
+  "d"
+ ],
+ "POST /v1/action_templates": [
+  "create",
+  "d"
+ ],
+ "POST /v1/action_templates/{id}/publish": [
+  "post_publish",
+  "n"
+ ],
+ "POST /v1/action_templates/{id}/unlist": [
+  "post_unlist",
+  "n"
+ ],
+ "POST /v1/action_templates/{id}/versions": [
+  "post_versions",
+  "d"
+ ],
+ "POST /v1/action_templates/{id}/versions/{version}/submit": [
+  "post_versions_submit",
+  "n"
+ ],
+ "POST /v1/actions": [
+  "create",
+  "d"
+ ],
+ "POST /v1/actions/{id}/gallery_update": [
+  "post_gallery_update",
+  "d"
+ ],
+ "POST /v1/actions/{id}/rollback": [
+  "post_rollback",
+  "r"
+ ],
+ "POST /v1/actions/{id}/test": [
+  "post_test",
+  "d"
+ ],
+ "POST /v1/actions/{id}/versions": [
+  "post_versions",
+  "r"
+ ],
+ "POST /v1/actor_tokens": [
+  "create",
+  "d"
+ ],
+ "POST /v1/actor_tokens/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/administrative_units": [
+  "create",
+  "r"
+ ],
+ "POST /v1/administrative_units/{id}/members": [
+  "post_members",
+  "r"
+ ],
+ "POST /v1/agent_access_requests/{id}/approve": [
+  "post_approve",
+  "d"
+ ],
+ "POST /v1/agent_access_requests/{id}/deny": [
+  "post_deny",
+  "d"
+ ],
+ "POST /v1/agent_access_reviews": [
+  "create",
+  "r"
+ ],
+ "POST /v1/agent_access_reviews/{id}/close": [
+  "post_close",
+  "n"
+ ],
+ "POST /v1/agent_access_reviews/{id}/items/{itemId}/decide": [
+  "post_items_decide",
+  "r"
+ ],
+ "POST /v1/agent_delegations": [
+  "create",
+  "r"
+ ],
+ "POST /v1/agent_delegations/revoke_for_user": [
+  "post_revoke_for_user",
+  "r"
+ ],
+ "POST /v1/agent_delegations/{id}/evaluate": [
+  "post_evaluate",
+  "r"
+ ],
+ "POST /v1/agent_delegations/{id}/revoke": [
+  "post_revoke",
+  "r"
+ ],
+ "POST /v1/agents/verify_request": [
+  "post_verify_request",
+  "r"
+ ],
+ "POST /v1/agents/{id}/claim": [
+  "post_claim",
+  "r"
+ ],
+ "POST /v1/agents/{id}/renew": [
+  "post_renew",
+  "r"
+ ],
+ "POST /v1/agents/{id}/revoke_access": [
+  "post_revoke_access",
+  "d"
+ ],
+ "POST /v1/allowlist_identifiers": [
+  "create",
+  "d"
+ ],
+ "POST /v1/analytics/alert_rules": [
+  "post_alert_rules",
+  "r"
+ ],
+ "POST /v1/analytics/alert_rules/{id}/test": [
+  "post_alert_rules_test",
+  "r"
+ ],
+ "POST /v1/api_keys": [
+  "create",
+  "d"
+ ],
+ "POST /v1/api_keys/token": [
+  "post_token",
+  "d"
+ ],
+ "POST /v1/api_keys/verify": [
+  "post_verify",
+  "d"
+ ],
+ "POST /v1/api_keys/{id}/rotate": [
+  "post_rotate",
+  "r"
+ ],
+ "POST /v1/api_keys/{id}/usage": [
+  "post_usage",
+  "r"
+ ],
+ "POST /v1/app_catalog/custom_presets": [
+  "post_custom_presets",
+  "r"
+ ],
+ "POST /v1/app_catalog/requests": [
+  "post_requests",
+  "r"
+ ],
+ "POST /v1/app_catalog/requests/{id}/vote": [
+  "post_requests_vote",
+  "n"
+ ],
+ "POST /v1/app_catalog/{id}/install": [
+  "post_install",
+  "r"
+ ],
+ "POST /v1/app_event_types": [
+  "create",
+  "r"
+ ],
+ "POST /v1/app_events": [
+  "create",
+  "r"
+ ],
+ "POST /v1/app_roles": [
+  "create",
+  "r"
+ ],
+ "POST /v1/approval_requests": [
+  "create",
+  "r"
+ ],
+ "POST /v1/approval_requests/{id}/cancel": [
+  "post_cancel",
+  "n"
+ ],
+ "POST /v1/approval_requests/{id}/consume": [
+  "post_consume",
+  "r"
+ ],
+ "POST /v1/atlas_id_apps/adopt": [
+  "post_adopt",
+  "r"
+ ],
+ "POST /v1/atlas_id_apps/{id}/release": [
+  "post_release",
+  "n"
+ ],
+ "POST /v1/audit/chain/checkpoints": [
+  "post_chain_checkpoints",
+  "n"
+ ],
+ "POST /v1/audit/chain/verify": [
+  "post_chain_verify",
+  "r"
+ ],
+ "POST /v1/audit_event_schemas": [
+  "create",
+  "r"
+ ],
+ "POST /v1/audit_events": [
+  "create",
+  "d"
+ ],
+ "POST /v1/audit_events/batch": [
+  "post_batch",
+  "d"
+ ],
+ "POST /v1/audit_events/{id}/redact": [
+  "post_redact",
+  "r"
+ ],
+ "POST /v1/audit_exports": [
+  "create",
+  "d"
+ ],
+ "POST /v1/audit_exports/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "n"
+ ],
+ "POST /v1/audit_exports/{id}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/authenticator_policies": [
+  "create",
+  "d"
+ ],
+ "POST /v1/authz/explain": [
+  "post_explain",
+  "r"
+ ],
+ "POST /v1/authz/rbac/check": [
+  "post_rbac_check",
+  "r"
+ ],
+ "POST /v1/authz/what_if": [
+  "post_what_if",
+  "r"
+ ],
+ "POST /v1/authz_decisions/ingest": [
+  "post_ingest",
+  "d"
+ ],
+ "POST /v1/authzen/access/v1/evaluation": [
+  "post_access_v1_evaluation",
+  "d"
+ ],
+ "POST /v1/authzen/access/v1/evaluations": [
+  "post_access_v1_evaluations",
+  "d"
+ ],
+ "POST /v1/authzen/access/v1/search/action": [
+  "post_access_v1_search_action",
+  "r"
+ ],
+ "POST /v1/authzen/access/v1/search/resource": [
+  "post_access_v1_search_resource",
+  "r"
+ ],
+ "POST /v1/authzen/access/v1/search/subject": [
+  "post_access_v1_search_subject",
+  "r"
+ ],
+ "POST /v1/better_auth_imports": [
+  "create",
+  "d"
+ ],
+ "POST /v1/better_auth_imports/public_key/rotate": [
+  "post_public_key_rotate",
+  "n"
+ ],
+ "POST /v1/better_auth_imports/{id}/apply": [
+  "post_apply",
+  "d"
+ ],
+ "POST /v1/better_auth_imports/{id}/dry_run": [
+  "post_dry_run",
+  "d"
+ ],
+ "POST /v1/better_auth_imports/{id}/finalize": [
+  "post_finalize",
+  "n"
+ ],
+ "POST /v1/billing/check": [
+  "post_check",
+  "d"
+ ],
+ "POST /v1/billing/connect/accounts": [
+  "post_connect_accounts",
+  "r"
+ ],
+ "POST /v1/billing/connect/accounts/{id}/onboarding_link": [
+  "post_connect_accounts_onboarding_link",
+  "r"
+ ],
+ "POST /v1/billing/connect/accounts/{id}/refresh": [
+  "post_connect_accounts_refresh",
+  "n"
+ ],
+ "POST /v1/billing/connect/transfers": [
+  "post_connect_transfers",
+  "r"
+ ],
+ "POST /v1/billing/coupons": [
+  "post_coupons",
+  "d"
+ ],
+ "POST /v1/billing/coupons/validate": [
+  "post_coupons_validate",
+  "d"
+ ],
+ "POST /v1/billing/credits": [
+  "post_credits",
+  "d"
+ ],
+ "POST /v1/billing/invoices/{id}/refund": [
+  "post_invoices_refund",
+  "r"
+ ],
+ "POST /v1/billing/plans": [
+  "post_plans",
+  "r"
+ ],
+ "POST /v1/billing/plans/{id}/sync_entitlements": [
+  "post_plans_sync_entitlements",
+  "n"
+ ],
+ "POST /v1/billing/providers/{provider}/test": [
+  "post_providers_test",
+  "n"
+ ],
+ "POST /v1/billing/store_links": [
+  "post_store_links",
+  "r"
+ ],
+ "POST /v1/billing/subjects/{type}/{id}/sync_seats": [
+  "post_subjects_sync_seats",
+  "n"
+ ],
+ "POST /v1/billing/subscriptions/import": [
+  "post_subscriptions_import",
+  "d"
+ ],
+ "POST /v1/billing/subscriptions/{id}/cancel": [
+  "post_subscriptions_cancel",
+  "r"
+ ],
+ "POST /v1/billing/subscriptions/{id}/change": [
+  "post_subscriptions_change",
+  "r"
+ ],
+ "POST /v1/billing/subscriptions/{id}/extend_trial": [
+  "post_subscriptions_extend_trial",
+  "r"
+ ],
+ "POST /v1/billing/subscriptions/{id}/restore": [
+  "post_subscriptions_restore",
+  "n"
+ ],
+ "POST /v1/billing/usage": [
+  "post_usage",
+  "d"
+ ],
+ "POST /v1/billing/usage/batch": [
+  "post_usage_batch",
+  "r"
+ ],
+ "POST /v1/blocklist_identifiers": [
+  "create",
+  "d"
+ ],
+ "POST /v1/bot_labels": [
+  "create",
+  "d"
+ ],
+ "POST /v1/branding/preview": [
+  "post_preview",
+  "d"
+ ],
+ "POST /v1/captcha/verify": [
+  "post_verify",
+  "d"
+ ],
+ "POST /v1/chat_integrations": [
+  "create",
+  "r"
+ ],
+ "POST /v1/chat_integrations/{id}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/chat_integrations/{id}/user_links": [
+  "post_user_links",
+  "r"
+ ],
+ "POST /v1/cloud_access/targets": [
+  "post_targets",
+  "r"
+ ],
+ "POST /v1/compliance/reports": [
+  "post_reports",
+  "r"
+ ],
+ "POST /v1/connection_provider_changes/{id}/acknowledge": [
+  "post_acknowledge",
+  "n"
+ ],
+ "POST /v1/connection_provider_changes/{id}/resolve": [
+  "post_resolve",
+  "n"
+ ],
+ "POST /v1/connections": [
+  "create",
+  "r"
+ ],
+ "POST /v1/connections/export": [
+  "post_export",
+  "d"
+ ],
+ "POST /v1/connections/import": [
+  "post_import",
+  "r"
+ ],
+ "POST /v1/connections/oauth/complete": [
+  "post_oauth_complete",
+  "r"
+ ],
+ "POST /v1/connections/oauth_clients/register": [
+  "post_oauth_clients_register",
+  "r"
+ ],
+ "POST /v1/connections/tokens/batch": [
+  "post_tokens_batch",
+  "r"
+ ],
+ "POST /v1/connections/{id}/actions/{name}": [
+  "post_actions",
+  "d"
+ ],
+ "POST /v1/connections/{id}/connect": [
+  "post_connect",
+  "r"
+ ],
+ "POST /v1/connections/{id}/credentials/rotate": [
+  "post_credentials_rotate",
+  "r"
+ ],
+ "POST /v1/connections/{id}/oauth1/sign": [
+  "post_oauth1_sign",
+  "r"
+ ],
+ "POST /v1/connections/{id}/provider_events/{eventId}/replay": [
+  "post_provider_events_replay",
+  "n"
+ ],
+ "POST /v1/connections/{id}/provider_subscriptions/sync": [
+  "post_provider_subscriptions_sync",
+  "n"
+ ],
+ "POST /v1/connections/{id}/reconnect_link": [
+  "post_reconnect_link",
+  "d"
+ ],
+ "POST /v1/connections/{id}/relay": [
+  "post_relay",
+  "r"
+ ],
+ "POST /v1/connections/{id}/revoke": [
+  "post_revoke",
+  "d"
+ ],
+ "POST /v1/connections/{id}/scoped_tokens": [
+  "post_scoped_tokens",
+  "r"
+ ],
+ "POST /v1/connections/{id}/sign": [
+  "post_sign",
+  "r"
+ ],
+ "POST /v1/connections/{id}/token/downscope": [
+  "post_token_downscope",
+  "d"
+ ],
+ "POST /v1/connections/{id}/token/exchange": [
+  "post_token_exchange",
+  "n"
+ ],
+ "POST /v1/connections/{id}/token/refresh": [
+  "post_token_refresh",
+  "d"
+ ],
+ "POST /v1/connections/{id}/transfer": [
+  "post_transfer",
+  "r"
+ ],
+ "POST /v1/connections/{id}/triggers": [
+  "post_triggers",
+  "r"
+ ],
+ "POST /v1/connections/{id}/webhook_endpoints": [
+  "post_webhook_endpoints",
+  "r"
+ ],
+ "POST /v1/connections/{id}/webhooks/verify": [
+  "post_webhooks_verify",
+  "r"
+ ],
+ "POST /v1/connectors": [
+  "create",
+  "d"
+ ],
+ "POST /v1/connectors/{id}/publish": [
+  "post_publish",
+  "n"
+ ],
+ "POST /v1/connectors/{id}/shared_credentials": [
+  "post_shared_credentials",
+  "d"
+ ],
+ "POST /v1/connectors/{id}/unlist": [
+  "post_unlist",
+  "n"
+ ],
+ "POST /v1/connectors/{slug}/install": [
+  "post_install",
+  "d"
+ ],
+ "POST /v1/connectors/{slug}/reviews": [
+  "post_reviews",
+  "d"
+ ],
+ "POST /v1/custom_oauth_providers": [
+  "create",
+  "r"
+ ],
+ "POST /v1/custom_oauth_providers/discover": [
+  "post_discover",
+  "r"
+ ],
+ "POST /v1/custom_oauth_providers/profile_mapping/preview": [
+  "post_profile_mapping_preview",
+  "r"
+ ],
+ "POST /v1/custom_oauth_providers/{id}/profile_mapping/preview": [
+  "post_by_id_profile_mapping_preview",
+  "r"
+ ],
+ "POST /v1/custom_oauth_providers/{id}/signing_keys": [
+  "post_signing_keys",
+  "r"
+ ],
+ "POST /v1/custom_oauth_providers/{id}/signing_keys/{kid}/retire": [
+  "post_signing_keys_retire",
+  "n"
+ ],
+ "POST /v1/data_subject_requests": [
+  "create",
+  "r"
+ ],
+ "POST /v1/data_subject_requests/{id}/cancel": [
+  "post_cancel",
+  "n"
+ ],
+ "POST /v1/data_subject_requests/{id}/downstream/{connectorId}": [
+  "post_downstream",
+  "d"
+ ],
+ "POST /v1/data_subject_requests/{id}/downstream/{connectorId}/run": [
+  "post_downstream_run",
+  "d"
+ ],
+ "POST /v1/data_subject_requests/{id}/extend": [
+  "post_extend",
+  "r"
+ ],
+ "POST /v1/data_subject_requests/{id}/fulfill": [
+  "post_fulfill",
+  "n"
+ ],
+ "POST /v1/data_subject_requests/{id}/notes": [
+  "post_notes",
+  "r"
+ ],
+ "POST /v1/data_subject_requests/{id}/reject": [
+  "post_reject",
+  "d"
+ ],
+ "POST /v1/design/assets": [
+  "post_assets",
+  "r"
+ ],
+ "POST /v1/desktop_mfa/devices/{id}/revoke": [
+  "post_devices_revoke",
+  "n"
+ ],
+ "POST /v1/desktop_mfa/devices/{id}/revoke_offline_cache": [
+  "post_devices_revoke_offline_cache",
+  "n"
+ ],
+ "POST /v1/desktop_mfa/enrolment_codes": [
+  "post_enrolment_codes",
+  "d"
+ ],
+ "POST /v1/device_assurance_policies": [
+  "create",
+  "d"
+ ],
+ "POST /v1/device_assurance_policies/evaluate": [
+  "post_evaluate",
+  "n"
+ ],
+ "POST /v1/device_integrations": [
+  "create",
+  "d"
+ ],
+ "POST /v1/device_integrations/{id}/sync": [
+  "post_sync",
+  "n"
+ ],
+ "POST /v1/device_posture": [
+  "create",
+  "d"
+ ],
+ "POST /v1/device_sso/registrations/{id}/revoke": [
+  "post_registrations_revoke",
+  "n"
+ ],
+ "POST /v1/directory_pull_sources": [
+  "create",
+  "d"
+ ],
+ "POST /v1/directory_pull_sources/{id}/sync_runs": [
+  "post_sync_runs",
+  "n"
+ ],
+ "POST /v1/domains": [
+  "create",
+  "d"
+ ],
+ "POST /v1/domains/{id}/verify": [
+  "post_verify",
+  "n"
+ ],
+ "POST /v1/email_addresses/{eid}/primary": [
+  "post_primary",
+  "n"
+ ],
+ "POST /v1/email_addresses/{eid}/verify": [
+  "post_verify",
+  "n"
+ ],
+ "POST /v1/email_templates/{name}/preview": [
+  "post_preview",
+  "d"
+ ],
+ "POST /v1/entitlement_overrides": [
+  "create",
+  "r"
+ ],
+ "POST /v1/entitlements/consume": [
+  "post_consume",
+  "r"
+ ],
+ "POST /v1/entitlements/consume/refund": [
+  "post_consume_refund",
+  "r"
+ ],
+ "POST /v1/erasure_connectors": [
+  "create",
+  "r"
+ ],
+ "POST /v1/erasure_connectors/{id}/probe": [
+  "post_probe",
+  "n"
+ ],
+ "POST /v1/feature_flags": [
+  "create",
+  "r"
+ ],
+ "POST /v1/feature_flags/evaluate": [
+  "post_evaluate",
+  "d"
+ ],
+ "POST /v1/federation/resolve": [
+  "post_resolve",
+  "d"
+ ],
+ "POST /v1/fga/models/transform": [
+  "post_models_transform",
+  "d"
+ ],
+ "POST /v1/fga/stores": [
+  "post_stores",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/authorization-models": [
+  "post_stores_authorization_models",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/authorization-models/{mid}/assertions/run": [
+  "post_stores_authorization_models_assertions_run",
+  "n"
+ ],
+ "POST /v1/fga/stores/{id}/batch-check": [
+  "post_stores_batch_check",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/check": [
+  "post_stores_check",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/expand": [
+  "post_stores_expand",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/import": [
+  "post_stores_import",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/list-objects": [
+  "post_stores_list_objects",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/list-users": [
+  "post_stores_list_users",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/materializations": [
+  "post_stores_materializations",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/materializations/{mid}/rebuild": [
+  "post_stores_materializations_rebuild",
+  "n"
+ ],
+ "POST /v1/fga/stores/{id}/read": [
+  "post_stores_read",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/tests": [
+  "post_stores_tests",
+  "d"
+ ],
+ "POST /v1/fga/stores/{id}/write": [
+  "post_stores_write",
+  "d"
+ ],
+ "POST /v1/fga/sync/backfill": [
+  "post_sync_backfill",
+  "d"
+ ],
+ "POST /v1/fga/sync/purge": [
+  "post_sync_purge",
+  "r"
+ ],
+ "POST /v1/fga/tests": [
+  "post_tests",
+  "d"
+ ],
+ "POST /v1/flows": [
+  "create",
+  "r"
+ ],
+ "POST /v1/flows/{id}/activate": [
+  "post_activate",
+  "r"
+ ],
+ "POST /v1/flows/{id}/experiments": [
+  "post_experiments",
+  "r"
+ ],
+ "POST /v1/flows/{id}/experiments/{experimentId}/start": [
+  "post_experiments_start",
+  "n"
+ ],
+ "POST /v1/flows/{id}/experiments/{experimentId}/stop": [
+  "post_experiments_stop",
+  "r"
+ ],
+ "POST /v1/flows/{id}/messages/{messageId}/cancel": [
+  "post_messages_cancel",
+  "n"
+ ],
+ "POST /v1/flows/{id}/simulate": [
+  "post_simulate",
+  "r"
+ ],
+ "POST /v1/fraud/email_risk": [
+  "post_email_risk",
+  "d"
+ ],
+ "POST /v1/fraud/lookup": [
+  "post_lookup",
+  "d"
+ ],
+ "POST /v1/grants/{grantType}/{id}/consume": [
+  "post_consume",
+  "r"
+ ],
+ "POST /v1/grants/{grantType}/{id}/leases/{leaseId}/release": [
+  "post_leases_release",
+  "d"
+ ],
+ "POST /v1/grants/{grantType}/{id}/refund": [
+  "post_refund",
+  "r"
+ ],
+ "POST /v1/group_rules": [
+  "create",
+  "r"
+ ],
+ "POST /v1/group_rules/apply": [
+  "post_apply",
+  "n"
+ ],
+ "POST /v1/group_rules/{id}/apply": [
+  "post_by_id_apply",
+  "n"
+ ],
+ "POST /v1/groups": [
+  "create",
+  "r"
+ ],
+ "POST /v1/groups/{id}/members": [
+  "post_members",
+  "r"
+ ],
+ "POST /v1/groups/{id}/members/remove": [
+  "post_members_remove",
+  "r"
+ ],
+ "POST /v1/groups/{id}/reapply": [
+  "post_reapply",
+  "n"
+ ],
+ "POST /v1/identity_verifications/{id}/decide": [
+  "post_decide",
+  "d"
+ ],
+ "POST /v1/iga/activations": [
+  "post_activations",
+  "r"
+ ],
+ "POST /v1/iga/activations/{id}/end": [
+  "post_activations_end",
+  "n"
+ ],
+ "POST /v1/iga/birthright_rules": [
+  "post_birthright_rules",
+  "r"
+ ],
+ "POST /v1/iga/bundles": [
+  "post_bundles",
+  "r"
+ ],
+ "POST /v1/iga/bundles/{id}/request": [
+  "post_bundles_request",
+  "r"
+ ],
+ "POST /v1/iga/campaign_items/{id}/decide": [
+  "post_campaign_items_decide",
+  "r"
+ ],
+ "POST /v1/iga/campaigns": [
+  "post_campaigns",
+  "r"
+ ],
+ "POST /v1/iga/campaigns/from_template": [
+  "post_campaigns_from_template",
+  "r"
+ ],
+ "POST /v1/iga/campaigns/{id}/close": [
+  "post_campaigns_close",
+  "n"
+ ],
+ "POST /v1/iga/campaigns/{id}/launch": [
+  "post_campaigns_launch",
+  "n"
+ ],
+ "POST /v1/iga/campaigns/{id}/run_now": [
+  "post_campaigns_run_now",
+  "n"
+ ],
+ "POST /v1/iga/campaigns/{id}/stop_recurrence": [
+  "post_campaigns_stop_recurrence",
+  "n"
+ ],
+ "POST /v1/iga/delegations": [
+  "post_delegations",
+  "r"
+ ],
+ "POST /v1/iga/eligibilities": [
+  "post_eligibilities",
+  "r"
+ ],
+ "POST /v1/iga/entitlements": [
+  "post_entitlements",
+  "r"
+ ],
+ "POST /v1/iga/entitlements/import": [
+  "post_entitlements_import",
+  "r"
+ ],
+ "POST /v1/iga/grants": [
+  "post_grants",
+  "r"
+ ],
+ "POST /v1/iga/grants/{id}/revoke": [
+  "post_grants_revoke",
+  "d"
+ ],
+ "POST /v1/iga/requests": [
+  "post_requests",
+  "r"
+ ],
+ "POST /v1/iga/requests/{id}/cancel": [
+  "post_requests_cancel",
+  "n"
+ ],
+ "POST /v1/iga/requests/{id}/decide": [
+  "post_requests_decide",
+  "r"
+ ],
+ "POST /v1/iga/sod_rules": [
+  "post_sod_rules",
+  "r"
+ ],
+ "POST /v1/iga/sod_violations/scan": [
+  "post_sod_violations_scan",
+  "n"
+ ],
+ "POST /v1/iga/users/{id}/offboard": [
+  "post_users_offboard",
+  "d"
+ ],
+ "POST /v1/iga/users/{id}/reconcile": [
+  "post_users_reconcile",
+  "n"
+ ],
+ "POST /v1/impersonations": [
+  "create",
+  "r"
+ ],
+ "POST /v1/impersonations/requests/{id}/approve": [
+  "post_requests_approve",
+  "r"
+ ],
+ "POST /v1/impersonations/requests/{id}/deny": [
+  "post_requests_deny",
+  "r"
+ ],
+ "POST /v1/impersonations/{id}/end": [
+  "post_end",
+  "n"
+ ],
+ "POST /v1/instance/config_snapshots": [
+  "post_config_snapshots",
+  "d"
+ ],
+ "POST /v1/instance/config_snapshots/{id}/restore": [
+  "post_config_snapshots_restore",
+  "d"
+ ],
+ "POST /v1/instance/data_key_provider": [
+  "post_data_key_provider",
+  "n"
+ ],
+ "POST /v1/instance/data_key_provider/check": [
+  "post_data_key_provider_check",
+  "n"
+ ],
+ "POST /v1/instance/data_key_provider/rewrap": [
+  "post_data_key_provider_rewrap",
+  "d"
+ ],
+ "POST /v1/instance/data_key_provider/rotate": [
+  "post_data_key_provider_rotate",
+  "n"
+ ],
+ "POST /v1/instance/data_key_provider/rotation_drill": [
+  "post_data_key_provider_rotation_drill",
+  "d"
+ ],
+ "POST /v1/instance/design/preview": [
+  "post_design_preview",
+  "r"
+ ],
+ "POST /v1/instance/duo_health_check": [
+  "post_duo_health_check",
+  "n"
+ ],
+ "POST /v1/instance/exports": [
+  "post_exports",
+  "r"
+ ],
+ "POST /v1/instance/exports/{id}/download_url": [
+  "post_exports_download_url",
+  "n"
+ ],
+ "POST /v1/instance/exports/{id}/revoke_links": [
+  "post_exports_revoke_links",
+  "n"
+ ],
+ "POST /v1/instance/hooks/before_user_create/test": [
+  "post_hooks_before_user_create_test",
+  "n"
+ ],
+ "POST /v1/instance/imports": [
+  "post_imports",
+  "r"
+ ],
+ "POST /v1/instance/integrations/{product}/atlas_id_tokens": [
+  "post_integrations_atlas_id_tokens",
+  "r"
+ ],
+ "POST /v1/instance/integrations/{product}/deliveries/redeliver": [
+  "post_integrations_deliveries_redeliver",
+  "r"
+ ],
+ "POST /v1/instance/integrations/{product}/events_secret": [
+  "post_integrations_events_secret",
+  "n"
+ ],
+ "POST /v1/instance/integrations/{product}/events_secret/rotate": [
+  "post_integrations_events_secret_rotate",
+  "r"
+ ],
+ "POST /v1/instance/integrations/{product}/test": [
+  "post_integrations_test",
+  "n"
+ ],
+ "POST /v1/instance/move_origin": [
+  "post_move_origin",
+  "r"
+ ],
+ "POST /v1/instance/notices/{id}/acknowledge": [
+  "post_notices_acknowledge",
+  "n"
+ ],
+ "POST /v1/instance/op_keys/rotate": [
+  "post_op_keys_rotate",
+  "d"
+ ],
+ "POST /v1/instance/page_templates/{page}/preview": [
+  "post_page_templates_preview",
+  "n"
+ ],
+ "POST /v1/instance/page_templates/{page}/promote": [
+  "post_page_templates_promote",
+  "n"
+ ],
+ "POST /v1/instance/policy_source/sync": [
+  "post_policy_source_sync",
+  "n"
+ ],
+ "POST /v1/instance/policy_source/test": [
+  "post_policy_source_test",
+  "n"
+ ],
+ "POST /v1/instance/preflight/acks": [
+  "post_preflight_acks",
+  "r"
+ ],
+ "POST /v1/instance/privacy_integrations/connect": [
+  "post_privacy_integrations_connect",
+  "r"
+ ],
+ "POST /v1/instance/privacy_orchestrator/cases/dismiss": [
+  "post_privacy_orchestrator_cases_dismiss",
+  "r"
+ ],
+ "POST /v1/instance/privacy_orchestrator/cases/{id}/dismiss": [
+  "post_privacy_orchestrator_cases_by_id_dismiss",
+  "r"
+ ],
+ "POST /v1/instance/privacy_orchestrator/cases/{id}/retry": [
+  "post_privacy_orchestrator_cases_retry",
+  "n"
+ ],
+ "POST /v1/instance/proxy_secret": [
+  "post_proxy_secret",
+  "d"
+ ],
+ "POST /v1/instance/referrals/accounts/resync": [
+  "post_referrals_accounts_resync",
+  "r"
+ ],
+ "POST /v1/instance/referrals/backfill": [
+  "post_referrals_backfill",
+  "r"
+ ],
+ "POST /v1/instance/referrals/calls/retry_failed": [
+  "post_referrals_calls_retry_failed",
+  "r"
+ ],
+ "POST /v1/instance/referrals/calls/{id}/retry": [
+  "post_referrals_calls_retry",
+  "n"
+ ],
+ "POST /v1/instance/referrals/simulate": [
+  "post_referrals_simulate",
+  "r"
+ ],
+ "POST /v1/instance/referrals/test": [
+  "post_referrals_test",
+  "n"
+ ],
+ "POST /v1/instance/referrals/{preset}/install": [
+  "post_referrals_install",
+  "r"
+ ],
+ "POST /v1/instance/secret_keys": [
+  "post_secret_keys",
+  "r"
+ ],
+ "POST /v1/instance/signing_keys/rotate": [
+  "post_signing_keys_rotate",
+  "d"
+ ],
+ "POST /v1/instance/status_dependencies": [
+  "post_status_dependencies",
+  "r"
+ ],
+ "POST /v1/instance/status_dependencies/{id}/refresh": [
+  "post_status_dependencies_refresh",
+  "n"
+ ],
+ "POST /v1/instance/status_subscription/rotate_feed": [
+  "post_status_subscription_rotate_feed",
+  "n"
+ ],
+ "POST /v1/integrations/verify_errors": [
+  "post_verify_errors",
+  "r"
+ ],
+ "POST /v1/integrations/{integration}/card/actions/{action}": [
+  "post_card_actions",
+  "r"
+ ],
+ "POST /v1/invitations": [
+  "create",
+  "d"
+ ],
+ "POST /v1/invitations/bulk": [
+  "post_bulk",
+  "d"
+ ],
+ "POST /v1/invitations/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/jwt_connections": [
+  "create",
+  "r"
+ ],
+ "POST /v1/jwt_templates": [
+  "create",
+  "r"
+ ],
+ "POST /v1/ldap_server_clients": [
+  "create",
+  "d"
+ ],
+ "POST /v1/ldap_server_clients/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "n"
+ ],
+ "POST /v1/least_privilege/apply": [
+  "post_apply",
+  "d"
+ ],
+ "POST /v1/listen/sessions": [
+  "post_sessions",
+  "r"
+ ],
+ "POST /v1/localizations": [
+  "create",
+  "d"
+ ],
+ "POST /v1/localizations/check": [
+  "post_check",
+  "r"
+ ],
+ "POST /v1/localizations/{id}/review": [
+  "post_review",
+  "r"
+ ],
+ "POST /v1/log_streams": [
+  "create",
+  "d"
+ ],
+ "POST /v1/log_streams/{id}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/logout_notify_endpoints": [
+  "create",
+  "r"
+ ],
+ "POST /v1/lti_platforms": [
+  "create",
+  "d"
+ ],
+ "POST /v1/m2m_tokens/verify": [
+  "post_verify",
+  "d"
+ ],
+ "POST /v1/machine_enrolment_tokens": [
+  "create",
+  "d"
+ ],
+ "POST /v1/machine_trust_policies": [
+  "create",
+  "r"
+ ],
+ "POST /v1/machine_trust_policies/{id}/test": [
+  "post_test",
+  "r"
+ ],
+ "POST /v1/machines": [
+  "create",
+  "d"
+ ],
+ "POST /v1/machines/{id}/approve": [
+  "post_approve",
+  "n"
+ ],
+ "POST /v1/machines/{id}/grants": [
+  "post_grants",
+  "d"
+ ],
+ "POST /v1/machines/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/machines/{id}/rotate_key": [
+  "post_rotate_key",
+  "r"
+ ],
+ "POST /v1/machines/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "r"
+ ],
+ "POST /v1/managed_waf/deprovision": [
+  "post_deprovision",
+  "n"
+ ],
+ "POST /v1/managed_waf/provision": [
+  "post_provision",
+  "n"
+ ],
+ "POST /v1/mcp": [
+  "create",
+  "d"
+ ],
+ "POST /v1/mcp/elevations": [
+  "post_elevations",
+  "r"
+ ],
+ "POST /v1/mcp_gateways": [
+  "create",
+  "r"
+ ],
+ "POST /v1/mcp_gateways/{id}/budgets": [
+  "post_budgets",
+  "r"
+ ],
+ "POST /v1/mcp_gateways/{id}/packs": [
+  "post_packs",
+  "r"
+ ],
+ "POST /v1/mcp_gateways/{id}/pins/{tool}/approve": [
+  "post_pins_approve",
+  "n"
+ ],
+ "POST /v1/mcp_gateways/{id}/upstreams": [
+  "post_upstreams",
+  "r"
+ ],
+ "POST /v1/mcp_gateways/{id}/upstreams/{upstreamId}/test": [
+  "post_upstreams_test",
+  "n"
+ ],
+ "POST /v1/mcp_registry": [
+  "create",
+  "r"
+ ],
+ "POST /v1/mcp_registry/{id}/decide": [
+  "post_decide",
+  "r"
+ ],
+ "POST /v1/messaging/suppressions": [
+  "post_suppressions",
+  "d"
+ ],
+ "POST /v1/messaging_providers/email/development": [
+  "post_email_development",
+  "d"
+ ],
+ "POST /v1/messaging_providers/email/managed": [
+  "post_email_managed",
+  "d"
+ ],
+ "POST /v1/messaging_providers/email/managed/verify": [
+  "post_email_managed_verify",
+  "n"
+ ],
+ "POST /v1/messaging_providers/{channel}/fallbacks": [
+  "post_fallbacks",
+  "r"
+ ],
+ "POST /v1/messaging_providers/{channel}/test": [
+  "post_test",
+  "d"
+ ],
+ "POST /v1/mfa_campaigns": [
+  "create",
+  "r"
+ ],
+ "POST /v1/mfa_factor_quarantines/{id}/release": [
+  "post_release",
+  "n"
+ ],
+ "POST /v1/migrations/better_auth/exchange": [
+  "post_better_auth_exchange",
+  "r"
+ ],
+ "POST /v1/migrations/{source}/exchange": [
+  "post_exchange",
+  "r"
+ ],
+ "POST /v1/migrations/{source}/imports": [
+  "post_imports",
+  "d"
+ ],
+ "POST /v1/migrations/{source}/imports/public_key/rotate": [
+  "post_imports_public_key_rotate",
+  "n"
+ ],
+ "POST /v1/migrations/{source}/imports/{id}/apply": [
+  "post_imports_apply",
+  "d"
+ ],
+ "POST /v1/migrations/{source}/imports/{id}/dry_run": [
+  "post_imports_dry_run",
+  "d"
+ ],
+ "POST /v1/migrations/{source}/imports/{id}/finalize": [
+  "post_imports_finalize",
+  "n"
+ ],
+ "POST /v1/migrations/{source}/verify": [
+  "post_verify",
+  "r"
+ ],
+ "POST /v1/network_acls": [
+  "create",
+  "d"
+ ],
+ "POST /v1/network_zones": [
+  "create",
+  "d"
+ ],
+ "POST /v1/network_zones/{id}/check": [
+  "post_check",
+  "d"
+ ],
+ "POST /v1/notification_categories": [
+  "create",
+  "r"
+ ],
+ "POST /v1/notification_templates": [
+  "create",
+  "r"
+ ],
+ "POST /v1/notifications": [
+  "create",
+  "r"
+ ],
+ "POST /v1/oauth_clients": [
+  "create",
+  "r"
+ ],
+ "POST /v1/oauth_clients/import": [
+  "post_import",
+  "r"
+ ],
+ "POST /v1/oauth_clients/{clientId}/grants": [
+  "post_grants",
+  "d"
+ ],
+ "POST /v1/oauth_clients/{id}/backchannel_logout/test": [
+  "post_backchannel_logout_test",
+  "n"
+ ],
+ "POST /v1/oauth_clients/{id}/logout": [
+  "post_logout",
+  "r"
+ ],
+ "POST /v1/oauth_clients/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "r"
+ ],
+ "POST /v1/oauth_clients/{id}/secret/reveal": [
+  "post_secret_reveal",
+  "n"
+ ],
+ "POST /v1/oauth_clients/{id}/token_exchange_profiles": [
+  "post_token_exchange_profiles",
+  "d"
+ ],
+ "POST /v1/oauth_clients/{id}/trusted_issuers": [
+  "post_trusted_issuers",
+  "r"
+ ],
+ "POST /v1/oauth_grants/import": [
+  "post_import",
+  "r"
+ ],
+ "POST /v1/oauth_initial_access_tokens": [
+  "create",
+  "d"
+ ],
+ "POST /v1/oauth_providers/{provider}/enabled": [
+  "post_enabled",
+  "d"
+ ],
+ "POST /v1/oauth_providers/{provider}/scope": [
+  "post_scope",
+  "d"
+ ],
+ "POST /v1/oauth_providers/{provider}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/oauth_publishers": [
+  "create",
+  "r"
+ ],
+ "POST /v1/oauth_publishers/{id}/verify": [
+  "post_verify",
+  "n"
+ ],
+ "POST /v1/opa/logs": [
+  "post_logs",
+  "d"
+ ],
+ "POST /v1/opa/status": [
+  "post_status",
+  "d"
+ ],
+ "POST /v1/opa/v1/data/*": [
+  "post_v1_data_x",
+  "d"
+ ],
+ "POST /v1/openfga/stores": [
+  "post_stores",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/authorization-models": [
+  "post_stores_authorization_models",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/batch-check": [
+  "post_stores_batch_check",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/check": [
+  "post_stores_check",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/expand": [
+  "post_stores_expand",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/list-objects": [
+  "post_stores_list_objects",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/list-users": [
+  "post_stores_list_users",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/read": [
+  "post_stores_read",
+  "r"
+ ],
+ "POST /v1/openfga/stores/{store}/write": [
+  "post_stores_write",
+  "r"
+ ],
+ "POST /v1/org_ldap_connections": [
+  "create",
+  "r"
+ ],
+ "POST /v1/org_ldap_connections/{id}/sync_runs": [
+  "post_sync_runs",
+  "d"
+ ],
+ "POST /v1/org_ldap_connections/{id}/test": [
+  "post_test",
+  "d"
+ ],
+ "POST /v1/org_role_grants": [
+  "create",
+  "d"
+ ],
+ "POST /v1/org_role_grants/{id}/delegations": [
+  "post_delegations",
+  "d"
+ ],
+ "POST /v1/org_role_sets": [
+  "create",
+  "r"
+ ],
+ "POST /v1/org_templates": [
+  "create",
+  "r"
+ ],
+ "POST /v1/org_templates/{id}/organizations": [
+  "post_organizations",
+  "r"
+ ],
+ "POST /v1/organization_connections": [
+  "create",
+  "r"
+ ],
+ "POST /v1/organization_connections/{id}/accept": [
+  "post_accept",
+  "r"
+ ],
+ "POST /v1/organization_settings_schema": [
+  "create",
+  "r"
+ ],
+ "POST /v1/organizations": [
+  "create",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/app_webhook_endpoints": [
+  "post_app_webhook_endpoints",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver": [
+  "post_app_webhook_endpoints_deliveries_redeliver",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay": [
+  "post_app_webhook_endpoints_replay",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret": [
+  "post_app_webhook_endpoints_reveal_secret",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret": [
+  "post_app_webhook_endpoints_rotate_secret",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test": [
+  "post_app_webhook_endpoints_test",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/audit_streams": [
+  "post_audit_streams",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/directory_sync_runs/{runId}/retry": [
+  "post_directory_sync_runs_retry",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/domains": [
+  "post_domains",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/domains/{domainId}/verification_email": [
+  "post_domains_verification_email",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/domains/{domainId}/verify": [
+  "post_domains_verify",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/invitations": [
+  "post_invitations",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/invitations/import": [
+  "post_invitations_import",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/invitations/{invitationId}/resend": [
+  "post_invitations_resend",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/invitations/{invitationId}/revoke": [
+  "post_invitations_revoke",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/machine_memberships": [
+  "post_machine_memberships",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/membership_imports": [
+  "post_membership_imports",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/memberships": [
+  "post_memberships",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/roles": [
+  "post_roles",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/teams": [
+  "post_teams",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/teams/{teamId}/members": [
+  "post_teams_members",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/webhook_endpoints": [
+  "post_webhook_endpoints",
+  "r"
+ ],
+ "POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver": [
+  "post_webhook_endpoints_deliveries_redeliver",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/replay": [
+  "post_webhook_endpoints_replay",
+  "d"
+ ],
+ "POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/reveal_secret": [
+  "post_webhook_endpoints_reveal_secret",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/rotate_secret": [
+  "post_webhook_endpoints_rotate_secret",
+  "n"
+ ],
+ "POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/test": [
+  "post_webhook_endpoints_test",
+  "n"
+ ],
+ "POST /v1/organizations/{orgId}/end_users": [
+  "post_end_users",
+  "r"
+ ],
+ "POST /v1/organizations/{orgId}/reader_domain": [
+  "post_reader_domain",
+  "r"
+ ],
+ "POST /v1/partner_links": [
+  "create",
+  "r"
+ ],
+ "POST /v1/partner_links/outbound/{partner}/request": [
+  "post_outbound_request",
+  "r"
+ ],
+ "POST /v1/partner_links/outbound/{partner}/test": [
+  "post_outbound_test",
+  "n"
+ ],
+ "POST /v1/partner_links/requests/{id}/approve": [
+  "post_requests_approve",
+  "r"
+ ],
+ "POST /v1/partner_links/requests/{id}/deny": [
+  "post_requests_deny",
+  "n"
+ ],
+ "POST /v1/partner_links/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "n"
+ ],
+ "POST /v1/partner_platforms/{partner}/token": [
+  "post_token",
+  "r"
+ ],
+ "POST /v1/passkey_api/login/finalize": [
+  "post_login_finalize",
+  "r"
+ ],
+ "POST /v1/passkey_api/login/init": [
+  "post_login_init",
+  "r"
+ ],
+ "POST /v1/passkey_api/registration/finalize": [
+  "post_registration_finalize",
+  "r"
+ ],
+ "POST /v1/passkey_api/registration/init": [
+  "post_registration_init",
+  "r"
+ ],
+ "POST /v1/passkey_campaigns": [
+  "create",
+  "r"
+ ],
+ "POST /v1/pca/freeze": [
+  "post_freeze",
+  "r"
+ ],
+ "POST /v1/pca/revocations": [
+  "post_revocations",
+  "r"
+ ],
+ "POST /v1/pca/stepups/{id}/deny": [
+  "post_stepups_deny",
+  "r"
+ ],
+ "POST /v1/permissions": [
+  "create",
+  "d"
+ ],
+ "POST /v1/platform/accountless_apps": [
+  "create",
+  "d"
+ ],
+ "POST /v1/platform/apps": [
+  "create",
+  "d"
+ ],
+ "POST /v1/platform/apps/accept_transfer": [
+  "post_accept_transfer",
+  "d"
+ ],
+ "POST /v1/platform/apps/bulk_delete": [
+  "post_bulk_delete",
+  "d"
+ ],
+ "POST /v1/platform/apps/claim": [
+  "post_claim",
+  "d"
+ ],
+ "POST /v1/platform/apps/{id}/archive": [
+  "post_archive",
+  "n"
+ ],
+ "POST /v1/platform/apps/{id}/clone_config": [
+  "post_clone_config",
+  "d"
+ ],
+ "POST /v1/platform/apps/{id}/initial_secret/reveal": [
+  "reveal_initial_secret",
+  "n"
+ ],
+ "POST /v1/platform/apps/{id}/instances": [
+  "post_instances",
+  "d"
+ ],
+ "POST /v1/platform/apps/{id}/instances/{instanceId}/clones": [
+  "post_instances_clones",
+  "r"
+ ],
+ "POST /v1/platform/apps/{id}/instances/{instanceId}/rotate_secret": [
+  "post_instances_rotate_secret",
+  "r"
+ ],
+ "POST /v1/platform/apps/{id}/narrow_secret_keys": [
+  "post_narrow_secret_keys",
+  "r"
+ ],
+ "POST /v1/platform/apps/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "r"
+ ],
+ "POST /v1/platform/apps/{id}/secret_keys": [
+  "post_secret_keys",
+  "d"
+ ],
+ "POST /v1/platform/apps/{id}/transfer": [
+  "post_transfer",
+  "n"
+ ],
+ "POST /v1/platform/apps/{id}/unarchive": [
+  "post_unarchive",
+  "n"
+ ],
+ "POST /v1/platform/atlas_id_apps": [
+  "create",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_apps/design/preview": [
+  "post_design_preview",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/adoption_codes": [
+  "post_adoption_codes",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/backchannel_logout/test": [
+  "post_backchannel_logout_test",
+  "n"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/move_origin": [
+  "post_move_origin",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/provisioned_accounts": [
+  "post_provisioned_accounts",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/provisioned_accounts/{testAccountId}/password": [
+  "post_provisioned_accounts_password",
+  "d"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_apps/{id}/webhook/rotate_secret": [
+  "post_webhook_rotate_secret",
+  "r"
+ ],
+ "POST /v1/platform/atlas_id_publisher/verify": [
+  "post_verify",
+  "n"
+ ],
+ "POST /v1/platform/audit_streams": [
+  "create",
+  "r"
+ ],
+ "POST /v1/platform/audit_streams/{id}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/platform/design/assets": [
+  "post_assets",
+  "r"
+ ],
+ "POST /v1/platform/domains": [
+  "create",
+  "r"
+ ],
+ "POST /v1/platform/domains/{domainId}/verify": [
+  "post_verify",
+  "n"
+ ],
+ "POST /v1/platform/keys": [
+  "create",
+  "d"
+ ],
+ "POST /v1/platform/keys/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/policies": [
+  "create",
+  "r"
+ ],
+ "POST /v1/policies/{id}/versions": [
+  "post_versions",
+  "r"
+ ],
+ "POST /v1/policies/{id}/versions/{versionId}/publish": [
+  "post_versions_publish",
+  "d"
+ ],
+ "POST /v1/policies/{id}/versions/{versionId}/retire": [
+  "post_versions_retire",
+  "n"
+ ],
+ "POST /v1/policy_bundles": [
+  "create",
+  "n"
+ ],
+ "POST /v1/policy_bundles/import": [
+  "post_import",
+  "r"
+ ],
+ "POST /v1/policy_bundles/verify": [
+  "post_verify",
+  "r"
+ ],
+ "POST /v1/privacy/lookup": [
+  "post_lookup",
+  "r"
+ ],
+ "POST /v1/privacy/requests": [
+  "post_requests",
+  "r"
+ ],
+ "POST /v1/privacy/requests/{id}/cancel": [
+  "post_requests_cancel",
+  "n"
+ ],
+ "POST /v1/provisioning/preview": [
+  "post_preview",
+  "r"
+ ],
+ "POST /v1/proxy_apps": [
+  "create",
+  "d"
+ ],
+ "POST /v1/radius_clients": [
+  "create",
+  "d"
+ ],
+ "POST /v1/rate_limit_policies": [
+  "create",
+  "r"
+ ],
+ "POST /v1/redirect_urls": [
+  "create",
+  "d"
+ ],
+ "POST /v1/referral_rewards/run": [
+  "post_run",
+  "n"
+ ],
+ "POST /v1/referral_rewards/{id}/void": [
+  "post_void",
+  "d"
+ ],
+ "POST /v1/refresh_tokens/revoke": [
+  "post_revoke",
+  "d"
+ ],
+ "POST /v1/relay_agents": [
+  "create",
+  "d"
+ ],
+ "POST /v1/relay_agents/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "n"
+ ],
+ "POST /v1/required_actions/bulk": [
+  "post_bulk",
+  "r"
+ ],
+ "POST /v1/resource_checks": [
+  "create",
+  "d"
+ ],
+ "POST /v1/resource_checks/batch": [
+  "post_batch",
+  "d"
+ ],
+ "POST /v1/resource_checks/list": [
+  "post_list",
+  "d"
+ ],
+ "POST /v1/resource_role_assignments": [
+  "create",
+  "d"
+ ],
+ "POST /v1/resource_servers": [
+  "create",
+  "d"
+ ],
+ "POST /v1/resource_types": [
+  "create",
+  "d"
+ ],
+ "POST /v1/resources/sync": [
+  "post_sync",
+  "d"
+ ],
+ "POST /v1/risk_based_mfa/replay": [
+  "post_replay",
+  "r"
+ ],
+ "POST /v1/risk_events/{id}/feedback": [
+  "post_feedback",
+  "d"
+ ],
+ "POST /v1/risk_signals": [
+  "create",
+  "r"
+ ],
+ "POST /v1/risky_users/{user_id}/confirm": [
+  "post_confirm",
+  "n"
+ ],
+ "POST /v1/risky_users/{user_id}/dismiss": [
+  "post_dismiss",
+  "n"
+ ],
+ "POST /v1/risky_users/{user_id}/force_password_change": [
+  "post_force_password_change",
+  "n"
+ ],
+ "POST /v1/risky_users/{user_id}/force_reauth": [
+  "post_force_reauth",
+  "n"
+ ],
+ "POST /v1/risky_users/{user_id}/remediate": [
+  "post_remediate",
+  "n"
+ ],
+ "POST /v1/roles": [
+  "create",
+  "d"
+ ],
+ "POST /v1/saml_idp/service_providers/import_metadata": [
+  "post_service_providers_import_metadata",
+  "r"
+ ],
+ "POST /v1/scim_provisioning_targets": [
+  "create",
+  "r"
+ ],
+ "POST /v1/scim_provisioning_targets/{id}/retry_failed": [
+  "post_retry_failed",
+  "r"
+ ],
+ "POST /v1/scim_provisioning_targets/{id}/sync_group": [
+  "post_sync_group",
+  "r"
+ ],
+ "POST /v1/scim_provisioning_targets/{id}/sync_user": [
+  "post_sync_user",
+  "r"
+ ],
+ "POST /v1/scim_provisioning_targets/{id}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/scim_resource_types": [
+  "create",
+  "r"
+ ],
+ "POST /v1/scim_tokens": [
+  "create",
+  "r"
+ ],
+ "POST /v1/scim_tokens/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/scim_tokens/{id}/rotate": [
+  "post_rotate",
+  "r"
+ ],
+ "POST /v1/secret_keys": [
+  "create",
+  "r"
+ ],
+ "POST /v1/secret_keys/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/secret_keys/{id}/rotate": [
+  "post_rotate",
+  "d"
+ ],
+ "POST /v1/security_advisories/{id}/acknowledge": [
+  "post_acknowledge",
+  "n"
+ ],
+ "POST /v1/service_connectors": [
+  "create",
+  "d"
+ ],
+ "POST /v1/service_connectors/{id}/invoke": [
+  "post_invoke",
+  "d"
+ ],
+ "POST /v1/session_exchange_apps": [
+  "create",
+  "r"
+ ],
+ "POST /v1/sessions": [
+  "create",
+  "r"
+ ],
+ "POST /v1/sessions/revoke_by_filter": [
+  "post_revoke_by_filter",
+  "r"
+ ],
+ "POST /v1/sessions/{id}/integration_tokens/{integration}": [
+  "post_integration_tokens",
+  "n"
+ ],
+ "POST /v1/sessions/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/sessions/{id}/tokens/{template}": [
+  "post_tokens",
+  "n"
+ ],
+ "POST /v1/sessions/{id}/touch": [
+  "post_touch",
+  "n"
+ ],
+ "POST /v1/sign_in_tokens": [
+  "create",
+  "d"
+ ],
+ "POST /v1/sign_in_tokens/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/sms_templates": [
+  "create",
+  "d"
+ ],
+ "POST /v1/sms_templates/{name}/preview": [
+  "post_preview",
+  "d"
+ ],
+ "POST /v1/ssf/events": [
+  "post_events",
+  "d"
+ ],
+ "POST /v1/ssf/receivers": [
+  "post_receivers",
+  "d"
+ ],
+ "POST /v1/ssf/status": [
+  "post_status",
+  "d"
+ ],
+ "POST /v1/ssf/streams": [
+  "post_streams",
+  "d"
+ ],
+ "POST /v1/ssf/streams/{id}/status": [
+  "post_streams_status",
+  "d"
+ ],
+ "POST /v1/ssf/streams/{id}/verify": [
+  "post_streams_verify",
+  "d"
+ ],
+ "POST /v1/ssf/subjects/add": [
+  "post_subjects_add",
+  "d"
+ ],
+ "POST /v1/ssf/subjects/remove": [
+  "post_subjects_remove",
+  "d"
+ ],
+ "POST /v1/ssf/verify": [
+  "post_verify",
+  "d"
+ ],
+ "POST /v1/sso_connections": [
+  "create",
+  "r"
+ ],
+ "POST /v1/sso_connections/{id}/profile_mapping/preview": [
+  "post_profile_mapping_preview",
+  "r"
+ ],
+ "POST /v1/sso_connections/{id}/saml_encryption_key": [
+  "post_saml_encryption_key",
+  "n"
+ ],
+ "POST /v1/sso_connections/{id}/signing_keys": [
+  "post_signing_keys",
+  "r"
+ ],
+ "POST /v1/sso_connections/{id}/signing_keys/{kid}/retire": [
+  "post_signing_keys_retire",
+  "n"
+ ],
+ "POST /v1/sso_connections/{id}/test": [
+  "post_test",
+  "r"
+ ],
+ "POST /v1/sso_connections/{id}/test_login": [
+  "post_test_login",
+  "n"
+ ],
+ "POST /v1/sso_onboarding_profiles": [
+  "create",
+  "d"
+ ],
+ "POST /v1/sso_onboarding_profiles/{id}/tickets": [
+  "post_tickets",
+  "d"
+ ],
+ "POST /v1/sso_onboarding_tickets/{id}/revoke": [
+  "post_revoke",
+  "n"
+ ],
+ "POST /v1/step_up/assert": [
+  "post_assert",
+  "r"
+ ],
+ "POST /v1/step_up/policies": [
+  "post_policies",
+  "r"
+ ],
+ "POST /v1/suppressions": [
+  "create",
+  "r"
+ ],
+ "POST /v1/telemetry_export/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/test_instance": [
+  "create",
+  "r"
+ ],
+ "POST /v1/test_users/purge": [
+  "post_purge",
+  "r"
+ ],
+ "POST /v1/testing/sign_in_url": [
+  "post_sign_in_url",
+  "r"
+ ],
+ "POST /v1/testing_tokens": [
+  "create",
+  "n"
+ ],
+ "POST /v1/tickets": [
+  "create",
+  "r"
+ ],
+ "POST /v1/tickets/redeem": [
+  "post_redeem",
+  "r"
+ ],
+ "POST /v1/tokens/verify": [
+  "post_verify",
+  "d"
+ ],
+ "POST /v1/user_exports": [
+  "create",
+  "n"
+ ],
+ "POST /v1/user_imports": [
+  "create",
+  "d"
+ ],
+ "POST /v1/users": [
+  "create",
+  "d"
+ ],
+ "POST /v1/users/bulk_actions": [
+  "post_bulk_actions",
+  "r"
+ ],
+ "POST /v1/users/bulk_actions/{id}/cancel": [
+  "post_bulk_actions_cancel",
+  "n"
+ ],
+ "POST /v1/users/by_emails": [
+  "post_by_emails",
+  "r"
+ ],
+ "POST /v1/users/deleted_addresses": [
+  "post_deleted_addresses",
+  "r"
+ ],
+ "POST /v1/users/deleted_addresses/check": [
+  "post_deleted_addresses_check",
+  "r"
+ ],
+ "POST /v1/users/search": [
+  "post_search",
+  "r"
+ ],
+ "POST /v1/users/search/export": [
+  "post_search_export",
+  "r"
+ ],
+ "POST /v1/users/search/views": [
+  "post_search_views",
+  "r"
+ ],
+ "POST /v1/users/search/views/{id}/count": [
+  "post_search_views_count",
+  "n"
+ ],
+ "POST /v1/users/{id}/account_claim": [
+  "post_account_claim",
+  "d"
+ ],
+ "POST /v1/users/{id}/age_assurance": [
+  "post_age_assurance",
+  "r"
+ ],
+ "POST /v1/users/{id}/age_assurance/{assuranceId}/revoke": [
+  "post_age_assurance_revoke",
+  "d"
+ ],
+ "POST /v1/users/{id}/app_roles": [
+  "post_app_roles",
+  "r"
+ ],
+ "POST /v1/users/{id}/approval_devices/trust": [
+  "post_approval_devices_trust",
+  "r"
+ ],
+ "POST /v1/users/{id}/approval_requests": [
+  "post_approval_requests",
+  "r"
+ ],
+ "POST /v1/users/{id}/approval_requests/{approvalId}/cancel": [
+  "post_approval_requests_cancel",
+  "n"
+ ],
+ "POST /v1/users/{id}/ban": [
+  "post_ban",
+  "d"
+ ],
+ "POST /v1/users/{id}/consents": [
+  "post_consents",
+  "d"
+ ],
+ "POST /v1/users/{id}/contain": [
+  "post_contain",
+  "d"
+ ],
+ "POST /v1/users/{id}/deletion": [
+  "post_deletion",
+  "r"
+ ],
+ "POST /v1/users/{id}/deletion/cancel": [
+  "post_deletion_cancel",
+  "n"
+ ],
+ "POST /v1/users/{id}/deletion/finalize": [
+  "post_deletion_finalize",
+  "n"
+ ],
+ "POST /v1/users/{id}/deletion/reconfirm": [
+  "post_deletion_reconfirm",
+  "n"
+ ],
+ "POST /v1/users/{id}/directives": [
+  "post_directives",
+  "d"
+ ],
+ "POST /v1/users/{id}/email_addresses": [
+  "post_email_addresses",
+  "d"
+ ],
+ "POST /v1/users/{id}/email_addresses/{eid}/primary": [
+  "post_email_addresses_primary",
+  "n"
+ ],
+ "POST /v1/users/{id}/email_addresses/{eid}/verify": [
+  "post_email_addresses_verify",
+  "n"
+ ],
+ "POST /v1/users/{id}/erasure_acks": [
+  "post_erasure_acks",
+  "r"
+ ],
+ "POST /v1/users/{id}/external_accounts": [
+  "post_external_accounts",
+  "d"
+ ],
+ "POST /v1/users/{id}/external_accounts/connect": [
+  "post_external_accounts_connect",
+  "d"
+ ],
+ "POST /v1/users/{id}/guardians": [
+  "post_guardians",
+  "r"
+ ],
+ "POST /v1/users/{id}/guardians/{linkId}/approve": [
+  "post_guardians_approve",
+  "d"
+ ],
+ "POST /v1/users/{id}/identities": [
+  "post_identities",
+  "d"
+ ],
+ "POST /v1/users/{id}/identities/import": [
+  "post_identities_import",
+  "d"
+ ],
+ "POST /v1/users/{id}/identity_verifications": [
+  "post_identity_verifications",
+  "d"
+ ],
+ "POST /v1/users/{id}/identity_verifications/import": [
+  "post_identity_verifications_import",
+  "r"
+ ],
+ "POST /v1/users/{id}/legal_hold": [
+  "post_legal_hold",
+  "r"
+ ],
+ "POST /v1/users/{id}/legal_hold/release": [
+  "post_legal_hold_release",
+  "r"
+ ],
+ "POST /v1/users/{id}/links": [
+  "post_links",
+  "r"
+ ],
+ "POST /v1/users/{id}/lock": [
+  "post_lock",
+  "d"
+ ],
+ "POST /v1/users/{id}/merge": [
+  "post_merge",
+  "d"
+ ],
+ "POST /v1/users/{id}/minor_status/assess": [
+  "post_minor_status_assess",
+  "n"
+ ],
+ "POST /v1/users/{id}/notes": [
+  "post_notes",
+  "r"
+ ],
+ "POST /v1/users/{id}/password": [
+  "post_password",
+  "r"
+ ],
+ "POST /v1/users/{id}/phone_numbers": [
+  "post_phone_numbers",
+  "d"
+ ],
+ "POST /v1/users/{id}/phone_numbers/{pid}/verify": [
+  "post_phone_numbers_verify",
+  "n"
+ ],
+ "POST /v1/users/{id}/progression/events": [
+  "post_progression_events",
+  "d"
+ ],
+ "POST /v1/users/{id}/referral/flag": [
+  "post_referral_flag",
+  "d"
+ ],
+ "POST /v1/users/{id}/referral/resync": [
+  "post_referral_resync",
+  "n"
+ ],
+ "POST /v1/users/{id}/release": [
+  "post_release",
+  "n"
+ ],
+ "POST /v1/users/{id}/required_actions": [
+  "post_required_actions",
+  "r"
+ ],
+ "POST /v1/users/{id}/reset_mfa": [
+  "post_reset_mfa",
+  "n"
+ ],
+ "POST /v1/users/{id}/sessions/revoke": [
+  "post_sessions_revoke",
+  "d"
+ ],
+ "POST /v1/users/{id}/smartcard_mappings": [
+  "post_smartcard_mappings",
+  "r"
+ ],
+ "POST /v1/users/{id}/temporary_access": [
+  "post_temporary_access",
+  "d"
+ ],
+ "POST /v1/users/{id}/unban": [
+  "post_unban",
+  "n"
+ ],
+ "POST /v1/users/{id}/unlock": [
+  "post_unlock",
+  "n"
+ ],
+ "POST /v1/vault/objects": [
+  "post_objects",
+  "d"
+ ],
+ "POST /v1/vc/credential_types": [
+  "post_credential_types",
+  "r"
+ ],
+ "POST /v1/vc/credentials/{id}/revoke": [
+  "post_credentials_revoke",
+  "r"
+ ],
+ "POST /v1/vc/deferred/{id}/approve": [
+  "post_deferred_approve",
+  "d"
+ ],
+ "POST /v1/vc/deferred/{id}/deny": [
+  "post_deferred_deny",
+  "d"
+ ],
+ "POST /v1/vc/offers": [
+  "post_offers",
+  "r"
+ ],
+ "POST /v1/vc/presentation_requests": [
+  "post_presentation_requests",
+  "r"
+ ],
+ "POST /v1/waitlist_entries": [
+  "create",
+  "d"
+ ],
+ "POST /v1/waitlist_entries/bulk": [
+  "post_bulk",
+  "d"
+ ],
+ "POST /v1/waitlist_entries/{id}/decide": [
+  "post_decide",
+  "d"
+ ],
+ "POST /v1/web_bot_auth/directories": [
+  "post_directories",
+  "r"
+ ],
+ "POST /v1/webhook_endpoints": [
+  "create",
+  "r"
+ ],
+ "POST /v1/webhook_endpoints/{id}/deliveries/{deliveryId}/redeliver": [
+  "post_deliveries_redeliver",
+  "n"
+ ],
+ "POST /v1/webhook_endpoints/{id}/dlq/ack": [
+  "post_dlq_ack",
+  "r"
+ ],
+ "POST /v1/webhook_endpoints/{id}/dlq/requeue": [
+  "post_dlq_requeue",
+  "r"
+ ],
+ "POST /v1/webhook_endpoints/{id}/redeliver": [
+  "post_redeliver",
+  "d"
+ ],
+ "POST /v1/webhook_endpoints/{id}/replay": [
+  "post_replay",
+  "d"
+ ],
+ "POST /v1/webhook_endpoints/{id}/reveal_secret": [
+  "post_reveal_secret",
+  "n"
+ ],
+ "POST /v1/webhook_endpoints/{id}/rotate_secret": [
+  "post_rotate_secret",
+  "r"
+ ],
+ "POST /v1/webhook_endpoints/{id}/test": [
+  "post_test",
+  "n"
+ ],
+ "POST /v1/workflow_approvals/{id}/decide": [
+  "post_decide",
+  "r"
+ ],
+ "POST /v1/workflows": [
+  "create",
+  "d"
+ ],
+ "POST /v1/workflows/from_template": [
+  "post_from_template",
+  "r"
+ ],
+ "POST /v1/workflows/{id}/dry_run": [
+  "post_dry_run",
+  "d"
+ ],
+ "POST /v1/workflows/{id}/invoke": [
+  "post_invoke",
+  "r"
+ ],
+ "POST /v1/workflows/{id}/run": [
+  "post_run",
+  "d"
+ ],
+ "POST /v1/workflows/{id}/runs/{runId}/cancel": [
+  "post_runs_cancel",
+  "n"
+ ],
+ "POST /v1/workflows/{id}/runs/{runId}/resume": [
+  "post_runs_resume",
+  "n"
+ ],
+ "POST /v1/workflows/{id}/runs/{runId}/retry": [
+  "post_runs_retry",
+  "r"
+ ],
+ "POST /v1/wsfed_connections": [
+  "create",
+  "r"
+ ],
+ "POST /v1/yubikeys": [
+  "create",
+  "r"
+ ],
+ "PUT /v1/abac/token_mapping": [
+  "put_token_mapping",
+  "d"
+ ],
+ "PUT /v1/abac_schema": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/actions/bindings/{trigger}": [
+  "put_bindings",
+  "d"
+ ],
+ "PUT /v1/agent_registration": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/agents/{id}/lifecycle": [
+  "put_lifecycle",
+  "r"
+ ],
+ "PUT /v1/agents/{id}/owner": [
+  "put_owner",
+  "r"
+ ],
+ "PUT /v1/attack_protection/app_attestation_secret": [
+  "put_app_attestation_secret",
+  "d"
+ ],
+ "PUT /v1/audit/chain": [
+  "put_chain",
+  "r"
+ ],
+ "PUT /v1/audit_retention": [
+  "put",
+  "d"
+ ],
+ "PUT /v1/authz_decision_settings": [
+  "put",
+  "d"
+ ],
+ "PUT /v1/better_auth_imports/{id}/parts/{part}": [
+  "put_parts",
+  "r"
+ ],
+ "PUT /v1/billing/providers/{provider}": [
+  "put_providers",
+  "r"
+ ],
+ "PUT /v1/billing/settings": [
+  "put_settings",
+  "d"
+ ],
+ "PUT /v1/changes/consumers/{name}/ack": [
+  "put_consumers_ack",
+  "r"
+ ],
+ "PUT /v1/connection_actions/{provider}/{name}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/connection_provider_topics": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/connection_providers/{provider}/policy": [
+  "put_policy",
+  "r"
+ ],
+ "PUT /v1/connection_reconnect_settings": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/connections/oauth_clients": [
+  "put_oauth_clients",
+  "r"
+ ],
+ "PUT /v1/connections/relay_limits": [
+  "put_relay_limits",
+  "r"
+ ],
+ "PUT /v1/connections/token_limits": [
+  "put_token_limits",
+  "r"
+ ],
+ "PUT /v1/connections/{id}/access_rules": [
+  "put_access_rules",
+  "r"
+ ],
+ "PUT /v1/connections/{id}/credentials": [
+  "put_credentials",
+  "r"
+ ],
+ "PUT /v1/delivery_health/{kind}/{id}/alert_contacts": [
+  "put_alert_contacts",
+  "r"
+ ],
+ "PUT /v1/desktop_mfa/policy": [
+  "put_policy",
+  "d"
+ ],
+ "PUT /v1/devices": [
+  "put",
+  "d"
+ ],
+ "PUT /v1/directory_pull_sources/{id}/csv": [
+  "put_csv",
+  "d"
+ ],
+ "PUT /v1/email_templates/{name}": [
+  "put",
+  "d"
+ ],
+ "PUT /v1/fga/settings": [
+  "put_settings",
+  "d"
+ ],
+ "PUT /v1/fga/sync": [
+  "put_sync",
+  "r"
+ ],
+ "PUT /v1/fraud/email_risk/settings": [
+  "put_email_risk_settings",
+  "d"
+ ],
+ "PUT /v1/identity_verification/settings": [
+  "put_settings",
+  "d"
+ ],
+ "PUT /v1/iga/settings": [
+  "put_settings",
+  "r"
+ ],
+ "PUT /v1/instance/app_event_types": [
+  "put_app_event_types",
+  "r"
+ ],
+ "PUT /v1/instance/captcha_secret": [
+  "put_captcha_secret",
+  "d"
+ ],
+ "PUT /v1/instance/cookie_consent": [
+  "put_cookie_consent",
+  "r"
+ ],
+ "PUT /v1/instance/data_key_provider": [
+  "put_data_key_provider",
+  "d"
+ ],
+ "PUT /v1/instance/design": [
+  "put_design",
+  "r"
+ ],
+ "PUT /v1/instance/duo_secret": [
+  "put_duo_secret",
+  "r"
+ ],
+ "PUT /v1/instance/impersonation_policy": [
+  "put_impersonation_policy",
+  "r"
+ ],
+ "PUT /v1/instance/integrations/{product}": [
+  "put_integrations",
+  "r"
+ ],
+ "PUT /v1/instance/kerberos_secret": [
+  "put_kerberos_secret",
+  "d"
+ ],
+ "PUT /v1/instance/ldap_connections/{connectionId}/bind_password": [
+  "put_ldap_connections_bind_password",
+  "d"
+ ],
+ "PUT /v1/instance/org_departure_policy": [
+  "put_org_departure_policy",
+  "r"
+ ],
+ "PUT /v1/instance/org_role_entitlements": [
+  "put_org_role_entitlements",
+  "r"
+ ],
+ "PUT /v1/instance/page_templates/{page}": [
+  "put_page_templates",
+  "d"
+ ],
+ "PUT /v1/instance/policy_source": [
+  "put_policy_source",
+  "r"
+ ],
+ "PUT /v1/instance/preflight/acks/{code}": [
+  "put_preflight_acks",
+  "r"
+ ],
+ "PUT /v1/instance/privacy_orchestrator": [
+  "put_privacy_orchestrator",
+  "r"
+ ],
+ "PUT /v1/instance/scopes": [
+  "put_scopes",
+  "r"
+ ],
+ "PUT /v1/instance/signing_key_provider": [
+  "put_signing_key_provider",
+  "r"
+ ],
+ "PUT /v1/instance/signing_key_schedule": [
+  "put_signing_key_schedule",
+  "r"
+ ],
+ "PUT /v1/instance/smart_card_secret": [
+  "put_smart_card_secret",
+  "r"
+ ],
+ "PUT /v1/instance/status_subscription": [
+  "put_status_subscription",
+  "d"
+ ],
+ "PUT /v1/instance/user_traits_schema": [
+  "put_user_traits_schema",
+  "r"
+ ],
+ "PUT /v1/instance/wallet_rpc_secret": [
+  "put_wallet_rpc_secret",
+  "d"
+ ],
+ "PUT /v1/instance/write_budget": [
+  "put_write_budget",
+  "r"
+ ],
+ "PUT /v1/instance/yubico_secret": [
+  "put_yubico_secret",
+  "r"
+ ],
+ "PUT /v1/legacy_auth_connection": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/managed_waf": [
+  "put",
+  "d"
+ ],
+ "PUT /v1/marketing_settings": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/mcp_connector": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/message_receivers/{provider}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/messaging/country_routes": [
+  "put_country_routes",
+  "r"
+ ],
+ "PUT /v1/messaging/settings": [
+  "put_settings",
+  "r"
+ ],
+ "PUT /v1/messaging_providers/email": [
+  "put_email",
+  "r"
+ ],
+ "PUT /v1/messaging_providers/push": [
+  "put_push",
+  "r"
+ ],
+ "PUT /v1/messaging_providers/sms": [
+  "put_sms",
+  "r"
+ ],
+ "PUT /v1/messaging_providers/{channel}/fallbacks/order": [
+  "put_fallbacks_order",
+  "r"
+ ],
+ "PUT /v1/messaging_providers/{channel}/fallbacks/{id}": [
+  "put_fallbacks",
+  "r"
+ ],
+ "PUT /v1/mfa_campaigns/{id}/users/{user_id}": [
+  "put_users",
+  "r"
+ ],
+ "PUT /v1/migrations/better_auth/bridge": [
+  "put_better_auth_bridge",
+  "r"
+ ],
+ "PUT /v1/migrations/{source}/bridge": [
+  "put_bridge",
+  "r"
+ ],
+ "PUT /v1/migrations/{source}/imports/{id}/parts/{part}": [
+  "put_imports_parts",
+  "r"
+ ],
+ "PUT /v1/notification_categories/{key}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/notification_templates/{name}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/oauth_client_profiles/{name}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/oauth_clients/{id}/delegated_ui": [
+  "put_delegated_ui",
+  "r"
+ ],
+ "PUT /v1/oauth_clients/{id}/exchange_policy": [
+  "put_exchange_policy",
+  "r"
+ ],
+ "PUT /v1/oauth_clients/{id}/organization_access": [
+  "put_organization_access",
+  "r"
+ ],
+ "PUT /v1/oauth_clients/{id}/profile": [
+  "put_profile",
+  "r"
+ ],
+ "PUT /v1/oauth_clients/{id}/webhook": [
+  "put_webhook",
+  "r"
+ ],
+ "PUT /v1/oauth_consent_requests/accept": [
+  "put_accept",
+  "r"
+ ],
+ "PUT /v1/oauth_consent_requests/reject": [
+  "put_reject",
+  "r"
+ ],
+ "PUT /v1/oauth_login_requests/accept": [
+  "put_accept",
+  "r"
+ ],
+ "PUT /v1/oauth_login_requests/reject": [
+  "put_reject",
+  "r"
+ ],
+ "PUT /v1/oauth_providers/{provider}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/oauth_publishers/{id}/clients/{client_id}": [
+  "put_clients",
+  "r"
+ ],
+ "PUT /v1/openfga/stores/{store}/assertions/{model}": [
+  "put_stores_assertions",
+  "d"
+ ],
+ "PUT /v1/org_ldap_connections/{id}/relay": [
+  "put_relay",
+  "d"
+ ],
+ "PUT /v1/org_ldap_connections/{id}/sync": [
+  "put_sync",
+  "d"
+ ],
+ "PUT /v1/organization_settings_schema": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/organizations/by_external_id/{external_id}": [
+  "put_by_external_id",
+  "d"
+ ],
+ "PUT /v1/organizations/{id}/applications/{clientId}": [
+  "put_applications",
+  "r"
+ ],
+ "PUT /v1/organizations/{id}/branding": [
+  "put_branding",
+  "d"
+ ],
+ "PUT /v1/organizations/{id}/design": [
+  "put_design",
+  "r"
+ ],
+ "PUT /v1/organizations/{id}/entitlements": [
+  "put_entitlements",
+  "d"
+ ],
+ "PUT /v1/organizations/{id}/memberships/{userId}": [
+  "put_memberships",
+  "r"
+ ],
+ "PUT /v1/organizations/{id}/metadata": [
+  "put_metadata",
+  "d"
+ ],
+ "PUT /v1/organizations/{id}/parent": [
+  "put_parent",
+  "d"
+ ],
+ "PUT /v1/organizations/{id}/role_policy": [
+  "put_role_policy",
+  "r"
+ ],
+ "PUT /v1/organizations/{id}/seats": [
+  "put_seats",
+  "r"
+ ],
+ "PUT /v1/organizations/{id}/settings": [
+  "put_settings",
+  "r"
+ ],
+ "PUT /v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}": [
+  "put_groups_roles",
+  "n"
+ ],
+ "PUT /v1/partner_links/outbound/{partner}": [
+  "put_outbound",
+  "r"
+ ],
+ "PUT /v1/partner_platforms/{partner}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/pca/attestors": [
+  "put_attestors",
+  "r"
+ ],
+ "PUT /v1/platform/atlas_id_apps/{id}/managed_by": [
+  "put_managed_by",
+  "r"
+ ],
+ "PUT /v1/platform/atlas_id_publisher": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/policies/{id}/audience": [
+  "put_audience",
+  "r"
+ ],
+ "PUT /v1/policies/{id}/versions/{versionId}/translations/{locale}": [
+  "put_versions_translations",
+  "r"
+ ],
+ "PUT /v1/rate_limit_overrides/{subject_type}/{subject_id}": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/referral_reward_rules": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/region": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/resources": [
+  "put",
+  "d"
+ ],
+ "PUT /v1/risk_based_mfa/reputation_secret": [
+  "put_reputation_secret",
+  "d"
+ ],
+ "PUT /v1/roles/{id}/permissions": [
+  "put_permissions",
+  "d"
+ ],
+ "PUT /v1/sessions/{id}/custom_data": [
+  "put_custom_data",
+  "r"
+ ],
+ "PUT /v1/sso_onboarding_profiles/by_name/{name}": [
+  "put_by_name",
+  "d"
+ ],
+ "PUT /v1/telemetry_export": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/users/{id}/entitlements": [
+  "put_entitlements",
+  "d"
+ ],
+ "PUT /v1/users/{id}/metadata": [
+  "put_metadata",
+  "r"
+ ],
+ "PUT /v1/vault/key_provider": [
+  "put_key_provider",
+  "d"
+ ],
+ "PUT /v1/vault/objects/{id}": [
+  "put_objects",
+  "d"
+ ],
+ "PUT /v1/web_bot_auth": [
+  "put",
+  "r"
+ ],
+ "PUT /v1/webhook_endpoints/by_url": [
+  "put_by_url",
+  "r"
+ ],
+ "PUT /v1/workflows/{id}/kv/{key}": [
+  "put_kv",
+  "r"
+ ]
+}

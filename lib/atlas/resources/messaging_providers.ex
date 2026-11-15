@@ -5,7 +5,8 @@ defmodule Atlas.MessagingProviders do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,30 +14,40 @@ defmodule Atlas.MessagingProviders do
   Read the instance's BYOK email and SMS provider config: transport, from-address and which secret keys are set. Never returns a secret value.
 
   `GET /v1/messaging_providers`. Required scope: `messaging:read`.
+
+  Response fields: `object`, `email`, `email.object`, `email.configured`, `email.id`, `email.channel`, `email.mode`, `email.transport`, `email.from_address`, `email.status`, `email.config`, `email.secrets_set`, `email.updated_at`, `sms`, `sms.object`, `sms.configured`, `sms.id`, `sms.channel`, `sms.mode`, `sms.transport`, `sms.from_address`, `sms.status`, `sms.config`, `sms.secrets_set`, `sms.updated_at`, `push`, `push.object`, `push.configured`, `push.id`, `push.channel`, `push.mode`, `push.transport`, `push.from_address`, `push.status`, `push.config`, `push.secrets_set`, `push.updated_at`, `managed_email`, `managed_email.object`, `managed_email.from_address`, `managed_email.domain`, `managed_email.status`, `managed_email.verified`, `development_email`, `development_email.object`, `development_email.enabled`, `development_email.from_address`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers", %{}, nil, opts)
 
   @doc ~S"""
-  Read one channel's provider (`email` or `sms`): transport, mode, from-address and which secret keys are set. Never returns a secret value. When the channel has no provider: 200 `{ object: "messaging_provider", channel, configured: false }` (not a 404). An unknown channel is 404.
+  Read one channel's provider (`email`, `sms` or `push`): transport, mode, from-address and which secret keys are set. Never returns a secret value. When the channel has no provider: 200 `{ object: "messaging_provider", channel, configured: false }` (not a 404). An unknown channel is 404.
 
   `GET /v1/messaging_providers/{channel}`. Required scope: `messaging:read`.
+
+  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`, `message`.
   """
   def get(client, channel, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers/{channel}", %{"channel" => channel}, nil, opts)
 
   @doc ~S"""
-  Remove the email or sms provider configuration for the instance. Removing the email provider is refused with 409 EMAIL_PROVIDER_IN_USE (meta.features names them) while email-dependent features (email code or link sign-in, sign-up email verification, password reset) are on and nothing else would deliver for the instance; pass force=true to remove it anyway, after which those features stop being offered until a provider is configured again.
+  Remove the email, sms or push provider configuration for the instance. Removing the email provider is refused with 409 EMAIL_PROVIDER_IN_USE (meta.features names them) while email-dependent features (email code or link sign-in, sign-up email verification, password reset) are on and nothing else would deliver for the instance; pass force=true to remove it anyway, after which those features stop being offered until a provider is configured again.
 
   `DELETE /v1/messaging_providers/{channel}`. Required scope: `messaging:write`.
+
+  Query params (`params:`): `force`.
+  Response fields: `object`, `channel`, `deleted`.
   """
   def delete(client, channel, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/messaging_providers/{channel}", %{"channel" => channel}, nil, opts)
 
   @doc ~S"""
-  Configure the email delivery provider. The body is discriminated by `transport` (resend, ses, smtp, brevo, mailgun, smtp2go, webhook); each transport has its own `config` keys, listed in its schema. Unknown or missing keys are refused with a 422 naming `config.<key>`. Secrets are write-only; on an update of the same transport an omitted secret keeps the stored one.
+  Configure the email delivery provider. The body is discriminated by `transport` (resend, ses, smtp, brevo, mailgun, smtp2go, hermetica, webhook; `hermeticor` is accepted as an alias for `hermetica`); each transport has its own `config` keys, listed in its schema. Unknown or missing keys are refused with a 422 naming `config.<key>`. Secrets are write-only; on an update of the same transport an omitted secret keeps the stored one.
 
   `PUT /v1/messaging_providers/email`. Required scope: `messaging:write`.
+
+  Nested body fields: `config.api_key`, `config.region`, `config.access_key_id`, `config.secret_access_key`, `config.session_token`, `config.host`, `config.port`, `config.secure`, `config.username`, `config.password`, `config.domain`, `config.app`, `config.url`, `config.signing_secret`, `config.payload`.
+  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`.
   """
   def put_email(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/email", %{}, body, opts)
@@ -45,22 +56,101 @@ defmodule Atlas.MessagingProviders do
   Configure the SMS delivery provider. The body is discriminated by `transport` (twilio, vonage, messagebird, plivo, telnyx, sinch, infobip, clicksend, bandwidth, aws_sns, webhook); each transport has its own `config` keys. Unknown or missing keys are refused with a 422 naming `config.<key>`. Secrets are write-only.
 
   `PUT /v1/messaging_providers/sms`. Required scope: `messaging:write`.
+
+  Nested body fields: `config.account_sid`, `config.auth_token`, `config.from`, `config.messaging_service_sid`, `config.whatsapp_from`, `config.voice_from`, `config.api_key`, `config.api_secret`, `config.application_id`, `config.private_key`, `config.voice_event_url`, `config.access_key`, `config.whatsapp_channel_id`, `config.auth_id`, `config.whatsapp_template`, `config.whatsapp_template_language`, `config.whatsapp_template_otp_button`, `config.service_plan_id`, `config.api_token`, `config.region`, `config.base_url`, `config.username`, `config.account_id`, `config.password`, `config.access_key_id`, `config.secret_access_key`, `config.session_token`, `config.url`, `config.signing_secret`, `config.payload`.
+  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`.
   """
   def put_sms(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/sms", %{}, body, opts)
 
   @doc ~S"""
-  Send a clearly-marked test message to a destination to verify the configured email or SMS provider delivers, without triggering a real auth flow. Rate-limited; 422 when nothing is configured. 200 when the provider accepted the message: `ok`/`accepted` true, `provider`, `provider_message_id` (for SMTP also `provider_response`, the server reply line with its queue id). 502 INTERNAL when the provider refused it or could not be reached; the error `meta` carries `ok: false`, `accepted: false`, `failure` (provider_rejected | provider_unreachable), `provider`, `provider_message_id`, `provider_status`, `provider_reason` (the provider's own reason) and, for SMTP, `provider_response`.
+  Configure the push sender used for push MFA and in-app sign-in approval. The body is discriminated by `transport`: `apns_fcm` (one row carrying APNS and/or FCM credentials; devices are routed by their platform) or `expo` (an Expo access token, write-only; delivers to ExponentPushToken devices registered with platform `expo`). Unknown or missing keys are refused with a 422 naming `config.<key>`. Secrets are write-only.
+
+  `PUT /v1/messaging_providers/push`. Required scope: `messaging:write`.
+
+  Nested body fields: `config.apns_auth_key`, `config.apns_key_id`, `config.apns_team_id`, `config.apns_topic`, `config.apns_host`, `config.fcm_service_account`, `config.fcm_project_id`, `config.access_token`.
+  """
+  def put_push(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/messaging_providers/push", %{}, body, opts)
+
+  @doc ~S"""
+  Send a clearly-marked test message to a destination to verify the configured email, SMS or push provider delivers (for push, `to` is a device token and the response shows only its last 6 characters), without triggering a real auth flow. `channel` may also be `whatsapp` or `voice`: both ride the Twilio account of your SMS provider (`to` is an E.164 number; the voice call speaks six zeros). A test goes through the same suppression list, `pre_message_send` hook and message ledger as any send, so it appears in GET /v1/messages (template `provider_test`). Rate-limited; 422 when nothing is configured. 200 when the provider accepted the message: `ok`/`accepted` true, `provider`, `provider_message_id` (for SMTP also `provider_response`, the server reply line with its queue id). 502 INTERNAL when the provider refused it or could not be reached; the error `meta` carries `ok: false`, `accepted: false`, `failure` (provider_rejected | provider_unreachable), `provider`, `provider_message_id`, `provider_status`, `provider_reason` (the provider's own reason) and, for SMTP, `provider_response`.
 
   `POST /v1/messaging_providers/{channel}/test`. Required scope: `messaging:write`.
+
+  Body fields: `to` (string).
+  Response fields: `object`, `channel`, `sent_to`, `ok`, `accepted`, `provider`, `provider_message_id`, `provider_response`.
   """
   def post_test(client, channel, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/messaging_providers/{channel}/test", %{"channel" => channel}, body, opts)
 
   @doc ~S"""
+  The fallback providers of a channel (`email`, `sms` or `push`), in the order they are tried after your own provider. `failover_order` lists `primary` then each active fallback.
+
+  `GET /v1/messaging_providers/{channel}/fallbacks`. Required scope: `messaging:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.channel`, `data.position`, `data.transport`, `data.from_address`, `data.status`, `data.config`, `data.secrets_set`, `data.updated_at`, `has_more`, `next_cursor`, `failover_order`.
+  """
+  def get_fallbacks(client, channel, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/messaging_providers/{channel}/fallbacks", %{"channel" => channel}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_fallbacks`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_fallbacks(client, channel, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/messaging_providers/{channel}/fallbacks", %{"channel" => channel}, opts)
+
+  @doc ~S"""
+  Add a fallback provider (up to 5 per channel). When your provider errors, Atlas tries the fallbacks in order; the ledger shows each attempt. A provider refusing one recipient does not fail over. The body is validated per transport exactly like PUT /v1/messaging_providers/{channel}. Credentials are yours and write-only.
+
+  `POST /v1/messaging_providers/{channel}/fallbacks`. Required scope: `messaging:write`.
+
+  Body fields: `transport` (string, required), `from_address` (string|null), `config` (object), `position` (integer), `status` (enum).
+  Response fields: `object`, `id`, `channel`, `position`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`.
+  """
+  def post_fallbacks(client, channel, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/messaging_providers/{channel}/fallbacks", %{"channel" => channel}, body, opts)
+
+  @doc ~S"""
+  Set the order of the channel's fallback providers. `ids` lists every fallback exactly once.
+
+  `PUT /v1/messaging_providers/{channel}/fallbacks/order`. Required scope: `messaging:write`.
+
+  Body fields: `ids` (array, required).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.channel`, `data.position`, `data.transport`, `data.from_address`, `data.status`, `data.config`, `data.secrets_set`, `data.updated_at`, `has_more`, `next_cursor`, `failover_order`.
+  """
+  def put_fallbacks_order(client, channel, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/messaging_providers/{channel}/fallbacks/order", %{"channel" => channel}, body, opts)
+
+  @doc ~S"""
+  Change a fallback provider. An omitted secret keeps the stored one.
+
+  `PUT /v1/messaging_providers/{channel}/fallbacks/{id}`. Required scope: `messaging:write`.
+
+  Body fields: `transport` (string), `from_address` (string|null), `config` (object), `position` (integer), `status` (enum).
+  Response fields: `object`, `id`, `channel`, `position`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`.
+  """
+  def put_fallbacks(client, channel, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/messaging_providers/{channel}/fallbacks/{id}", %{"channel" => channel, "id" => id}, body, opts)
+
+  @doc ~S"""
+  Remove a fallback provider, and any country route that pointed at it.
+
+  `DELETE /v1/messaging_providers/{channel}/fallbacks/{id}`. Required scope: `messaging:write`.
+
+  Response fields: `object`, `id`, `deleted`.
+  """
+  def delete_fallbacks(client, channel, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/messaging_providers/{channel}/fallbacks/{id}", %{"channel" => channel, "id" => id}, nil, opts)
+
+  @doc ~S"""
   Read the managed sending domain: status (refreshed from your provider while unverified), the records to publish, and sent / bounce / complaint counts. When none is configured: 200 `{ object: "managed_email", configured: false }`. Never returns an API key or DNS token.
 
   `GET /v1/messaging_providers/email/managed`. Required scope: `messaging:read`.
+
+  Response fields: `object`, `configured`, `id`, `from_address`, `domain`, `provider`, `backend`, `provider_id`, `feedback_webhook`, `feedback_webhook_id`, `feedback_webhook_error`, `region`, `status`, `verified`, `records`, `records.purpose`, `records.type`, `records.name`, `records.value`, `records.priority`, `records.status`, `limits`, `usage`, `usage.sent`, `usage.bounces`, `usage.complaints`, `usage.last_bounce_at`, `usage.last_complaint_at`, `reputation`, `dns`, `dns.provider`, `dns.token_set`, `dns.status`, `dns.last_error`, `dns.attempts`, `dns.next_check_at`, `dns.started_at`, `failure_reason`, `last_checked_at`, `verified_at`, `created_at`, `updated_at`, `next_step`, `channel`, `message`.
   """
   def get_email_managed(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers/email/managed", %{}, nil, opts)
@@ -69,6 +159,10 @@ defmodule Atlas.MessagingProviders do
   Managed email: Atlas sets up your sending domain (the domain of `from_address`) on YOUR OWN Resend or Brevo account, with your API key, and sends through it once the domain is verified. Pass `transport` ("resend" | "brevo") with `config.api_key`, or `provider_id` of your configured Resend or Brevo email provider; without either the call is refused with 422 (param `config.api_key`). The key is stored, write-only, as the instance's email provider in `managed_domain` mode. Returns 201 with the DNS `records` to publish (DKIM, SPF / return-path for Resend; ownership, DKIM, DMARC for Brevo). Until the domain is verified email delivery stays unavailable and preflight warns `managed_email_unverified`. Pass `dns: {provider: "cloudflare", api_token}` and Atlas writes the records itself (DNS-only; the token is write-only) IN THE BACKGROUND: the call answers 202 at once with the records and `dns.status: "pending"`, then Atlas writes them and checks with your provider until the domain is verified (`dns.status` pending → verifying → verified; `dns.last_error` and `failed` when it cannot). No further call is needed; GET shows progress and POST …/verify checks at once. Atlas also registers a bounce / complaint webhook on your Resend or Brevo account, for this instance only (`feedback_webhook`, `feedback_webhook_id`); the counts appear in `usage`. No Atlas sending limits apply (`limits: null`): the account and its limits are yours. Atlas never uses an email account of its own. 409 when the domain is set up on another Atlas instance; 502 MANAGED_EMAIL_PROVIDER_ERROR when your provider refuses.
 
   `POST /v1/messaging_providers/email/managed`. Required scope: `messaging:write`.
+
+  Body fields: `from_address` (string, required), `transport` (enum), `config` (object), `provider_id` (string), `region` (enum), `dns` (object).
+  Nested body fields: `config.api_key`, `dns.provider`, `dns.api_token`, `dns.overwrite`.
+  Response fields: `object`, `configured`, `id`, `from_address`, `domain`, `provider`, `backend`, `provider_id`, `feedback_webhook`, `feedback_webhook_id`, `feedback_webhook_error`, `region`, `status`, `verified`, `records`, `records.purpose`, `records.type`, `records.name`, `records.value`, `records.priority`, `records.status`, `limits`, `usage`, `usage.sent`, `usage.bounces`, `usage.complaints`, `usage.last_bounce_at`, `usage.last_complaint_at`, `reputation`, `dns`, `dns.provider`, `dns.token_set`, `dns.status`, `dns.last_error`, `dns.attempts`, `dns.next_check_at`, `dns.started_at`, `failure_reason`, `last_checked_at`, `verified_at`, `created_at`, `updated_at`, `next_step`.
   """
   def post_email_managed(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/messaging_providers/email/managed", %{}, body, opts)
@@ -77,6 +171,9 @@ defmodule Atlas.MessagingProviders do
   Stop using managed email: removes the domain from your provider account (and the bounce / complaint webhook Atlas registered there, on Resend or Brevo) and the email provider (managed_domain mode) that held your key (`provider_removed`). DNS records are left in place. Refused with 409 EMAIL_PROVIDER_IN_USE while it is the only way the instance can send email and email-dependent features are on; pass force=true to remove it anyway.
 
   `DELETE /v1/messaging_providers/email/managed`. Required scope: `messaging:write`.
+
+  Query params (`params:`): `force`.
+  Response fields: `object`, `domain`, `deleted`, `provider_removed`.
   """
   def delete_email_managed(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/messaging_providers/email/managed", %{}, nil, opts)
@@ -85,6 +182,8 @@ defmodule Atlas.MessagingProviders do
   Re-check the managed sending domain's DNS records now (and, with DNS automation, re-write any that are missing). It also re-registers the bounce / complaint webhook on your Resend or Brevo account if it is missing (`feedback_webhook`), and marks background DNS automation verified once the domain is. Returns the managed_email object; `verified` is true once email can be sent.
 
   `POST /v1/messaging_providers/email/managed/verify`. Required scope: `messaging:write`.
+
+  Response fields: `object`, `configured`, `id`, `from_address`, `domain`, `provider`, `backend`, `provider_id`, `feedback_webhook`, `feedback_webhook_id`, `feedback_webhook_error`, `region`, `status`, `verified`, `records`, `records.purpose`, `records.type`, `records.name`, `records.value`, `records.priority`, `records.status`, `limits`, `usage`, `usage.sent`, `usage.bounces`, `usage.complaints`, `usage.last_bounce_at`, `usage.last_complaint_at`, `reputation`, `dns`, `dns.provider`, `dns.token_set`, `dns.status`, `dns.last_error`, `dns.attempts`, `dns.next_check_at`, `dns.started_at`, `failure_reason`, `last_checked_at`, `verified_at`, `created_at`, `updated_at`, `next_step`.
   """
   def post_email_managed_verify(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/messaging_providers/email/managed/verify", %{}, nil, opts)
@@ -93,6 +192,8 @@ defmodule Atlas.MessagingProviders do
   Read the email provider in development mode: whether it is active, the provider, the From address, the subject prefix, the templates it sends and the limits. When the provider is not in development mode: 200 `{ object: "development_email", configured: false, enabled: false }`.
 
   `GET /v1/messaging_providers/email/development`. Required scope: `messaging:read`.
+
+  Response fields: `object`, `configured`, `provider_id`, `enabled`, `active`, `transport`, `from_address`, `subject_prefix`, `footer`, `templates`, `limits`, `limits.daily`, `limits.per_recipient_hourly`, `note`, `next_step`, `updated_at`, `channel`, `message`.
   """
   def get_email_development(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers/email/development", %{}, nil, opts)
@@ -101,6 +202,9 @@ defmodule Atlas.MessagingProviders do
   Put your OWN email provider in development mode, so a development instance can send sign-in email without a verified domain: Resend's `onboarding@resend.dev` (the default From for Resend; Resend delivers it only to your Resend account's own address), or a single sender address your provider has verified (Brevo, SES, SMTP, a Mailgun sandbox). Body: `provider_id` of your configured email provider, or `transport` + `config` (+ `from_address`) exactly as PUT /v1/messaging_providers/email; with neither, 422 (param `provider_id`). Only Atlas's own sign-in emails are sent (verification code, magic link, password reset, password changed, account exists notice, organization invitation); every subject starts with "[Atlas test] " and every message ends with a development footer; template overrides and branding are not used and custom notification templates are refused. Capped per instance per day and per recipient per hour (`limits`); over a cap a send is refused with 429 DEVELOPMENT_EMAIL_LIMIT_REACHED. The instance then counts as able to deliver email, and preflight warns `email_development_sender`. Atlas never sends with an account of its own. 201 when the mode is turned on, 200 when it already was. 409 DEVELOPMENT_EMAIL_NOT_ALLOWED on a production instance.
 
   `POST /v1/messaging_providers/email/development`. Required scope: `messaging:write`.
+
+  Body fields: `provider_id` (string), `transport` (enum), `from_address` (string), `config` (object).
+  Response fields: `object`, `configured`, `provider_id`, `enabled`, `active`, `transport`, `from_address`, `subject_prefix`, `footer`, `templates`, `limits`, `limits.daily`, `limits.per_recipient_hourly`, `note`, `next_step`, `updated_at`.
   """
   def post_email_development(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/messaging_providers/email/development", %{}, body, opts)
@@ -109,6 +213,8 @@ defmodule Atlas.MessagingProviders do
   Put the email provider back in standard mode (the provider and its key stay). To remove the provider, DELETE /v1/messaging_providers/email.
 
   `DELETE /v1/messaging_providers/email/development`. Required scope: `messaging:write`.
+
+  Response fields: `object`, `deleted`, `provider_id`, `mode`.
   """
   def delete_email_development(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/messaging_providers/email/development", %{}, nil, opts)
@@ -120,7 +226,13 @@ defmodule Atlas.MessagingProviders do
     {:delete, :delete, "/v1/messaging_providers/{channel}", 1, false, false},
     {:put_email, :put, "/v1/messaging_providers/email", 0, true, false},
     {:put_sms, :put, "/v1/messaging_providers/sms", 0, true, false},
+    {:put_push, :put, "/v1/messaging_providers/push", 0, true, false},
     {:post_test, :post, "/v1/messaging_providers/{channel}/test", 1, true, false},
+    {:get_fallbacks, :get, "/v1/messaging_providers/{channel}/fallbacks", 1, false, true},
+    {:post_fallbacks, :post, "/v1/messaging_providers/{channel}/fallbacks", 1, true, false},
+    {:put_fallbacks_order, :put, "/v1/messaging_providers/{channel}/fallbacks/order", 1, true, false},
+    {:put_fallbacks, :put, "/v1/messaging_providers/{channel}/fallbacks/{id}", 2, true, false},
+    {:delete_fallbacks, :delete, "/v1/messaging_providers/{channel}/fallbacks/{id}", 2, false, false},
     {:get_email_managed, :get, "/v1/messaging_providers/email/managed", 0, false, false},
     {:post_email_managed, :post, "/v1/messaging_providers/email/managed", 0, true, false},
     {:delete_email_managed, :delete, "/v1/messaging_providers/email/managed", 0, false, false},

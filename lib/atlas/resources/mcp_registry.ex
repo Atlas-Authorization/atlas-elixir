@@ -5,7 +5,8 @@ defmodule Atlas.McpRegistry do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.McpRegistry do
   The instance registry of upstream MCP servers: approved ones, and requests waiting for review. A gateway with `registry_only` accepts only approved URLs.
 
   `GET /v1/mcp_registry`. Required scope: `machines:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.url`, `data.description`, `data.status`, `data.requested_by`, `data.decided_by`, `data.decided_at`, `data.created_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_registry", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.McpRegistry do
   Add a server to the registry as approved (default), or file it as pending for review.
 
   `POST /v1/mcp_registry`. Required scope: `machines:write`.
+
+  Body fields: `name` (string, required), `url` (string, required), `description` (string), `status` (enum).
+  Response fields: `object`, `id`, `name`, `url`, `description`, `status`, `requested_by`, `decided_by`, `decided_at`, `created_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_registry", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.McpRegistry do
   Approve or reject a registry entry.
 
   `POST /v1/mcp_registry/{id}/decide`. Required scope: `machines:write`.
+
+  Body fields: `status` (enum, required).
+  Response fields: `object`, `id`, `name`, `url`, `description`, `status`, `requested_by`, `decided_by`, `decided_at`, `created_at`.
   """
   def post_decide(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/mcp_registry/{id}/decide", %{"id" => id}, body, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.McpRegistry do
   Remove a registry entry.
 
   `DELETE /v1/mcp_registry/{id}`. Required scope: `machines:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/mcp_registry/{id}", %{"id" => id}, nil, opts)

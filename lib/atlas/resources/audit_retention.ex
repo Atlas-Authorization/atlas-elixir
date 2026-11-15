@@ -5,7 +5,8 @@ defmodule Atlas.AuditRetention do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -21,6 +22,8 @@ defmodule Atlas.AuditRetention do
   Set audit log retention in days (`null` returns to the default). Entries older than the retention are deleted by an hourly sweep, so shortening it needs `confirm_deletion: true`.
 
   `PUT /v1/audit_retention`. Required scope: `audit:write`.
+
+  Body fields: `retention_days` (integer|null), `confirm_deletion` (boolean).
   """
   def put(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/audit_retention", %{}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.ApiKeys do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,29 +14,39 @@ defmodule Atlas.ApiKeys do
   List end-user API keys the tenant minted for its users/organizations. Never the secret.
 
   `GET /v1/api_keys`. Required scope: `api_keys:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `type`, `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.name`, `data.prefix`, `data.type`, `data.claims`, `data.scopes`, `data.constraints`, `data.max_token_lifetime_seconds`, `data.public_key`, `data.public_key_jkt`, `data.limits`, `data.limits.unit`, `data.limits.amount`, `data.limits.period`, `data.usage`, `data.usage.unit`, `data.usage.period`, `data.usage.amount`, `data.usage.used`, `data.usage.remaining`, `data.usage.window_start`, `data.usage.resets_at`, `data.enabled`, `data.rate_limit`, `data.rate_limit.max`, `data.rate_limit.window_seconds`, `data.remaining`, `data.allowed_ips`, `data.last_used_at`, `data.expires_at`, `data.revoked_at`, `data.revoked_reason`, `data.organization_id`, `data.created_by_user_id`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/api_keys", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/api_keys", %{}, opts)
 
   @doc ~S"""
-  Mint an end-user API key for a user, organization or machine (returns the ak_ secret once), OR import an existing key by its SHA-256 hash (hash_algorithm "sha256" or "sha256_hex") so it verifies against the original secret. Normally authenticated with an sk_ key; a LAN/offline MACHINE may instead self-provision a key for ITSELF by presenting Authorization: Bearer <machine JWT> (token_use:m2m from /v1/machines/token) + x-publishable-key — the subject is forced to that machine and it cannot grant itself management-plane scopes. Pass public_key (an SPKI PEM) to make the key proof-of-possession: tokens minted from it carry cnf.jkt and a resource verifies a holder-signed proof OFFLINE. Pass limits (an array of { unit, amount, period } with period request|second|minute|day|month|total) to set per-key spend caps and rate limits, metered with POST /v1/api_keys/{id}/usage. Key controls: enabled (false = minted disabled), rate_limit { max, window_seconds } (per-key verify throttle), remaining (a use budget each successful verify spends), prefix (a custom secret prefix such as acme, giving acme_<id>_<secret>), and expires_in_seconds as an alternative to expires_at. The instance expiry policy (endUserApiKeys.defaultExpiresInSeconds / maxExpiresInSeconds) gives a key sent without an expiry the default lifetime and refuses one longer than the ceiling (400). Emits api_key.created (on mint, import and machine self-provisioning).
+  Mint an end-user API key for a user, organization or machine (returns the ak_ secret once), OR import an existing key by its SHA-256 hash (hash_algorithm "sha256" or "sha256_hex"), or by its bcrypt or Argon2id hash string (hash_algorithm "bcrypt" or "argon2id": verified on first use by the imported prefix, then re-hashed to SHA-256), so it verifies against the original secret. Normally authenticated with an sk_ key; a LAN/offline MACHINE may instead self-provision a key for ITSELF by presenting Authorization: Bearer <machine JWT> (token_use:m2m from /v1/machines/token) + x-publishable-key — the subject is forced to that machine and it cannot grant itself management-plane scopes. Pass public_key (an SPKI PEM) to make the key proof-of-possession: tokens minted from it carry cnf.jkt and a resource verifies a holder-signed proof OFFLINE. Pass limits (an array of { unit, amount, period } with period request|second|minute|day|month|total) to set per-key spend caps and rate limits, metered with POST /v1/api_keys/{id}/usage. Key controls: enabled (false = minted disabled), rate_limit { max, window_seconds } (per-key verify throttle), remaining (a use budget each successful verify spends), prefix (a custom secret prefix such as acme, giving acme_<id>_<secret>), type (a key type such as sk, giving ak_sk_<id>_<secret>; required and checked against endUserApiKeys.keyTypes when the instance sets that list, 400 otherwise; also accepted on import), and expires_in_seconds as an alternative to expires_at, and allowed_ips (up to 100 IPv4/IPv6 addresses or CIDR ranges; verify then needs the end caller's client_ip and refuses callers outside the list). The instance expiry policy (endUserApiKeys.defaultExpiresInSeconds / maxExpiresInSeconds) gives a key sent without an expiry the default lifetime and refuses one longer than the ceiling (400). Emits api_key.created (on mint, import and machine self-provisioning). An import is idempotent: it honours Idempotency-Key (a retry replays the first answer), and re-sending the same hash for the same subject, prefix and type answers 200 with the stored key and `outcome: "already_present"` (nothing is written, no event fires); a first import answers 201 with `outcome: "created"`. A hash that already exists with a different subject, prefix or type is refused with 409 CONFLICT and nothing is changed.
 
   `POST /v1/api_keys`. Required scope: `api_keys:write`.
+
+  Body fields: `subject_type` (enum), `subject_id` (string), `organization_id` (string), `created_by_user_id` (string), `name` (string), `claims` (object), `expires_at` (number|null), `expires_in_seconds` (number), `prefix` (string), `type` (string), `enabled` (boolean), `rate_limit` (object|null), `remaining` (number|null), `allowed_ips` (array|null), `scopes` (array), `constraints` (object), `max_token_lifetime_seconds` (number|null), `limits` (array|null), `public_key` (string|null), `import` (object).
+  Nested body fields: `rate_limit.max`, `rate_limit.window_seconds`, `limits.unit`, `limits.amount`, `limits.period`, `import.secret_hash`, `import.hash_algorithm`, `import.prefix`, `import.created_at`, `import.last_used_at`, `import.revoked_at`, `import.expires_at`.
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `name`, `prefix`, `type`, `claims`, `scopes`, `constraints`, `max_token_lifetime_seconds`, `public_key`, `public_key_jkt`, `limits`, `limits.unit`, `limits.amount`, `limits.period`, `usage`, `usage.unit`, `usage.period`, `usage.amount`, `usage.used`, `usage.remaining`, `usage.window_start`, `usage.resets_at`, `enabled`, `rate_limit`, `rate_limit.max`, `rate_limit.window_seconds`, `remaining`, `allowed_ips`, `last_used_at`, `expires_at`, `revoked_at`, `revoked_reason`, `organization_id`, `created_by_user_id`, `created_at`, `secret`, `note`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/api_keys", %{}, body, opts)
 
   @doc ~S"""
-  Verify a presented end-user API key secret. Any secret works: a natively minted ak_ key AND an imported key of any format or prefix (resolved by its SHA-256). Returns the subject, name, claims, scopes, constraints, spend caps (limits) and their current-window usage, or valid:false alone (unknown, revoked, expired, disabled or subject deleted; never says which). Send required_scopes to require scopes the key must carry. A live key refused by its own policy answers valid:false with a code: insufficient_scope (missing_scopes), rate_limited (retry_after_ms, from the key rate_limit) or usage_exhausted (no remaining uses left). Each successful verify spends one remaining use, atomically. Rate-limited.
+  Verify a presented end-user API key secret. Any secret works: a natively minted ak_ key AND an imported key of any format or prefix (resolved by its SHA-256). Returns the subject, name, claims, scopes, constraints, spend caps (limits) and their current-window usage, or valid:false alone (unknown, revoked, expired, disabled or subject deleted; never says which). Send required_scopes to require scopes the key must carry. A live key refused by its own policy answers valid:false with a code: insufficient_scope (missing_scopes), rate_limited (retry_after_ms, from the key rate_limit) usage_exhausted (no remaining uses left), ip_not_allowed (client_ip is outside the key's allowed_ips) or client_ip_required (the key has allowed_ips and no client_ip was sent; fails closed). Send client_ip, the END caller's address, because this call is server-to-server. Each successful verify spends one remaining use, atomically. Rate-limited.
 
   `POST /v1/api_keys/verify`. Required scope: `api_keys:read`.
+
+  Body fields: `secret` (string), `required_scopes` (array), `client_ip` (string).
+  Response fields: `object`, `valid`, `id`, `subject_type`, `subject_id`, `name`, `claims`, `scopes`, `effective_scopes`, `organization`, `organization.id`, `organization.role`, `organization.permissions`, `created_by_user_id`, `constraints`, `limits`, `limits.unit`, `limits.amount`, `limits.period`, `usage`, `usage.unit`, `usage.period`, `usage.amount`, `usage.used`, `usage.remaining`, `usage.window_start`, `usage.resets_at`, `last_used_at`, `expires_at`, `remaining`, `rate_limit`, `rate_limit.limit`, `rate_limit.window_seconds`, `rate_limit.burst`, `rate_limit.source`, `rate_limit.policy_id`, `rate_limit.policy_name`, `rate_limit.plan`, `rate_limit.version`, `code`, `missing_scopes`, `retry_after_ms`.
   """
   def post_verify(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/api_keys/verify", %{}, body, opts)
@@ -44,14 +55,20 @@ defmodule Atlas.ApiKeys do
   Read one end-user API key by id (prefix + metadata, never the secret).
 
   `GET /v1/api_keys/{id}`. Required scope: `api_keys:read`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `name`, `prefix`, `type`, `claims`, `scopes`, `constraints`, `max_token_lifetime_seconds`, `public_key`, `public_key_jkt`, `limits`, `limits.unit`, `limits.amount`, `limits.period`, `usage`, `usage.unit`, `usage.period`, `usage.amount`, `usage.used`, `usage.remaining`, `usage.window_start`, `usage.resets_at`, `enabled`, `rate_limit`, `rate_limit.max`, `rate_limit.window_seconds`, `remaining`, `allowed_ips`, `last_used_at`, `expires_at`, `revoked_at`, `revoked_reason`, `organization_id`, `created_by_user_id`, `created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/api_keys/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an end-user API key: name, claims, expires_at (held to the instance expiry ceiling), scopes, constraints, max_token_lifetime_seconds, limits (null clears the caps; counters are kept), enabled (disable or re-enable without revoking), rate_limit (null removes it) or remaining (null = unlimited). Emits api_key.updated.
+  Update an end-user API key: name, claims, expires_at (held to the instance expiry ceiling), scopes, constraints, max_token_lifetime_seconds, limits (null clears the caps; counters are kept), enabled (disable or re-enable without revoking), rate_limit (null removes it) remaining (null = unlimited) or allowed_ips (null or [] removes the list). Emits api_key.updated.
 
   `PATCH /v1/api_keys/{id}`. Required scope: `api_keys:write`.
+
+  Body fields: `name` (string|null), `claims` (object), `expires_at` (number|null), `scopes` (array), `constraints` (object), `max_token_lifetime_seconds` (number|null), `limits` (array|null), `enabled` (boolean), `rate_limit` (object|null), `remaining` (number|null), `allowed_ips` (array|null).
+  Nested body fields: `limits.unit`, `limits.amount`, `limits.period`, `rate_limit.max`, `rate_limit.window_seconds`.
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `name`, `prefix`, `type`, `claims`, `scopes`, `constraints`, `max_token_lifetime_seconds`, `public_key`, `public_key_jkt`, `limits`, `limits.unit`, `limits.amount`, `limits.period`, `usage`, `usage.unit`, `usage.period`, `usage.amount`, `usage.used`, `usage.remaining`, `usage.window_start`, `usage.resets_at`, `enabled`, `rate_limit`, `rate_limit.max`, `rate_limit.window_seconds`, `remaining`, `allowed_ips`, `last_used_at`, `expires_at`, `revoked_at`, `revoked_reason`, `organization_id`, `created_by_user_id`, `created_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/api_keys/{id}", %{"id" => id}, body, opts)
@@ -60,6 +77,8 @@ defmodule Atlas.ApiKeys do
   Revoke an end-user API key. It stops verifying immediately; the record is kept.
 
   `DELETE /v1/api_keys/{id}`. Required scope: `api_keys:write`.
+
+  Response fields: `object`, `id`, `revoked`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/api_keys/{id}", %{"id" => id}, nil, opts)
@@ -68,6 +87,8 @@ defmodule Atlas.ApiKeys do
   A key's current-window usage: each cap with used/remaining/resets_at, plus the day, month and total counters of every unit the key has been debited in.
 
   `GET /v1/api_keys/{id}/usage`. Required scope: `api_keys:read`.
+
+  Response fields: `object`, `key_id`, `limits`, `limits.unit`, `limits.amount`, `limits.period`, `usage`, `usage.unit`, `usage.period`, `usage.amount`, `usage.used`, `usage.remaining`, `usage.window_start`, `usage.resets_at`, `counters`, `counters.unit`, `counters.period`, `counters.used`, `counters.window_start`, `counters.resets_at`.
   """
   def get_usage(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/api_keys/{id}/usage", %{"id" => id}, nil, opts)
@@ -76,14 +97,60 @@ defmodule Atlas.ApiKeys do
   Meter usage against a key's spend caps, atomically. Body: amount (positive integer), unit (app-defined, e.g. requests or usd_cents), optional idempotency_key. When the debit fits every cap for that unit it is recorded (day, month and total counters, plus second/minute counters for a unit capped on those windows) and allowed:true is returned; when it would exceed a cap — or is larger than a per-request cap — NOTHING is recorded and the response is 200 with allowed:false and code LIMIT_EXCEEDED, so you enforce it in your own transaction. Concurrent debits on one key serialize: two can never both pass a cap only one fits under. Second and minute windows are fixed windows aligned to the UTC clock (a 600/minute cap refuses the 601st request until the next whole minute); day and month windows are UTC calendar windows. The same idempotency_key (kept 24 hours) returns the first outcome without counting again (idempotent_replay:true); reusing it with a different unit or amount is 409 IDEMPOTENCY_CONFLICT. A revoked or expired key is 409 CONFLICT; an unknown id 404. The first time a cap fills or refuses a debit in a window, api_key.limit_reached is emitted (once per cap per window).
 
   `POST /v1/api_keys/{id}/usage`. Required scope: `api_keys:write`.
+
+  Body fields: `amount` (integer, required), `unit` (string, required), `idempotency_key` (string).
+  Response fields: `object`, `key_id`, `unit`, `amount`, `allowed`, `code`, `exceeded`, `exceeded.unit`, `exceeded.period`, `exceeded.amount`, `exceeded.used`, `exceeded.remaining`, `exceeded.window_start`, `exceeded.resets_at`, `usage`, `usage.unit`, `usage.period`, `usage.amount`, `usage.used`, `usage.remaining`, `usage.window_start`, `usage.resets_at`, `counters`, `counters.unit`, `counters.period`, `counters.used`, `counters.window_start`, `counters.resets_at`, `idempotent_replay`.
   """
   def post_usage(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/api_keys/{id}/usage", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Rotate an end-user API key with an overlap: mint its successor and keep the old key working until the overlap ends.
+
+  `POST /v1/api_keys/{id}/rotate`. Required scope: `api_keys:write`.
+
+  Body fields: `overlap_seconds` (integer), `name` (string|null), `expires_at` (integer|null), `expires_in_seconds` (integer).
+  Response fields: `secret`, `previous_key`, `previous_key.id`, `previous_key.prefix`, `previous_key.expires_at`, `previous_key.revoked`, `overlap_seconds`, `note`.
+  """
+  def post_rotate(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/api_keys/{id}/rotate", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The key posture report: live end-user API keys that are never used, stale, over-scoped, without an expiry or without a network allowlist.
+
+  `GET /v1/api_keys/posture`. Required scope: `api_keys:read`.
+
+  Query params (`params:`): `issue`, `stale_days`, `never_used_days`, `max_scopes`, `starting_after`, `limit`.
+  Response fields: `object`, `generated_at`, `thresholds`, `thresholds.stale_days`, `thresholds.never_used_days`, `thresholds.max_scopes`, `totals`, `totals.live_keys`, `totals.flagged_keys`, `summary`, `summary.never_used`, `summary.stale`, `summary.over_scoped`, `summary.no_expiry`, `summary.no_ip_allowlist`, `truncated`, `data`, `data.object`, `data.key_id`, `data.prefix`, `data.name`, `data.subject_type`, `data.subject_id`, `data.organization_id`, `data.issues`, `data.last_used_at`, `data.expires_at`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_posture(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/api_keys/posture", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_posture`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_posture(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/api_keys/posture", %{}, opts)
+
+  @doc ~S"""
+  Who uses a key: the busiest caller addresses, user agents and route buckets over the last days.
+
+  `GET /v1/api_keys/{id}/callers`. Required scope: `api_keys:read`.
+
+  Query params (`params:`): `window_days`, `limit`.
+  Response fields: `object`, `key_id`, `window_days`, `since_day`, `live`, `ip`, `ip.value`, `ip.requests`, `ip.last_seen_at`, `user_agent`, `user_agent.value`, `user_agent.requests`, `user_agent.last_seen_at`, `route`, `route.value`, `route.requests`, `route.last_seen_at`.
+  """
+  def get_callers(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/api_keys/{id}/callers", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Mint a short-lived, JWKS-signed access JWT (token_use:api_key, jti) whose exp is clamped to the smallest of the request, the key expiry and the org ceiling; scopes + constraints are embedded so a resource verifies it OFFLINE against the instance JWKS. When the key registered a public_key, the token also carries cnf.jkt (proof-of-possession) and a resource additionally checks a holder-signed proof. Authenticate with (1) an sk_ bearer + the ak_ in the body, (2) an Authorization: Bearer ak_… that self-mints for itself, or (3) no bearer + x-publishable-key naming the instance with the ak_ in the body. A key only ever mints within its own instance. The api_keys:read scope applies ONLY to the sk_ path; the ak_ and publishable-key paths are self-scoped.
 
   `POST /v1/api_keys/token`. Required scope: `api_keys:read`.
+
+  Body fields: `secret` (string), `ttl_seconds` (number), `audience` (any), `client_ip` (string).
+  Response fields: `object`, `token`, `token_type`, `jti`, `key_id`, `subject_type`, `subject_id`, `scopes`, `constraints`, `organization`, `organization.id`, `organization.role`, `organization.permissions`, `cnf`, `cnf.jkt`, `expires_in`, `expires_at`, `issuer`.
   """
   def post_token(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/api_keys/token", %{}, body, opts)
@@ -92,12 +159,15 @@ defmodule Atlas.ApiKeys do
   Revocation feed: the keys revoked since a cursor (since=<iso|cursor>), so a resource can deny-list revoked key ids while their short-lived delegated tokens are still live. Keyset-paginated. Readable with an sk_ bearer, an Authorization: Bearer ak_… key, OR an x-publishable-key header; it exposes only key id + revoked_at, so a public pk caller leaks nothing. The api_keys:read scope applies ONLY to the sk_ path; the ak_ and publishable-key paths are self-scoped.
 
   `GET /v1/api_keys/revoked`. Required scope: `api_keys:read`.
+
+  Query params (`params:`): `starting_after`, `since`, `limit`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.revoked_at`, `data.revoked_reason`, `data.subject_type`, `data.subject_id`, `data.organization_id`, `has_more`, `next_cursor`.
   """
   def get_revoked(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/api_keys/revoked", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_revoked/1`, following the cursor page by page.
+  Lazy stream over every item of `get_revoked`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_revoked(client, opts \\ []),
@@ -113,6 +183,9 @@ defmodule Atlas.ApiKeys do
     {:delete, :delete, "/v1/api_keys/{id}", 1, false, false},
     {:get_usage, :get, "/v1/api_keys/{id}/usage", 1, false, false},
     {:post_usage, :post, "/v1/api_keys/{id}/usage", 1, true, false},
+    {:post_rotate, :post, "/v1/api_keys/{id}/rotate", 1, true, false},
+    {:get_posture, :get, "/v1/api_keys/posture", 0, false, true},
+    {:get_callers, :get, "/v1/api_keys/{id}/callers", 1, false, false},
     {:post_token, :post, "/v1/api_keys/token", 0, true, false},
     {:get_revoked, :get, "/v1/api_keys/revoked", 0, false, true}
   ]

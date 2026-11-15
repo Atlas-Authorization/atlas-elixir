@@ -5,7 +5,8 @@ defmodule Atlas.RelayAgents do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.RelayAgents do
   List the on-prem relay agents with their allowed destinations and whether each is online. Secrets are never returned.
 
   `GET /v1/relay_agents`. Required scope: `relay_agents:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.organization_id`, `data.status`, `data.allowed_destinations`, `data.cert_fingerprints`, `data.secret_prefix`, `data.online`, `data.last_seen_at`, `data.last_ip`, `data.agent_version`, `data.created_at`, `data.token`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/relay_agents", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.RelayAgents do
   Register an outbound-only relay agent. The response carries the agent token once; it cannot be read back. An agent can reach only the destinations in allowed_destinations (host, host:port, *.domain).
 
   `POST /v1/relay_agents`. Required scope: `relay_agents:write`.
+
+  Body fields: `name` (string, required), `organization_id` (string|null), `status` (enum), `allowed_destinations` (array), `cert_fingerprints` (array).
+  Response fields: `object`, `id`, `name`, `organization_id`, `status`, `allowed_destinations`, `cert_fingerprints`, `secret_prefix`, `online`, `last_seen_at`, `last_ip`, `agent_version`, `created_at`, `token`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/relay_agents", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.RelayAgents do
   Read one relay agent, including when it last polled.
 
   `GET /v1/relay_agents/{id}`. Required scope: `relay_agents:read`.
+
+  Response fields: `object`, `id`, `name`, `organization_id`, `status`, `allowed_destinations`, `cert_fingerprints`, `secret_prefix`, `online`, `last_seen_at`, `last_ip`, `agent_version`, `created_at`, `token`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/relay_agents/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.RelayAgents do
   Rename an agent, change its allowed destinations or pinned client-certificate thumbprints, or revoke it (status: revoked).
 
   `PATCH /v1/relay_agents/{id}`. Required scope: `relay_agents:write`.
+
+  Body fields: `name` (string), `organization_id` (string|null), `status` (enum), `allowed_destinations` (array), `cert_fingerprints` (array).
+  Response fields: `object`, `id`, `name`, `organization_id`, `status`, `allowed_destinations`, `cert_fingerprints`, `secret_prefix`, `online`, `last_seen_at`, `last_ip`, `agent_version`, `created_at`, `token`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/relay_agents/{id}", %{"id" => id}, body, opts)
@@ -60,6 +72,8 @@ defmodule Atlas.RelayAgents do
   Issue a new agent token (returned once). The old token stops working immediately.
 
   `POST /v1/relay_agents/{id}/rotate_secret`. Required scope: `relay_agents:write`.
+
+  Response fields: `object`, `id`, `name`, `organization_id`, `status`, `allowed_destinations`, `cert_fingerprints`, `secret_prefix`, `online`, `last_seen_at`, `last_ip`, `agent_version`, `created_at`, `token`.
   """
   def post_rotate_secret(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/relay_agents/{id}/rotate_secret", %{"id" => id}, nil, opts)

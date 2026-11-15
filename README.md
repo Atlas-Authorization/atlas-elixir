@@ -134,6 +134,114 @@ queues a back-channel logout to every other app signed in through it. No browser
 `AtlasAuth.WebhookEvents.session_expired()` names the event sent once when a session idles out or reaches its
 absolute lifetime; `invitation_created()`, `invitation_accepted()` and `invitation_revoked()` cover instance invitations.
 
+## Hosted-redirect sign-in (relying party)
+
+`AtlasAuth.RP` is the server side of the hosted redirect: authorization-code flow with PKCE (S256), `state`
+and `nonce`, ID-token verification against the instance JWKS, keep-alive, step-up and sign-out. The
+`AtlasAuth.Plug.RP` plug mounts it as routes.
+
+```elixir
+# config: build the relying party once
+rp =
+  AtlasAuth.RP.new(
+    issuer: "https://inst.atlas.example",
+    client_id: "your-client-id",
+    client_secret: System.fetch_env!("ATLAS_CLIENT_SECRET"),
+    redirect_uri: "https://app.example.com/auth/callback",
+    secret: System.fetch_env!("ATLAS_RP_SECRET"),   # 32+ characters; seals the short-lived sign-in cookie
+    secret_key: System.fetch_env!("ATLAS_SECRET_KEY"),
+    post_logout_redirect_uri: "https://app.example.com/"
+  )
+
+# endpoint.ex or a router pipeline
+plug AtlasAuth.Plug.RP,
+  rp: rp,
+  on_signed_in: fn conn, user, _tokens, _result ->
+    # user: sub, sid, email, email_verified, name, auth_time (+ external_id, org_id, org_role)
+    conn |> Plug.Conn.put_session(:user_id, user.sub) |> Plug.Conn.put_session(:atlas_sid, user.sid)
+  end,
+  on_sign_out: fn conn -> [sid: Plug.Conn.get_session(conn, :atlas_sid)] end
+```
+
+`GET /auth/sign-in` starts sign-in (`prompt`, `login_hint`, `ui_locales`, `max_age`, `organization`, `return_to` and
+the `:forward_params` you configure pass through; a bad `return_to` is dropped, never an open redirect). The callback
+path is that of `redirect_uri`; `GET` or `POST /auth/sign-out` ends the session. Without Plug, call
+`AtlasAuth.RP.start/3`, `callback/3`, `sign_out/2` and `AtlasAuth.OIDC` directly: they take and return plain maps.
+
+```elixir
+# Keep the Atlas session alive while the user is active (at most once per 5 minutes per session).
+case AtlasAuth.RP.touch_if_due(rp, sid, last_touched_ms) do
+  {:skipped, _} -> :ok
+  {:touched, %{last_touched_at: at}} -> store(at)
+  {:ended, _reason} -> sign_the_user_out()           # revoked, idle_expired, expired or not_found
+  {:error, error} -> report(error)                   # a key, scope or availability problem: never "signed out"
+end
+
+# Step-up before a sensitive action: :ok, or a redirect that asks the SAME user to authenticate again.
+{:redirect, %{location: url, cookies: cookies}} = AtlasAuth.RP.require_recent_auth(rp, 300, sub: user.sub, auth_time: auth_time)
+
+# Back-channel logout: bind your app session to the Atlas sid, then end exactly those sessions.
+{:ok, store} = AtlasAuth.RP.SidStore.Memory.start_link()          # one node; implement AtlasAuth.RP.SidStore for several
+:ok = AtlasAuth.RP.bind_session(rp, sid, my_session_id, expires_at_ms)
+```
+
+An app with no instance secret key (Sign in with Atlas) leaves `:secret_key` unset: `touch_if_due/3` and
+`end_app_session/2` then use the client credentials.
+
+## Step-up and MFA checks, device flow, helpers
+
+```elixir
+AtlasAuth.RecentAuth.authenticated_within?(claims, 300)   # auth_time within 5 minutes
+AtlasAuth.RecentAuth.used_multi_factor?(claims)           # acr mfa or amr includes mfa
+AtlasAuth.RecentAuth.mfa_satisfied?(claims)               # the server's mfa_satisfied verdict, then mfa / acr / amr / SSO
+AtlasAuth.RecentAuth.mfa_org_satisfied?(claims, "org_123")
+
+# A CLI or TV of your own: RFC 8628 against the instance's OAuth server.
+{:ok, flow} = AtlasAuth.DeviceFlow.start(issuer: issuer, client_id: "cli", scope: ["openid", "profile"])
+IO.puts("Open #{flow.verification_uri} and enter #{flow.user_code}")
+{:ok, tokens} = AtlasAuth.DeviceFlow.poll(flow)
+
+{:ok, %{"secret" => secret}} = Atlas.Helpers.rotate_events_secret(client, "forumulate", overlap_seconds: 3600)
+{:ok, settings} = Atlas.Helpers.jwt_template_settings(lifetime_seconds: 300, audience: "api", algorithm: "RS256")
+{:ok, _} = Atlas.JwtTemplates.create(client, %{name: "api", claims: %{"role" => "{{org.role}}"}, settings: settings})
+```
+
+## Resilience, telemetry and the doctor
+
+`Atlas.Client` retries a `429` for every method, honouring `Retry-After` (seconds or an HTTP date), and
+`500`, `502`, `503`, `504` and transport failures for `GET`, `HEAD`, `PUT`, `DELETE` and calls with an `:idempotency_key` (a write without one is never retried):
+exponential backoff with jitter, 2 retries by default.
+
+```elixir
+client = Atlas.new(key, resilience: [max_retries: 4, max_delay_ms: 20_000, status_aware: true])
+{:ok, status} = Atlas.Client.status(client)    # GET /v1/status: "operational" | "degraded" | "major_outage"
+```
+
+A wait longer than `:max_delay_ms` is not waited out: the `%Atlas.Error{}` carries `retry_after_ms`. With
+`status_aware: true`, a degraded or down service stretches the backoff 2x, a `major_outage` 4x.
+
+With the `:telemetry` package installed, every call emits `[:atlas, :request, :start | :stop | :exception]` and
+`[:atlas, :request, :retry]` (route template, method, status, duration; never the expanded path or a secret), so
+`opentelemetry_telemetry` turns them into spans, and `AtlasAuth.Telemetry.metrics/0` gives `telemetry_metrics` definitions (count, duration, retries) for any reporter. With it absent nothing is emitted and nothing is loaded. See
+`AtlasAuth.Telemetry`.
+
+```elixir
+report = Atlas.Doctor.run(client, issuer: "https://inst.atlas.example")
+IO.puts(Atlas.Doctor.format(report))    # key, config, API status, clock skew, instance read, JWKS reachability
+```
+
+## Verification primitives
+
+Local, no-hot-path-call building blocks, each with an in-memory store behind a behaviour (bring your own for several nodes):
+
+- `AtlasAuth.KeyMirror`: an authoritative local mirror of end-user API keys (`mint/3`, `rotate/4`, `import_key/3`, `revoke/2`, `verify/3`, `sync/1` over the revocation feed, `apply_webhook/2`); scopes, scope implications, CIDR allowlists, organization-bound keys, staleness bounds.
+- `AtlasAuth.SidRevocation`: a poller of revoked session ids; `check/2` rejects a token whose `sid` was revoked, and can fail closed when the list is stale. `source: :status_list` reads the signed list instead (`AtlasAuth.StatusList`, verified against the instance JWKS), falling back to the paged feed when it is missing, unverifiable or truncated.
+- `AtlasAuth.ResourceRoleMirror`: resource-role assignments mirrored locally for `can?/5` checks.
+- `AtlasAuth.MachineClient`: the machine (device) flow: generate an Ed25519 keypair, enrol, sign the challenge, cache and refresh the short-lived token, DPoP proofs with Ed25519, P-256 (`{:generate, :es256}`) or P-384 keys.
+- `AtlasAuth.WebBotAuth`: verify (and sign) Web Bot Auth HTTP message signatures; `decide/2` and `AtlasAuth.WebBotAuth.Verifier` apply allow and block lists over cached directories.
+- `AtlasAuth.WebhookDedupe`: verify a webhook and drop a delivery id already seen; `release` lets a retry through after a failed handler. `AtlasAuth.WebhookDedupe.EctoStore` keeps the seen ids in SQL (PostgreSQL, SQLite, MySQL) when `:ecto_sql` is installed.
+- `AtlasAuth.TxnToken`: verify a transaction token (`typ txntoken+jwt`) for your trust domain.
+
 ## Phoenix / Plug
 
 ```elixir

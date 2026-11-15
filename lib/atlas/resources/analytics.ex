@@ -5,7 +5,8 @@ defmodule Atlas.Analytics do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Analytics do
   Where sign-in or sign-up attempts end, per method: started, completed, abandoned, and the step each unfinished attempt stopped at, with the completion rate. Each attempt is counted once, at its final state.
 
   `GET /v1/analytics/funnel`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `kind`, `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `data`, `data.method`, `data.started`, `data.completed`, `data.abandoned`, `data.in_progress`, `data.needs_first_factor`, `data.needs_second_factor`, `data.needs_email_verification`, `data.completion_rate`.
   """
   def get_funnel(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/funnel", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_funnel/1`, following the cursor page by page.
+  Lazy stream over every item of `get_funnel`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_funnel(client, opts \\ []),
@@ -28,12 +32,15 @@ defmodule Atlas.Analytics do
   What happened at each step of a sign-in journey: how often it held a sign-in (a required action or form), was completed, ran at the sign-in (an Action, claim or redirect) or refused it, with the completion rate of its holds. Steps follow the active version; a sub-flow's steps are prefixed with the sub-flow step id. No organization slice.
 
   `GET /v1/analytics/journey_funnel`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `journey_id`, `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `journey_id`, `journey_name`, `data`, `data.step`, `data.held`, `data.completed`, `data.applied`, `data.denied`, `data.completion_rate`.
   """
   def get_journey_funnel(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/journey_funnel", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_journey_funnel/1`, following the cursor page by page.
+  Lazy stream over every item of `get_journey_funnel`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_journey_funnel(client, opts \\ []),
@@ -43,12 +50,15 @@ defmodule Atlas.Analytics do
   Failed first- and second-factor attempts by reason and method, most frequent first. No organization slice (a failed attempt belongs to no organization).
 
   `GET /v1/analytics/failures`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `total`, `data`, `data.phase`, `data.reason`, `data.method`, `data.count`, `data.share`.
   """
   def get_failures(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/failures", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_failures/1`, following the cursor page by page.
+  Lazy stream over every item of `get_failures`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_failures(client, opts \\ []),
@@ -58,12 +68,15 @@ defmodule Atlas.Analytics do
   Sign-ins split by one dimension: method, device type, browser, operating system or country (country needs a GeoIP database on the deployment; otherwise it reports `unknown`).
 
   `GET /v1/analytics/breakdown`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `dimension`, `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `dimension`, `total`, `data`, `data.value`, `data.count`, `data.share`.
   """
   def get_breakdown(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/breakdown", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_breakdown/1`, following the cursor page by page.
+  Lazy stream over every item of `get_breakdown`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_breakdown(client, opts \\ []),
@@ -73,12 +86,15 @@ defmodule Atlas.Analytics do
   Distinct active users and sign-ins per bucket, each bucket split into new users (signed up in that bucket) and returning users, plus trailing 1/7/30-day active-user counts (dau, wau, mau) ending at `to`.
 
   `GET /v1/analytics/active_users`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `dau`, `wau`, `mau`, `data`, `data.bucket`, `data.active_users`, `data.new_users`, `data.returning_users`, `data.sign_ins`.
   """
   def get_active_users(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/active_users", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_active_users/1`, following the cursor page by page.
+  Lazy stream over every item of `get_active_users`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_active_users(client, opts \\ []),
@@ -88,12 +104,15 @@ defmodule Atlas.Analytics do
   How many users hold a passkey (adoption rate), and the passkey share of sign-ins per bucket.
 
   `GET /v1/analytics/passkey_adoption`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `users`, `users_with_passkey`, `adoption_rate`, `data`, `data.bucket`, `data.passkey_sign_ins`, `data.sign_ins`, `data.passkey_share`.
   """
   def get_passkey_adoption(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/passkey_adoption", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_passkey_adoption/1`, following the cursor page by page.
+  Lazy stream over every item of `get_passkey_adoption`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_passkey_adoption(client, opts \\ []),
@@ -103,12 +122,15 @@ defmodule Atlas.Analytics do
   Compliance report: users who have not signed in for `inactive_days` (default 90), oldest id first, cursor-paginated (an export returns up to 50,000 rows).
 
   `GET /v1/analytics/reports/inactive_users`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `inactive_days`, `limit`, `starting_after`, `from`, `to`, `days`, `granularity`, `organization_id`, `format`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `inactive_days`, `cutoff`, `has_more`, `next_cursor`, `data`, `data.user_id`, `data.email`, `data.last_sign_in_at`, `data.created_at`.
   """
   def get_reports_inactive_users(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/reports/inactive_users", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_reports_inactive_users/1`, following the cursor page by page.
+  Lazy stream over every item of `get_reports_inactive_users`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_reports_inactive_users(client, opts \\ []),
@@ -118,12 +140,15 @@ defmodule Atlas.Analytics do
   Compliance report: how many users are protected by a second factor, a passkey, either, or neither.
 
   `GET /v1/analytics/reports/mfa_coverage`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `total_users`, `data`, `data.protection`, `data.users`, `data.share`.
   """
   def get_reports_mfa_coverage(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/reports/mfa_coverage", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_reports_mfa_coverage/1`, following the cursor page by page.
+  Lazy stream over every item of `get_reports_mfa_coverage`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_reports_mfa_coverage(client, opts \\ []),
@@ -133,12 +158,15 @@ defmodule Atlas.Analytics do
   Compliance report: for each application (OAuth client), how many users have access, how many grants are active and how many users signed in during the window.
 
   `GET /v1/analytics/reports/access_by_app`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `data`, `data.client_id`, `data.name`, `data.users`, `data.active_grants`, `data.users_in_window`.
   """
   def get_reports_access_by_app(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/reports/access_by_app", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_reports_access_by_app/1`, following the cursor page by page.
+  Lazy stream over every item of `get_reports_access_by_app`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_reports_access_by_app(client, opts \\ []),
@@ -148,12 +176,15 @@ defmodule Atlas.Analytics do
   API usage per subject against its own baseline: secret keys calling the Backend API, end-user API keys verified through /v1/api_keys/verify, and organizations (Backend API calls on the organization plus verifications of its keys). For each: requests and the failure rate in the window, the average hourly rate over the 7 days before, and the ratio between them, highest ratio first (at most 100). Counts are written in batches and can lag by up to a minute.
 
   `GET /v1/analytics/api_usage`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `window_minutes`, `limit`, `starting_after`.
+  Response fields: `object`, `window_minutes`, `baseline_hours`, `generated_at`, `data`, `data.type`, `data.id`, `data.current`, `data.current_per_hour`, `data.baseline_per_hour`, `data.ratio`, `data.error_rate`.
   """
   def get_api_usage(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/api_usage", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_api_usage/1`, following the cursor page by page.
+  Lazy stream over every item of `get_api_usage`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_api_usage(client, opts \\ []),
@@ -163,12 +194,15 @@ defmodule Atlas.Analytics do
   List analytics alert rules with their state and last measured value. The metric catalog is included.
 
   `GET /v1/analytics/alert_rules`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.metric`, `data.comparator`, `data.threshold`, `data.window_minutes`, `data.min_sample`, `data.cooldown_minutes`, `data.email_contacts`, `data.webhook_url`, `data.has_webhook_secret`, `data.enabled`, `data.subject_type`, `data.subject_id`, `data.ssf`, `data.state`, `data.last_value`, `data.last_evaluated_at`, `data.last_triggered_at`, `data.last_error`, `data.created_at`, `has_more`, `next_cursor`, `metrics`.
   """
   def get_alert_rules(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/alert_rules", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_alert_rules/1`, following the cursor page by page.
+  Lazy stream over every item of `get_alert_rules`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_alert_rules(client, opts \\ []),
@@ -178,6 +212,9 @@ defmodule Atlas.Analytics do
   Create an alert rule: tell me when a sign-in health metric, or a key or organization's API usage against its baseline, crosses a threshold over a trailing window. It must have email_contacts, a webhook_url or ssf. A webhook signing secret is returned once.
 
   `POST /v1/analytics/alert_rules`. Required scope: `analytics:write`.
+
+  Body fields: `name` (string, required), `metric` (enum, required), `comparator` (enum, required), `threshold` (number, required), `window_minutes` (integer), `min_sample` (integer), `cooldown_minutes` (integer), `email_contacts` (array), `webhook_url` (string|null), `enabled` (boolean), `subject_type` (enum), `subject_id` (string|null), `ssf` (boolean).
+  Response fields: `object`, `id`, `name`, `metric`, `comparator`, `threshold`, `window_minutes`, `min_sample`, `cooldown_minutes`, `email_contacts`, `webhook_url`, `has_webhook_secret`, `enabled`, `subject_type`, `subject_id`, `ssf`, `state`, `last_value`, `last_evaluated_at`, `last_triggered_at`, `last_error`, `created_at`.
   """
   def post_alert_rules(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/analytics/alert_rules", %{}, body, opts)
@@ -186,6 +223,8 @@ defmodule Atlas.Analytics do
   One analytics alert rule.
 
   `GET /v1/analytics/alert_rules/{id}`. Required scope: `analytics:read`.
+
+  Response fields: `object`, `id`, `name`, `metric`, `comparator`, `threshold`, `window_minutes`, `min_sample`, `cooldown_minutes`, `email_contacts`, `webhook_url`, `has_webhook_secret`, `enabled`, `subject_type`, `subject_id`, `ssf`, `state`, `last_value`, `last_evaluated_at`, `last_triggered_at`, `last_error`, `created_at`.
   """
   def get_alert_rules_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/analytics/alert_rules/{id}", %{"id" => id}, nil, opts)
@@ -194,6 +233,9 @@ defmodule Atlas.Analytics do
   Edit an alert rule. Editing re-arms it.
 
   `PATCH /v1/analytics/alert_rules/{id}`. Required scope: `analytics:write`.
+
+  Body fields: `name` (string), `metric` (enum), `comparator` (enum), `threshold` (number), `window_minutes` (integer), `min_sample` (integer), `cooldown_minutes` (integer), `email_contacts` (array), `webhook_url` (string|null), `enabled` (boolean), `subject_type` (enum), `subject_id` (string|null), `ssf` (boolean).
+  Response fields: `object`, `id`, `name`, `metric`, `comparator`, `threshold`, `window_minutes`, `min_sample`, `cooldown_minutes`, `email_contacts`, `webhook_url`, `has_webhook_secret`, `enabled`, `subject_type`, `subject_id`, `ssf`, `state`, `last_value`, `last_evaluated_at`, `last_triggered_at`, `last_error`, `created_at`.
   """
   def update_alert_rules(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/analytics/alert_rules/{id}", %{"id" => id}, body, opts)
@@ -202,6 +244,8 @@ defmodule Atlas.Analytics do
   Delete an alert rule.
 
   `DELETE /v1/analytics/alert_rules/{id}`. Required scope: `analytics:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_alert_rules(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/analytics/alert_rules/{id}", %{"id" => id}, nil, opts)
@@ -210,6 +254,9 @@ defmodule Atlas.Analytics do
   Measure the rule now. With `notify: true` it also sends the rule's email and webhook, whether or not the rule is breaching, to prove the delivery path.
 
   `POST /v1/analytics/alert_rules/{id}/test`. Required scope: `analytics:write`.
+
+  Body fields: `notify` (boolean).
+  Response fields: `object`, `value`, `sample`, `subject`, `subject.type`, `subject.id`, `subject.current`, `subject.current_per_hour`, `subject.baseline_per_hour`, `subject.ratio`, `subject.error_rate`, `notified`, `error`.
   """
   def post_alert_rules_test(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/analytics/alert_rules/{id}/test", %{"id" => id}, body, opts)

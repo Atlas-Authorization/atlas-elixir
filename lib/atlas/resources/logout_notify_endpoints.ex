@@ -5,7 +5,8 @@ defmodule Atlas.LogoutNotifyEndpoints do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,27 @@ defmodule Atlas.LogoutNotifyEndpoints do
   List the logout fan-out ("also notify") endpoints: downstream services that receive the same signed logout_token as your OIDC apps whenever a session ends, and a subject-wide one on ban or deletion.
 
   `GET /v1/logout_notify_endpoints`. Required scope: `logout_notify_endpoints:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.url`, `data.oauth_client_id`, `data.audience`, `data.description`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/logout_notify_endpoints", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/logout_notify_endpoints", %{}, opts)
 
   @doc ~S"""
-  Register a logout fan-out endpoint. It is POSTed `logout_token=<jwt>` (application/x-www-form-urlencoded; OIDC Back-Channel Logout: iss, sub, sid, events, signed with the instance JWKS) whenever an Atlas session ends, plus one with sub and no sid when the user is banned, deleted or deprovisioned. With oauth_client_id it follows one OAuth client instead (that client's sign-in ending, incl. /oauth2/session/end and grant revocation). Retried on network errors, 5xx, 408 and 429; redirects are not followed. The URL must be public https.
+  Register a logout fan-out endpoint. It is POSTed `logout_token=<jwt>` (application/x-www-form-urlencoded; OIDC Back-Channel Logout, signed with the instance JWKS, header typ `logout+jwt`; claims iss, sub, aud, iat, exp (120 seconds after iat; receivers should require it), jti, events, and sid only when one session ends) whenever an Atlas session ends, plus one with sub and no sid when the user is banned, deleted or deprovisioned. With oauth_client_id it follows one OAuth client instead (that client's sign-in ending, incl. /oauth2/session/end and grant revocation). Retried on network errors, 5xx, 408 and 429; redirects are not followed. The URL must be public https.
 
   `POST /v1/logout_notify_endpoints`. Required scope: `logout_notify_endpoints:write`.
+
+  Body fields: `url` (string, required), `oauth_client_id` (string|null), `audience` (string|null), `description` (string|null).
+  Response fields: `object`, `id`, `url`, `oauth_client_id`, `audience`, `description`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/logout_notify_endpoints", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.LogoutNotifyEndpoints do
   Fetch one logout fan-out endpoint. Another instance id is 404.
 
   `GET /v1/logout_notify_endpoints/{id}`. Required scope: `logout_notify_endpoints:read`.
+
+  Response fields: `object`, `id`, `url`, `oauth_client_id`, `audience`, `description`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/logout_notify_endpoints/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.LogoutNotifyEndpoints do
   Change a logout fan-out endpoint's url, audience or description.
 
   `PATCH /v1/logout_notify_endpoints/{id}`. Required scope: `logout_notify_endpoints:write`.
+
+  Body fields: `url` (string), `audience` (string|null), `description` (string|null).
+  Response fields: `object`, `id`, `url`, `oauth_client_id`, `audience`, `description`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/logout_notify_endpoints/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.LogoutNotifyEndpoints do
   Delete a logout fan-out endpoint; its queued deliveries go with it.
 
   `DELETE /v1/logout_notify_endpoints/{id}`. Required scope: `logout_notify_endpoints:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/logout_notify_endpoints/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +74,15 @@ defmodule Atlas.LogoutNotifyEndpoints do
   The endpoint's delivery log, newest first: each logout_token sent (sub, sid — null for a subject-wide logout), status, HTTP status and the next retry.
 
   `GET /v1/logout_notify_endpoints/{id}/deliveries`. Required scope: `logout_notify_endpoints:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.sub`, `data.sid`, `data.status`, `data.attempt_number`, `data.http_status`, `data.response_snippet`, `data.next_retry_at`, `data.delivered_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_deliveries(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/logout_notify_endpoints/{id}/deliveries", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_deliveries/2`, following the cursor page by page.
+  Lazy stream over every item of `get_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_deliveries(client, id, opts \\ []),

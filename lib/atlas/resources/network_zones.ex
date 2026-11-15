@@ -5,7 +5,8 @@ defmodule Atlas.NetworkZones do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.NetworkZones do
   List reusable network zones — named sets of CIDRs, countries, ASNs and anonymizer classes (tor, datacenter, vpn) that network ACL rules reference by zone_id.
 
   `GET /v1/network_zones`. Required scope: `network_acls:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.cidrs`, `data.countries`, `data.asns`, `data.anonymizers`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/network_zones", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.NetworkZones do
   Create a network zone. `name` is unique per instance; `cidrs`, `countries` (ISO alpha-2), `asns` and `anonymizers` are unioned (any match = in the zone). Malformed entries are refused.
 
   `POST /v1/network_zones`. Required scope: `network_acls:write`.
+
+  Body fields: `name` (string), `description` (string|null), `cidrs` (array), `countries` (array), `asns` (array), `anonymizers` (array), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `description`, `cidrs`, `countries`, `asns`, `anonymizers`, `enabled`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/network_zones", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.NetworkZones do
   Read one network zone.
 
   `GET /v1/network_zones/{id}`. Required scope: `network_acls:read`.
+
+  Response fields: `object`, `id`, `name`, `description`, `cidrs`, `countries`, `asns`, `anonymizers`, `enabled`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/network_zones/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.NetworkZones do
   Update a network zone. Sending any of cidrs/countries/asns/anonymizers replaces that list; omitted lists keep their value.
 
   `PATCH /v1/network_zones/{id}`. Required scope: `network_acls:write`.
+
+  Body fields: `name` (string), `description` (string|null), `cidrs` (array), `countries` (array), `asns` (array), `anonymizers` (array), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `description`, `cidrs`, `countries`, `asns`, `anonymizers`, `enabled`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/network_zones/{id}", %{"id" => id}, body, opts)
@@ -60,6 +72,9 @@ defmodule Atlas.NetworkZones do
   What-if: does an IP address fall inside this zone? Returns the resolved country / ASN / Tor / datacenter facts alongside the answer. Facts the instance has no IP-intelligence data for are null and never match.
 
   `POST /v1/network_zones/{id}/check`. Required scope: `network_acls:read`.
+
+  Body fields: `ip` (string).
+  Response fields: `object`, `zone_id`, `ip`, `matches`, `facts`, `facts.country`, `facts.asn`, `facts.tor`, `facts.datacenter`.
   """
   def post_check(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/network_zones/{id}/check", %{"id" => id}, body, opts)

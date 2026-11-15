@@ -5,7 +5,8 @@ defmodule Atlas.AuthenticatorPolicies do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AuthenticatorPolicies do
   List the group-targeted authenticator policies.
 
   `GET /v1/authenticator_policies`. Required scope: `access_policies:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.group`, `data.enabled`, `data.required_factors`, `data.grace_until`, `data.passkey`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authenticator_policies", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.AuthenticatorPolicies do
   Create an authenticator policy for a group: `required_factors` (members must pass a second factor, or enrol one), `grace_until` (members with no factor may still sign in until then), and a `passkey` profile (user verification, attestation, attachment, AAGUID allow / block lists) applied when members register passkeys. Policies only add protection to the instance settings; several policies combine to the strictest result.
 
   `POST /v1/authenticator_policies`. Required scope: `access_policies:write`.
+
+  Body fields: `name` (string), `group` (string), `enabled` (boolean), `required_factors` (array), `grace_until` (integer|null), `passkey` (object).
+  Nested body fields: `passkey.requireUserVerification`, `passkey.attestation`, `passkey.attachment`, `passkey.allowlist`, `passkey.blocklist`.
+  Response fields: `object`, `id`, `name`, `group`, `enabled`, `required_factors`, `grace_until`, `passkey`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/authenticator_policies", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.AuthenticatorPolicies do
   The combined authenticator rules that apply to one user through their groups.
 
   `GET /v1/authenticator_policies/effective/{user_id}`. Required scope: `access_policies:read`.
+
+  Response fields: `object`, `user_id`, `required_factors`, `in_grace`, `passkey`, `matched_policies`.
   """
   def get_effective(client, user_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authenticator_policies/effective/{user_id}", %{"user_id" => user_id}, nil, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.AuthenticatorPolicies do
   Read one authenticator policy.
 
   `GET /v1/authenticator_policies/{id}`. Required scope: `access_policies:read`.
+
+  Response fields: `object`, `id`, `name`, `group`, `enabled`, `required_factors`, `grace_until`, `passkey`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authenticator_policies/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +64,10 @@ defmodule Atlas.AuthenticatorPolicies do
   Update an authenticator policy.
 
   `PATCH /v1/authenticator_policies/{id}`. Required scope: `access_policies:write`.
+
+  Body fields: `name` (string), `group` (string), `enabled` (boolean), `required_factors` (array), `grace_until` (integer|null), `passkey` (object).
+  Nested body fields: `passkey.requireUserVerification`, `passkey.attestation`, `passkey.attachment`, `passkey.allowlist`, `passkey.blocklist`.
+  Response fields: `object`, `id`, `name`, `group`, `enabled`, `required_factors`, `grace_until`, `passkey`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/authenticator_policies/{id}", %{"id" => id}, body, opts)
@@ -60,6 +76,8 @@ defmodule Atlas.AuthenticatorPolicies do
   Delete an authenticator policy.
 
   `DELETE /v1/authenticator_policies/{id}`. Required scope: `access_policies:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/authenticator_policies/{id}", %{"id" => id}, nil, opts)

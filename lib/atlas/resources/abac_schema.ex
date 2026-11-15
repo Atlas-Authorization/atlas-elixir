@@ -5,7 +5,8 @@ defmodule Atlas.AbacSchema do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.AbacSchema do
   The instance’s ABAC entity schema (`schema` is null and `version` 0 when none is set).
 
   `GET /v1/abac_schema`. Required scope: `abac:read`.
+
+  Response fields: `object`, `schema`, `version`, `updated_at`, `policy_issues`, `policy_issues.severity`, `policy_issues.policy`, `policy_issues.rule`, `policy_issues.clause`, `policy_issues.clause.kind`, `policy_issues.clause.index`, `policy_issues.message`, `policy_issues.offset`, `policy_issues.line`, `policy_issues.column`, `policy_issues.source_name`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_schema", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.AbacSchema do
   Set the ABAC entity schema: `entity_types` (attributes with `boolean`, `long`, `string`, `set`, `entity` and `record` types, `required: false` for optional ones, and `member_of`) and `actions` (`applies_to` principal and resource types and a `context`). Every problem is reported with its path. Once set, policies and templates are type-checked when saved: unknown attributes, optional attributes read without a `has` guard, wrong operand types, unknown entity types and actions, and actions that do not apply to the policy’s principal and resource types. The response lists the errors the schema would give the policies and links already stored.
 
   `PUT /v1/abac_schema`. Required scope: `abac:write`.
+
+  Body fields: `schema` (object, required).
+  Response fields: `object`, `schema`, `version`, `updated_at`, `policy_issues`, `policy_issues.severity`, `policy_issues.policy`, `policy_issues.rule`, `policy_issues.clause`, `policy_issues.clause.kind`, `policy_issues.clause.index`, `policy_issues.message`, `policy_issues.offset`, `policy_issues.line`, `policy_issues.column`, `policy_issues.source_name`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/abac_schema", %{}, body, opts)
@@ -37,6 +43,9 @@ defmodule Atlas.AbacSchema do
   Type-check policy (or, with `template: true`, template) source against the saved schema, or one sent as `schema`, without saving anything. Returns every issue with its policy number, clause, character offset, line and column. A syntax error is reported as an issue too.
 
   `POST /v1/abac_schema/validate`. Required scope: `abac:read`.
+
+  Body fields: `source` (string, required), `schema` (object), `template` (boolean).
+  Response fields: `object`, `valid`, `schema_checked`, `issues`, `issues.severity`, `issues.policy`, `issues.rule`, `issues.clause`, `issues.clause.kind`, `issues.clause.index`, `issues.message`, `issues.offset`, `issues.line`, `issues.column`, `issues.source_name`.
   """
   def post_validate(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac_schema/validate", %{}, body, opts)

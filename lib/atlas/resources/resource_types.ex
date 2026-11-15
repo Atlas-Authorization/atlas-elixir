@@ -5,7 +5,8 @@ defmodule Atlas.ResourceTypes do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ResourceTypes do
   List the resource types (roles, permissions, parent type).
 
   `GET /v1/resource_types`. Required scope: `resources:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.key`, `data.name`, `data.description`, `data.parent_type`, `data.inherit`, `data.roles`, `data.roles.key`, `data.roles.name`, `data.roles.permissions`, `data.roles.includes`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resource_types", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.ResourceTypes do
   Define a resource type: a `key`, its `roles` (each a set of permissions, optionally `includes` other roles), an optional `parent_type` resources nest under, and `inherit` (default true) controlling whether assignments on a parent flow down.
 
   `POST /v1/resource_types`. Required scope: `resources:write`.
+
+  Body fields: `key` (string), `name` (string), `description` (string|null), `parent_type` (string|null), `inherit` (boolean), `roles` (array).
+  Response fields: `object`, `key`, `name`, `description`, `parent_type`, `inherit`, `roles`, `roles.key`, `roles.name`, `roles.permissions`, `roles.includes`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resource_types", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.ResourceTypes do
   Read one resource type.
 
   `GET /v1/resource_types/{key}`. Required scope: `resources:read`.
+
+  Response fields: `object`, `key`, `name`, `description`, `parent_type`, `inherit`, `roles`, `roles.key`, `roles.name`, `roles.permissions`, `roles.includes`, `created_at`, `updated_at`.
   """
   def get(client, key, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resource_types/{key}", %{"key" => key}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.ResourceTypes do
   Change a resource type’s name, roles, parent type or inheritance.
 
   `PATCH /v1/resource_types/{key}`. Required scope: `resources:write`.
+
+  Body fields: `name` (string), `description` (string|null), `parent_type` (string|null), `inherit` (boolean), `roles` (array).
+  Response fields: `object`, `key`, `name`, `description`, `parent_type`, `inherit`, `roles`, `roles.key`, `roles.name`, `roles.permissions`, `roles.includes`, `created_at`, `updated_at`.
   """
   def update(client, key, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/resource_types/{key}", %{"key" => key}, body, opts)

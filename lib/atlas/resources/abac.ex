@@ -5,7 +5,8 @@ defmodule Atlas.Abac do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Abac do
   Policy decision point: ask whether `principal` may perform `action` on `resource` given `context` (and optional extra `entities` for hierarchy). All enabled policies are evaluated together with Cedar semantics: a matching forbid wins, otherwise a matching permit allows, otherwise deny. Each decision is written to the event feed (type authz.decision), so log streams carry it.
 
   `POST /v1/abac/evaluate`. Required scope: `abac:evaluate`.
+
+  Body fields: `principal` (object), `action` (string), `resource` (object), `context` (object), `entities` (array), `policy_ids` (array).
+  Response fields: `object`, `decision`, `reasons`, `errors`, `annotations`, `annotations.policy`, `annotations.annotations`.
   """
   def post_evaluate(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/evaluate", %{}, body, opts)
@@ -21,6 +25,10 @@ defmodule Atlas.Abac do
   Partial evaluation (data filtering): ask what is left of the decision when an entity is unknown. With a known principal, an action and a resource TYPE, the response is a residual `filter` over the resource attributes (or constant `true`/`false`) that is equivalent to evaluating the policies on each resource. `unknowns: ["principal"]` answers "who may do this on that resource". Relationship conditions (`fga.check`) are resolved to id lists from the policy’s FGA store unless `resolve_relations` is false. `output` asks for a ready-made parameterised SQL WHERE (`sql`: dialect and a field-to-column map) and/or a Prisma where object (`prisma`: a field map). Policies that build sets from unknown attributes cannot be expressed as a filter and are refused with a message naming the policy.
 
   `POST /v1/abac/partial_evaluate`. Required scope: `abac:evaluate`.
+
+  Body fields: `principal` (object, required), `action` (string, required), `resource` (object, required), `context` (object), `entities` (array), `policy_ids` (array), `unknowns` (array), `resolve_relations` (boolean), `output` (object).
+  Nested body fields: `principal.type`, `principal.id`, `principal.attributes`, `principal.parents`, `resource.type`, `resource.id`, `resource.attributes`, `resource.parents`, `entities.type`, `entities.id`, `entities.attributes`, `entities.parents`, `output.sql`, `output.sql.dialect`, `output.sql.columns`, `output.sql.param_offset`, `output.prisma`, `output.prisma.fields`.
+  Response fields: `object`, `decision`, `filter`, `filter.op`, `filter.field`, `filter.value`, `filter.ref`, `filter.args`, `filter.values`, `filter.pattern`, `permit`, `permit.op`, `permit.field`, `permit.value`, `permit.ref`, `permit.args`, `permit.values`, `permit.pattern`, `forbid`, `forbid.op`, `forbid.field`, `forbid.value`, `forbid.ref`, `forbid.args`, `forbid.values`, `forbid.pattern`, `unknowns`, `relations_resolved`, `sql`, `sql.text`, `sql.params`, `prisma`.
   """
   def post_partial_evaluate(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/partial_evaluate", %{}, body, opts)
@@ -29,6 +37,10 @@ defmodule Atlas.Abac do
   List the resources of a type a principal may perform an action on, paged (`limit`, `starting_after`; the response carries `has_more` and `next_cursor`). Candidates are the Atlas resources of that type (their metadata are the attributes) or the `candidates` you send. The policies are reduced to one filter and applied to every candidate; `method` says whether that worked or each candidate was evaluated in full.
 
   `POST /v1/abac/accessible_resources`. Required scope: `abac:evaluate`.
+
+  Body fields: `principal` (object, required), `action` (string, required), `resource_type` (string, required), `context` (object), `entities` (array), `candidates` (array), `policy_ids` (array), `limit` (integer), `starting_after` (string).
+  Nested body fields: `principal.type`, `principal.id`, `principal.attributes`, `principal.parents`, `entities.type`, `entities.id`, `entities.attributes`, `entities.parents`, `candidates.id`, `candidates.attributes`, `candidates.parents`.
+  Response fields: `object`, `data`, `data.object`, `data.type`, `data.id`, `has_more`, `next_cursor`, `total`, `evaluated`, `method`.
   """
   def post_accessible_resources(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/accessible_resources", %{}, body, opts)
@@ -37,6 +49,8 @@ defmodule Atlas.Abac do
   Convert Cedar policy text to the Cedar JSON policy format (annotations, decimal and ip extension calls included).
 
   `POST /v1/abac/cedar/export`. Required scope: `abac:read`.
+
+  Body fields: `source` (string).
   """
   def post_cedar_export(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/cedar/export", %{}, body, opts)
@@ -45,6 +59,8 @@ defmodule Atlas.Abac do
   Convert Cedar JSON policies to policy text. With `name`, also create the policy from them.
 
   `POST /v1/abac/cedar/import`. Required scope: `abac:read`.
+
+  Body fields: `policies` (array), `name` (string), `fga_store_id` (string|null).
   """
   def post_cedar_import(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/cedar/import", %{}, body, opts)
@@ -61,6 +77,8 @@ defmodule Atlas.Abac do
   Set the claim mapping used by `authorize_token`: the principal type and id claim, claims that become parent entities (org, role, groups), claims copied as attributes, and trusted issuers with their JWKS URLs.
 
   `PUT /v1/abac/token_mapping`. Required scope: `abac:write`.
+
+  Body fields: `principal_type` (string), `id_claim` (string), `parents` (array), `attribute_claims` (array), `trusted_issuers` (array).
   """
   def put_token_mapping(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/abac/token_mapping", %{}, body, opts)
@@ -69,6 +87,8 @@ defmodule Atlas.Abac do
   Decide for the principal an access token stands for. The token is verified first (an active Atlas session token, or a token from a trusted issuer); its claims map to the principal and parents per the token mapping. An invalid token is a 401, not a deny.
 
   `POST /v1/abac/authorize_token`. Required scope: `abac:evaluate`.
+
+  Body fields: `access_token` (string), `action` (string), `resource` (object), `context` (object), `entities` (array), `policy_ids` (array).
   """
   def post_authorize_token(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/authorize_token", %{}, body, opts)
@@ -77,6 +97,9 @@ defmodule Atlas.Abac do
   The same comparison for two policy sources you send (a draft against the saved version, or two templates), without saving anything.
 
   `POST /v1/abac/diff`. Required scope: `abac:read`.
+
+  Body fields: `before` (string, required), `after` (string, required), `semantic` (boolean), `max_requests` (integer), `max_changes` (integer).
+  Response fields: `object`, `policy_id`, `from`, `to`, `text`, `text.identical`, `text.added`, `text.removed`, `text.lines`, `text.lines.type`, `text.lines.text`, `text.lines.before_line`, `text.lines.after_line`, `semantic`, `semantic.enumerated`, `semantic.space`, `semantic.exhaustive`, `semantic.changed`, `semantic.newly_allowed`, `semantic.newly_denied`, `semantic.by_action`, `semantic.truncated`, `semantic.changes`, `semantic.changes.request`, `semantic.changes.before`, `semantic.changes.after`, `semantic.changes.assuming`, `semantic.changes.assuming.fga_check`.
   """
   def post_diff(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac/diff", %{}, body, opts)

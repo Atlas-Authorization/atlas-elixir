@@ -5,7 +5,8 @@ defmodule Atlas.Devices do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Devices do
   List registered devices, filtered by user_id or source.
 
   `GET /v1/devices`. Required scope: `users:read`.
+
+  Query params (`params:`): `user_id`, `source`, `platform`, `assurance_state`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.source`, `data.external_id`, `data.name`, `data.platform`, `data.managed`, `data.compliant`, `data.posture`, `data.last_reported_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/devices", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Devices do
   Create or refresh one device by (source, external_id), reporting managed/compliant posture. Tie it to a user with user_id or a verified user_email. Access policies read the result through the deviceTrust condition: trusted = a managed, compliant device reported within 30 days.
 
   `PUT /v1/devices`. Required scope: `users:write`.
+
+  Body fields: `external_id` (string), `source` (string), `user_id` (string|null), `user_email` (string), `name` (string|null), `platform` (string|null), `managed` (boolean), `compliant` (boolean), `posture` (object), `os_version` (string|null), `disk_encrypted` (boolean|null), `screen_lock` (boolean|null), `secure_hardware` (boolean|null), `jailbroken` (boolean|null), `firewall` (boolean|null), `edr_present` (boolean|null).
+  Response fields: `object`, `id`, `user_id`, `source`, `external_id`, `name`, `platform`, `managed`, `compliant`, `posture`, `last_reported_at`, `created_at`.
   """
   def put(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/devices", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Devices do
   Fetch a device and its latest posture.
 
   `GET /v1/devices/{id}`. Required scope: `users:read`.
+
+  Response fields: `object`, `id`, `user_id`, `source`, `external_id`, `name`, `platform`, `managed`, `compliant`, `posture`, `last_reported_at`, `created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/devices/{id}", %{"id" => id}, nil, opts)
@@ -52,12 +61,15 @@ defmodule Atlas.Devices do
   The compliance transitions of one device, newest first.
 
   `GET /v1/devices/{id}/compliance_history`. Required scope: `device_assurance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.device_id`, `data.user_id`, `data.state`, `data.compliant`, `data.failing`, `data.source`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_compliance_history(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/devices/{id}/compliance_history", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_compliance_history/2`, following the cursor page by page.
+  Lazy stream over every item of `get_compliance_history`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_compliance_history(client, id, opts \\ []),

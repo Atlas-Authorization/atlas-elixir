@@ -5,7 +5,8 @@ defmodule Atlas.ScimProvisioningPresets do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ScimProvisioningPresets do
   List the pre-built outbound provisioning targets (Slack, GitHub, Zoom, Salesforce, Atlassian) with their base-URL template and required parameters.
 
   `GET /v1/scim_provisioning_presets`. Required scope: `scim_provisioning:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.id`, `data.name`, `data.base_url_template`, `data.params`, `data.params.key`, `data.params.label`, `data.deprovision_action`, `data.token_hint`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_provisioning_presets", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

@@ -5,7 +5,8 @@ defmodule Atlas.EmailAddresses do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.EmailAddresses do
   Mark an address verified — flat Clerk-shape alias (user derived from the address).
 
   `POST /v1/email_addresses/{eid}/verify`. Required scope: `users:write`.
+
+  Response fields: `id`, `object`, `email_address`, `verification`, `verification.status`, `verification.strategy`, `verified`, `primary`.
   """
   def post_verify(client, eid, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/email_addresses/{eid}/verify", %{"eid" => eid}, nil, opts)
@@ -21,6 +24,8 @@ defmodule Atlas.EmailAddresses do
   Make a verified address primary — flat Clerk-shape alias (user derived from the address).
 
   `POST /v1/email_addresses/{eid}/primary`. Required scope: `users:write`.
+
+  Response fields: `id`, `object`, `email_address`, `verification`, `verification.status`, `verification.strategy`, `verified`, `primary`.
   """
   def post_primary(client, eid, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/email_addresses/{eid}/primary", %{"eid" => eid}, nil, opts)

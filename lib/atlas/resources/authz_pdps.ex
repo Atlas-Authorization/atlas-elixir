@@ -5,7 +5,8 @@ defmodule Atlas.AuthzPdps do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AuthzPdps do
   The fleet of local policy decision points that have checked in: the bundle revision each is on, when it was last seen and how many decisions it has shipped.
 
   `GET /v1/authz_pdps`. Required scope: `authz_decisions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.version`, `data.bundle_revision`, `data.decisions_total`, `data.first_seen_at`, `data.last_seen_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authz_pdps", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.AuthzPdps do
   Forget a local policy decision point (it reappears if it checks in again).
 
   `DELETE /v1/authz_pdps/{id}`. Required scope: `authz_decisions:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/authz_pdps/{id}", %{"id" => id}, nil, opts)

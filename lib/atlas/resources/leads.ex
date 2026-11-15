@@ -5,7 +5,8 @@ defmodule Atlas.Leads do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Leads do
   The lead / subscribe form's submissions, newest first, with the first-touch attribution captured with each. `format=csv` exports up to 50,000.
 
   `GET /v1/leads`. Required scope: `marketing:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `form`, `format`.
+  Response fields: `object`, `data`, `data.id`, `data.email`, `data.name`, `data.form`, `data.consent`, `data.first_touch`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/leads", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.Leads do
   Delete one captured lead.
 
   `DELETE /v1/leads/{id}`. Required scope: `marketing:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/leads/{id}", %{"id" => id}, nil, opts)

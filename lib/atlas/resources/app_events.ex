@@ -5,7 +5,8 @@ defmodule Atlas.AppEvents do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AppEvents do
   One organization's published app events, newest first.
 
   `GET /v1/app_events`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `organization_id`, `type`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.organization_id`, `data.user_id`, `data.data`, `data.idempotency_key`, `data.created_at`, `data.idempotent_replay`, `data.deliveries_queued`, `data.endpoint_ids`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_events", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AppEvents do
   Publish one application event to one organization (your customer). The type must be in the catalog and data must match its schema (422 with one error per failing path). Every active app webhook endpoint of that organization subscribed to the type (or "*") gets a signed delivery (Standard Webhooks), retried on the webhook schedule, visible in its delivery log with redeliver and replay. idempotency_key (or the Idempotency-Key header) makes a repeat return the first event (200, idempotent_replay: true) for as long as the event is kept (90 days). 201 on a new event.
 
   `POST /v1/app_events`. Required scope: `webhooks:write`.
+
+  Body fields: `organization_id` (string), `org` (string), `user_id` (string), `type` (string, required), `data` (object, required), `idempotency_key` (string).
+  Response fields: `object`, `id`, `type`, `organization_id`, `user_id`, `data`, `idempotency_key`, `created_at`, `idempotent_replay`, `deliveries_queued`, `endpoint_ids`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_events", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AppEvents do
   Retrieve one published app event.
 
   `GET /v1/app_events/{id}`. Required scope: `webhooks:read`.
+
+  Response fields: `object`, `id`, `type`, `organization_id`, `user_id`, `data`, `idempotency_key`, `created_at`, `idempotent_replay`, `deliveries_queued`, `endpoint_ids`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_events/{id}", %{"id" => id}, nil, opts)

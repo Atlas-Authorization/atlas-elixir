@@ -5,7 +5,8 @@ defmodule Atlas.AuditEventSchemas do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AuditEventSchemas do
   List the registered audit event schemas, by action then version (newest first).
 
   `GET /v1/audit_event_schemas`. Required scope: `audit_events:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.action`, `data.version`, `data.description`, `data.target_types`, `data.actor_types`, `data.metadata_schema`, `data.status`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_event_schemas", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AuditEventSchemas do
   Register a schema for an action: the target types and actor types it allows and a JSON Schema its metadata must satisfy. `version` defaults to the next number for that action; a version is immutable (registering it again is a 409) - change a schema by registering a new version. From then on events with this action are validated on write.
 
   `POST /v1/audit_event_schemas`. Required scope: `audit_events:write`.
+
+  Body fields: `action` (string, required), `version` (integer), `description` (string), `target_types` (array), `actor_types` (array), `metadata_schema` (object).
+  Response fields: `object`, `id`, `action`, `version`, `description`, `target_types`, `actor_types`, `metadata_schema`, `status`, `created_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_event_schemas", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AuditEventSchemas do
   One audit event schema.
 
   `GET /v1/audit_event_schemas/{id}`. Required scope: `audit_events:read`.
+
+  Response fields: `object`, `id`, `action`, `version`, `description`, `target_types`, `actor_types`, `metadata_schema`, `status`, `created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_event_schemas/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AuditEventSchemas do
   Change a schema version's description or status. A deprecated version is no longer applied by default but still validates events that name it with `schema_version`.
 
   `PATCH /v1/audit_event_schemas/{id}`. Required scope: `audit_events:write`.
+
+  Body fields: `description` (string|null), `status` (enum).
+  Response fields: `object`, `id`, `action`, `version`, `description`, `target_types`, `actor_types`, `metadata_schema`, `status`, `created_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/audit_event_schemas/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.AuditEventSchemas do
   Remove a schema version. Events already recorded keep their `schema_version` number.
 
   `DELETE /v1/audit_event_schemas/{id}`. Required scope: `audit_events:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/audit_event_schemas/{id}", %{"id" => id}, nil, opts)

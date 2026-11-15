@@ -5,7 +5,8 @@ defmodule Atlas.MarketingSettings do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.MarketingSettings do
   The marketing settings: which UTM / ad-click-id parameters the SDK captures onto new users, and the GA4, GTM and Hotjar ids hosted pages load after consent.
 
   `GET /v1/marketing_settings`. Required scope: `marketing:read`.
+
+  Response fields: `object`, `capture`, `capture.enabled`, `capture.params`, `capture.default_params`, `capture.consent_category`, `scripts`, `scripts.ga4_measurement_id`, `scripts.gtm_container_id`, `scripts.hotjar_site_id`, `scripts.consent_category`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/marketing_settings", %{}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.MarketingSettings do
   Change the marketing settings. `capture.params` empty means the standard set (utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id and the common ad click ids). Hosted pages load a configured script only when the visitor's consent manager grants `scripts.consent_category` (default analytics); with no consent signal nothing loads.
 
   `PUT /v1/marketing_settings`. Required scope: `marketing:write`.
+
+  Body fields: `capture` (object), `scripts` (object).
+  Nested body fields: `capture.enabled`, `capture.params`, `capture.consent_category`, `scripts.ga4_measurement_id`, `scripts.gtm_container_id`, `scripts.hotjar_site_id`, `scripts.consent_category`.
+  Response fields: `object`, `capture`, `capture.enabled`, `capture.params`, `capture.default_params`, `capture.consent_category`, `scripts`, `scripts.ga4_measurement_id`, `scripts.gtm_container_id`, `scripts.hotjar_site_id`, `scripts.consent_category`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/marketing_settings", %{}, body, opts)

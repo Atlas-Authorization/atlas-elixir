@@ -5,7 +5,8 @@ defmodule Atlas.NetworkAcls do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.NetworkAcls do
   List network ACLs — per-instance IP allow/deny rules that gate access to the instance, in priority order.
 
   `GET /v1/network_acls`. Required scope: `network_acls:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.action`, `data.cidr`, `data.zone_id`, `data.description`, `data.priority`, `data.enabled`, `data.expires_at`, `data.source`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/network_acls", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.NetworkAcls do
   Create a network ACL rule (allow|deny, a CIDR or single address or a `zone_id`, a priority). A malformed CIDR is refused. First match in priority order decides; an allow-list denies every unnamed IP.
 
   `POST /v1/network_acls`. Required scope: `network_acls:write`.
+
+  Body fields: `action` (enum), `cidr` (string), `zone_id` (string|null), `description` (string|null), `priority` (integer), `enabled` (boolean).
+  Response fields: `object`, `id`, `action`, `cidr`, `zone_id`, `description`, `priority`, `enabled`, `expires_at`, `source`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/network_acls", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.NetworkAcls do
   Read one network ACL rule.
 
   `GET /v1/network_acls/{id}`. Required scope: `network_acls:read`.
+
+  Response fields: `object`, `id`, `action`, `cidr`, `zone_id`, `description`, `priority`, `enabled`, `expires_at`, `source`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/network_acls/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.NetworkAcls do
   Update a network ACL rule's action, cidr or zone_id, description, priority or enabled flag.
 
   `PATCH /v1/network_acls/{id}`. Required scope: `network_acls:write`.
+
+  Body fields: `action` (enum), `cidr` (string), `zone_id` (string|null), `description` (string|null), `priority` (integer), `enabled` (boolean).
+  Response fields: `object`, `id`, `action`, `cidr`, `zone_id`, `description`, `priority`, `enabled`, `expires_at`, `source`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/network_acls/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.NetworkAcls do
   Delete a network ACL rule. With no rules left, enforcement falls back to the ip_allowlist.
 
   `DELETE /v1/network_acls/{id}`. Required scope: `network_acls:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/network_acls/{id}", %{"id" => id}, nil, opts)

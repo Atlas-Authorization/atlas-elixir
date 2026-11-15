@@ -2,12 +2,26 @@ defmodule Atlas.Client do
   @moduledoc """
   The HTTP core behind every `Atlas.<Resource>` module (built on `Req`).
 
-  Options for `new/2`: `:base_url` (default `https://api.atlasauth.net`) and
-  `:req_options` (merged into every `Req` request, for example `retry: false`
-  or `plug: {Req.Test, MyStub}` in tests).
+  Options for `new/2`: `:base_url` (default `https://api.atlasauth.net`),
+  `:req_options` (merged into every `Req` request, for example `plug: {Req.Test, MyStub}`
+  in tests) and `:resilience`, a keyword list:
+
+    * `:max_retries` - default 2 (0 when `req_options` has `retry: false`).
+    * `:base_delay_ms` (250) and `:max_delay_ms` (30_000) - exponential backoff with jitter.
+    * `:jitter` - default `true`.
+    * `:status_aware` - default `false`; when `true`, a degraded or partially down Atlas stretches the backoff 2x, a
+      `major_outage` (top level or the `backend_api` component) 4x (`status/1`, cached 30 seconds).
+    * `:sleep` - `(ms -> any)`, for tests.
+
+  A `429` is retried for every method (it was not processed), honouring `Retry-After` (seconds or an HTTP
+  date; a wait longer than `:max_delay_ms` is not waited out and the error carries
+  `retry_after_ms`). `500`, `502`, `503`, `504` and transport failures are retried only for
+  `GET`, `HEAD`, `PUT`, `DELETE` and calls with an `:idempotency_key`; a write without one is never retried.
+
+  Every call emits `:telemetry` events (see `AtlasAuth.Telemetry`) when `:telemetry` is installed.
   """
 
-  defstruct [:secret_key, :base_url, req_options: []]
+  defstruct [:secret_key, :base_url, req_options: [], resilience: %{}]
 
   @type t :: %__MODULE__{}
   @default_base "https://api.atlasauth.net"
@@ -18,28 +32,153 @@ defmodule Atlas.Client do
     %__MODULE__{
       secret_key: secret_key,
       base_url: String.trim_trailing(Keyword.get(opts, :base_url, @default_base), "/"),
-      req_options: Keyword.get(opts, :req_options, [])
+      req_options: Keyword.get(opts, :req_options, []),
+      resilience: opts |> Keyword.get(:resilience, []) |> Map.new()
     }
   end
 
   @doc false
   @spec request(t(), atom(), String.t(), map(), term(), keyword()) :: {:ok, term()} | {:error, Atlas.Error.t()}
   def request(%__MODULE__{} = c, method, template, bindings, body, opts) do
+    meta = %{method: method |> to_string() |> String.upcase(), route: template, base_url: c.base_url}
+
+    AtlasAuth.Telemetry.span([:atlas, :request], meta, fn ->
+      result = run(c, method, template, expand(template, bindings), body, opts, 0)
+
+      stop =
+        case result do
+          {:ok, _} -> %{status: :ok}
+          {:error, %Atlas.Error{} = e} -> %{status: :error, http_status: e.status, code: e.code, request_id: e.request_id}
+        end
+
+      {result, Map.merge(meta, stop)}
+    end)
+  end
+
+  @doc false
+  # One raw call for diagnostics: `{:ok, %Req.Response{}}` for any HTTP status, `{:error, %Atlas.Error{}}` on transport failure.
+  def raw(%__MODULE__{} = c, method, path, opts \\ []) do
+    case Req.request(build(c, method, path, nil, opts) |> Keyword.put(:retry, false)) do
+      {:ok, %Req.Response{} = r} -> {:ok, r}
+      {:error, reason} -> {:error, Atlas.Error.transport(reason)}
+    end
+  end
+
+  defp run(c, method, template, path, body, opts, attempt) do
+    result =
+      case Req.request(build(c, method, path, body, opts)) do
+        {:ok, %Req.Response{status: s} = r} when s in 200..299 -> {:ok, decode(r)}
+        {:ok, %Req.Response{status: s} = r} -> {:error, Atlas.Error.from_response(s, decode(r), r.headers)}
+        {:error, reason} -> {:error, Atlas.Error.transport(reason)}
+      end
+
+    cfg = resilience(c)
+
+    with {:error, %Atlas.Error{} = e} <- result,
+         true <- attempt < cfg.max_retries,
+         true <- retryable?(e, method, opts),
+         {:ok, delay} <- delay_ms(c, cfg, e, attempt) do
+      AtlasAuth.Telemetry.execute([:atlas, :request, :retry], %{delay_ms: delay, attempt: attempt + 1}, %{
+        method: method |> to_string() |> String.upcase(),
+        route: template,
+        http_status: e.status,
+        code: e.code
+      })
+
+      cfg.sleep.(delay)
+      run(c, method, template, path, body, opts, attempt + 1)
+    else
+      _ -> result
+    end
+  end
+
+  defp build(c, method, path, body, opts) do
     headers =
       [{"authorization", "Bearer " <> c.secret_key}, {"accept", "application/json"}] ++
         idem(opts[:idempotency_key]) ++ Enum.map(opts[:headers] || [], fn {k, v} -> {to_string(k), to_string(v)} end)
 
-    req =
-      Keyword.merge(
-        [method: method, url: c.base_url <> expand(template, bindings), headers: headers, decode_body: false, params: opts[:params] || []],
-        c.req_options
-      )
-      |> put_body(body, opts[:content_type])
+    Keyword.merge(
+      # Retries are decided here (status aware, `Retry-After` honoured); Req's own retry stays off unless a caller turns it on.
+      [method: method, url: c.base_url <> path, headers: headers, decode_body: false, params: opts[:params] || [], retry: false],
+      c.req_options
+    )
+    |> put_body(body, opts[:content_type])
+  end
 
-    case Req.request(req) do
+  # 429 is retried for every method (the request was refused, not processed). 500, 502, 503, 504 and transport
+  # failures only when repeating the call is safe: GET, HEAD, PUT, DELETE, or a call with an idempotency key.
+  defp retryable?(%Atlas.Error{status: 429}, _method, _opts), do: true
+
+  defp retryable?(%Atlas.Error{status: s}, method, opts) when s in [500, 502, 503, 504, nil],
+    do: method in [:get, :head, :put, :delete] or opts[:idempotency_key] not in [nil, ""]
+
+  defp retryable?(_, _, _), do: false
+
+  @doc false
+  def resilience(%__MODULE__{} = c) do
+    explicit = c.resilience || %{}
+    off? = Keyword.get(c.req_options, :retry) == false and not Map.has_key?(explicit, :max_retries)
+
+    Map.merge(
+      %{max_retries: if(off?, do: 0, else: 2), base_delay_ms: 250, max_delay_ms: 30_000, jitter: true, status_aware: false, sleep: &Process.sleep/1},
+      explicit
+    )
+  end
+
+  # `{:ok, ms}` to wait, or `:give_up` when the server asked for longer than `max_delay_ms`.
+  defp delay_ms(c, cfg, %Atlas.Error{retry_after_ms: ra}, _attempt) when is_integer(ra) do
+    if ra > cfg.max_delay_ms, do: :give_up, else: {:ok, max(ra, 0) |> then(&if(cfg.status_aware, do: status_stretch(c, &1, cfg), else: &1))}
+  end
+
+  defp delay_ms(c, cfg, %Atlas.Error{}, attempt) do
+    exp = min(cfg.base_delay_ms * Integer.pow(2, attempt), cfg.max_delay_ms)
+    exp = if cfg.jitter, do: div(exp, 2) + :rand.uniform(max(div(exp, 2), 1)), else: exp
+    {:ok, if(cfg.status_aware, do: status_stretch(c, exp, cfg), else: exp)}
+  end
+
+  # With `status_aware: true`, a degraded or down Atlas (read from `GET /v1/status`, cached 30 s) stretches the wait 2x / 4x.
+  defp status_stretch(c, ms, cfg) do
+    factor =
+      case service_status(c) do
+        "major_outage" -> 4
+        s when s in ["degraded", "partial_outage"] -> 2
+        _ -> 1
+      end
+
+    min(ms * factor, cfg.max_delay_ms)
+  end
+
+  @doc """
+  The public service status (`GET /v1/status`): `{:ok, %{"status" => "operational" | "degraded" | "partial_outage" | "major_outage" | "maintenance", "components" => [%{"id" => "backend_api", "status" => ...}, ...], ...}}`.
+  """
+  def status(%__MODULE__{} = c) do
+    case raw(c, :get, "/v1/status") do
       {:ok, %Req.Response{status: s} = r} when s in 200..299 -> {:ok, decode(r)}
       {:ok, %Req.Response{status: s} = r} -> {:error, Atlas.Error.from_response(s, decode(r), r.headers)}
-      {:error, reason} -> {:error, Atlas.Error.transport(reason)}
+      {:error, _} = e -> e
+    end
+  end
+
+  # A top-level or backend_api `major_outage` is an outage; otherwise the top-level status stands.
+  defp effective_status(%{"status" => top} = body) do
+    backend = Enum.find(body["components"] || [], &(&1["id"] == "backend_api"))
+    if top == "major_outage" or (backend && backend["status"] == "major_outage"), do: "major_outage", else: top
+  end
+
+  defp effective_status(_), do: "unknown"
+
+  defp service_status(c) do
+    key = {__MODULE__, :status, c.base_url}
+    now = System.monotonic_time(:millisecond)
+
+    case :persistent_term.get(key, nil) do
+      {value, at} when now - at < 30_000 ->
+        value
+
+      _ ->
+        value = case status(c) do {:ok, body} -> effective_status(body); _ -> "unknown" end
+        :persistent_term.put(key, {value, now})
+        value
     end
   end
 

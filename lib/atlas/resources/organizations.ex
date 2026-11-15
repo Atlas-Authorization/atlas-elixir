@@ -5,7 +5,8 @@ defmodule Atlas.Organizations do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Organizations do
   Read an organization's design override and the result of layering it over the instance design.
 
   `GET /v1/organizations/{id}/design`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `design`, `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `legacy`, `legacy_design`, `legacy_design.version`, `legacy_design.preset`, `legacy_design.colorScheme`, `legacy_design.palette`, `legacy_design.palette.primary`, `legacy_design.palette.primaryInk`, `legacy_design.palette.accent`, `legacy_design.palette.background`, `legacy_design.palette.surface`, `legacy_design.palette.text`, `legacy_design.palette.muted`, `legacy_design.palette.border`, `legacy_design.palette.danger`, `legacy_design.palette.success`, `legacy_design.palette.inputBackground`, `legacy_design.palette.inputText`, `legacy_design.paletteDark`, `legacy_design.paletteDark.primary`, `legacy_design.paletteDark.primaryInk`, `legacy_design.paletteDark.accent`, `legacy_design.paletteDark.background`, `legacy_design.paletteDark.surface`, `legacy_design.paletteDark.text`, `legacy_design.paletteDark.muted`, `legacy_design.paletteDark.border`, `legacy_design.paletteDark.danger`, `legacy_design.paletteDark.success`, `legacy_design.paletteDark.inputBackground`, `legacy_design.paletteDark.inputText`, `legacy_design.typography`, `legacy_design.typography.font`, `legacy_design.typography.headingFont`, `legacy_design.typography.baseSize`, `legacy_design.typography.headingWeight`, `legacy_design.typography.bodyWeight`, `legacy_design.typography.letterCase`, `legacy_design.typography.scale`, `legacy_design.shape`, `legacy_design.shape.radius`, `legacy_design.shape.controlRadius`, `legacy_design.shape.borderWidth`, `legacy_design.elevation`, `legacy_design.elevation.cardShadow`, `legacy_design.spacing`, `legacy_design.spacing.density`, `legacy_design.card`, `legacy_design.card.style`, `legacy_design.card.blur`, `legacy_design.card.width`, `legacy_design.layout`, `legacy_design.layout.position`, `legacy_design.layout.splitImageSide`, `legacy_design.layout.logoPlacement`, `legacy_design.layout.logoSize`, `legacy_design.buttons`, `legacy_design.buttons.style`, `legacy_design.buttons.socialLayout`, `legacy_design.inputs`, `legacy_design.inputs.style`, `legacy_design.background`, `legacy_design.background.color`, `legacy_design.background.gradient`, `legacy_design.background.gradient.type`, `legacy_design.background.gradient.angle`, `legacy_design.background.gradient.stops`, `legacy_design.background.image`, `legacy_design.background.image.assetId`, `legacy_design.background.image.fit`, `legacy_design.background.image.position`, `legacy_design.background.image.overlay`, `legacy_design.background.image.blur`, `legacy_design.background.pattern`, `legacy_design.backgroundDark`, `legacy_design.backgroundDark.color`, `legacy_design.backgroundDark.gradient`, `legacy_design.backgroundDark.gradient.type`, `legacy_design.backgroundDark.gradient.angle`, `legacy_design.backgroundDark.gradient.stops`, `legacy_design.backgroundDark.image`, `legacy_design.backgroundDark.image.assetId`, `legacy_design.backgroundDark.image.fit`, `legacy_design.backgroundDark.image.position`, `legacy_design.backgroundDark.image.overlay`, `legacy_design.backgroundDark.image.blur`, `legacy_design.backgroundDark.pattern`, `legacy_design.logo`, `legacy_design.logo.assetId`, `legacy_design.logo.darkAssetId`, `brand`, `brand.source`, `brand.url`, `brand.imported_at`, `brand.document_sha256`, `brand.design`, `brand.design.version`, `brand.design.preset`, `brand.design.colorScheme`, `brand.design.palette`, `brand.design.palette.primary`, `brand.design.palette.primaryInk`, `brand.design.palette.accent`, `brand.design.palette.background`, `brand.design.palette.surface`, `brand.design.palette.text`, `brand.design.palette.muted`, `brand.design.palette.border`, `brand.design.palette.danger`, `brand.design.palette.success`, `brand.design.palette.inputBackground`, `brand.design.palette.inputText`, `brand.design.paletteDark`, `brand.design.paletteDark.primary`, `brand.design.paletteDark.primaryInk`, `brand.design.paletteDark.accent`, `brand.design.paletteDark.background`, `brand.design.paletteDark.surface`, `brand.design.paletteDark.text`, `brand.design.paletteDark.muted`, `brand.design.paletteDark.border`, `brand.design.paletteDark.danger`, `brand.design.paletteDark.success`, `brand.design.paletteDark.inputBackground`, `brand.design.paletteDark.inputText`, `brand.design.typography`, `brand.design.typography.font`, `brand.design.typography.headingFont`, `brand.design.typography.baseSize`, `brand.design.typography.headingWeight`, `brand.design.typography.bodyWeight`, `brand.design.typography.letterCase`, `brand.design.typography.scale`, `brand.design.shape`, `brand.design.shape.radius`, `brand.design.shape.controlRadius`, `brand.design.shape.borderWidth`, `brand.design.elevation`, `brand.design.elevation.cardShadow`, `brand.design.spacing`, `brand.design.spacing.density`, `brand.design.card`, `brand.design.card.style`, `brand.design.card.blur`, `brand.design.card.width`, `brand.design.layout`, `brand.design.layout.position`, `brand.design.layout.splitImageSide`, `brand.design.layout.logoPlacement`, `brand.design.layout.logoSize`, `brand.design.buttons`, `brand.design.buttons.style`, `brand.design.buttons.socialLayout`, `brand.design.inputs`, `brand.design.inputs.style`, `brand.design.background`, `brand.design.background.color`, `brand.design.background.gradient`, `brand.design.background.image`, `brand.design.background.pattern`, `brand.design.backgroundDark`, `brand.design.backgroundDark.color`, `brand.design.backgroundDark.gradient`, `brand.design.backgroundDark.image`, `brand.design.backgroundDark.pattern`, `brand.design.logo`, `brand.design.logo.assetId`, `brand.design.logo.darkAssetId`, `brand.mapping`, `brand.mapping.token`, `brand.mapping.to`, `brand.mapping.value`, `brand.ignored`, `brand.ignored.token`, `brand.ignored.reason`, `brand.meta`, `brand.meta.name`, `brand.meta.legalName`, `brand.meta.supportEmail`, `brand.meta.favicon`, `precedence`, `precedence.layer`, `precedence.source`, `sources`, `ignored`, `ignored.token`, `ignored.reason`.
   """
   def get_design(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/design", %{"id" => id}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.Organizations do
   Replace an organization's design override ({ design: AtlasDesign }); { design: {} } removes it. Image ids must be design assets uploaded to this instance.
 
   `PUT /v1/organizations/{id}/design`. Required scope: `organizations:write`.
+
+  Body fields: `design` (object, required).
+  Nested body fields: `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`.
+  Response fields: `object`, `organization_id`, `design`, `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `legacy`, `legacy_design`, `legacy_design.version`, `legacy_design.preset`, `legacy_design.colorScheme`, `legacy_design.palette`, `legacy_design.palette.primary`, `legacy_design.palette.primaryInk`, `legacy_design.palette.accent`, `legacy_design.palette.background`, `legacy_design.palette.surface`, `legacy_design.palette.text`, `legacy_design.palette.muted`, `legacy_design.palette.border`, `legacy_design.palette.danger`, `legacy_design.palette.success`, `legacy_design.palette.inputBackground`, `legacy_design.palette.inputText`, `legacy_design.paletteDark`, `legacy_design.paletteDark.primary`, `legacy_design.paletteDark.primaryInk`, `legacy_design.paletteDark.accent`, `legacy_design.paletteDark.background`, `legacy_design.paletteDark.surface`, `legacy_design.paletteDark.text`, `legacy_design.paletteDark.muted`, `legacy_design.paletteDark.border`, `legacy_design.paletteDark.danger`, `legacy_design.paletteDark.success`, `legacy_design.paletteDark.inputBackground`, `legacy_design.paletteDark.inputText`, `legacy_design.typography`, `legacy_design.typography.font`, `legacy_design.typography.headingFont`, `legacy_design.typography.baseSize`, `legacy_design.typography.headingWeight`, `legacy_design.typography.bodyWeight`, `legacy_design.typography.letterCase`, `legacy_design.typography.scale`, `legacy_design.shape`, `legacy_design.shape.radius`, `legacy_design.shape.controlRadius`, `legacy_design.shape.borderWidth`, `legacy_design.elevation`, `legacy_design.elevation.cardShadow`, `legacy_design.spacing`, `legacy_design.spacing.density`, `legacy_design.card`, `legacy_design.card.style`, `legacy_design.card.blur`, `legacy_design.card.width`, `legacy_design.layout`, `legacy_design.layout.position`, `legacy_design.layout.splitImageSide`, `legacy_design.layout.logoPlacement`, `legacy_design.layout.logoSize`, `legacy_design.buttons`, `legacy_design.buttons.style`, `legacy_design.buttons.socialLayout`, `legacy_design.inputs`, `legacy_design.inputs.style`, `legacy_design.background`, `legacy_design.background.color`, `legacy_design.background.gradient`, `legacy_design.background.gradient.type`, `legacy_design.background.gradient.angle`, `legacy_design.background.gradient.stops`, `legacy_design.background.image`, `legacy_design.background.image.assetId`, `legacy_design.background.image.fit`, `legacy_design.background.image.position`, `legacy_design.background.image.overlay`, `legacy_design.background.image.blur`, `legacy_design.background.pattern`, `legacy_design.backgroundDark`, `legacy_design.backgroundDark.color`, `legacy_design.backgroundDark.gradient`, `legacy_design.backgroundDark.gradient.type`, `legacy_design.backgroundDark.gradient.angle`, `legacy_design.backgroundDark.gradient.stops`, `legacy_design.backgroundDark.image`, `legacy_design.backgroundDark.image.assetId`, `legacy_design.backgroundDark.image.fit`, `legacy_design.backgroundDark.image.position`, `legacy_design.backgroundDark.image.overlay`, `legacy_design.backgroundDark.image.blur`, `legacy_design.backgroundDark.pattern`, `legacy_design.logo`, `legacy_design.logo.assetId`, `legacy_design.logo.darkAssetId`, `brand`, `brand.source`, `brand.url`, `brand.imported_at`, `brand.document_sha256`, `brand.design`, `brand.design.version`, `brand.design.preset`, `brand.design.colorScheme`, `brand.design.palette`, `brand.design.palette.primary`, `brand.design.palette.primaryInk`, `brand.design.palette.accent`, `brand.design.palette.background`, `brand.design.palette.surface`, `brand.design.palette.text`, `brand.design.palette.muted`, `brand.design.palette.border`, `brand.design.palette.danger`, `brand.design.palette.success`, `brand.design.palette.inputBackground`, `brand.design.palette.inputText`, `brand.design.paletteDark`, `brand.design.paletteDark.primary`, `brand.design.paletteDark.primaryInk`, `brand.design.paletteDark.accent`, `brand.design.paletteDark.background`, `brand.design.paletteDark.surface`, `brand.design.paletteDark.text`, `brand.design.paletteDark.muted`, `brand.design.paletteDark.border`, `brand.design.paletteDark.danger`, `brand.design.paletteDark.success`, `brand.design.paletteDark.inputBackground`, `brand.design.paletteDark.inputText`, `brand.design.typography`, `brand.design.typography.font`, `brand.design.typography.headingFont`, `brand.design.typography.baseSize`, `brand.design.typography.headingWeight`, `brand.design.typography.bodyWeight`, `brand.design.typography.letterCase`, `brand.design.typography.scale`, `brand.design.shape`, `brand.design.shape.radius`, `brand.design.shape.controlRadius`, `brand.design.shape.borderWidth`, `brand.design.elevation`, `brand.design.elevation.cardShadow`, `brand.design.spacing`, `brand.design.spacing.density`, `brand.design.card`, `brand.design.card.style`, `brand.design.card.blur`, `brand.design.card.width`, `brand.design.layout`, `brand.design.layout.position`, `brand.design.layout.splitImageSide`, `brand.design.layout.logoPlacement`, `brand.design.layout.logoSize`, `brand.design.buttons`, `brand.design.buttons.style`, `brand.design.buttons.socialLayout`, `brand.design.inputs`, `brand.design.inputs.style`, `brand.design.background`, `brand.design.background.color`, `brand.design.background.gradient`, `brand.design.background.image`, `brand.design.background.pattern`, `brand.design.backgroundDark`, `brand.design.backgroundDark.color`, `brand.design.backgroundDark.gradient`, `brand.design.backgroundDark.image`, `brand.design.backgroundDark.pattern`, `brand.design.logo`, `brand.design.logo.assetId`, `brand.design.logo.darkAssetId`, `brand.mapping`, `brand.mapping.token`, `brand.mapping.to`, `brand.mapping.value`, `brand.ignored`, `brand.ignored.token`, `brand.ignored.reason`, `brand.meta`, `brand.meta.name`, `brand.meta.legalName`, `brand.meta.supportEmail`, `brand.meta.favicon`, `precedence`, `precedence.layer`, `precedence.source`, `sources`, `ignored`, `ignored.token`, `ignored.reason`.
   """
   def put_design(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/design", %{"id" => id}, body, opts)
@@ -29,20 +36,45 @@ defmodule Atlas.Organizations do
   Change part of an organization's design override; null removes a setting.
 
   `PATCH /v1/organizations/{id}/design`. Required scope: `organizations:write`.
+
+  Body fields: `design` (object, required).
+  Nested body fields: `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`.
+  Response fields: `object`, `organization_id`, `design`, `design.version`, `design.preset`, `design.colorScheme`, `design.palette`, `design.palette.primary`, `design.palette.primaryInk`, `design.palette.accent`, `design.palette.background`, `design.palette.surface`, `design.palette.text`, `design.palette.muted`, `design.palette.border`, `design.palette.danger`, `design.palette.success`, `design.palette.inputBackground`, `design.palette.inputText`, `design.paletteDark`, `design.paletteDark.primary`, `design.paletteDark.primaryInk`, `design.paletteDark.accent`, `design.paletteDark.background`, `design.paletteDark.surface`, `design.paletteDark.text`, `design.paletteDark.muted`, `design.paletteDark.border`, `design.paletteDark.danger`, `design.paletteDark.success`, `design.paletteDark.inputBackground`, `design.paletteDark.inputText`, `design.typography`, `design.typography.font`, `design.typography.headingFont`, `design.typography.baseSize`, `design.typography.headingWeight`, `design.typography.bodyWeight`, `design.typography.letterCase`, `design.typography.scale`, `design.shape`, `design.shape.radius`, `design.shape.controlRadius`, `design.shape.borderWidth`, `design.elevation`, `design.elevation.cardShadow`, `design.spacing`, `design.spacing.density`, `design.card`, `design.card.style`, `design.card.blur`, `design.card.width`, `design.layout`, `design.layout.position`, `design.layout.splitImageSide`, `design.layout.logoPlacement`, `design.layout.logoSize`, `design.buttons`, `design.buttons.style`, `design.buttons.socialLayout`, `design.inputs`, `design.inputs.style`, `design.background`, `design.background.color`, `design.background.gradient`, `design.background.gradient.type`, `design.background.gradient.angle`, `design.background.gradient.stops`, `design.background.image`, `design.background.image.assetId`, `design.background.image.fit`, `design.background.image.position`, `design.background.image.overlay`, `design.background.image.overlay.color`, `design.background.image.overlay.opacity`, `design.background.image.blur`, `design.background.pattern`, `design.backgroundDark`, `design.backgroundDark.color`, `design.backgroundDark.gradient`, `design.backgroundDark.gradient.type`, `design.backgroundDark.gradient.angle`, `design.backgroundDark.gradient.stops`, `design.backgroundDark.image`, `design.backgroundDark.image.assetId`, `design.backgroundDark.image.fit`, `design.backgroundDark.image.position`, `design.backgroundDark.image.overlay`, `design.backgroundDark.image.overlay.color`, `design.backgroundDark.image.overlay.opacity`, `design.backgroundDark.image.blur`, `design.backgroundDark.pattern`, `design.logo`, `design.logo.assetId`, `design.logo.darkAssetId`, `resolved`, `resolved.version`, `resolved.preset`, `resolved.colorScheme`, `resolved.palette`, `resolved.paletteDark`, `resolved.typography`, `resolved.shape`, `resolved.elevation`, `resolved.spacing`, `resolved.card`, `resolved.layout`, `resolved.buttons`, `resolved.inputs`, `resolved.background`, `resolved.backgroundDark`, `resolved.logo`, `warnings`, `warnings.code`, `warnings.mode`, `warnings.pair`, `warnings.ratio`, `warnings.required`, `warnings.path`, `warnings.message`, `legacy`, `legacy_design`, `legacy_design.version`, `legacy_design.preset`, `legacy_design.colorScheme`, `legacy_design.palette`, `legacy_design.palette.primary`, `legacy_design.palette.primaryInk`, `legacy_design.palette.accent`, `legacy_design.palette.background`, `legacy_design.palette.surface`, `legacy_design.palette.text`, `legacy_design.palette.muted`, `legacy_design.palette.border`, `legacy_design.palette.danger`, `legacy_design.palette.success`, `legacy_design.palette.inputBackground`, `legacy_design.palette.inputText`, `legacy_design.paletteDark`, `legacy_design.paletteDark.primary`, `legacy_design.paletteDark.primaryInk`, `legacy_design.paletteDark.accent`, `legacy_design.paletteDark.background`, `legacy_design.paletteDark.surface`, `legacy_design.paletteDark.text`, `legacy_design.paletteDark.muted`, `legacy_design.paletteDark.border`, `legacy_design.paletteDark.danger`, `legacy_design.paletteDark.success`, `legacy_design.paletteDark.inputBackground`, `legacy_design.paletteDark.inputText`, `legacy_design.typography`, `legacy_design.typography.font`, `legacy_design.typography.headingFont`, `legacy_design.typography.baseSize`, `legacy_design.typography.headingWeight`, `legacy_design.typography.bodyWeight`, `legacy_design.typography.letterCase`, `legacy_design.typography.scale`, `legacy_design.shape`, `legacy_design.shape.radius`, `legacy_design.shape.controlRadius`, `legacy_design.shape.borderWidth`, `legacy_design.elevation`, `legacy_design.elevation.cardShadow`, `legacy_design.spacing`, `legacy_design.spacing.density`, `legacy_design.card`, `legacy_design.card.style`, `legacy_design.card.blur`, `legacy_design.card.width`, `legacy_design.layout`, `legacy_design.layout.position`, `legacy_design.layout.splitImageSide`, `legacy_design.layout.logoPlacement`, `legacy_design.layout.logoSize`, `legacy_design.buttons`, `legacy_design.buttons.style`, `legacy_design.buttons.socialLayout`, `legacy_design.inputs`, `legacy_design.inputs.style`, `legacy_design.background`, `legacy_design.background.color`, `legacy_design.background.gradient`, `legacy_design.background.gradient.type`, `legacy_design.background.gradient.angle`, `legacy_design.background.gradient.stops`, `legacy_design.background.image`, `legacy_design.background.image.assetId`, `legacy_design.background.image.fit`, `legacy_design.background.image.position`, `legacy_design.background.image.overlay`, `legacy_design.background.image.blur`, `legacy_design.background.pattern`, `legacy_design.backgroundDark`, `legacy_design.backgroundDark.color`, `legacy_design.backgroundDark.gradient`, `legacy_design.backgroundDark.gradient.type`, `legacy_design.backgroundDark.gradient.angle`, `legacy_design.backgroundDark.gradient.stops`, `legacy_design.backgroundDark.image`, `legacy_design.backgroundDark.image.assetId`, `legacy_design.backgroundDark.image.fit`, `legacy_design.backgroundDark.image.position`, `legacy_design.backgroundDark.image.overlay`, `legacy_design.backgroundDark.image.blur`, `legacy_design.backgroundDark.pattern`, `legacy_design.logo`, `legacy_design.logo.assetId`, `legacy_design.logo.darkAssetId`, `brand`, `brand.source`, `brand.url`, `brand.imported_at`, `brand.document_sha256`, `brand.design`, `brand.design.version`, `brand.design.preset`, `brand.design.colorScheme`, `brand.design.palette`, `brand.design.palette.primary`, `brand.design.palette.primaryInk`, `brand.design.palette.accent`, `brand.design.palette.background`, `brand.design.palette.surface`, `brand.design.palette.text`, `brand.design.palette.muted`, `brand.design.palette.border`, `brand.design.palette.danger`, `brand.design.palette.success`, `brand.design.palette.inputBackground`, `brand.design.palette.inputText`, `brand.design.paletteDark`, `brand.design.paletteDark.primary`, `brand.design.paletteDark.primaryInk`, `brand.design.paletteDark.accent`, `brand.design.paletteDark.background`, `brand.design.paletteDark.surface`, `brand.design.paletteDark.text`, `brand.design.paletteDark.muted`, `brand.design.paletteDark.border`, `brand.design.paletteDark.danger`, `brand.design.paletteDark.success`, `brand.design.paletteDark.inputBackground`, `brand.design.paletteDark.inputText`, `brand.design.typography`, `brand.design.typography.font`, `brand.design.typography.headingFont`, `brand.design.typography.baseSize`, `brand.design.typography.headingWeight`, `brand.design.typography.bodyWeight`, `brand.design.typography.letterCase`, `brand.design.typography.scale`, `brand.design.shape`, `brand.design.shape.radius`, `brand.design.shape.controlRadius`, `brand.design.shape.borderWidth`, `brand.design.elevation`, `brand.design.elevation.cardShadow`, `brand.design.spacing`, `brand.design.spacing.density`, `brand.design.card`, `brand.design.card.style`, `brand.design.card.blur`, `brand.design.card.width`, `brand.design.layout`, `brand.design.layout.position`, `brand.design.layout.splitImageSide`, `brand.design.layout.logoPlacement`, `brand.design.layout.logoSize`, `brand.design.buttons`, `brand.design.buttons.style`, `brand.design.buttons.socialLayout`, `brand.design.inputs`, `brand.design.inputs.style`, `brand.design.background`, `brand.design.background.color`, `brand.design.background.gradient`, `brand.design.background.image`, `brand.design.background.pattern`, `brand.design.backgroundDark`, `brand.design.backgroundDark.color`, `brand.design.backgroundDark.gradient`, `brand.design.backgroundDark.image`, `brand.design.backgroundDark.pattern`, `brand.design.logo`, `brand.design.logo.assetId`, `brand.design.logo.darkAssetId`, `brand.mapping`, `brand.mapping.token`, `brand.mapping.to`, `brand.mapping.value`, `brand.ignored`, `brand.ignored.token`, `brand.ignored.reason`, `brand.meta`, `brand.meta.name`, `brand.meta.legalName`, `brand.meta.supportEmail`, `brand.meta.favicon`, `precedence`, `precedence.layer`, `precedence.source`, `sources`, `ignored`, `ignored.token`, `ignored.reason`.
   """
   def update_design(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/design", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  The organization's audit trail: actions on the organization or naming it. A page, newest first, or with `format=jsonl` the whole trail as newline-delimited JSON for download (capped at 100000 rows, then a truncated marker). Filter with `action` (exact, or a prefix ending in "."), `from` and `to` (ISO dates).
+
+  `GET /v1/organizations/{id}/audit_logs`. Required scope: `audit:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `action`, `format`, `from`, `to`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.actor_type`, `data.actor_id`, `data.action`, `data.target_type`, `data.target_id`, `data.organization_id`, `data.metadata`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_audit_logs(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/audit_logs", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_audit_logs`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_audit_logs(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/audit_logs", %{"id" => id}, opts)
+
+  @doc ~S"""
   List organizations, cursor-paginated. Filter with ?external_id= (your own id for the customer) and ?metadata[key]=value (public_metadata equality; repeat for AND).
 
   `GET /v1/organizations`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `external_id`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.slug`, `data.image_url`, `data.parent_organization_id`, `data.public_metadata`, `data.max_allowed_memberships`, `data.created_by`, `data.external_id`, `data.role_mappings`, `data.owner_invitation`, `data.owner_invitation.object`, `data.owner_invitation.id`, `data.owner_invitation.email`, `data.owner_invitation.role`, `data.owner_invitation.status`, `data.owner_invitation.expires_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -52,6 +84,9 @@ defmodule Atlas.Organizations do
   Create an organization. Body: `name` (required); `slug` (optional: derived from the name, suffixed -2, -3… when taken, and returned; an explicit slug that is taken is 409); `created_by` (optional: an Atlas user id seated with the creator role; omit or null for an organization created by your backend, which then has no members yet); `external_id` (your id for the customer, unique per instance; 409 when taken); `public_metadata` / `private_metadata`; `owner_email` (invites that address with the creator role, org:admin by default; the invitation is in `owner_invitation`); `role_mappings` (role key → your product's name for it, echoed as the `org_role_mapped` token claim); `max_allowed_memberships`. Emits organization.created.
 
   `POST /v1/organizations`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `slug` (string), `created_by` (string|null), `max_allowed_memberships` (number), `external_id` (string|null), `public_metadata` (object), `private_metadata` (object), `owner_email` (string), `role_mappings` (object|null).
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations", %{}, body, opts)
@@ -60,6 +95,9 @@ defmodule Atlas.Organizations do
   Create-or-update the organization keyed by your own id (external_id, the path segment, URL-encoded): 201 with the new organization when none has it (as POST /v1/organizations, external_id set from the path), else 200 with it updated (as PATCH /v1/organizations/{id}; only the fields sent change). Body: name (required when it creates), slug, image_url, max_allowed_memberships, public_metadata, private_metadata, role_mappings, and on create only created_by and owner_email (ignored on update). Two calls racing for a new external_id create exactly one organization; the other updates it. Emits organization.created or organization.updated.
 
   `PUT /v1/organizations/by_external_id/{external_id}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `slug` (string), `image_url` (string), `max_allowed_memberships` (integer), `public_metadata` (object), `private_metadata` (object), `role_mappings` (object|null), `created_by` (string|null), `owner_email` (string).
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`.
   """
   def put_by_external_id(client, external_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/by_external_id/{external_id}", %{"external_id" => external_id}, body, opts)
@@ -68,6 +106,9 @@ defmodule Atlas.Organizations do
   Find the organization that owns an email domain (or an email address: its domain is used). Only VERIFIED domains match unless ?include_unverified=true. 404 when none. Returns the organization plus the matched `domain` (id, status, verified_at).
 
   `GET /v1/organizations/by_domain/{domain}`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `include_unverified`.
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`, `domain`, `domain.object`, `domain.id`, `domain.domain`, `domain.status`, `domain.verified_at`.
   """
   def get_by_domain(client, domain, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/by_domain/{domain}", %{"domain" => domain}, nil, opts)
@@ -76,6 +117,8 @@ defmodule Atlas.Organizations do
   Fetch an organization by its slug (case-insensitive).
 
   `GET /v1/organizations/by_slug/{slug}`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`.
   """
   def get_by_slug(client, slug, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/by_slug/{slug}", %{"slug" => slug}, nil, opts)
@@ -84,6 +127,9 @@ defmodule Atlas.Organizations do
   Check whether a slug is valid and free, for a create-organization form.
 
   `GET /v1/organizations/check_slug`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `slug`.
+  Response fields: `object`, `slug`, `valid`, `available`.
   """
   def get_check_slug(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/check_slug", %{}, nil, opts)
@@ -92,6 +138,8 @@ defmodule Atlas.Organizations do
   Fetch an organization. Never includes private_metadata. Includes `sso`: its SSO connections (id, type saml|oidc, status draft|active|disabled, domains, created_at in Unix ms) and `scim_base_url`, the SCIM 2.0 base URL to give its identity provider.
 
   `GET /v1/organizations/{id}`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`, `members`, `members.total`, `members.scanned`, `members.roles`, `entitlements`, `entitlements.plan`, `entitlements.features`, `entitlements.limits`, `sso`, `sso.connections`, `sso.connections.id`, `sso.connections.type`, `sso.connections.status`, `sso.connections.domains`, `sso.connections.created_at`, `sso.scim_base_url`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}", %{"id" => id}, nil, opts)
@@ -100,6 +148,9 @@ defmodule Atlas.Organizations do
   Update an organization name, slug, image, seat cap or metadata. Emits organization.updated.
 
   `PATCH /v1/organizations/{id}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `slug` (string), `image_url` (string), `max_allowed_memberships` (number), `public_metadata` (object), `private_metadata` (object), `external_id` (string|null), `role_mappings` (object|null).
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}", %{"id" => id}, body, opts)
@@ -108,6 +159,8 @@ defmodule Atlas.Organizations do
   Delete an organization; its memberships and invitations cascade with it.
 
   `DELETE /v1/organizations/{id}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}", %{"id" => id}, nil, opts)
@@ -116,14 +169,20 @@ defmodule Atlas.Organizations do
   Read an organization's security policy (the same object PATCH …/policy writes and returns).
 
   `GET /v1/organizations/{id}/policy`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `policy`, `policy.requireMfa`, `policy.requireMfaReasons`, `policy.mfaEnforcement`, `policy.mfaMaxAgeSeconds`, `policy.allowedMfaFactors`, `policy.requiredFactors`, `policy.passwordPolicyOverride`, `policy.ssoRequired`, `policy.sessionIdleOverrideMs`, `policy.allowedSignInMethods`, `policy.ipAllowlist`, `policy.maxSessionAgeSeconds`, `policy.maxSessions`, `policy.ssoMultiConnection`, `policy.memberVisibility`, `policy.endUserPool`, `policy.endUserPool.enabled`, `policy.endUserPool.requireApproval`, `policy.endUserPool.allowHostedSignup`, `policy.ssoBypass`, `policy.itContacts`, `policy.itContacts.email`, `policy.itContacts.name`, `policy.itContacts.role`.
   """
   def get_policy(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/policy", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update the org policy as a partial merge (requireMfa, ssoRequired, sessionIdleOverrideMs, allowedSignInMethods, ipAllowlist, maxSessionAgeSeconds, entitlementPlan, entitlementOverrides, endUserPool); null clears a key.
+  Update the org policy as a partial merge (requireMfa, requireMfaReasons / requireMfaReasonsAdd / requireMfaReasonsRemove, mfaEnforcement, mfaMaxAgeSeconds, allowedMfaFactors, ssoRequired, sessionIdleOverrideMs, allowedSignInMethods, ipAllowlist, maxSessionAgeSeconds, entitlementPlan, entitlementOverrides, endUserPool); null clears a key. With mfaEnforcement require_step_up, activating the org on a session short of the MFA bar is 403 STEP_UP_REQUIRED with reason org_mfa_step_up_required. The session token carries org_mfa_required and org_mfa_ok.
 
   `PATCH /v1/organizations/{id}/policy`. Required scope: `organizations:write`.
+
+  Body fields: `requireMfa` (boolean|null), `requireMfaReasons` (array|null), `requireMfaReasonsAdd` (array), `requireMfaReasonsRemove` (array), `mfaEnforcement` (enum), `mfaMaxAgeSeconds` (integer|null), `allowedMfaFactors` (array|null), `requiredFactors` (array|null), `passwordPolicyOverride` (object|null), `ssoRequired` (boolean|null), `sessionIdleOverrideMs` (integer|null), `allowedSignInMethods` (array|null), `ipAllowlist` (array|null), `maxSessionAgeSeconds` (integer|null), `maxSessions` (integer|null), `ssoMultiConnection` (boolean|null), `entitlementPlan` (null), `entitlementOverrides` (null), `memberVisibility` (enum), `endUserPool` (object|null), `ssoBypass` (array|null), `itContacts` (array|null).
+  Nested body fields: `endUserPool.enabled`, `endUserPool.requireApproval`, `endUserPool.allowHostedSignup`, `itContacts.email`, `itContacts.name`, `itContacts.role`.
+  Response fields: `object`, `organization_id`, `policy`, `policy.requireMfa`, `policy.requireMfaReasons`, `policy.mfaEnforcement`, `policy.mfaMaxAgeSeconds`, `policy.allowedMfaFactors`, `policy.requiredFactors`, `policy.passwordPolicyOverride`, `policy.ssoRequired`, `policy.sessionIdleOverrideMs`, `policy.allowedSignInMethods`, `policy.ipAllowlist`, `policy.maxSessionAgeSeconds`, `policy.maxSessions`, `policy.ssoMultiConnection`, `policy.memberVisibility`, `policy.endUserPool`, `policy.endUserPool.enabled`, `policy.endUserPool.requireApproval`, `policy.endUserPool.allowHostedSignup`, `policy.ssoBypass`, `policy.itContacts`, `policy.itContacts.email`, `policy.itContacts.name`, `policy.itContacts.role`.
   """
   def update_policy(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/policy", %{"id" => id}, body, opts)
@@ -132,45 +191,83 @@ defmodule Atlas.Organizations do
   Replace the organization public and private metadata bags wholesale.
 
   `PUT /v1/organizations/{id}/metadata`. Required scope: `organizations:write`.
+
+  Body fields: `public_metadata` (object), `private_metadata` (object).
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`.
   """
   def put_metadata(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/metadata", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  List members of an organization with their roles.
+  List members of an organization with their roles. `user_id` narrows the list to that one member.
 
   `GET /v1/organizations/{id}/memberships`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `offset`, `user_id`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.user_id`, `data.role`, `data.role_source`, `data.public_metadata`, `data.private_metadata`, `data.permissions`, `data.allowed_sign_in_methods`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_memberships(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/memberships", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_memberships/2`, following the cursor page by page.
+  Lazy stream over every item of `get_memberships`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_memberships(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/memberships", %{"id" => id}, opts)
 
   @doc ~S"""
-  Add an existing instance user to an organization with a role. The seat cap is enforced.
+  Add an existing instance user to an organization with a role, optionally with the seat's `public_metadata`, `private_metadata`, `permissions` and `allowed_sign_in_methods`. The seat cap (max_allowed_memberships) is enforced: when it was lowered below the current member count, existing members stay and new seats are refused with MEMBERSHIP_LIMIT_REACHED until the count drops.
 
   `POST /v1/organizations/{id}/memberships`. Required scope: `organizations:write`.
+
+  Body fields: `user_id` (string), `role` (string), `scope` (object), `public_metadata` (object), `private_metadata` (object), `permissions` (array), `allowed_sign_in_methods` (array|null), `expires_at` (string|number|null).
+  Nested body fields: `scope.groups`, `scope.teams`, `scope.units`.
+  Response fields: `object`, `public_metadata`, `private_metadata`, `permissions`, `allowed_sign_in_methods`, `organization_id`, `user_id`, `role`.
   """
   def post_memberships(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/memberships", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Change a member's role, who manages it (`role_source`), and/or their administrator `scope`. A role set here is `manual`: directory re-sync (SCIM groups, SSO claims, LDAP groups) leaves it alone until you send `role_source` naming a source of this organization again. A scope (`groups`, `teams`, `units`) limits where that member's admin permissions apply to members inside it, so an administrator can run part of an organization; `null` makes them organization-wide. A scoped administrator cannot invite, change settings, manage roles or assign a management role. Demoting the last admin returns LAST_ADMIN.
+  Read one membership: role, `role_source`, scope, in the same shape as a list item. 404 when the user is not a member.
+
+  `GET /v1/organizations/{id}/memberships/{userId}`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `user_id`, `role`, `role_source`, `scope`, `expires_at`, `created_at`.
+  """
+  def get_by_id_memberships_by_user_id(client, id, user_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/memberships/{userId}", %{"id" => id, "userId" => user_id}, nil, opts)
+
+  @doc ~S"""
+  Create or update a membership. Body: `role` (required), `role_source` (optional, as on PATCH), and the seat's own `public_metadata`, `private_metadata`, `permissions` (extra permission keys that join org_permissions in the session token) and `allowed_sign_in_methods` (a session signed in another way mints without this organization's claims). 201 when it adds the member, 200 when it changes the role. When a directory (SCIM, SSO or LDAP) manages the existing role and `role_source` does not name that same source, nothing changes and the answer is 200 with `unchanged: true` and the current `role_source`. Emits organizationMembership.created or organizationMembership.updated. Accepts Idempotency-Key.
+
+  `PUT /v1/organizations/{id}/memberships/{userId}`. Required scope: `organizations:write`.
+
+  Body fields: `role` (string, required), `role_source` (string), `public_metadata` (object), `private_metadata` (object), `permissions` (array), `allowed_sign_in_methods` (array|null), `expires_at` (string|integer|null).
+  Response fields: `object`, `id`, `organization_id`, `user_id`, `role`, `role_source`, `scope`, `expires_at`, `created_at`, `unchanged`.
+  """
+  def put_memberships(client, id, user_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/memberships/{userId}", %{"id" => id, "userId" => user_id}, body, opts)
+
+  @doc ~S"""
+  Change a member's role, who manages it (`role_source`), their administrator `scope`, and/or the seat's own `public_metadata`, `private_metadata`, `permissions` and `allowed_sign_in_methods` (only the fields you send change; `permissions: []` and `allowed_sign_in_methods: null` clear them; emits organizationMembership.updated). A role set here is `manual`: directory re-sync (SCIM groups, SSO claims, LDAP groups) leaves it alone until you send `role_source` naming a source of this organization again. A scope (`groups`, `teams`, `units`) limits where that member's admin permissions apply to members inside it, so an administrator can run part of an organization; `null` makes them organization-wide. A scoped administrator cannot invite, change settings, manage roles or assign a management role. Demoting the last admin returns LAST_ADMIN.
 
   `PATCH /v1/organizations/{id}/memberships/{userId}`. Required scope: `organizations:write`.
+
+  Body fields: `role` (string), `role_source` (string), `scope` (object), `public_metadata` (object), `private_metadata` (object), `permissions` (array), `allowed_sign_in_methods` (array|null), `expires_at` (string|number|null).
+  Nested body fields: `scope.groups`, `scope.teams`, `scope.units`.
+  Response fields: `object`, `public_metadata`, `private_metadata`, `permissions`, `allowed_sign_in_methods`, `role`, `role_source`, `scope`, `updated`.
   """
   def update_memberships(client, id, user_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/memberships/{userId}", %{"id" => id, "userId" => user_id}, body, opts)
 
   @doc ~S"""
-  Remove a member. Removing the last admin returns LAST_ADMIN.
+  Remove a member. Removing the last admin returns LAST_ADMIN. The organization connections they authorized or shared move to the member named by `transfer_to`, else per GET /v1/instance/org_departure_policy.
 
   `DELETE /v1/organizations/{id}/memberships/{userId}`. Required scope: `organizations:write`.
+
+  Query params (`params:`): `transfer_to`.
+  Response fields: `object`, `deleted`.
   """
   def delete_memberships(client, id, user_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/memberships/{userId}", %{"id" => id, "userId" => user_id}, nil, opts)
@@ -179,45 +276,82 @@ defmodule Atlas.Organizations do
   List an organization's invitations with their roles and status.
 
   `GET /v1/organizations/{id}/invitations`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.email`, `data.role`, `data.status`, `data.inviter_user_id`, `data.delivery`, `data.accept_by`, `data.public_metadata`, `data.private_metadata`, `data.permissions`, `data.allowed_sign_in_methods`, `data.accept_token`, `data.accept_url`, `data.email_sent`, `data.accepted_by_user_id`, `data.accepted_email_address`, `data.expires_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_invitations(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/invitations", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_invitations/2`, following the cursor page by page.
+  Lazy stream over every item of `get_invitations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_invitations(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/invitations", %{"id" => id}, opts)
 
   @doc ~S"""
-  Invite an email address to an organization. Expires in 7 days.
+  Invite an email address to an organization. Expires after organizations.invitationTtlSeconds (7 days by default). With `delivery: "email"` (default) your app sends the mail from organizationInvitation.created; with the instance setting organizations.invitationEmail "atlas", Atlas mails it through your own email provider instead (`redirect_url` is then required unless the instance sets organizations.invitationRedirectUrl, which is the default, the mailed link is `redirect_url` plus `?invitation_token=`, `email_sent` reports whether it went out, and no token is returned). With `delivery: "link"` nothing is sent: `accept_token` (and `accept_url`, when you pass a `redirect_url` on an allowed origin) come back ONCE; only the token's SHA-256 is stored, and the invitee accepts with POST /v1/client/organization_invitations/accept_by_token while signed in. `accept_by` (`link` or `verified_email`) overrides the instance setting organizations.invitationAccept for this invitation. `public_metadata` and `private_metadata` are copied to the membership on accept, as are `permissions` (added to the role's permissions in org_permissions) and `allowed_sign_in_methods`. Runs the pre_invitation_create hook. Accepts Idempotency-Key.
 
   `POST /v1/organizations/{id}/invitations`. Required scope: `organizations:write`.
+
+  Body fields: `email` (string), `role` (string), `inviter_user_id` (string), `delivery` (enum), `accept_by` (enum), `redirect_url` (string), `public_metadata` (object), `private_metadata` (object), `permissions` (array), `allowed_sign_in_methods` (array|null).
+  Response fields: `object`, `id`, `organization_id`, `email`, `role`, `status`, `inviter_user_id`, `delivery`, `accept_by`, `public_metadata`, `private_metadata`, `permissions`, `allowed_sign_in_methods`, `accept_token`, `accept_url`, `email_sent`, `accepted_by_user_id`, `accepted_email_address`, `expires_at`, `created_at`.
   """
   def post_invitations(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/invitations", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Import up to 500 invitations that already exist in another system and keep their links working: each row carries the `token_sha256` of the token already issued and its original `expires_at`. A pending invitation to the same address with the same token is `unchanged`; with another token it is replaced. A bad row is reported as `invalid_row` and does not stop the others. `dry_run` checks every row and writes nothing. Accepts Idempotency-Key.
+
+  `POST /v1/organizations/{id}/invitations/import`. Required scope: `organizations:write`.
+
+  Body fields: `invitations` (array), `dry_run` (boolean).
+  Nested body fields: `invitations.email`, `invitations.role`, `invitations.token_sha256`, `invitations.expires_at`, `invitations.inviter_user_id`, `invitations.accept_by`, `invitations.public_metadata`, `invitations.private_metadata`, `invitations.permissions`, `invitations.allowed_sign_in_methods`.
+  Response fields: `object`, `organization_id`, `dry_run`, `created`, `unchanged`, `invalid`, `data`, `data.index`, `data.status`, `data.id`, `data.code`, `data.message`, `data.param`.
+  """
+  def post_invitations_import(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/invitations/import", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Revoke a pending invitation so the address can be re-invited.
 
   `POST /v1/organizations/{id}/invitations/{invitationId}/revoke`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `status`.
   """
   def post_invitations_revoke(client, id, invitation_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/invitations/{invitationId}/revoke", %{"id" => id, "invitationId" => invitation_id}, nil, opts)
 
   @doc ~S"""
-  Resend a pending invitation: same id and role, a fresh expiry, and organizationInvitation.resent so your mailer sends it again. 404 for an invitation of another organization; 409 when it is no longer pending.
+  Resend a pending invitation: same id and role, a fresh expiry, and organizationInvitation.resent so your mailer sends it again. With organizations.invitationEmail "atlas", an email invitation is mailed again by Atlas with a fresh single-use link built from the body's `redirect_url` (required then unless the instance sets organizations.invitationRedirectUrl; `email_sent` in the response says whether it went out). 404 for an invitation of another organization; 409 when it is no longer pending.
 
   `POST /v1/organizations/{id}/invitations/{invitationId}/resend`. Required scope: `organizations:write`.
+
+  Body fields: `redirect_url` (string).
+  Response fields: `object`, `id`, `organization_id`, `email`, `status`, `expires_at`, `email_sent`.
   """
   def post_invitations_resend(client, id, invitation_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/invitations/{invitationId}/resend", %{"id" => id, "invitationId" => invitation_id}, nil, opts)
 
   @doc ~S"""
+  Resend a pending invitation: same id and role, a fresh expiry, and organizationInvitation.resent so your mailer sends it again. With organizations.invitationEmail "atlas", an email invitation is mailed again by Atlas with a fresh single-use link built from the body's `redirect_url` (required then unless the instance sets organizations.invitationRedirectUrl; `email_sent` in the response says whether it went out). 404 for an invitation of another organization; 409 when it is no longer pending.
+
+  `POST /v1/organizations/{id}/invitations/{invitationId}/resend`. Required scope: `organizations:write`.
+
+  Body fields: `redirect_url` (string).
+  Response fields: `object`, `id`, `organization_id`, `email`, `status`, `expires_at`, `email_sent`.
+  """
+  def post_invitations_resend_with_body(client, id, invitation_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/invitations/{invitationId}/resend", %{"id" => id, "invitationId" => invitation_id}, body, opts)
+
+  @doc ~S"""
   Set or clear (null) an organization’s parent in the B2B2B hierarchy; refuses a cycle.
 
   `PUT /v1/organizations/{id}/parent`. Required scope: `organizations:write`.
+
+  Body fields: `parent_organization_id` (string|null).
+  Response fields: `object`, `id`, `name`, `slug`, `image_url`, `parent_organization_id`, `public_metadata`, `max_allowed_memberships`, `created_by`, `external_id`, `role_mappings`, `owner_invitation`, `owner_invitation.object`, `owner_invitation.id`, `owner_invitation.email`, `owner_invitation.role`, `owner_invitation.status`, `owner_invitation.expires_at`, `created_at`, `updated_at`.
   """
   def put_parent(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/parent", %{"id" => id}, body, opts)
@@ -226,6 +360,8 @@ defmodule Atlas.Organizations do
   The organization’s ancestor chain and direct children in the B2B2B hierarchy.
 
   `GET /v1/organizations/{id}/hierarchy`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `ancestors`, `children`, `children.id`, `children.name`, `children.slug`.
   """
   def get_hierarchy(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/hierarchy", %{"id" => id}, nil, opts)
@@ -234,6 +370,8 @@ defmodule Atlas.Organizations do
   The organization’s effective entitlement — resolved plan, feature keys and numeric limits, with sales-led overrides applied and plan limits merged.
 
   `GET /v1/organizations/{id}/entitlements`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `plan`, `features`, `limits`.
   """
   def get_entitlements(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/entitlements", %{"id" => id}, nil, opts)
@@ -242,6 +380,9 @@ defmodule Atlas.Organizations do
   Assign an organization's entitlements (a plan, a feature list and/or limits, optionally expiring) without a billing subscription. Replaces whatever was assigned or overridden before; an empty body clears it and the organization falls back to its billing plan. Reaches the `pla`, `fea` and `ent` session claims on the next token.
 
   `PUT /v1/organizations/{id}/entitlements`. Required scope: `billing:write`.
+
+  Body fields: `plan` (string|null), `features` (array|null), `limits` (object|null), `expires_at` (integer|string|null).
+  Response fields: `object`, `subject_type`, `subject_id`, `plan`, `features`, `limits`, `expires_at`.
   """
   def put_entitlements(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/entitlements", %{"id" => id}, body, opts)
@@ -250,6 +391,8 @@ defmodule Atlas.Organizations do
   Grant an org role to a directory group; members inherit its permissions (augments only).
 
   `PUT /v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `organization_id`, `group_id`, `role_id`, `granted`.
   """
   def put_groups_roles(client, org_id, group_id, role_id, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}", %{"orgId" => org_id, "groupId" => group_id, "roleId" => role_id}, nil, opts)
@@ -258,6 +401,8 @@ defmodule Atlas.Organizations do
   Revoke a role from a directory group. Members lose the inherited permissions.
 
   `DELETE /v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `organization_id`, `group_id`, `role_id`, `deleted`.
   """
   def delete_groups_roles(client, org_id, group_id, role_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}", %{"orgId" => org_id, "groupId" => group_id, "roleId" => role_id}, nil, opts)
@@ -266,12 +411,15 @@ defmodule Atlas.Organizations do
   List an organization's email domains and their verification state.
 
   `GET /v1/organizations/{id}/domains`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.domain`, `data.status`, `data.auto_join`, `data.default_role_id`, `data.verification`, `data.verification.record_name`, `data.verification.record_type`, `data.verification.record_value`, `data.verification_methods`, `data.verification_methods.dns_txt`, `data.verification_methods.dns_txt.record_name`, `data.verification_methods.dns_txt.record_type`, `data.verification_methods.dns_txt.record_value`, `data.verification_methods.well_known`, `data.verification_methods.well_known.url`, `data.verification_methods.well_known.body`, `data.verification_methods.well_known.content_type`, `data.verification_methods.email`, `data.verification_methods.email.addresses`, `data.verification_methods.email.sent_to`, `data.verification_methods.email.expires_at`, `data.verification_method`, `data.verified_at`, `data.last_checked_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_domains(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/domains", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_domains/2`, following the cursor page by page.
+  Lazy stream over every item of `get_domains`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_domains(client, id, opts \\ []),
@@ -281,6 +429,9 @@ defmodule Atlas.Organizations do
   Claim an email domain for auto-join. Returns the DNS TXT record to publish.
 
   `POST /v1/organizations/{id}/domains`. Required scope: `organizations:write`.
+
+  Body fields: `domain` (string), `auto_join` (boolean), `default_role_id` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `domain`, `status`, `auto_join`, `default_role_id`, `verification`, `verification.record_name`, `verification.record_type`, `verification.record_value`, `verification_methods`, `verification_methods.dns_txt`, `verification_methods.dns_txt.record_name`, `verification_methods.dns_txt.record_type`, `verification_methods.dns_txt.record_value`, `verification_methods.well_known`, `verification_methods.well_known.url`, `verification_methods.well_known.body`, `verification_methods.well_known.content_type`, `verification_methods.email`, `verification_methods.email.addresses`, `verification_methods.email.sent_to`, `verification_methods.email.expires_at`, `verification_method`, `verified_at`, `last_checked_at`, `created_at`.
   """
   def post_domains(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains", %{"id" => id}, body, opts)
@@ -289,6 +440,9 @@ defmodule Atlas.Organizations do
   Verify a claimed domain now. `method`: dns_txt (default; the TXT record in verification_methods.dns_txt), well_known (the token served as the whole body of verification_methods.well_known.url, fetched over https with no redirects followed), or email (the `code` from POST …/verification_email). A failed DNS or file check sets status failed; a wrong code only counts an attempt (5 per code).
 
   `POST /v1/organizations/{id}/domains/{domainId}/verify`. Required scope: `organizations:write`.
+
+  Body fields: `method` (enum), `code` (string).
+  Response fields: `object`, `id`, `organization_id`, `domain`, `status`, `auto_join`, `default_role_id`, `verification`, `verification.record_name`, `verification.record_type`, `verification.record_value`, `verification_methods`, `verification_methods.dns_txt`, `verification_methods.dns_txt.record_name`, `verification_methods.dns_txt.record_type`, `verification_methods.dns_txt.record_value`, `verification_methods.well_known`, `verification_methods.well_known.url`, `verification_methods.well_known.body`, `verification_methods.well_known.content_type`, `verification_methods.email`, `verification_methods.email.addresses`, `verification_methods.email.sent_to`, `verification_methods.email.expires_at`, `verification_method`, `verified_at`, `last_checked_at`, `created_at`, `verified`.
   """
   def post_domains_verify(client, id, domain_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains/{domainId}/verify", %{"id" => id, "domainId" => domain_id}, body, opts)
@@ -297,6 +451,9 @@ defmodule Atlas.Organizations do
   Email a 6-digit verification code to an administrative mailbox at the domain (`address`: admin (default), administrator, hostmaster, postmaster or webmaster). Sent only through your instance's own email provider; 422 email_delivery_not_configured when there is none. The code lasts 30 minutes; enter it with POST …/verify {"method":"email","code":"…"}. At most one code a minute.
 
   `POST /v1/organizations/{id}/domains/{domainId}/verification_email`. Required scope: `organizations:write`.
+
+  Body fields: `address` (enum).
+  Response fields: `object`, `id`, `organization_id`, `domain`, `status`, `auto_join`, `default_role_id`, `verification`, `verification.record_name`, `verification.record_type`, `verification.record_value`, `verification_methods`, `verification_methods.dns_txt`, `verification_methods.dns_txt.record_name`, `verification_methods.dns_txt.record_type`, `verification_methods.dns_txt.record_value`, `verification_methods.well_known`, `verification_methods.well_known.url`, `verification_methods.well_known.body`, `verification_methods.well_known.content_type`, `verification_methods.email`, `verification_methods.email.addresses`, `verification_methods.email.sent_to`, `verification_methods.email.expires_at`, `verification_method`, `verified_at`, `last_checked_at`, `created_at`, `sent_to`.
   """
   def post_domains_verification_email(client, id, domain_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/domains/{domainId}/verification_email", %{"id" => id, "domainId" => domain_id}, body, opts)
@@ -305,6 +462,8 @@ defmodule Atlas.Organizations do
   Remove a claimed email domain.
 
   `DELETE /v1/organizations/{id}/domains/{domainId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_domains(client, id, domain_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/domains/{domainId}", %{"id" => id, "domainId" => domain_id}, nil, opts)
@@ -313,12 +472,15 @@ defmodule Atlas.Organizations do
   List the organization's teams with member counts. ?user_id= narrows to the teams that user is in.
 
   `GET /v1/organizations/{id}/teams`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.name`, `data.description`, `data.members_count`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_by_id_teams(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/teams", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_teams/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_teams`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_teams(client, id, opts \\ []),
@@ -328,6 +490,9 @@ defmodule Atlas.Organizations do
   Create a team inside the organization. Emits team.created.
 
   `POST /v1/organizations/{id}/teams`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string, required), `description` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `name`, `description`, `members_count`, `created_at`, `updated_at`.
   """
   def post_teams(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/teams", %{"id" => id}, body, opts)
@@ -336,6 +501,8 @@ defmodule Atlas.Organizations do
   Fetch one team of the organization.
 
   `GET /v1/organizations/{id}/teams/{teamId}`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `name`, `description`, `members_count`, `created_at`, `updated_at`.
   """
   def get_by_id_teams_by_team_id(client, id, team_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/teams/{teamId}", %{"id" => id, "teamId" => team_id}, nil, opts)
@@ -344,6 +511,9 @@ defmodule Atlas.Organizations do
   Rename a team or change its description. Emits team.updated.
 
   `PATCH /v1/organizations/{id}/teams/{teamId}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `description` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `name`, `description`, `members_count`, `created_at`, `updated_at`.
   """
   def update_teams(client, id, team_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/teams/{teamId}", %{"id" => id, "teamId" => team_id}, body, opts)
@@ -352,6 +522,8 @@ defmodule Atlas.Organizations do
   Delete a team (its memberships go with it; the organization memberships stay). Emits team.deleted.
 
   `DELETE /v1/organizations/{id}/teams/{teamId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_teams(client, id, team_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/teams/{teamId}", %{"id" => id, "teamId" => team_id}, nil, opts)
@@ -360,12 +532,15 @@ defmodule Atlas.Organizations do
   List a team's members.
 
   `GET /v1/organizations/{id}/teams/{teamId}/members`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.team_id`, `data.user_id`, `data.user`, `data.user.id`, `data.user.first_name`, `data.user.last_name`, `data.user.image_url`, `data.deleted`, `has_more`, `next_cursor`.
   """
   def get_teams_members(client, id, team_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/teams/{teamId}/members", %{"id" => id, "teamId" => team_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_teams_members/3`, following the cursor page by page.
+  Lazy stream over every item of `get_teams_members`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_teams_members(client, id, team_id, opts \\ []),
@@ -375,6 +550,9 @@ defmodule Atlas.Organizations do
   Add an organization member to the team (201; 200 if already in it).
 
   `POST /v1/organizations/{id}/teams/{teamId}/members`. Required scope: `organizations:write`.
+
+  Body fields: `user_id` (string, required).
+  Response fields: `object`, `team_id`, `user_id`, `user`, `user.id`, `user.first_name`, `user.last_name`, `user.image_url`, `deleted`.
   """
   def post_teams_members(client, id, team_id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/teams/{teamId}/members", %{"id" => id, "teamId" => team_id}, body, opts)
@@ -383,6 +561,8 @@ defmodule Atlas.Organizations do
   Remove a user from the team.
 
   `DELETE /v1/organizations/{id}/teams/{teamId}/members/{userId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `team_id`, `user_id`, `user`, `user.id`, `user.first_name`, `user.last_name`, `user.image_url`, `deleted`.
   """
   def delete_teams_members(client, id, team_id, user_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/teams/{teamId}/members/{userId}", %{"id" => id, "teamId" => team_id, "userId" => user_id}, nil, opts)
@@ -391,12 +571,15 @@ defmodule Atlas.Organizations do
   The roles an organization can assign: the instance-wide roles plus its own custom roles (organization_id set). ?own=true lists only its own.
 
   `GET /v1/organizations/{id}/roles`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `own`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.is_system`, `data.organization_id`, `data.permissions`, `data.member_count`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_roles(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/roles", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_roles/2`, following the cursor page by page.
+  Lazy stream over every item of `get_roles`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_roles(client, id, opts \\ []),
@@ -406,6 +589,9 @@ defmodule Atlas.Organizations do
   Create a custom role for one organization, from any of the instance's permissions. Its key must not be an instance-wide role key or one of this organization's; other organizations may reuse it. Emits role.created.
 
   `POST /v1/organizations/{id}/roles`. Required scope: `organizations:write`.
+
+  Body fields: `key` (string, required), `name` (string, required), `description` (string|null), `permissions` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `is_system`, `organization_id`, `permissions`, `member_count`, `created_at`, `updated_at`.
   """
   def post_roles(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/roles", %{"id" => id}, body, opts)
@@ -414,6 +600,9 @@ defmodule Atlas.Organizations do
   Rename one of the organization's own roles or replace its permissions. Emits role.updated.
 
   `PATCH /v1/organizations/{id}/roles/{roleId}`. Required scope: `organizations:write`.
+
+  Body fields: `name` (string), `description` (string|null), `permissions` (array).
+  Response fields: `object`, `id`, `key`, `name`, `description`, `is_system`, `organization_id`, `permissions`, `member_count`, `created_at`, `updated_at`.
   """
   def update_roles(client, id, role_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/roles/{roleId}", %{"id" => id, "roleId" => role_id}, body, opts)
@@ -422,14 +611,30 @@ defmodule Atlas.Organizations do
   Delete one of the organization's own roles; ?reassign_to=<role key> moves members and pending invitations first (409 ROLE_IN_USE without it). Emits role.deleted.
 
   `DELETE /v1/organizations/{id}/roles/{roleId}`. Required scope: `organizations:write`.
+
+  Query params (`params:`): `reassign_to`.
+  Response fields: `object`, `id`, `key`, `deleted`, `members_reassigned`.
   """
   def delete_roles(client, id, role_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/roles/{roleId}", %{"id" => id, "roleId" => role_id}, nil, opts)
 
   @doc ~S"""
+  Does this session meet THIS organization's MFA policy? The same check the token mint runs for the active organization, answered for any organization (Atlas id or external id), so an app that acts in a per-request organization need not make it the active one. A non-member answers `member: false, ok: false`. 404 for an unknown organization or a session of another instance.
+
+  `GET /v1/organizations/{id}/mfa_status`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `session_id`.
+  Response fields: `object`, `organization_id`, `user_id`, `session_id`, `member`, `required`, `ok`, `enforcement`, `reasons`, `max_age_seconds`, `mfa_age_seconds`, `allowed_factors`.
+  """
+  def get_mfa_status(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/mfa_status", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Read an organization's hosted-page branding overlay (display name, logo, primary colour, support URL, custom domain). Unset fields are null and inherit the instance brand.
 
   `GET /v1/organizations/{id}/branding`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `display_name`, `logo_url`, `primary_color`, `support_url`, `custom_domain`, `updated_at`.
   """
   def get_branding(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/branding", %{"id" => id}, nil, opts)
@@ -438,20 +643,80 @@ defmodule Atlas.Organizations do
   Set an organization's hosted-page branding overlay — a partial merge: a provided field overrides the instance brand, null (or empty string) clears it back. URLs must be https; custom_domain is a hostname.
 
   `PUT /v1/organizations/{id}/branding`. Required scope: `organizations:write`.
+
+  Body fields: `display_name` (string|null), `logo_url` (string|null), `primary_color` (string|null), `support_url` (string|null), `custom_domain` (string|null).
+  Response fields: `object`, `organization_id`, `display_name`, `logo_url`, `primary_color`, `support_url`, `custom_domain`, `updated_at`.
   """
   def put_branding(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/branding", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  The roles an organization may assign and the role a new seat gets by default.
+
+  `GET /v1/organizations/{id}/role_policy`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `role_set`, `role_set.id`, `role_set.key`, `allowed_roles`, `default_role`, `default_role_source`.
+  """
+  def get_role_policy(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/role_policy", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Point an organization at a role set and/or give it its own default role (null clears either). Adding a member, accepting an invitation or changing a role to one outside the set is refused with 422 ROLE_NOT_IN_ROLE_SET; org:admin and the organization's own custom roles are always allowed, and directory syncs report what the directory says. Existing members are not changed.
+
+  `PUT /v1/organizations/{id}/role_policy`. Required scope: `organizations:write`.
+
+  Body fields: `role_set` (string|null), `default_role` (string|null).
+  Response fields: `object`, `organization_id`, `role_set`, `role_set.id`, `role_set.key`, `allowed_roles`, `default_role`, `default_role_source`.
+  """
+  def put_role_policy(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/role_policy", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Seats used, pending invitations and seats left for an organization.
+
+  `GET /v1/organizations/{id}/seats`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `limit`, `used`, `pending_invitations`, `available`, `percent_used`, `warn_percent`, `state`.
+  """
+  def get_seats(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/seats", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Set the seat limit (max_allowed_memberships; null = unlimited) and the warning level. Lowering the limit below the members already seated removes nobody; new seats are refused. Emits organization.seats_low when used seats reach warn_percent of the limit and organization.seat_limit_reached when the limit is reached or someone is turned away, each once per crossing.
+
+  `PUT /v1/organizations/{id}/seats`. Required scope: `organizations:write`.
+
+  Body fields: `limit` (integer|null), `warn_percent` (integer|null).
+  Response fields: `object`, `organization_id`, `limit`, `used`, `pending_invitations`, `available`, `percent_used`, `warn_percent`, `state`.
+  """
+  def put_seats(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/seats", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Import up to 5000 memberships into an organization as a background job. Send `memberships` (a list of { email or user_id, role, expires_at, public_metadata }) or `csv` (header row with email, user_id, role, expires_at). Each row goes through the same checks as adding a member: the seat limit, the role set, hooks and events. `on_existing` is `skip` (default) or `update`; `invite_missing` invites an email no account has. A bad row is recorded and the rest continue. Answers 202 with the job: poll GET /v1/jobs/{id}, errors at GET /v1/jobs/{id}/errors, and import_job.completed is sent when it ends. Honours Idempotency-Key.
+
+  `POST /v1/organizations/{id}/membership_imports`. Required scope: `organizations:write`.
+
+  Body fields: `memberships` (array), `csv` (string), `on_existing` (enum), `invite_missing` (boolean), `default_role` (string).
+  Nested body fields: `memberships.email`, `memberships.user_id`, `memberships.role`, `memberships.expires_at`, `memberships.public_metadata`.
+  Response fields: `object`, `id`, `type`, `status`, `total`, `processed`, `succeeded`, `failed`, `error_count`, `results`, `created_at`, `updated_at`, `completed_at`.
+  """
+  def post_membership_imports(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/membership_imports", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   List the apps (OAuth clients) that hold an active grant in this organization's context, one entry per grant.
 
   `GET /v1/organizations/{id}/connected_apps`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.user_id`, `data.client_id`, `data.client_name`, `data.scope`, `data.connected_at`, `has_more`, `next_cursor`.
   """
   def get_connected_apps(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/connected_apps", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_connected_apps/2`, following the cursor page by page.
+  Lazy stream over every item of `get_connected_apps`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_connected_apps(client, id, opts \\ []),
@@ -461,6 +726,8 @@ defmodule Atlas.Organizations do
   Revoke one connected app grant of the organization: its tokens and any session minted from it stop working. Emits grant.revoked; audited as organization.connected_app_revoked.
 
   `DELETE /v1/organizations/{id}/connected_apps/{grantId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_connected_apps(client, id, grant_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/connected_apps/{grantId}", %{"id" => id, "grantId" => grant_id}, nil, opts)
@@ -469,12 +736,15 @@ defmodule Atlas.Organizations do
   List the organization's reader domain(s) — the host(s) whose sign-ups join this org's end-user pool, with DNS/certificate status.
 
   `GET /v1/organizations/{orgId}/reader_domain`. Required scope: `domains:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.role`, `data.host`, `data.status`, `data.action`, `data.live`, `data.cname_target`, `data.last_checked_at`, `data.last_observed_target`, `data.failure_reason`, `data.certificate_expires_at`, `data.cookie_domain`, `has_more`, `next_cursor`.
   """
   def get_reader_domain(client, org_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{orgId}/reader_domain", %{"orgId" => org_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_reader_domain/2`, following the cursor page by page.
+  Lazy stream over every item of `get_reader_domain`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_reader_domain(client, org_id, opts \\ []),
@@ -484,6 +754,9 @@ defmodule Atlas.Organizations do
   Bind a host to this organization's reader pool: a sign-up on it joins the pool. Returns the CNAME to publish; verify with POST /v1/domains/{id}/verify. Never becomes the instance's frontend_api host.
 
   `POST /v1/organizations/{orgId}/reader_domain`. Required scope: `domains:write`.
+
+  Body fields: `host` (string, required).
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `instructions`, `instructions.role`, `instructions.host`, `instructions.type`, `instructions.target`, `instructions.purpose`, `note`.
   """
   def post_reader_domain(client, org_id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{orgId}/reader_domain", %{"orgId" => org_id}, body, opts)
@@ -492,6 +765,8 @@ defmodule Atlas.Organizations do
   Remove the organization's reader domain binding and drop its edge router.
 
   `DELETE /v1/organizations/{orgId}/reader_domain`. Required scope: `domains:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_reader_domain(client, org_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{orgId}/reader_domain", %{"orgId" => org_id}, nil, opts)
@@ -500,12 +775,15 @@ defmodule Atlas.Organizations do
   List the machines that are members of an organization. Separate from user memberships.
 
   `GET /v1/organizations/{id}/machine_memberships`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.machine_id`, `data.role`, `data.role_id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_machine_memberships(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/machine_memberships", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_machine_memberships/2`, following the cursor page by page.
+  Lazy stream over every item of `get_machine_memberships`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_machine_memberships(client, id, opts \\ []),
@@ -515,6 +793,9 @@ defmodule Atlas.Organizations do
   Make a machine a member of an organization with a role. Holds no seat. 409 if it is already a member.
 
   `POST /v1/organizations/{id}/machine_memberships`. Required scope: `organizations:write`.
+
+  Body fields: `machine_id` (string), `role` (string).
+  Response fields: `object`, `id`, `organization_id`, `machine_id`, `role`, `role_id`, `created_at`, `updated_at`.
   """
   def post_machine_memberships(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/machine_memberships", %{"id" => id}, body, opts)
@@ -523,6 +804,9 @@ defmodule Atlas.Organizations do
   Change a machine's role in an organization. New tokens carry the new role.
 
   `PATCH /v1/organizations/{id}/machine_memberships/{machineId}`. Required scope: `organizations:write`.
+
+  Body fields: `role` (string).
+  Response fields: `object`, `id`, `organization_id`, `machine_id`, `role`, `role_id`, `created_at`, `updated_at`.
   """
   def update_machine_memberships(client, id, machine_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/machine_memberships/{machineId}", %{"id" => id, "machineId" => machine_id}, body, opts)
@@ -531,6 +815,8 @@ defmodule Atlas.Organizations do
   Remove a machine from an organization. New tokens no longer carry its role there.
 
   `DELETE /v1/organizations/{id}/machine_memberships/{machineId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_machine_memberships(client, id, machine_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/machine_memberships/{machineId}", %{"id" => id, "machineId" => machine_id}, nil, opts)
@@ -539,12 +825,15 @@ defmodule Atlas.Organizations do
   The OAuth applications an organization has been given access to.
 
   `GET /v1/organizations/{id}/applications`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.client_id`, `data.application_id`, `data.application_name`, `data.roles`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def get_applications(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/applications", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_applications/2`, following the cursor page by page.
+  Lazy stream over every item of `get_applications`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_applications(client, id, opts \\ []),
@@ -554,6 +843,9 @@ defmodule Atlas.Organizations do
   Give an organization access to an application (by client id or id), optionally limited to some organization roles. Idempotent; send `enabled: false` to pause access without removing it. Only matters while the application is `restricted`.
 
   `PUT /v1/organizations/{id}/applications/{clientId}`. Required scope: `organizations:write`.
+
+  Body fields: `roles` (array), `enabled` (boolean).
+  Response fields: `object`, `id`, `organization_id`, `client_id`, `application_id`, `application_name`, `roles`, `enabled`, `created_at`, `updated_at`.
   """
   def put_applications(client, id, client_id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/applications/{clientId}", %{"id" => id, "clientId" => client_id}, body, opts)
@@ -562,6 +854,8 @@ defmodule Atlas.Organizations do
   Take an organization's access to an application away.
 
   `DELETE /v1/organizations/{id}/applications/{clientId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `organization_id`, `client_id`, `deleted`.
   """
   def delete_applications(client, id, client_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/applications/{clientId}", %{"id" => id, "clientId" => client_id}, nil, opts)
@@ -570,12 +864,15 @@ defmodule Atlas.Organizations do
   List an organization's end-user (reader) pool — the B2B2C tier of external users attached to the org, distinct from its staff members. Filter with `?status=active|pending|blocked`; cursor-paginated.
 
   `GET /v1/organizations/{orgId}/end_users`. Required scope: `end_users:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.user_id`, `data.status`, `data.source`, `data.public_metadata`, `data.approved_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_end_users(client, org_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{orgId}/end_users", %{"orgId" => org_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_end_users/2`, following the cursor page by page.
+  Lazy stream over every item of `get_end_users`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_end_users(client, org_id, opts \\ []),
@@ -585,6 +882,9 @@ defmodule Atlas.Organizations do
   Attach an instance user to an organization's end-user pool as a reader (the token-exchange path). Idempotent per (org, user); grants no org role. `status` defaults to active, `source` to token_exchange.
 
   `POST /v1/organizations/{orgId}/end_users`. Required scope: `end_users:write`.
+
+  Body fields: `user_id` (string, required), `status` (enum), `source` (enum).
+  Response fields: `object`, `id`, `organization_id`, `user_id`, `status`, `source`, `public_metadata`, `approved_at`, `created_at`, `updated_at`.
   """
   def post_end_users(client, org_id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{orgId}/end_users", %{"orgId" => org_id}, body, opts)
@@ -593,6 +893,9 @@ defmodule Atlas.Organizations do
   Approve (active), gate (pending) or block a reader in an organization end-user pool. Blocking keeps the row for the audit trail.
 
   `PATCH /v1/organizations/{orgId}/end_users/{userId}`. Required scope: `end_users:write`.
+
+  Body fields: `status` (enum, required).
+  Response fields: `object`, `id`, `organization_id`, `user_id`, `status`, `source`, `public_metadata`, `approved_at`, `created_at`, `updated_at`.
   """
   def update_end_users(client, org_id, user_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{orgId}/end_users/{userId}", %{"orgId" => org_id, "userId" => user_id}, body, opts)
@@ -601,6 +904,8 @@ defmodule Atlas.Organizations do
   Remove a reader from an organization's end-user pool.
 
   `DELETE /v1/organizations/{orgId}/end_users/{userId}`. Required scope: `end_users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_end_users(client, org_id, user_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{orgId}/end_users/{userId}", %{"orgId" => org_id, "userId" => user_id}, nil, opts)
@@ -609,12 +914,15 @@ defmodule Atlas.Organizations do
   List an organization's registered audit stream destinations. Reports has_secret, never the signing secret. Another instance's or org's id is a 404, never a 403.
 
   `GET /v1/organizations/{id}/audit_streams`. Required scope: `audit:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.url`, `data.format`, `data.sink_type`, `data.sink_config`, `data.active`, `data.has_secret`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_audit_streams(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/audit_streams", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_audit_streams/2`, following the cursor page by page.
+  Lazy stream over every item of `get_audit_streams`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_audit_streams(client, id, opts \\ []),
@@ -624,6 +932,9 @@ defmodule Atlas.Organizations do
   Register an audit stream destination for one organization: an HTTPS SIEM/collector URL plus a shared HMAC signing secret (write-only, stored encrypted, min 16 chars) and an optional format hint. Only that organization's audit events are ever forwarded to it.
 
   `POST /v1/organizations/{id}/audit_streams`. Required scope: `audit:write`.
+
+  Body fields: `url` (string), `secret` (string), `format` (enum), `sink_type` (enum), `sink_config` (object).
+  Response fields: `object`, `id`, `organization_id`, `url`, `format`, `sink_type`, `sink_config`, `active`, `has_secret`, `created_at`.
   """
   def post_audit_streams(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/audit_streams", %{"id" => id}, body, opts)
@@ -632,6 +943,8 @@ defmodule Atlas.Organizations do
   Delete one of an organization's audit stream destinations. A stream id belonging to another org or instance is a 404.
 
   `DELETE /v1/organizations/{id}/audit_streams/{streamId}`. Required scope: `audit:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_audit_streams(client, id, stream_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/audit_streams/{streamId}", %{"id" => id, "streamId" => stream_id}, nil, opts)
@@ -640,27 +953,89 @@ defmodule Atlas.Organizations do
   Recent alerts sent to an organization's IT contacts, newest first: a single sign-on signing certificate nearing expiry, failing sign-ins, failing SCIM requests. Filter with kind (certificate_expiring, sso_failure, scim_error); page with limit and starting_after. Each alert also fired the organization.it_alert webhook event. Another instance's or org's id is a 404.
 
   `GET /v1/organizations/{id}/it_alerts`. Required scope: `audit:read`.
+
+  Query params (`params:`): `kind`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.kind`, `data.connection_id`, `data.title`, `data.days_left`, `data.contacts_notified`, `data.created_at`, `has_more`.
   """
   def get_it_alerts(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/it_alerts", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_it_alerts/2`, following the cursor page by page.
+  Lazy stream over every item of `get_it_alerts`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_it_alerts(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/it_alerts", %{"id" => id}, opts)
 
   @doc ~S"""
+  Live health of one organization's enterprise setup, for its IT admin: each SSO connection's last successful and failed sign-in and signing-certificate expiry, the directory's last SCIM request and errors, the last run of each directory sync, the email domains' verification state, and the issues that need attention. Read from what Atlas already recorded; it probes nothing. The hosted admin portal shows the same report. Needs the scim:read scope as well as sso_connections:read. Needs scim:read as well as sso_connections:read. Another instance's or org's id is a 404.
+
+  `GET /v1/organizations/{id}/it_health`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `organization_id`, `status`, `checked_at`, `sso`, `sso.connections`, `sso.connections.object`, `sso.connections.id`, `sso.connections.type`, `sso.connections.status`, `sso.connections.last_successful_login_at`, `sso.connections.last_failed_login_at`, `sso.connections.last_failure_code`, `sso.connections.last_test_at`, `sso.connections.successes_24h`, `sso.connections.failures_24h`, `sso.connections.certificate`, `sso.connections.certificate.status`, `sso.connections.certificate.expires_at`, `sso.connections.certificate.days_left`, `scim`, `scim.active_tokens`, `scim.last_request_at`, `scim.last_error_at`, `scim.last_error`, `scim.last_error.status`, `scim.last_error.detail`, `scim.last_error.method`, `scim.last_error.path`, `scim.requests_24h`, `scim.errors_24h`, `scim.ip_restricted_tokens`, `scim.profile_lock`, `directory_sync`, `directory_sync.object`, `directory_sync.kind`, `directory_sync.id`, `directory_sync.name`, `directory_sync.status`, `directory_sync.last_run`, `directory_sync.last_run.id`, `directory_sync.last_run.status`, `directory_sync.last_run.error`, `directory_sync.last_run.trigger`, `directory_sync.last_run.created_at`, `directory_sync.last_run.finished_at`, `directory_sync.last_run.stats`, `directory_sync.last_success_at`, `domains`, `domains.id`, `domains.domain`, `domains.status`, `domains.verification_method`, `domains.verified_at`, `domains.last_checked_at`, `recent_alerts`, `recent_alerts.id`, `recent_alerts.kind`, `recent_alerts.title`, `recent_alerts.created_at`, `issues`, `issues.code`, `issues.severity`, `issues.message`, `issues.subject`.
+  """
+  def get_it_health(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/it_health", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The requests the organization's directory sent to the SCIM endpoint, newest first, kept 30 days: method, path, resource, the status Atlas answered, why a failed one failed, the source IP and the duration. Never the request body. Includes requests refused by a token's IP allow-list. Filter with status (ok or error), token_id, resource and since; page with limit and starting_after.
+
+  `GET /v1/organizations/{id}/scim/requests`. Required scope: `scim:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `status`, `token_id`, `resource`, `since`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.token_id`, `data.method`, `data.path`, `data.resource`, `data.status`, `data.error_detail`, `data.ip`, `data.user_agent`, `data.duration_ms`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_scim_requests(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/scim/requests", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_scim_requests`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_scim_requests(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/scim/requests", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Directory sync runs of one organization (its LDAP connections and HR/directory pull sources together), newest first. Filter with status. A failed run can be retried with POST /v1/organizations/{id}/directory_sync_runs/{runId}/retry.
+
+  `GET /v1/organizations/{id}/directory_sync_runs`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `limit`, `status`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.source_id`, `data.organization_id`, `data.trigger`, `data.status`, `data.stats`, `data.error`, `data.retry_of`, `data.created_at`, `data.started_at`, `data.finished_at`, `has_more`, `next_cursor`.
+  """
+  def get_directory_sync_runs(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/directory_sync_runs", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_directory_sync_runs`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_directory_sync_runs(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/organizations/{id}/directory_sync_runs", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Queue a new run for the source of a failed run; the new run records retry_of. Only a failed run can be retried (400), and only while the source is active and has no run queued or running (409). Answers 202 with the queued run; the worker executes it.
+
+  `POST /v1/organizations/{id}/directory_sync_runs/{runId}/retry`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `id`, `kind`, `source_id`, `organization_id`, `trigger`, `status`, `stats`, `error`, `retry_of`, `created_at`, `started_at`, `finished_at`.
+  """
+  def post_directory_sync_runs_retry(client, id, run_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/directory_sync_runs/{runId}/retry", %{"id" => id, "runId" => run_id}, nil, opts)
+
+  @doc ~S"""
   List the organization's own webhook endpoints. Backend API. Never returns a secret.
 
   `GET /v1/organizations/{id}/webhook_endpoints`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.url`, `data.description`, `data.enabled_events`, `data.event_naming`, `data.active`, `data.external`, `data.managed_by`, `data.signature_versions`, `data.filters`, `data.header_names`, `data.oauth`, `data.max_rps`, `data.destination`, `data.destination.type`, `data.destination.credentials_set`, `data.health`, `data.failing_since`, `data.last_failing_since`, `data.disabled_at`, `data.last_success_at`, `data.last_failure`, `data.last_failure.at`, `data.last_failure.status`, `data.last_failure.error`, `data.consecutive_failures`, `data.success_rate_24h`, `data.attempts_24h`, `data.attempts_24h.succeeded`, `data.attempts_24h.failed`, `data.alert_contacts`, `data.alerts_sent`, `data.alerts_sent.first_sent_at`, `data.alerts_sent.second_sent_at`, `data.alerts_sent.disabled_sent_at`, `data.auto_disable`, `data.auto_disable.after_failing_ms`, `data.auto_disable.after_consecutive_failures`, `data.auto_disable.consecutive_failures_min_failing_ms`, `data.auto_disable.description`, `data.previous_secret_expires_at`, `data.replay`, `data.replay.since`, `data.replay.method`, `data.replay.path`, `data.replay.note`, `data.created`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_by_id_webhook_endpoints(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/webhook_endpoints", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_webhook_endpoints/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_webhook_endpoints`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_webhook_endpoints(client, id, opts \\ []),
@@ -670,6 +1045,9 @@ defmodule Atlas.Organizations do
   Register a webhook endpoint for one organization. It receives only that organization's events (membership, invitation, role, domain and organization events). The signing secret is returned in this response only. Backend API. At most 20 per organization.
 
   `POST /v1/organizations/{id}/webhook_endpoints`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string), `enabled_events` (array), `description` (string|null), `active` (boolean).
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`, `secret`.
   """
   def post_webhook_endpoints(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/webhook_endpoints", %{"id" => id}, body, opts)
@@ -678,6 +1056,8 @@ defmodule Atlas.Organizations do
   Retrieve one of the organization's webhook endpoints, with its delivery health.
 
   `GET /v1/organizations/{id}/webhook_endpoints/{endpointId}`. Required scope: `webhooks:read`.
+
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`.
   """
   def get_by_id_webhook_endpoints_by_endpoint_id(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -686,6 +1066,9 @@ defmodule Atlas.Organizations do
   Update the url, subscribed events, description or active flag of one of the organization's endpoints. Never re-reveals the secret.
 
   `PATCH /v1/organizations/{id}/webhook_endpoints/{endpointId}`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string), `enabled_events` (array), `description` (string|null), `active` (boolean).
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`.
   """
   def update_webhook_endpoints(client, id, endpoint_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, body, opts)
@@ -694,6 +1077,8 @@ defmodule Atlas.Organizations do
   Delete one of the organization's webhook endpoints and its delivery log. An id from another organization is a 404.
 
   `DELETE /v1/organizations/{id}/webhook_endpoints/{endpointId}`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_webhook_endpoints(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -702,6 +1087,8 @@ defmodule Atlas.Organizations do
   Rotate the signing secret. The previous secret keeps signing alongside the new one for 24 hours so the receiver can switch over without dropping events.
 
   `POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/rotate_secret`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `secret`, `overlap_seconds`, `previous_secret_expires_at`.
   """
   def post_webhook_endpoints_rotate_secret(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/rotate_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -710,27 +1097,75 @@ defmodule Atlas.Organizations do
   The endpoint's delivery log: payload, response and retry state for each attempt, filterable by status, event type and time.
 
   `GET /v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `status`, `event_type`, `since`, `until`, `trace`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.event_id`, `data.event_type`, `data.latency_ms`, `data.trace_id`, `data.attempt_number`, `data.max_attempts`, `data.payload`, `data.payload.id`, `data.payload.type`, `data.payload.timestamp`, `data.payload.instance_id`, `data.payload.actor`, `data.payload.idempotency_key`, `data.payload.data`, `data.status`, `data.http_status`, `data.error`, `data.location`, `data.response_snippet`, `data.next_retry_at`, `data.delivered_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_webhook_endpoints_deliveries/3`, following the cursor page by page.
+  Lazy stream over every item of `get_webhook_endpoints_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, opts)
 
   @doc ~S"""
+  Show the current whsec_ signing secret of one of the organization's endpoints again. Audited.
+
+  `POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/reveal_secret`. Required scope: `webhooks:reveal`.
+
+  Response fields: `object`, `secret`.
+  """
+  def post_webhook_endpoints_reveal_secret(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/reveal_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Send a signed webhook.test event to this endpoint only. With ?wait=10s the attempt is made now and its result returned; otherwise it is queued (201).
+
+  `POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/test`. Required scope: `webhooks:write`.
+
+  Query params (`params:`): `wait`.
+  Response fields: `object`, `ok`, `delivery_id`, `event_id`, `event_type`, `url`, `status`, `http_status`, `latency_ms`, `response_snippet`, `error`, `error_kind`, `signature_header_sent`, `will_retry`.
+  """
+  def post_webhook_endpoints_test(client, id, endpoint_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/test", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
+
+  @doc ~S"""
+  Redeliver one past delivery as a fresh attempt (same event id). 409 when the event has passed its 90-day retention; a delivery of another endpoint is a 404.
+
+  `POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `event_id`, `status`, `note`.
+  """
+  def post_webhook_endpoints_deliveries_redeliver(client, id, endpoint_id, delivery_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", %{"id" => id, "endpointId" => endpoint_id, "deliveryId" => delivery_id}, nil, opts)
+
+  @doc ~S"""
+  Re-send every event of this organization since `since` (or since=failing_since) that the endpoint subscribes to and has not received. At most 1,000 per call; running it again queues nothing new. 409 if the endpoint is disabled.
+
+  `POST /v1/organizations/{id}/webhook_endpoints/{endpointId}/replay`. Required scope: `webhooks:write`.
+
+  Query params (`params:`): `since`, `until`, `event_type`.
+  Body fields: `since` (string|integer), `until` (string|integer), `event_type` (string).
+  """
+  def post_webhook_endpoints_replay(client, id, endpoint_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/replay", %{"id" => id, "endpointId" => endpoint_id}, body, opts)
+
+  @doc ~S"""
   List the organization's application webhook endpoints (the app's own events, published with POST /v1/app_events), with delivery health. Backend API. Never returns a secret.
 
   `GET /v1/organizations/{id}/app_webhook_endpoints`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.url`, `data.description`, `data.enabled_events`, `data.event_naming`, `data.active`, `data.external`, `data.managed_by`, `data.signature_versions`, `data.filters`, `data.header_names`, `data.oauth`, `data.max_rps`, `data.destination`, `data.destination.type`, `data.destination.credentials_set`, `data.health`, `data.failing_since`, `data.last_failing_since`, `data.disabled_at`, `data.last_success_at`, `data.last_failure`, `data.last_failure.at`, `data.last_failure.status`, `data.last_failure.error`, `data.consecutive_failures`, `data.success_rate_24h`, `data.attempts_24h`, `data.attempts_24h.succeeded`, `data.attempts_24h.failed`, `data.alert_contacts`, `data.alerts_sent`, `data.alerts_sent.first_sent_at`, `data.alerts_sent.second_sent_at`, `data.alerts_sent.disabled_sent_at`, `data.auto_disable`, `data.auto_disable.after_failing_ms`, `data.auto_disable.after_consecutive_failures`, `data.auto_disable.consecutive_failures_min_failing_ms`, `data.auto_disable.description`, `data.previous_secret_expires_at`, `data.replay`, `data.replay.since`, `data.replay.method`, `data.replay.path`, `data.replay.note`, `data.created`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_by_id_app_webhook_endpoints(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_app_webhook_endpoints/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_app_webhook_endpoints`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_app_webhook_endpoints(client, id, opts \\ []),
@@ -740,6 +1175,9 @@ defmodule Atlas.Organizations do
   Register an endpoint that receives the app's own events for this organization. Deliveries are signed with Standard Webhooks headers (webhook-id, webhook-timestamp in seconds, webhook-signature: v1,<base64 HMAC-SHA256 of id.timestamp.body keyed with the base64 after whsec_>), so any Standard Webhooks verifier library accepts them. The whsec_ secret is returned in this response only. Backend API. At most 20 per organization; https only, private and loopback addresses refused.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string), `enabled_events` (array), `description` (string|null), `active` (boolean).
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`, `secret`.
   """
   def post_app_webhook_endpoints(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints", %{"id" => id}, body, opts)
@@ -748,6 +1186,8 @@ defmodule Atlas.Organizations do
   Retrieve one of the organization's application webhook endpoints, with its delivery health (failing_since, disabled_at, auto_disable rule).
 
   `GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}`. Required scope: `webhooks:read`.
+
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`.
   """
   def get_by_id_app_webhook_endpoints_by_endpoint_id(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -756,6 +1196,9 @@ defmodule Atlas.Organizations do
   Update the url, subscribed app event types, description or active flag. Setting active: true on an auto-disabled endpoint re-enables it; replay then re-sends what it missed.
 
   `PATCH /v1/organizations/{id}/app_webhook_endpoints/{endpointId}`. Required scope: `webhooks:write`.
+
+  Body fields: `url` (string), `enabled_events` (array), `description` (string|null), `active` (boolean).
+  Response fields: `object`, `id`, `url`, `description`, `enabled_events`, `event_naming`, `active`, `external`, `managed_by`, `signature_versions`, `filters`, `header_names`, `oauth`, `max_rps`, `destination`, `destination.type`, `destination.credentials_set`, `health`, `failing_since`, `last_failing_since`, `disabled_at`, `last_success_at`, `last_failure`, `last_failure.at`, `last_failure.status`, `last_failure.error`, `consecutive_failures`, `success_rate_24h`, `attempts_24h`, `attempts_24h.succeeded`, `attempts_24h.failed`, `alert_contacts`, `alerts_sent`, `alerts_sent.first_sent_at`, `alerts_sent.second_sent_at`, `alerts_sent.disabled_sent_at`, `auto_disable`, `auto_disable.after_failing_ms`, `auto_disable.after_consecutive_failures`, `auto_disable.consecutive_failures_min_failing_ms`, `auto_disable.description`, `previous_secret_expires_at`, `replay`, `replay.since`, `replay.method`, `replay.path`, `replay.note`, `created`, `created_at`, `updated_at`.
   """
   def update_app_webhook_endpoints(client, id, endpoint_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, body, opts)
@@ -764,6 +1207,8 @@ defmodule Atlas.Organizations do
   Delete an application webhook endpoint and its delivery log. An id from another organization is a 404.
 
   `DELETE /v1/organizations/{id}/app_webhook_endpoints/{endpointId}`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_app_webhook_endpoints(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -772,6 +1217,8 @@ defmodule Atlas.Organizations do
   Rotate the whsec_ signing secret. The previous secret keeps signing alongside the new one (a second v1 entry in webhook-signature) for 24 hours.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `secret`, `overlap_seconds`, `previous_secret_expires_at`.
   """
   def post_app_webhook_endpoints_rotate_secret(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/rotate_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -780,12 +1227,15 @@ defmodule Atlas.Organizations do
   The endpoint's delivery log: payload, response and retry state for each attempt, filterable by status, app event type and time.
 
   `GET /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `status`, `event_type`, `since`, `until`, `trace`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.event_id`, `data.event_type`, `data.latency_ms`, `data.trace_id`, `data.attempt_number`, `data.max_attempts`, `data.payload`, `data.payload.id`, `data.payload.type`, `data.payload.timestamp`, `data.payload.instance_id`, `data.payload.actor`, `data.payload.idempotency_key`, `data.payload.data`, `data.status`, `data.http_status`, `data.error`, `data.location`, `data.response_snippet`, `data.next_retry_at`, `data.delivered_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_app_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_app_webhook_endpoints_deliveries/3`, following the cursor page by page.
+  Lazy stream over every item of `get_app_webhook_endpoints_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_app_webhook_endpoints_deliveries(client, id, endpoint_id, opts \\ []),
@@ -795,6 +1245,8 @@ defmodule Atlas.Organizations do
   Show the current whsec_ signing secret again. Audited.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret`. Required scope: `webhooks:reveal`.
+
+  Response fields: `object`, `secret`.
   """
   def post_app_webhook_endpoints_reveal_secret(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/reveal_secret", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -803,6 +1255,9 @@ defmodule Atlas.Organizations do
   Send a signed webhook.test event to this endpoint only. With ?wait=10s the attempt is made now and its result returned; otherwise it is queued (201).
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test`. Required scope: `webhooks:write`.
+
+  Query params (`params:`): `wait`.
+  Response fields: `object`, `ok`, `delivery_id`, `event_id`, `event_type`, `url`, `status`, `http_status`, `latency_ms`, `response_snippet`, `error`, `error_kind`, `signature_header_sent`, `will_retry`.
   """
   def post_app_webhook_endpoints_test(client, id, endpoint_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/test", %{"id" => id, "endpointId" => endpoint_id}, nil, opts)
@@ -811,6 +1266,8 @@ defmodule Atlas.Organizations do
   Redeliver one past delivery as a fresh attempt (same event id). 409 when the event has passed its 90-day retention; a delivery of another endpoint is a 404.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver`. Required scope: `webhooks:write`.
+
+  Response fields: `object`, `id`, `event_id`, `status`, `note`.
   """
   def post_app_webhook_endpoints_deliveries_redeliver(client, id, endpoint_id, delivery_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", %{"id" => id, "endpointId" => endpoint_id, "deliveryId" => delivery_id}, nil, opts)
@@ -819,6 +1276,9 @@ defmodule Atlas.Organizations do
   Re-send every event of this organization since `since` (or since=failing_since) that the endpoint subscribes to and has not received, including events published while it was disabled. At most 1,000 per call; running it again queues nothing new. 409 if the endpoint is disabled.
 
   `POST /v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay`. Required scope: `webhooks:write`.
+
+  Query params (`params:`): `since`, `until`, `event_type`.
+  Body fields: `since` (string|integer), `until` (string|integer), `event_type` (string).
   """
   def post_app_webhook_endpoints_replay(client, id, endpoint_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}/replay", %{"id" => id, "endpointId" => endpoint_id}, body, opts)
@@ -827,12 +1287,15 @@ defmodule Atlas.Organizations do
   The app's event catalog for the endpoint picker (deprecated types left out).
 
   `GET /v1/organizations/{id}/app_event_types`. Required scope: `webhooks:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.description`, `data.schema`, `data.deprecated`, `data.required_scope`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_app_event_types(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/app_event_types", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_app_event_types/2`, following the cursor page by page.
+  Lazy stream over every item of `get_app_event_types`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_app_event_types(client, id, opts \\ []),
@@ -842,6 +1305,9 @@ defmodule Atlas.Organizations do
   The same read, scoped to an organization: 404 unless the connection is owned by that organization. Needs connections:secret_read; audited.
 
   `GET /v1/organizations/{id}/connections/{connectionId}/secret`. Required scope: `connections:secret_read`.
+
+  Query params (`params:`): `version`.
+  Response fields: `object`, `connection_id`, `kind`, `version`, `secret`, `config`, `expires_at`.
   """
   def get_connections_secret(client, id, connection_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/connections/{connectionId}/secret", %{"id" => id, "connectionId" => connection_id}, nil, opts)
@@ -850,6 +1316,8 @@ defmodule Atlas.Organizations do
   Fetch one organization's settings values. Returns an empty document at version 0 if none are set. Another instance's org is a 404.
 
   `GET /v1/organizations/{id}/settings`. Required scope: `organizations:read`.
+
+  Response fields: `object`, `organization_id`, `values`, `version`, `updated_by`, `updated_at`.
   """
   def get_settings(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/organizations/{id}/settings", %{"id" => id}, nil, opts)
@@ -858,6 +1326,9 @@ defmodule Atlas.Organizations do
   Write one organization's settings values. Validated against the registered schema (422 SETTINGS_INVALID with failing paths on mismatch); versions, audits, and emits organization.settings.updated.
 
   `PUT /v1/organizations/{id}/settings`. Required scope: `organizations:write`.
+
+  Body fields: `values` (object, required).
+  Response fields: `object`, `organization_id`, `values`, `version`, `updated_by`, `updated_at`.
   """
   def put_settings(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
@@ -866,6 +1337,9 @@ defmodule Atlas.Organizations do
   Merge a partial object into an organization's settings values (RFC 7396 shallow merge): a key set to null is REMOVED, any other value sets/overwrites it, untouched keys are preserved — so a single settings key can be removed or changed without read-replacing the whole document. The merge is row-locked (atomic against concurrent writers); the MERGED result is validated against the registered schema (422 SETTINGS_INVALID — e.g. removing a required key), then versioned, audited, and emitted as organization.settings.updated.
 
   `PATCH /v1/organizations/{id}/settings`. Required scope: `organizations:write`.
+
+  Body fields: `values` (object, required).
+  Response fields: `object`, `organization_id`, `values`, `version`, `updated_by`, `updated_at`.
   """
   def update_settings(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/organizations/{id}/settings", %{"id" => id}, body, opts)
@@ -875,6 +1349,7 @@ defmodule Atlas.Organizations do
     {:get_design, :get, "/v1/organizations/{id}/design", 1, false, false},
     {:put_design, :put, "/v1/organizations/{id}/design", 1, true, false},
     {:update_design, :patch, "/v1/organizations/{id}/design", 1, true, false},
+    {:get_audit_logs, :get, "/v1/organizations/{id}/audit_logs", 1, false, true},
     {:list, :get, "/v1/organizations", 0, false, true},
     {:create, :post, "/v1/organizations", 0, true, false},
     {:put_by_external_id, :put, "/v1/organizations/by_external_id/{external_id}", 1, true, false},
@@ -889,12 +1364,16 @@ defmodule Atlas.Organizations do
     {:put_metadata, :put, "/v1/organizations/{id}/metadata", 1, true, false},
     {:get_memberships, :get, "/v1/organizations/{id}/memberships", 1, false, true},
     {:post_memberships, :post, "/v1/organizations/{id}/memberships", 1, true, false},
+    {:get_by_id_memberships_by_user_id, :get, "/v1/organizations/{id}/memberships/{userId}", 2, false, false},
+    {:put_memberships, :put, "/v1/organizations/{id}/memberships/{userId}", 2, true, false},
     {:update_memberships, :patch, "/v1/organizations/{id}/memberships/{userId}", 2, true, false},
     {:delete_memberships, :delete, "/v1/organizations/{id}/memberships/{userId}", 2, false, false},
     {:get_invitations, :get, "/v1/organizations/{id}/invitations", 1, false, true},
     {:post_invitations, :post, "/v1/organizations/{id}/invitations", 1, true, false},
+    {:post_invitations_import, :post, "/v1/organizations/{id}/invitations/import", 1, true, false},
     {:post_invitations_revoke, :post, "/v1/organizations/{id}/invitations/{invitationId}/revoke", 2, false, false},
     {:post_invitations_resend, :post, "/v1/organizations/{id}/invitations/{invitationId}/resend", 2, false, false},
+    {:post_invitations_resend_with_body, :post, "/v1/organizations/{id}/invitations/{invitationId}/resend", 2, true, false},
     {:put_parent, :put, "/v1/organizations/{id}/parent", 1, true, false},
     {:get_hierarchy, :get, "/v1/organizations/{id}/hierarchy", 1, false, false},
     {:get_entitlements, :get, "/v1/organizations/{id}/entitlements", 1, false, false},
@@ -918,8 +1397,14 @@ defmodule Atlas.Organizations do
     {:post_roles, :post, "/v1/organizations/{id}/roles", 1, true, false},
     {:update_roles, :patch, "/v1/organizations/{id}/roles/{roleId}", 2, true, false},
     {:delete_roles, :delete, "/v1/organizations/{id}/roles/{roleId}", 2, false, false},
+    {:get_mfa_status, :get, "/v1/organizations/{id}/mfa_status", 1, false, false},
     {:get_branding, :get, "/v1/organizations/{id}/branding", 1, false, false},
     {:put_branding, :put, "/v1/organizations/{id}/branding", 1, true, false},
+    {:get_role_policy, :get, "/v1/organizations/{id}/role_policy", 1, false, false},
+    {:put_role_policy, :put, "/v1/organizations/{id}/role_policy", 1, true, false},
+    {:get_seats, :get, "/v1/organizations/{id}/seats", 1, false, false},
+    {:put_seats, :put, "/v1/organizations/{id}/seats", 1, true, false},
+    {:post_membership_imports, :post, "/v1/organizations/{id}/membership_imports", 1, true, false},
     {:get_connected_apps, :get, "/v1/organizations/{id}/connected_apps", 1, false, true},
     {:delete_connected_apps, :delete, "/v1/organizations/{id}/connected_apps/{grantId}", 2, false, false},
     {:get_reader_domain, :get, "/v1/organizations/{orgId}/reader_domain", 1, false, true},
@@ -940,6 +1425,10 @@ defmodule Atlas.Organizations do
     {:post_audit_streams, :post, "/v1/organizations/{id}/audit_streams", 1, true, false},
     {:delete_audit_streams, :delete, "/v1/organizations/{id}/audit_streams/{streamId}", 2, false, false},
     {:get_it_alerts, :get, "/v1/organizations/{id}/it_alerts", 1, false, true},
+    {:get_it_health, :get, "/v1/organizations/{id}/it_health", 1, false, false},
+    {:get_scim_requests, :get, "/v1/organizations/{id}/scim/requests", 1, false, true},
+    {:get_directory_sync_runs, :get, "/v1/organizations/{id}/directory_sync_runs", 1, false, true},
+    {:post_directory_sync_runs_retry, :post, "/v1/organizations/{id}/directory_sync_runs/{runId}/retry", 2, false, false},
     {:get_by_id_webhook_endpoints, :get, "/v1/organizations/{id}/webhook_endpoints", 1, false, true},
     {:post_webhook_endpoints, :post, "/v1/organizations/{id}/webhook_endpoints", 1, true, false},
     {:get_by_id_webhook_endpoints_by_endpoint_id, :get, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", 2, false, false},
@@ -947,6 +1436,10 @@ defmodule Atlas.Organizations do
     {:delete_webhook_endpoints, :delete, "/v1/organizations/{id}/webhook_endpoints/{endpointId}", 2, false, false},
     {:post_webhook_endpoints_rotate_secret, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/rotate_secret", 2, false, false},
     {:get_webhook_endpoints_deliveries, :get, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries", 2, false, true},
+    {:post_webhook_endpoints_reveal_secret, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/reveal_secret", 2, false, false},
+    {:post_webhook_endpoints_test, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/test", 2, false, false},
+    {:post_webhook_endpoints_deliveries_redeliver, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/deliveries/{deliveryId}/redeliver", 3, false, false},
+    {:post_webhook_endpoints_replay, :post, "/v1/organizations/{id}/webhook_endpoints/{endpointId}/replay", 2, true, false},
     {:get_by_id_app_webhook_endpoints, :get, "/v1/organizations/{id}/app_webhook_endpoints", 1, false, true},
     {:post_app_webhook_endpoints, :post, "/v1/organizations/{id}/app_webhook_endpoints", 1, true, false},
     {:get_by_id_app_webhook_endpoints_by_endpoint_id, :get, "/v1/organizations/{id}/app_webhook_endpoints/{endpointId}", 2, false, false},

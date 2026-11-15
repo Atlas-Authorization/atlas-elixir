@@ -5,7 +5,8 @@ defmodule Atlas.IdentityVerification do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.IdentityVerification do
   Whether identity verification is on, and which connector does the checking.
 
   `GET /v1/identity_verification/settings`. Required scope: `identity_verification:read`.
+
+  Response fields: `object`, `enabled`, `connector_id`, `as_challenge`, `verified_attributes`, `verified_attributes.fields`, `verified_attributes.age_over`, `verified_attributes.retention_days`, `webhook_url`.
   """
   def get_settings(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/identity_verification/settings", %{}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.IdentityVerification do
   Turn identity verification on or off and choose the connector (a Persona, Onfido, Veriff or Stripe Identity service connector; its credentials stay in the vault). `as_challenge` offers a verified identity as the custom second step of sign-in (the custom challenge factor must be enabled).
 
   `PUT /v1/identity_verification/settings`. Required scope: `identity_verification:write`.
+
+  Body fields: `enabled` (boolean, required), `connector_id` (string|null), `as_challenge` (boolean), `verified_attributes` (object|null).
+  Nested body fields: `verified_attributes.fields`, `verified_attributes.age_over`, `verified_attributes.retention_days`.
+  Response fields: `object`, `enabled`, `connector_id`, `as_challenge`, `verified_attributes`, `verified_attributes.fields`, `verified_attributes.age_over`, `verified_attributes.retention_days`, `webhook_url`.
   """
   def put_settings(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/identity_verification/settings", %{}, body, opts)

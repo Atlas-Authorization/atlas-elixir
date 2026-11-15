@@ -5,7 +5,8 @@ defmodule Atlas.Fga do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Fga do
   How this instance runs fine-grained authorization reads: the result-cache TTL, the consistency mode applied to reads that name none, and how long the tuple change log is kept.
 
   `GET /v1/fga/settings`. Required scope: `fga:read`.
+
+  Response fields: `object`, `cache_ttl_ms`, `default_consistency`, `changelog_retention_days`.
   """
   def get_settings(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/settings", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.Fga do
   Change the instance FGA settings. Fields you omit keep their value. `cache_ttl_ms` null uses the platform default and 0 turns the result cache off; a request that carries its own `consistency` always wins over `default_consistency`; `changelog_retention_days` null keeps the whole tuple change log, otherwise older changes are removed in the background.
 
   `PUT /v1/fga/settings`. Required scope: `fga:write`.
+
+  Body fields: `cache_ttl_ms` (integer|null), `default_consistency` (enum), `changelog_retention_days` (integer|null).
+  Response fields: `object`, `cache_ttl_ms`, `default_consistency`, `changelog_retention_days`.
   """
   def put_settings(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/fga/settings", %{}, body, opts)
@@ -29,12 +35,15 @@ defmodule Atlas.Fga do
   List fine-grained authorization (ReBAC / Zanzibar) stores in the instance. Each store namespaces its own authorization models and relationship tuples.
 
   `GET /v1/fga/stores`. Required scope: `fga:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_stores(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_stores/1`, following the cursor page by page.
+  Lazy stream over every item of `get_stores`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_stores(client, opts \\ []),
@@ -44,6 +53,9 @@ defmodule Atlas.Fga do
   Create a fine-grained authorization store — an isolated namespace for authorization models and relationship tuples.
 
   `POST /v1/fga/stores`. Required scope: `fga:write`.
+
+  Body fields: `name` (string).
+  Response fields: `object`, `id`, `name`, `created_at`, `updated_at`.
   """
   def post_stores(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores", %{}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.Fga do
   Read one FGA store. A store from another instance is a 404.
 
   `GET /v1/fga/stores/{id}`. Required scope: `fga:read`.
+
+  Response fields: `object`, `id`, `name`, `created_at`, `updated_at`.
   """
   def get_stores_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.Fga do
   Delete an FGA store, cascading its authorization models and relationship tuples.
 
   `DELETE /v1/fga/stores/{id}`. Required scope: `fga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_stores(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/fga/stores/{id}", %{"id" => id}, nil, opts)
@@ -68,12 +84,15 @@ defmodule Atlas.Fga do
   List the immutable authorization-model versions of a store, newest first.
 
   `GET /v1/fga/stores/{id}/authorization-models`. Required scope: `fga:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.store_id`, `data.schema_version`, `data.model`, `data.model.schema_version`, `data.model.type_definitions`, `data.model.conditions`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_stores_by_id_authorization_models(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/authorization-models", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_stores_by_id_authorization_models/2`, following the cursor page by page.
+  Lazy stream over every item of `get_stores_by_id_authorization_models`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_stores_by_id_authorization_models(client, id, opts \\ []),
@@ -83,6 +102,10 @@ defmodule Atlas.Fga do
   Write a new immutable authorization-model version (OpenFGA-shaped type_definitions with this/computedUserset/tupleToUserset and union/intersection/difference). Unknown relation or type references are rejected.
 
   `POST /v1/fga/stores/{id}/authorization-models`. Required scope: `fga:write`.
+
+  Body fields: `type_definitions` (array), `schema_version` (string), `dsl` (string), `conditions` (object).
+  Nested body fields: `type_definitions.type`, `type_definitions.relations`, `type_definitions.metadata`, `type_definitions.metadata.relations`.
+  Response fields: `object`, `id`, `store_id`, `schema_version`, `model`, `model.schema_version`, `model.type_definitions`, `model.type_definitions.type`, `model.type_definitions.relations`, `model.type_definitions.metadata`, `model.type_definitions.metadata.relations`, `model.conditions`, `created_at`.
   """
   def post_stores_authorization_models(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/authorization-models", %{"id" => id}, body, opts)
@@ -91,6 +114,8 @@ defmodule Atlas.Fga do
   Read one authorization-model version, including its full model definition.
 
   `GET /v1/fga/stores/{id}/authorization-models/{mid}`. Required scope: `fga:read`.
+
+  Response fields: `object`, `id`, `store_id`, `schema_version`, `model`, `model.schema_version`, `model.type_definitions`, `model.type_definitions.type`, `model.type_definitions.relations`, `model.type_definitions.metadata`, `model.type_definitions.metadata.relations`, `model.conditions`, `created_at`.
   """
   def get_stores_by_id_authorization_models_by_mid(client, id, mid, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/authorization-models/{mid}", %{"id" => id, "mid" => mid}, nil, opts)
@@ -99,6 +124,10 @@ defmodule Atlas.Fga do
   Transactionally write and/or delete relationship tuples in a store. Writes are idempotent (a re-written tuple is a no-op); the whole batch is all-or-nothing.
 
   `POST /v1/fga/stores/{id}/write`. Required scope: `fga:write`.
+
+  Body fields: `writes` (any), `deletes` (any), `on_duplicate` (enum), `on_missing` (enum).
+  Nested body fields: `writes.user`, `writes.relation`, `writes.object`, `writes.condition`, `writes.condition.name`, `writes.condition.context`, `writes.expires_at`, `writes.tuple_keys`, `writes.tuple_keys.user`, `writes.tuple_keys.relation`, `writes.tuple_keys.object`, `writes.tuple_keys.condition`, `writes.tuple_keys.expires_at`, `deletes.user`, `deletes.relation`, `deletes.object`, `deletes.condition`, `deletes.condition.name`, `deletes.condition.context`, `deletes.expires_at`, `deletes.tuple_keys`, `deletes.tuple_keys.user`, `deletes.tuple_keys.relation`, `deletes.tuple_keys.object`, `deletes.tuple_keys.condition`, `deletes.tuple_keys.expires_at`.
+  Response fields: `consistency_token`, `object`, `writes`, `deletes`.
   """
   def post_stores_write(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/write", %{"id" => id}, body, opts)
@@ -107,6 +136,9 @@ defmodule Atlas.Fga do
   Query stored relationship tuples in a store, optionally filtered by user, relation and/or object.
 
   `POST /v1/fga/stores/{id}/read`. Required scope: `fga:read`.
+
+  Body fields: `user` (string), `relation` (string), `object` (string), `limit` (integer), `starting_after` (string).
+  Response fields: `object`, `data`, `data.object`, `data.user`, `data.relation`, `data.target`, `data.condition`, `data.condition.name`, `data.condition.context`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def post_stores_read(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/read", %{"id" => id}, body, opts)
@@ -115,6 +147,10 @@ defmodule Atlas.Fga do
   Check whether a user has a relation on an object, resolving the authorization model (direct tuples, computed usersets, tuple-to-userset hops, set operators, tuple conditions) with cycle + depth safety. Supports contextual tuples, request `context` for conditions and a pinned authorization_model_id. `consistency` / `consistency_token` choose between the result cache and a primary read; the response carries a `consistency_token`.
 
   `POST /v1/fga/stores/{id}/check`. Required scope: `fga:read`.
+
+  Body fields: `user` (string), `relation` (string), `object` (string), `authorization_model_id` (string), `contextual_tuples` (any), `context` (object), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `contextual_tuples.user`, `contextual_tuples.relation`, `contextual_tuples.object`, `contextual_tuples.condition`, `contextual_tuples.condition.name`, `contextual_tuples.condition.context`, `contextual_tuples.expires_at`, `contextual_tuples.tuple_keys`, `contextual_tuples.tuple_keys.user`, `contextual_tuples.tuple_keys.relation`, `contextual_tuples.tuple_keys.object`, `contextual_tuples.tuple_keys.condition`, `contextual_tuples.tuple_keys.expires_at`.
+  Response fields: `consistency_token`, `object`, `allowed`, `authorization_model_id`.
   """
   def post_stores_check(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/check", %{"id" => id}, body, opts)
@@ -123,6 +159,10 @@ defmodule Atlas.Fga do
   Check up to 100 (user, relation, object) tuples in one request.
 
   `POST /v1/fga/stores/{id}/batch-check`. Required scope: `fga:read`.
+
+  Body fields: `checks` (array), `authorization_model_id` (string), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `checks.user`, `checks.relation`, `checks.object`, `checks.correlation_id`, `checks.contextual_tuples`, `checks.contextual_tuples.tuple_keys`, `checks.context`.
+  Response fields: `consistency_token`, `object`, `authorization_model_id`, `result`, `result.correlation_id`, `result.allowed`.
   """
   def post_stores_batch_check(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/batch-check", %{"id" => id}, body, opts)
@@ -131,6 +171,10 @@ defmodule Atlas.Fga do
   List the object ids of a type that a user has a relation on. Exact (check-filtered over the complete candidate set); cost is linear in the objects of that type. Send `limit` (and `starting_after` from `next_cursor`) to page the sorted result; without a limit every object is returned.
 
   `POST /v1/fga/stores/{id}/list-objects`. Required scope: `fga:read`.
+
+  Body fields: `user` (string), `relation` (string), `type` (string), `authorization_model_id` (string), `contextual_tuples` (any), `limit` (integer), `starting_after` (string), `context` (object), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `contextual_tuples.user`, `contextual_tuples.relation`, `contextual_tuples.object`, `contextual_tuples.condition`, `contextual_tuples.condition.name`, `contextual_tuples.condition.context`, `contextual_tuples.expires_at`, `contextual_tuples.tuple_keys`, `contextual_tuples.tuple_keys.user`, `contextual_tuples.tuple_keys.relation`, `contextual_tuples.tuple_keys.object`, `contextual_tuples.tuple_keys.condition`, `contextual_tuples.tuple_keys.expires_at`.
+  Response fields: `consistency_token`, `object`, `objects`, `has_more`, `next_cursor`, `authorization_model_id`.
   """
   def post_stores_list_objects(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/list-objects", %{"id" => id}, body, opts)
@@ -139,6 +183,9 @@ defmodule Atlas.Fga do
   Expand the userset tree for an (object, relation) — who would hold the relation, mirroring the model rewrite. Not user-specific.
 
   `POST /v1/fga/stores/{id}/expand`. Required scope: `fga:read`.
+
+  Body fields: `object` (string), `relation` (string), `authorization_model_id` (string).
+  Response fields: `object`, `tree`, `tree.type`, `tree.nodes`, `tree.base`, `tree.subtract`, `tree.users`, `tree.computed`, `tree.tupleToUserset`, `tree.tupleToUserset.tupleset`, `tree.tupleToUserset.computed`, `authorization_model_id`.
   """
   def post_stores_expand(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/expand", %{"id" => id}, body, opts)
@@ -147,6 +194,10 @@ defmodule Atlas.Fga do
   List the users that have a relation on an object, filtered to one user type (or to `type#relation` usersets via `user_filters[0].relation`). Exact for wildcards (`type:*` plus `excluded_users` under `but not`), nested groups and contextual tuples; tuple conditions are evaluated against `context`. Pages with `page_size` / `continuation_token`; `consistency` / `consistency_token` behave as on check.
 
   `POST /v1/fga/stores/{id}/list-users`. Required scope: `fga:read`.
+
+  Body fields: `object` (any), `relation` (string), `user_filters` (array), `authorization_model_id` (string), `contextual_tuples` (any), `context` (object), `page_size` (integer), `continuation_token` (string), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `object.type`, `object.id`, `user_filters.type`, `user_filters.relation`, `contextual_tuples.user`, `contextual_tuples.relation`, `contextual_tuples.object`, `contextual_tuples.condition`, `contextual_tuples.condition.name`, `contextual_tuples.condition.context`, `contextual_tuples.expires_at`, `contextual_tuples.tuple_keys`, `contextual_tuples.tuple_keys.user`, `contextual_tuples.tuple_keys.relation`, `contextual_tuples.tuple_keys.object`, `contextual_tuples.tuple_keys.condition`, `contextual_tuples.tuple_keys.expires_at`.
+  Response fields: `object`, `users`, `excluded_users`, `continuation_token`, `authorization_model_id`, `consistency_token`.
   """
   def post_stores_list_users(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/list-users", %{"id" => id}, body, opts)
@@ -155,12 +206,15 @@ defmodule Atlas.Fga do
   Read the store’s tuple changelog: every tuple write and delete in commit order, resumable with `continuation_token` (returned even on the last page — pass it later to receive only newer changes). Filter by object `type` and `start_time`.
 
   `GET /v1/fga/stores/{id}/changes`. Required scope: `fga:read`.
+
+  Query params (`params:`): `type`, `page_size`, `continuation_token`, `start_time`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.operation`, `data.user`, `data.relation`, `data.target`, `data.condition`, `data.condition.name`, `data.condition.context`, `data.consistency_token`, `data.created_at`, `has_more`, `continuation_token`.
   """
   def get_stores_changes(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/changes", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_stores_changes/2`, following the cursor page by page.
+  Lazy stream over every item of `get_stores_changes`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_stores_changes(client, id, opts \\ []),
@@ -170,6 +224,8 @@ defmodule Atlas.Fga do
   What a local policy decision point syncs: the latest model and the store tuples. Without `since`, a page of tuples (`full: true`, follow `next_cursor`); with `since=<revision>`, only the tuple changes after that revision. Tuples carry `expires_at`; expired tuples are never listed.
 
   `GET /v1/fga/stores/{id}/snapshot`. Required scope: `fga:read`.
+
+  Query params (`params:`): `since`, `cursor`, `limit`.
   """
   def get_stores_snapshot(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/snapshot", %{"id" => id}, nil, opts)
@@ -178,6 +234,8 @@ defmodule Atlas.Fga do
   Export the store tuples as NDJSON (one tuple per line), paged: pass the `atlas-next-cursor` response header back as `cursor`.
 
   `GET /v1/fga/stores/{id}/export`. Required scope: `fga:read`.
+
+  Query params (`params:`): `cursor`, `limit`.
   """
   def get_stores_export(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/export", %{"id" => id}, nil, opts)
@@ -186,6 +244,8 @@ defmodule Atlas.Fga do
   Bulk-import up to 20,000 tuples. Idempotent: an existing tuple is untouched, a changed condition or expiry updates it. Validated against the latest model; `dry_run` reports how many are new without writing.
 
   `POST /v1/fga/stores/{id}/import`. Required scope: `fga:write`.
+
+  Body fields: `tuples` (array), `dry_run` (boolean).
   """
   def post_stores_import(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/import", %{"id" => id}, body, opts)
@@ -194,6 +254,8 @@ defmodule Atlas.Fga do
   Server-sent stream of the store tuple changes after `since` (or `Last-Event-ID`). Ends after about a minute; reconnect with the last event id.
 
   `GET /v1/fga/stores/{id}/watch`. Required scope: `fga:read`.
+
+  Query params (`params:`): `since`, `type`.
   """
   def get_stores_watch(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/watch", %{"id" => id}, nil, opts)
@@ -210,6 +272,8 @@ defmodule Atlas.Fga do
   What changed between a model version and the one before it (or `against`): types, relations, conditions, and whether the change can alter who has access.
 
   `GET /v1/fga/stores/{id}/authorization-models/{mid}/diff`. Required scope: `fga:read`.
+
+  Query params (`params:`): `against`.
   """
   def get_stores_authorization_models_diff(client, id, mid, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/fga/stores/{id}/authorization-models/{mid}/diff", %{"id" => id, "mid" => mid}, nil, opts)
@@ -218,6 +282,8 @@ defmodule Atlas.Fga do
   Run an FGA test suite in memory: a model (DSL, modules, a version id or the latest), suite tuples and tests with check, list_objects and list_users assertions. Returns per-test results and relation coverage. The store tuples are never read.
 
   `POST /v1/fga/stores/{id}/tests`. Required scope: `fga:read`.
+
+  Body fields: `model_id` (string), `dsl` (string), `modules` (array), `tuples` (array), `tests` (array).
   """
   def post_stores_tests(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/tests", %{"id" => id}, body, opts)
@@ -226,6 +292,8 @@ defmodule Atlas.Fga do
   Run an FGA test suite with no store: the model comes from `dsl` or `modules`. Returns per-test results and relation coverage. For CI.
 
   `POST /v1/fga/tests`. Required scope: `fga:read`.
+
+  Body fields: `model_id` (string), `dsl` (string), `modules` (array), `tuples` (array), `tests` (array).
   """
   def post_tests(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/tests", %{}, body, opts)
@@ -234,6 +302,8 @@ defmodule Atlas.Fga do
   Validate an authorization model and convert it: DSL (or modular DSL files) to canonical JSON, and JSON to DSL.
 
   `POST /v1/fga/models/transform`. Required scope: `fga:read`.
+
+  Body fields: `dsl` (string), `modules` (array), `model` (object).
   """
   def post_models_transform(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/models/transform", %{}, body, opts)
@@ -258,6 +328,8 @@ defmodule Atlas.Fga do
   Precompute list-objects for every user of `user_type` on `object_type#relation`, so a huge list question is one indexed read. The first build runs now; the worker rebuilds after tuple writes. A stored answer is served only while it is current for the store revision and model, before any tuple expiry, and for a plain `type:id` user with no request context or contextual tuples; otherwise list-objects is answered live. A model that uses conditions cannot be materialized.
 
   `POST /v1/fga/stores/{id}/materializations`. Required scope: `fga:write`.
+
+  Body fields: `object_type` (string), `relation` (string), `user_type` (string).
   """
   def post_stores_materializations(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/fga/stores/{id}/materializations", %{"id" => id}, body, opts)
@@ -277,6 +349,77 @@ defmodule Atlas.Fga do
   """
   def delete_stores_materializations(client, id, mid, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/fga/stores/{id}/materializations/{mid}", %{"id" => id, "mid" => mid}, nil, opts)
+
+  @doc ~S"""
+  The managed FGA sync: its settings, how many tuples it owns by kind, the backfill in flight and the last run. Needs an API key that is not limited to organizations.
+
+  `GET /v1/fga/sync`. Required scope: `fga:read`.
+
+  Response fields: `object`, `enabled`, `store_id`, `sync_memberships`, `sync_org_roles`, `sync_groups`, `user_type`, `org_type`, `group_type`, `member_relation`, `role_relation_prefix`, `group_key`, `last_synced_at`, `last_error`, `managed`, `managed.total`, `managed.by_kind`, `backfill`, `backfill.object`, `backfill.id`, `backfill.kind`, `backfill.status`, `backfill.store_id`, `backfill.repair`, `backfill.subjects`, `backfill.written`, `backfill.deleted`, `backfill.skipped`, `backfill.skipped_reasons`, `backfill.error`, `backfill.requested_by`, `backfill.started_at`, `backfill.finished_at`, `backfill.created_at`, `last_run`, `last_run.object`, `last_run.id`, `last_run.kind`, `last_run.status`, `last_run.store_id`, `last_run.repair`, `last_run.subjects`, `last_run.written`, `last_run.deleted`, `last_run.skipped`, `last_run.skipped_reasons`, `last_run.error`, `last_run.requested_by`, `last_run.started_at`, `last_run.finished_at`, `last_run.created_at`.
+  """
+  def get_sync(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/sync", %{}, nil, opts)
+
+  @doc ~S"""
+  Configure the managed sync that turns organization memberships, org roles and groups into FGA tuples, so a model can say `viewer: member from organization` without mirroring anything by hand. Opt-in per instance; nothing is written until `enabled` is true with a `store_id`. Enabling starts from the current end of the change feed and queues a backfill. The sync only ever removes tuples it wrote; a tuple that existed first is left alone. Tuples the store's model has no relation for are skipped and counted. A store or a tuple name cannot change while the sync owns tuples (409): disable it and `POST /v1/fga/sync/purge` first. Emits nothing itself; its writes emit fga.tuple_written and fga.tuple_deleted.
+
+  `PUT /v1/fga/sync`. Required scope: `fga:write`.
+
+  Body fields: `enabled` (boolean), `store_id` (string|null), `sync_memberships` (boolean), `sync_org_roles` (boolean), `sync_groups` (boolean), `user_type` (string), `org_type` (string), `group_type` (string), `member_relation` (string), `role_relation_prefix` (string), `group_key` (enum).
+  Response fields: `object`, `enabled`, `store_id`, `sync_memberships`, `sync_org_roles`, `sync_groups`, `user_type`, `org_type`, `group_type`, `member_relation`, `role_relation_prefix`, `group_key`, `last_synced_at`, `last_error`, `managed`, `managed.total`, `managed.by_kind`, `backfill`, `backfill.object`, `backfill.id`, `backfill.kind`, `backfill.status`, `backfill.store_id`, `backfill.repair`, `backfill.subjects`, `backfill.written`, `backfill.deleted`, `backfill.skipped`, `backfill.skipped_reasons`, `backfill.error`, `backfill.requested_by`, `backfill.started_at`, `backfill.finished_at`, `backfill.created_at`, `last_run`, `last_run.object`, `last_run.id`, `last_run.kind`, `last_run.status`, `last_run.store_id`, `last_run.repair`, `last_run.subjects`, `last_run.written`, `last_run.deleted`, `last_run.skipped`, `last_run.skipped_reasons`, `last_run.error`, `last_run.requested_by`, `last_run.started_at`, `last_run.finished_at`, `last_run.created_at`.
+  """
+  def put_sync(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/fga/sync", %{}, body, opts)
+
+  @doc ~S"""
+  Queue a backfill: walk every membership, group member and group and write the tuples that are missing, then remove owned tuples whose source is gone. `repair: true` rewrites every desired tuple, healing tuples someone deleted by hand. Resumable and processed by the worker; read the run to follow it. One backfill runs at a time: asking again returns the one in flight (200). Honours Idempotency-Key. Emits fga_sync.completed or fga_sync.failed when it ends.
+
+  `POST /v1/fga/sync/backfill`. Required scope: `fga:write`.
+
+  Body fields: `repair` (boolean).
+  Response fields: `object`, `id`, `kind`, `status`, `store_id`, `repair`, `subjects`, `written`, `deleted`, `skipped`, `skipped_reasons`, `error`, `requested_by`, `started_at`, `finished_at`, `created_at`.
+  """
+  def post_sync_backfill(client, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/sync/backfill", %{}, body, opts)
+
+  @doc ~S"""
+  Sync runs, newest first: backfills, and the incremental passes that changed something.
+
+  `GET /v1/fga/sync/runs`. Required scope: `fga:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.status`, `data.store_id`, `data.repair`, `data.subjects`, `data.written`, `data.deleted`, `data.skipped`, `data.skipped_reasons`, `data.error`, `data.requested_by`, `data.started_at`, `data.finished_at`, `data.created_at`, `has_more`.
+  """
+  def get_sync_runs(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/sync/runs", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_sync_runs`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_sync_runs(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/fga/sync/runs", %{}, opts)
+
+  @doc ~S"""
+  One sync run with its counts and any error.
+
+  `GET /v1/fga/sync/runs/{id}`. Required scope: `fga:read`.
+
+  Response fields: `object`, `id`, `kind`, `status`, `store_id`, `repair`, `subjects`, `written`, `deleted`, `skipped`, `skipped_reasons`, `error`, `requested_by`, `started_at`, `finished_at`, `created_at`.
+  """
+  def get_sync_runs_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/fga/sync/runs/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Remove the tuples the sync wrote (never one that existed before it) and forget them. The sync must be disabled (409 otherwise). Send `confirm: true`.
+
+  `POST /v1/fga/sync/purge`. Required scope: `fga:write`.
+
+  Body fields: `confirm` (boolean, required).
+  Response fields: `object`, `store_id`, `deleted`, `released`.
+  """
+  def post_sync_purge(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/fga/sync/purge", %{}, body, opts)
 
   @doc false
   def __operations__, do: [
@@ -310,6 +453,12 @@ defmodule Atlas.Fga do
     {:get_stores_materializations, :get, "/v1/fga/stores/{id}/materializations", 1, false, false},
     {:post_stores_materializations, :post, "/v1/fga/stores/{id}/materializations", 1, true, false},
     {:post_stores_materializations_rebuild, :post, "/v1/fga/stores/{id}/materializations/{mid}/rebuild", 2, false, false},
-    {:delete_stores_materializations, :delete, "/v1/fga/stores/{id}/materializations/{mid}", 2, false, false}
+    {:delete_stores_materializations, :delete, "/v1/fga/stores/{id}/materializations/{mid}", 2, false, false},
+    {:get_sync, :get, "/v1/fga/sync", 0, false, false},
+    {:put_sync, :put, "/v1/fga/sync", 0, true, false},
+    {:post_sync_backfill, :post, "/v1/fga/sync/backfill", 0, true, false},
+    {:get_sync_runs, :get, "/v1/fga/sync/runs", 0, false, true},
+    {:get_sync_runs_by_id, :get, "/v1/fga/sync/runs/{id}", 1, false, false},
+    {:post_sync_purge, :post, "/v1/fga/sync/purge", 0, true, false}
   ]
 end

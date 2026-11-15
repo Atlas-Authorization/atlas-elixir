@@ -5,7 +5,8 @@ defmodule Atlas.Vc do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Vc do
   List the credential types you issue.
 
   `GET /v1/vc/credential_types`. Required scope: `vc:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.vct`, `data.format`, `data.namespace`, `data.revocation_policy`, `data.iaca_roots`, `data.signer_chain`, `data.name`, `data.claims`, `data.claims.name`, `data.claims.source`, `data.claims.disclosable`, `data.claims.value_type`, `data.lifetime_seconds`, `data.require_wallet_attestation`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_credential_types(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vc/credential_types", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_credential_types/1`, following the cursor page by page.
+  Lazy stream over every item of `get_credential_types`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_credential_types(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.Vc do
   Define a credential type: its vct, and how each claim is filled from a user’s attributes. Issued as SD-JWT VC.
 
   `POST /v1/vc/credential_types`. Required scope: `vc:write`.
+
+  Body fields: `vct` (string, required), `format` (enum), `namespace` (string), `iaca_roots` (array), `revocation_policy` (enum), `signer_chain` (array), `name` (string, required), `claims` (array, required), `lifetime_seconds` (integer), `require_wallet_attestation` (boolean), `wallet_attestation_jwks` (object).
+  Nested body fields: `claims.name`, `claims.source`, `claims.disclosable`, `claims.value_type`.
+  Response fields: `object`, `id`, `vct`, `format`, `namespace`, `revocation_policy`, `iaca_roots`, `signer_chain`, `name`, `claims`, `claims.name`, `claims.source`, `claims.disclosable`, `claims.value_type`, `lifetime_seconds`, `require_wallet_attestation`, `created_at`.
   """
   def post_credential_types(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vc/credential_types", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.Vc do
   Read one credential type.
 
   `GET /v1/vc/credential_types/{id}`. Required scope: `vc:read`.
+
+  Response fields: `object`, `id`, `vct`, `format`, `namespace`, `revocation_policy`, `iaca_roots`, `signer_chain`, `name`, `claims`, `claims.name`, `claims.source`, `claims.disclosable`, `claims.value_type`, `lifetime_seconds`, `require_wallet_attestation`, `created_at`.
   """
   def get_credential_types_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vc/credential_types/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,8 @@ defmodule Atlas.Vc do
   Delete a credential type and the records of what was issued under it.
 
   `DELETE /v1/vc/credential_types/{id}`. Required scope: `vc:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_credential_types(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/vc/credential_types/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +64,9 @@ defmodule Atlas.Vc do
   Create a wallet offer for a user (pre-authorized code flow). The response carries the code once, as an openid-credential-offer:// link.
 
   `POST /v1/vc/offers`. Required scope: `vc:write`.
+
+  Body fields: `credential_type_id` (string, required), `user_id` (string, required), `tx_code` (string), `expires_in_seconds` (integer).
+  Response fields: `object`, `id`, `expires_at`, `credential_offer`, `credential_offer_uri`.
   """
   def post_offers(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vc/offers", %{}, body, opts)
@@ -60,12 +75,15 @@ defmodule Atlas.Vc do
   List deferred issuances waiting for an operator decision.
 
   `GET /v1/vc/deferred`. Required scope: `vc:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.credential_type_id`, `data.user_id`, `data.credentials_requested`, `data.status`, `data.reason`, `data.expires_at`, `data.created_at`, `has_more`.
   """
   def get_deferred(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vc/deferred", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_deferred/1`, following the cursor page by page.
+  Lazy stream over every item of `get_deferred`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_deferred(client, opts \\ []),
@@ -75,6 +93,8 @@ defmodule Atlas.Vc do
   Approve a deferred issuance; the wallet receives the credential at the deferred credential endpoint.
 
   `POST /v1/vc/deferred/{id}/approve`. Required scope: `vc:write`.
+
+  Body fields: `reason` (string).
   """
   def post_deferred_approve(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vc/deferred/{id}/approve", %{"id" => id}, body, opts)
@@ -83,6 +103,8 @@ defmodule Atlas.Vc do
   Deny a deferred issuance; the wallet is told issuance was refused.
 
   `POST /v1/vc/deferred/{id}/deny`. Required scope: `vc:write`.
+
+  Body fields: `reason` (string).
   """
   def post_deferred_deny(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vc/deferred/{id}/deny", %{"id" => id}, body, opts)
@@ -91,12 +113,15 @@ defmodule Atlas.Vc do
   List issued credentials (most recent 200), optionally for one user.
 
   `GET /v1/vc/credentials`. Required scope: `vc:read`.
+
+  Query params (`params:`): `user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.credential_type_id`, `data.user_id`, `data.status_idx`, `data.issued_at`, `data.expires_at`, `data.revoked_at`, `has_more`, `next_cursor`.
   """
   def get_credentials(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vc/credentials", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_credentials/1`, following the cursor page by page.
+  Lazy stream over every item of `get_credentials`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_credentials(client, opts \\ []),
@@ -106,6 +131,8 @@ defmodule Atlas.Vc do
   Revoke an issued credential: its status-list bit is set and later presentations are refused.
 
   `POST /v1/vc/credentials/{id}/revoke`. Required scope: `vc:write`.
+
+  Response fields: `object`, `id`, `credential_type_id`, `user_id`, `status_idx`, `issued_at`, `expires_at`, `revoked_at`.
   """
   def post_credentials_revoke(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vc/credentials/{id}/revoke", %{"id" => id}, body, opts)
@@ -114,6 +141,10 @@ defmodule Atlas.Vc do
   Start a verifier request for a credential type and claims. Show authorization_request_uri to the wallet, then read the request for the outcome.
 
   `POST /v1/vc/presentation_requests`. Required scope: `vc:write`.
+
+  Body fields: `vct` (string, required), `format` (enum), `iaca_roots` (array), `revocation_policy` (enum), `claims` (array), `trusted_issuers` (array), `expires_in_seconds` (integer).
+  Nested body fields: `trusted_issuers.issuer`, `trusted_issuers.jwks`.
+  Response fields: `object`, `id`, `vct`, `format`, `iaca_roots`, `revocation_policy`, `claims`, `status`, `result`, `error`, `user_id`, `expires_at`, `request_uri`, `authorization_request_uri`.
   """
   def post_presentation_requests(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/vc/presentation_requests", %{}, body, opts)
@@ -122,6 +153,8 @@ defmodule Atlas.Vc do
   The OpenID4VP request for the Digital Credentials API (navigator.credentials.get), for a presentation request with expected_origins.
 
   `GET /v1/vc/presentation_requests/{id}/dc_api_request`. Required scope: `vc:read`.
+
+  Response fields: `object`, `protocol`, `data`, `response_endpoint`.
   """
   def get_presentation_requests_dc_api_request(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vc/presentation_requests/{id}/dc_api_request", %{"id" => id}, nil, opts)
@@ -130,6 +163,8 @@ defmodule Atlas.Vc do
   Read a presentation request and its outcome.
 
   `GET /v1/vc/presentation_requests/{id}`. Required scope: `vc:read`.
+
+  Response fields: `object`, `id`, `vct`, `format`, `iaca_roots`, `revocation_policy`, `claims`, `status`, `result`, `error`, `user_id`, `expires_at`, `request_uri`, `authorization_request_uri`.
   """
   def get_presentation_requests(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/vc/presentation_requests/{id}", %{"id" => id}, nil, opts)

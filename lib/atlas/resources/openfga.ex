@@ -5,7 +5,8 @@ defmodule Atlas.Openfga do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Openfga do
   List the instance's OpenFGA (ReBAC) authorization stores.
 
   `GET /v1/openfga/stores`. Required scope: `fga:read`.
+
+  Response fields: `stores`, `stores.id`, `stores.name`, `stores.created_at`, `stores.updated_at`.
   """
   def get_stores(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/openfga/stores", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.Openfga do
   Create an OpenFGA authorization store.
 
   `POST /v1/openfga/stores`. Required scope: `fga:write`.
+
+  Body fields: `name` (string, required).
+  Response fields: `id`, `name`, `created_at`, `updated_at`.
   """
   def post_stores(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores", %{}, body, opts)
@@ -29,6 +35,8 @@ defmodule Atlas.Openfga do
   List the authorization models in a store.
 
   `GET /v1/openfga/stores/{store}/authorization-models`. Required scope: `fga:read`.
+
+  Response fields: `authorization_models`, `authorization_models.id`, `authorization_models.schema_version`.
   """
   def get_stores_by_store_authorization_models(client, store, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/openfga/stores/{store}/authorization-models", %{"store" => store}, nil, opts)
@@ -37,6 +45,10 @@ defmodule Atlas.Openfga do
   Write a new authorization model to a store.
 
   `POST /v1/openfga/stores/{store}/authorization-models`. Required scope: `fga:write`.
+
+  Body fields: `schema_version` (string), `type_definitions` (array), `dsl` (string).
+  Nested body fields: `type_definitions.type`, `type_definitions.relations`, `type_definitions.metadata`, `type_definitions.metadata.relations`.
+  Response fields: `authorization_model_id`.
   """
   def post_stores_authorization_models(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/authorization-models", %{"store" => store}, body, opts)
@@ -45,6 +57,10 @@ defmodule Atlas.Openfga do
   Check whether a user has a relation on an object (OpenFGA-wire check).
 
   `POST /v1/openfga/stores/{store}/check`. Required scope: `fga:read`.
+
+  Body fields: `tuple_key` (object, required), `authorization_model_id` (string), `contextual_tuples` (object), `context` (object), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `tuple_key.user`, `tuple_key.relation`, `tuple_key.object`, `contextual_tuples.tuple_keys`, `contextual_tuples.tuple_keys.user`, `contextual_tuples.tuple_keys.relation`, `contextual_tuples.tuple_keys.object`, `contextual_tuples.tuple_keys.condition`, `contextual_tuples.tuple_keys.condition.name`, `contextual_tuples.tuple_keys.condition.context`, `contextual_tuples.tuple_keys.expires_at`.
+  Response fields: `allowed`.
   """
   def post_stores_check(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/check", %{"store" => store}, body, opts)
@@ -53,6 +69,9 @@ defmodule Atlas.Openfga do
   Write or delete relationship tuples in a store (OpenFGA-wire write).
 
   `POST /v1/openfga/stores/{store}/write`. Required scope: `fga:write`.
+
+  Body fields: `writes` (object), `deletes` (object).
+  Nested body fields: `writes.tuple_keys`, `writes.tuple_keys.user`, `writes.tuple_keys.relation`, `writes.tuple_keys.object`, `writes.tuple_keys.condition`, `writes.tuple_keys.condition.name`, `writes.tuple_keys.condition.context`, `writes.tuple_keys.expires_at`, `deletes.tuple_keys`, `deletes.tuple_keys.user`, `deletes.tuple_keys.relation`, `deletes.tuple_keys.object`, `deletes.tuple_keys.condition`, `deletes.tuple_keys.condition.name`, `deletes.tuple_keys.condition.context`, `deletes.tuple_keys.expires_at`.
   """
   def post_stores_write(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/write", %{"store" => store}, body, opts)
@@ -61,6 +80,8 @@ defmodule Atlas.Openfga do
   Get one OpenFGA store (OpenFGA-wire GetStore).
 
   `GET /v1/openfga/stores/{store}`. Required scope: `fga:read`.
+
+  Response fields: `id`, `name`, `created_at`, `updated_at`.
   """
   def get_stores_by_store(client, store, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/openfga/stores/{store}", %{"store" => store}, nil, opts)
@@ -69,6 +90,8 @@ defmodule Atlas.Openfga do
   Read one authorization model (OpenFGA-wire ReadAuthorizationModel).
 
   `GET /v1/openfga/stores/{store}/authorization-models/{mid}`. Required scope: `fga:read`.
+
+  Response fields: `authorization_model`, `authorization_model.id`, `authorization_model.schema_version`, `authorization_model.type_definitions`, `authorization_model.type_definitions.type`, `authorization_model.type_definitions.relations`, `authorization_model.type_definitions.metadata`, `authorization_model.type_definitions.metadata.relations`.
   """
   def get_stores_by_store_authorization_models_by_mid(client, store, mid, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/openfga/stores/{store}/authorization-models/{mid}", %{"store" => store, "mid" => mid}, nil, opts)
@@ -77,6 +100,10 @@ defmodule Atlas.Openfga do
   Read relationship tuples, optionally filtered by a tuple key (OpenFGA-wire Read).
 
   `POST /v1/openfga/stores/{store}/read`. Required scope: `fga:read`.
+
+  Body fields: `tuple_key` (object), `page_size` (integer), `continuation_token` (string).
+  Nested body fields: `tuple_key.user`, `tuple_key.relation`, `tuple_key.object`.
+  Response fields: `tuples`, `tuples.key`, `tuples.key.user`, `tuples.key.relation`, `tuples.key.object`, `tuples.timestamp`, `continuation_token`.
   """
   def post_stores_read(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/read", %{"store" => store}, body, opts)
@@ -85,6 +112,10 @@ defmodule Atlas.Openfga do
   List the objects of a type a user has a relation on (OpenFGA-wire ListObjects).
 
   `POST /v1/openfga/stores/{store}/list-objects`. Required scope: `fga:read`.
+
+  Body fields: `type` (string, required), `relation` (string, required), `user` (string, required), `authorization_model_id` (string), `contextual_tuples` (object), `context` (object), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `contextual_tuples.tuple_keys`, `contextual_tuples.tuple_keys.user`, `contextual_tuples.tuple_keys.relation`, `contextual_tuples.tuple_keys.object`, `contextual_tuples.tuple_keys.condition`, `contextual_tuples.tuple_keys.condition.name`, `contextual_tuples.tuple_keys.condition.context`, `contextual_tuples.tuple_keys.expires_at`.
+  Response fields: `objects`.
   """
   def post_stores_list_objects(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/list-objects", %{"store" => store}, body, opts)
@@ -93,6 +124,10 @@ defmodule Atlas.Openfga do
   List the users that have a relation on an object (OpenFGA-wire ListUsers): concrete users, usersets (`user_filters[0].relation`), and the `type:*` wildcard with `excluded_users`. Honours contextual tuples and tuple conditions; pages with `page_size` / `continuation_token`.
 
   `POST /v1/openfga/stores/{store}/list-users`. Required scope: `fga:read`.
+
+  Body fields: `object` (object, required), `relation` (string, required), `user_filters` (array, required), `authorization_model_id` (string), `contextual_tuples` (object), `context` (object), `consistency` (enum), `consistency_token` (string), `page_size` (integer), `continuation_token` (string).
+  Nested body fields: `object.type`, `object.id`, `user_filters.type`, `user_filters.relation`, `contextual_tuples.tuple_keys`, `contextual_tuples.tuple_keys.user`, `contextual_tuples.tuple_keys.relation`, `contextual_tuples.tuple_keys.object`, `contextual_tuples.tuple_keys.condition`, `contextual_tuples.tuple_keys.condition.name`, `contextual_tuples.tuple_keys.condition.context`, `contextual_tuples.tuple_keys.expires_at`.
+  Response fields: `users`, `users.object`, `users.object.type`, `users.object.id`, `users.userset`, `users.userset.type`, `users.userset.id`, `users.userset.relation`, `users.wildcard`, `users.wildcard.type`, `excluded_users`, `excluded_users.object`, `excluded_users.object.type`, `excluded_users.object.id`, `continuation_token`.
   """
   def post_stores_list_users(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/list-users", %{"store" => store}, body, opts)
@@ -101,6 +136,9 @@ defmodule Atlas.Openfga do
   Read the tuple changelog (OpenFGA-wire ReadChanges): every tuple write and delete in order, resumable with `continuation_token` (the token is returned even on the last page — pass it later to receive only newer changes).
 
   `GET /v1/openfga/stores/{store}/changes`. Required scope: `fga:read`.
+
+  Query params (`params:`): `type`, `page_size`, `continuation_token`, `start_time`.
+  Response fields: `changes`, `changes.tuple_key`, `changes.tuple_key.user`, `changes.tuple_key.relation`, `changes.tuple_key.object`, `changes.tuple_key.condition`, `changes.tuple_key.condition.name`, `changes.tuple_key.condition.context`, `changes.tuple_key.expires_at`, `changes.operation`, `changes.timestamp`, `continuation_token`.
   """
   def get_stores_changes(client, store, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/openfga/stores/{store}/changes", %{"store" => store}, nil, opts)
@@ -109,6 +147,10 @@ defmodule Atlas.Openfga do
   Expand the userset tree for an (object, relation) (OpenFGA-wire Expand).
 
   `POST /v1/openfga/stores/{store}/expand`. Required scope: `fga:read`.
+
+  Body fields: `tuple_key` (object, required), `authorization_model_id` (string).
+  Nested body fields: `tuple_key.object`, `tuple_key.relation`.
+  Response fields: `tree`, `tree.root`, `tree.root.name`, `tree.root.union`, `tree.root.union.nodes`, `tree.root.intersection`, `tree.root.intersection.nodes`, `tree.root.difference`, `tree.root.difference.base`, `tree.root.difference.subtract`, `tree.root.leaf`, `tree.root.leaf.users`, `tree.root.leaf.users.users`, `tree.root.leaf.computed`, `tree.root.leaf.computed.userset`, `tree.root.leaf.tupleToUserset`, `tree.root.leaf.tupleToUserset.tupleset`, `tree.root.leaf.tupleToUserset.computed`.
   """
   def post_stores_expand(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/expand", %{"store" => store}, body, opts)
@@ -117,6 +159,10 @@ defmodule Atlas.Openfga do
   Check up to 100 tuples in one request, keyed by correlation id (OpenFGA-wire BatchCheck).
 
   `POST /v1/openfga/stores/{store}/batch-check`. Required scope: `fga:read`.
+
+  Body fields: `checks` (array, required), `authorization_model_id` (string), `consistency` (enum), `consistency_token` (string).
+  Nested body fields: `checks.tuple_key`, `checks.tuple_key.user`, `checks.tuple_key.relation`, `checks.tuple_key.object`, `checks.correlation_id`, `checks.contextual_tuples`, `checks.contextual_tuples.tuple_keys`, `checks.context`.
+  Response fields: `result`.
   """
   def post_stores_batch_check(client, store, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/openfga/stores/{store}/batch-check", %{"store" => store}, body, opts)
@@ -133,6 +179,8 @@ defmodule Atlas.Openfga do
   Replace the stored assertions for a model version.
 
   `PUT /v1/openfga/stores/{store}/assertions/{model}`. Required scope: `fga:write`.
+
+  Body fields: `assertions` (array).
   """
   def put_stores_assertions(client, store, model, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/openfga/stores/{store}/assertions/{model}", %{"store" => store, "model" => model}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.DesktopMfa do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.DesktopMfa do
   The desktop-login MFA policy: who must pass a second factor at OS login, the allowed factors and the offline grace window.
 
   `GET /v1/desktop_mfa/policy`. Required scope: `desktop_mfa:read`.
+
+  Response fields: `object`, `enabled`, `applies_to`, `user_ids`, `org_ids`, `allowed_factors`, `offline_enabled`, `offline_grace_hours`, `offline_pin_required`, `passkey_scope`, `passkey_rp_id`, `passkey_require_uv`, `device_sso_enabled`, `device_sso_session_minutes`, `device_sso_refresh_days`.
   """
   def get_policy(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/desktop_mfa/policy", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.DesktopMfa do
   Change the desktop-login MFA policy. Send only the fields to change. `applies_to: "selected"` needs at least one user or organization while enabled.
 
   `PUT /v1/desktop_mfa/policy`. Required scope: `desktop_mfa:write`.
+
+  Body fields: `device_sso_enabled` (boolean), `device_sso_session_minutes` (number), `device_sso_refresh_days` (number), `passkey_scope` (string), `passkey_rp_id` (string|null), `passkey_require_uv` (boolean), `enabled` (boolean), `applies_to` (string), `user_ids` (array), `org_ids` (array), `allowed_factors` (array), `offline_enabled` (boolean), `offline_grace_hours` (number), `offline_pin_required` (boolean).
+  Response fields: `object`, `enabled`, `applies_to`, `user_ids`, `org_ids`, `allowed_factors`, `offline_enabled`, `offline_grace_hours`, `offline_pin_required`, `passkey_scope`, `passkey_rp_id`, `passkey_require_uv`, `device_sso_enabled`, `device_sso_session_minutes`, `device_sso_refresh_days`.
   """
   def put_policy(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/desktop_mfa/policy", %{}, body, opts)
@@ -29,6 +35,9 @@ defmodule Atlas.DesktopMfa do
   Issue a single-use code a user types into the workstation agent to enrol it. Valid for `expires_in_minutes` (default 60, at most 7 days). Shown once.
 
   `POST /v1/desktop_mfa/enrolment_codes`. Required scope: `desktop_mfa:write`.
+
+  Body fields: `user_id` (string), `expires_in_minutes` (number).
+  Response fields: `object`, `code`, `expires_at`, `user_id`.
   """
   def post_enrolment_codes(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/desktop_mfa/enrolment_codes", %{}, body, opts)
@@ -37,12 +46,15 @@ defmodule Atlas.DesktopMfa do
   List enrolled workstations, optionally for one `user_id`.
 
   `GET /v1/desktop_mfa/devices`. Required scope: `desktop_mfa:read`.
+
+  Query params (`params:`): `user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.device_key_id`, `data.hostname`, `data.platform`, `data.agent_version`, `data.status`, `data.offline_pin_set`, `data.bundle_generation`, `data.last_seen_at`, `data.revoked_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_devices(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/desktop_mfa/devices", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_devices/1`, following the cursor page by page.
+  Lazy stream over every item of `get_devices`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_devices(client, opts \\ []),
@@ -52,6 +64,8 @@ defmodule Atlas.DesktopMfa do
   Read one workstation with the offline verifiers issued to it.
 
   `GET /v1/desktop_mfa/devices/{id}`. Required scope: `desktop_mfa:read`.
+
+  Response fields: `object`, `id`, `user_id`, `device_key_id`, `hostname`, `platform`, `agent_version`, `status`, `offline_pin_set`, `bundle_generation`, `last_seen_at`, `revoked_at`, `created_at`, `offline_bundles`, `offline_bundles.id`, `offline_bundles.generation`, `offline_bundles.issued_at`, `offline_bundles.expires_at`, `offline_bundles.revoked_at`.
   """
   def get_devices_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/desktop_mfa/devices/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.DesktopMfa do
   Delete a workstation and its device key.
 
   `DELETE /v1/desktop_mfa/devices/{id}`. Required scope: `desktop_mfa:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_devices(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/desktop_mfa/devices/{id}", %{"id" => id}, nil, opts)
@@ -68,6 +84,8 @@ defmodule Atlas.DesktopMfa do
   Revoke a workstation. Its next call is refused with `device_status: revoked` and it wipes its offline cache; offline unlock stops working at the latest when the cached verifier expires.
 
   `POST /v1/desktop_mfa/devices/{id}/revoke`. Required scope: `desktop_mfa:write`.
+
+  Response fields: `object`, `id`, `user_id`, `device_key_id`, `hostname`, `platform`, `agent_version`, `status`, `offline_pin_set`, `bundle_generation`, `last_seen_at`, `revoked_at`, `created_at`.
   """
   def post_devices_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/desktop_mfa/devices/{id}/revoke", %{"id" => id}, nil, opts)
@@ -76,6 +94,8 @@ defmodule Atlas.DesktopMfa do
   Void every offline verifier issued to the workstation without revoking it. It receives a fresh one on its next sync.
 
   `POST /v1/desktop_mfa/devices/{id}/revoke_offline_cache`. Required scope: `desktop_mfa:write`.
+
+  Response fields: `object`, `id`, `user_id`, `device_key_id`, `hostname`, `platform`, `agent_version`, `status`, `offline_pin_set`, `bundle_generation`, `last_seen_at`, `revoked_at`, `created_at`.
   """
   def post_devices_revoke_offline_cache(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/desktop_mfa/devices/{id}/revoke_offline_cache", %{"id" => id}, nil, opts)
@@ -84,12 +104,15 @@ defmodule Atlas.DesktopMfa do
   List the passkeys registered through a workstation.
 
   `GET /v1/desktop_mfa/devices/{id}/passkeys`. Required scope: `desktop_mfa:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.device_id`, `data.user_id`, `data.name`, `data.aaguid`, `data.transports`, `data.backed_up`, `data.last_used_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_devices_passkeys(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/desktop_mfa/devices/{id}/passkeys", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_devices_passkeys/2`, following the cursor page by page.
+  Lazy stream over every item of `get_devices_passkeys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_devices_passkeys(client, id, opts \\ []),
@@ -99,6 +122,8 @@ defmodule Atlas.DesktopMfa do
   Remove a passkey registered through a workstation. It stops answering the passkey factor at once.
 
   `DELETE /v1/desktop_mfa/devices/{id}/passkeys/{passkeyId}`. Required scope: `desktop_mfa:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_devices_passkeys(client, id, passkey_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/desktop_mfa/devices/{id}/passkeys/{passkeyId}", %{"id" => id, "passkeyId" => passkey_id}, nil, opts)

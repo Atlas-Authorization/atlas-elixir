@@ -5,7 +5,8 @@ defmodule Atlas.Groups do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Groups do
   Every instance group with its member count, by slug.
 
   `GET /v1/groups`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.slug`, `data.name`, `data.description`, `data.parent_id`, `data.attributes`, `data.app_role_keys`, `data.include_in_token`, `data.dynamic_filter`, `data.sso_match`, `data.member_count`, `data.source`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/groups", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Groups do
   Create an instance group. Emits group.created. → 201.
 
   `POST /v1/groups`. Required scope: `users:write`.
+
+  Body fields: `slug` (string, required), `name` (string, required), `description` (string|null), `parent_id` (string|null), `attributes` (object), `app_role_keys` (array), `include_in_token` (boolean), `dynamic_filter` (object|null), `sso_match` (object|null).
+  Response fields: `object`, `id`, `slug`, `name`, `description`, `parent_id`, `attributes`, `app_role_keys`, `include_in_token`, `dynamic_filter`, `sso_match`, `member_count`, `source`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/groups", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Groups do
   One group, by id or slug.
 
   `GET /v1/groups/{id}`. Required scope: `users:read`.
+
+  Response fields: `object`, `id`, `slug`, `name`, `description`, `parent_id`, `attributes`, `app_role_keys`, `include_in_token`, `dynamic_filter`, `sso_match`, `member_count`, `source`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/groups/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.Groups do
   Change a group. Emits group.updated.
 
   `PATCH /v1/groups/{id}`. Required scope: `users:write`.
+
+  Body fields: `slug` (string), `name` (string), `description` (string|null), `parent_id` (string|null), `attributes` (object), `app_role_keys` (array), `include_in_token` (boolean), `dynamic_filter` (object|null), `sso_match` (object|null).
+  Response fields: `object`, `id`, `slug`, `name`, `description`, `parent_id`, `attributes`, `app_role_keys`, `include_in_token`, `dynamic_filter`, `sso_match`, `member_count`, `source`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/groups/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.Groups do
   Delete a group: its memberships go, its children move to the top level. Emits group.deleted.
 
   `DELETE /v1/groups/{id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/groups/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +74,15 @@ defmodule Atlas.Groups do
   The members of one group (direct members only), with how each joined (manual, dynamic, sso, rule). Cursor paged by user id.
 
   `GET /v1/groups/{id}/members`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.group_id`, `data.user_id`, `data.source`, `data.source_ref`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_members(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/groups/{id}/members", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_members/2`, following the cursor page by page.
+  Lazy stream over every item of `get_members`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_members(client, id, opts \\ []),
@@ -75,6 +92,8 @@ defmodule Atlas.Groups do
   Add up to 500 users by hand. A member who joined by filter, SSO or rule becomes manual, so a re-apply leaves them. Emits group.member_added per new member.
 
   `POST /v1/groups/{id}/members`. Required scope: `users:write`.
+
+  Body fields: `user_ids` (array, required).
   """
   def post_members(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/groups/{id}/members", %{"id" => id}, body, opts)
@@ -83,6 +102,8 @@ defmodule Atlas.Groups do
   Remove up to 500 users from a group. Emits group.member_removed.
 
   `POST /v1/groups/{id}/members/remove`. Required scope: `users:write`.
+
+  Body fields: `user_ids` (array, required).
   """
   def post_members_remove(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/groups/{id}/members/remove", %{"id" => id}, body, opts)
@@ -91,6 +112,8 @@ defmodule Atlas.Groups do
   Re-evaluate a dynamic group now: users matching dynamic_filter are added, those who no longer match are removed; manual members are never touched (400 when the group has no dynamic_filter, or the filter matches over 50,000 users).
 
   `POST /v1/groups/{id}/reapply`. Required scope: `users:write`.
+
+  Response fields: `object`, `group_id`, `matched`, `added`, `removed`.
   """
   def post_reapply(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/groups/{id}/reapply", %{"id" => id}, nil, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.ActorTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,10 @@ defmodule Atlas.ActorTokens do
   Mint a one-time actor token; the redeemed session carries the RFC 8693 act claim naming the impersonator. Always audited.
 
   `POST /v1/actor_tokens`. Required scope: `impersonation:write`.
+
+  Body fields: `user_id` (string), `actor` (object), `expires_in_seconds` (number).
+  Nested body fields: `actor.sub`.
+  Response fields: `object`, `id`, `user_id`, `actor`, `actor.sub`, `token`, `expires_in`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/actor_tokens", %{}, body, opts)
@@ -21,6 +26,8 @@ defmodule Atlas.ActorTokens do
   Revoke an unredeemed actor token so it can no longer be exchanged for a session.
 
   `POST /v1/actor_tokens/{id}/revoke`. Required scope: `impersonation:write`.
+
+  Response fields: `object`, `id`, `revoked`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/actor_tokens/{id}/revoke", %{"id" => id}, nil, opts)

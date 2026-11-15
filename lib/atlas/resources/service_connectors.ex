@@ -5,7 +5,8 @@ defmodule Atlas.ServiceConnectors do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ServiceConnectors do
   List the instance's service connectors. Credentials are never returned.
 
   `GET /v1/service_connectors`. Required scope: `service_connectors:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.kind`, `data.category`, `data.config`, `data.enabled`, `data.last_used_at`, `data.last_status`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/service_connectors", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.ServiceConnectors do
   Connect a service. `credentials` are checked against the kind's fields and stored in the vault (never returned again); `config` holds the non-secret settings. 409 when the name is taken.
 
   `POST /v1/service_connectors`. Required scope: `service_connectors:write`.
+
+  Body fields: `name` (string), `kind` (string), `config` (object), `credentials` (object).
+  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/service_connectors", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.ServiceConnectors do
   Read one service connector.
 
   `GET /v1/service_connectors/{id}`. Required scope: `service_connectors:read`.
+
+  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/service_connectors/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.ServiceConnectors do
   Rename, enable or disable a connector, merge new `config` values, or replace individual `credentials` (written as a new vault version; the others are kept).
 
   `PATCH /v1/service_connectors/{id}`. Required scope: `service_connectors:write`.
+
+  Body fields: `name` (string), `enabled` (boolean), `config` (object), `credentials` (object).
+  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/service_connectors/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.ServiceConnectors do
   Delete a connector and its stored credentials.
 
   `DELETE /v1/service_connectors/{id}`. Required scope: `service_connectors:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/service_connectors/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,9 @@ defmodule Atlas.ServiceConnectors do
   Run one operation of the connector (send a message, read a fraud signal, start an identity check). `input` is checked against the operation's fields. A refusal or failure from the service is 502 CONNECTOR_UPSTREAM_ERROR with its own message. Each call is audited without its input or output.
 
   `POST /v1/service_connectors/{id}/invoke`. Required scope: `service_connectors:invoke`.
+
+  Body fields: `operation` (string), `input` (object).
+  Response fields: `object`, `operation`, `result`.
   """
   def post_invoke(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/service_connectors/{id}/invoke", %{"id" => id}, body, opts)

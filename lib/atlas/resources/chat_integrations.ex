@@ -5,7 +5,8 @@ defmodule Atlas.ChatIntegrations do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ChatIntegrations do
   List chat integrations (Slack workspaces and Teams bots).
 
   `GET /v1/chat_integrations`. Required scope: `service_connectors:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.provider`, `data.name`, `data.config`, `data.routing`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/chat_integrations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.ChatIntegrations do
   Connect a Slack workspace or a Teams bot using your own app. Slack credentials are checked with the workspace before saving.
 
   `POST /v1/chat_integrations`. Required scope: `service_connectors:write`.
+
+  Body fields: `provider` (enum, required), `name` (string, required), `credentials` (object, required), `config` (object), `routing` (object).
+  Response fields: `object`, `id`, `provider`, `name`, `config`, `routing`, `enabled`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/chat_integrations", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.ChatIntegrations do
   Read one chat integration.
 
   `GET /v1/chat_integrations/{id}`. Required scope: `service_connectors:read`.
+
+  Response fields: `object`, `id`, `provider`, `name`, `config`, `routing`, `enabled`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/chat_integrations/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.ChatIntegrations do
   Turn an integration on or off, change its routing, settings or credentials. `config.agent_approver_user_ids` lists who may decide agent access requests from chat.
 
   `PATCH /v1/chat_integrations/{id}`. Required scope: `service_connectors:write`.
+
+  Body fields: `enabled` (boolean), `config` (object), `credentials` (object), `routing` (object).
+  Response fields: `object`, `id`, `provider`, `name`, `config`, `routing`, `enabled`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/chat_integrations/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.ChatIntegrations do
   Remove an integration and its stored credentials.
 
   `DELETE /v1/chat_integrations/{id}`. Required scope: `service_connectors:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/chat_integrations/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.ChatIntegrations do
   Post a harmless test message to the default channel or conversation.
 
   `POST /v1/chat_integrations/{id}/test`. Required scope: `service_connectors:write`.
+
+  Response fields: `object`, `id`, `sent`.
   """
   def post_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/chat_integrations/{id}/test", %{"id" => id}, nil, opts)
@@ -68,12 +84,15 @@ defmodule Atlas.ChatIntegrations do
   Chat users linked to Atlas users. A link is made automatically on first click when the chat profile email matches a verified email.
 
   `GET /v1/chat_integrations/{id}/user_links`. Required scope: `service_connectors:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.chat_user_id`, `data.user_id`, `data.source`, `data.created_at`, `has_more`.
   """
   def get_user_links(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/chat_integrations/{id}/user_links", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_user_links/2`, following the cursor page by page.
+  Lazy stream over every item of `get_user_links`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_user_links(client, id, opts \\ []),
@@ -83,6 +102,9 @@ defmodule Atlas.ChatIntegrations do
   Link a chat user to an Atlas user by hand.
 
   `POST /v1/chat_integrations/{id}/user_links`. Required scope: `service_connectors:write`.
+
+  Body fields: `chat_user_id` (string, required), `user_id` (string, required).
+  Response fields: `object`, `id`, `chat_user_id`, `user_id`, `source`, `created_at`.
   """
   def post_user_links(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/chat_integrations/{id}/user_links", %{"id" => id}, body, opts)
@@ -91,6 +113,8 @@ defmodule Atlas.ChatIntegrations do
   Remove the link between a chat user and an Atlas user.
 
   `DELETE /v1/chat_integrations/{id}/user_links/{linkId}`. Required scope: `service_connectors:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_user_links(client, id, link_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/chat_integrations/{id}/user_links/{linkId}", %{"id" => id, "linkId" => link_id}, nil, opts)
@@ -99,12 +123,15 @@ defmodule Atlas.ChatIntegrations do
   The latest button clicks and what became of them (applied, refused, unlinked, stale).
 
   `GET /v1/chat_integrations/{id}/interactions`. Required scope: `service_connectors:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.chat_user_id`, `data.user_id`, `data.decision`, `data.outcome`, `data.detail`, `data.created_at`, `has_more`.
   """
   def get_interactions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/chat_integrations/{id}/interactions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_interactions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_interactions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_interactions(client, id, opts \\ []),

@@ -5,7 +5,8 @@ defmodule Atlas.EntitlementOverrides do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.EntitlementOverrides do
   List sales-led entitlement overrides, optionally filtered by subject_type (user/org) and subject_id. Includes expired ones (an expired override is retained for audit but no longer applies).
 
   `GET /v1/entitlement_overrides`. Required scope: `billing:read`.
+
+  Query params (`params:`): `subject_type`, `subject_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.subject_type`, `data.subject_id`, `data.plan`, `data.features`, `data.limits`, `data.expires_at`, `data.created_by`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/entitlement_overrides", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.EntitlementOverrides do
   Grant a SALES-LED entitlement override (P1-6): pin a plan / features / limits onto a user or org without Stripe (e.g. an Enterprise contract). A non-expired override WINS over the Stripe-derived entitlement and reaches the `pla`/`ent` claims on the next session. At least one of plan, features or limits is required.
 
   `POST /v1/entitlement_overrides`. Required scope: `billing:write`.
+
+  Body fields: `subject_type` (enum, required), `subject_id` (string, required), `plan` (string|null), `features` (array|null), `limits` (object|null), `expires_at` (integer|null), `internal` (boolean).
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan`, `features`, `limits`, `expires_at`, `created_by`, `created_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/entitlement_overrides", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.EntitlementOverrides do
   Revoke (hard-delete) a sales-led entitlement override. The subject reverts to its Stripe-derived entitlement on the next session mint.
 
   `DELETE /v1/entitlement_overrides/{id}`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/entitlement_overrides/{id}", %{"id" => id}, nil, opts)

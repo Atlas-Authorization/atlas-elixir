@@ -5,7 +5,8 @@ defmodule Atlas.ServiceConnectorCatalog do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ServiceConnectorCatalog do
   The services you can connect: for each kind the credential fields, the config fields and the operations with their inputs. Messaging (Twilio, SendGrid, Slack), CRM (HubSpot, Salesforce), analytics (Segment), fraud (Fingerprint, Arkose Labs, Forter, Sardine), identity verification (Persona, Onfido, Veriff, Stripe Identity) and a generic HTTPS connector.
 
   `GET /v1/service_connector_catalog`. Required scope: `service_connectors:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kind`, `data.name`, `data.category`, `data.summary`, `data.credentials`, `data.credentials.key`, `data.credentials.label`, `data.credentials.required`, `data.credentials.type`, `data.credentials.enum`, `data.credentials.default`, `data.config`, `data.config.key`, `data.config.label`, `data.config.required`, `data.config.type`, `data.config.enum`, `data.config.default`, `data.operations`, `data.operations.operation`, `data.operations.summary`, `data.operations.input`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/service_connector_catalog", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),

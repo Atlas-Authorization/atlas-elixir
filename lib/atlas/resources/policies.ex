@@ -5,7 +5,8 @@ defmodule Atlas.Policies do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Policies do
   List the policies (active; include_retired=true for all), each with its current, upcoming and latest version.
 
   `GET /v1/policies`. Required scope: `instance:read`.
+
+  Query params (`params:`): `include_retired`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.title`, `data.display`, `data.required`, `data.applies_to`, `data.audience`, `data.reaccept`, `data.grace_days`, `data.source`, `data.position`, `data.status`, `data.overrides`, `data.current_version`, `data.current_version.id`, `data.current_version.version`, `data.current_version.status`, `data.current_version.content_sha256`, `data.current_version.published_at`, `data.current_version.effective_at`, `data.upcoming_version`, `data.upcoming_version.id`, `data.upcoming_version.version`, `data.upcoming_version.status`, `data.upcoming_version.content_sha256`, `data.upcoming_version.published_at`, `data.upcoming_version.effective_at`, `data.latest_version`, `data.latest_version.id`, `data.latest_version.version`, `data.latest_version.status`, `data.latest_version.content_sha256`, `data.latest_version.published_at`, `data.latest_version.effective_at`, `data.retired_at`, `data.created_at`, `data.updated_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policies", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Policies do
   Create a policy. key and title are required. display: checkbox (default), scroll (an unskippable reader; acceptance needs scrolled_to_end) or link (clickwrap). applies_to: sign_up (default) or sign_in_and_sign_up (existing users re-accept new versions per reaccept: none, next_sign_in, or grace with grace_days). It asks nobody anything until a version is published.
 
   `POST /v1/policies`. Required scope: `instance:write`.
+
+  Body fields: `key` (string, required), `title` (string, required), `display` (enum), `required` (boolean), `applies_to` (enum), `reaccept` (enum), `grace_days` (integer|null), `position` (integer).
+  Response fields: `object`, `id`, `key`, `title`, `display`, `required`, `applies_to`, `audience`, `reaccept`, `grace_days`, `source`, `position`, `status`, `overrides`, `current_version`, `current_version.id`, `current_version.version`, `current_version.status`, `current_version.content_sha256`, `current_version.published_at`, `current_version.effective_at`, `upcoming_version`, `upcoming_version.id`, `upcoming_version.version`, `upcoming_version.status`, `upcoming_version.content_sha256`, `upcoming_version.published_at`, `upcoming_version.effective_at`, `latest_version`, `latest_version.id`, `latest_version.version`, `latest_version.status`, `latest_version.content_sha256`, `latest_version.published_at`, `latest_version.effective_at`, `retired_at`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policies", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Policies do
   One policy, by id or key.
 
   `GET /v1/policies/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `key`, `title`, `display`, `required`, `applies_to`, `audience`, `reaccept`, `grace_days`, `source`, `position`, `status`, `overrides`, `current_version`, `current_version.id`, `current_version.version`, `current_version.status`, `current_version.content_sha256`, `current_version.published_at`, `current_version.effective_at`, `upcoming_version`, `upcoming_version.id`, `upcoming_version.version`, `upcoming_version.status`, `upcoming_version.content_sha256`, `upcoming_version.published_at`, `upcoming_version.effective_at`, `latest_version`, `latest_version.id`, `latest_version.version`, `latest_version.status`, `latest_version.content_sha256`, `latest_version.published_at`, `latest_version.effective_at`, `retired_at`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policies/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.Policies do
   Update a policy (the key cannot change). status: retired stops it gating (history is kept); active brings it back. On an external policy the changed fields are kept across syncs (overrides).
 
   `PATCH /v1/policies/{id}`. Required scope: `instance:write`.
+
+  Body fields: `key` (string), `title` (string), `display` (enum), `required` (boolean), `applies_to` (enum), `reaccept` (enum), `grace_days` (integer|null), `position` (integer), `status` (enum).
+  Response fields: `object`, `id`, `key`, `title`, `display`, `required`, `applies_to`, `audience`, `reaccept`, `grace_days`, `source`, `position`, `status`, `overrides`, `current_version`, `current_version.id`, `current_version.version`, `current_version.status`, `current_version.content_sha256`, `current_version.published_at`, `current_version.effective_at`, `upcoming_version`, `upcoming_version.id`, `upcoming_version.version`, `upcoming_version.status`, `upcoming_version.content_sha256`, `upcoming_version.published_at`, `upcoming_version.effective_at`, `latest_version`, `latest_version.id`, `latest_version.version`, `latest_version.status`, `latest_version.content_sha256`, `latest_version.published_at`, `latest_version.effective_at`, `retired_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/policies/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.Policies do
   Delete a policy that was never published; one with a published version is retired instead (acceptances are evidence and stay).
 
   `DELETE /v1/policies/{id}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `key`, `deleted`, `retired`, `policy`, `policy.object`, `policy.id`, `policy.key`, `policy.title`, `policy.display`, `policy.required`, `policy.applies_to`, `policy.audience`, `policy.reaccept`, `policy.grace_days`, `policy.source`, `policy.position`, `policy.status`, `policy.overrides`, `policy.current_version`, `policy.current_version.id`, `policy.current_version.version`, `policy.current_version.status`, `policy.current_version.content_sha256`, `policy.current_version.published_at`, `policy.current_version.effective_at`, `policy.upcoming_version`, `policy.upcoming_version.id`, `policy.upcoming_version.version`, `policy.upcoming_version.status`, `policy.upcoming_version.content_sha256`, `policy.upcoming_version.published_at`, `policy.upcoming_version.effective_at`, `policy.latest_version`, `policy.latest_version.id`, `policy.latest_version.version`, `policy.latest_version.status`, `policy.latest_version.content_sha256`, `policy.latest_version.published_at`, `policy.latest_version.effective_at`, `policy.retired_at`, `policy.created_at`, `policy.updated_at`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/policies/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +74,15 @@ defmodule Atlas.Policies do
   The policy's versions, newest first, each with acceptance_count.
 
   `GET /v1/policies/{id}/versions`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.policy_id`, `data.policy`, `data.version`, `data.status`, `data.content_markdown`, `data.content_html`, `data.content_url`, `data.content_sha256`, `data.summary_of_changes`, `data.locale`, `data.published_at`, `data.effective_at`, `data.retired_at`, `data.created_at`, `data.updated_at`, `data.acceptance_count`.
   """
   def get_by_id_versions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policies/{id}/versions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_versions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_versions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_versions(client, id, opts \\ []),
@@ -75,6 +92,9 @@ defmodule Atlas.Policies do
   Create a version: a draft, or published at once with publish: true (and effective_at). content_markdown is rendered and sanitised, content_html is sanitised; content_sha256 is the hash of the result. 400 for an external policy (its versions come from the policy source).
 
   `POST /v1/policies/{id}/versions`. Required scope: `instance:write`.
+
+  Body fields: `version` (string, required), `content_markdown` (string), `content_html` (string), `content_url` (string|null), `summary_of_changes` (string|null), `locale` (string|null), `publish` (boolean), `effective_at` (integer|string).
+  Response fields: `object`, `id`, `policy_id`, `policy`, `version`, `status`, `content_markdown`, `content_html`, `content_url`, `content_sha256`, `summary_of_changes`, `locale`, `published_at`, `effective_at`, `retired_at`, `created_at`, `updated_at`, `acceptance_count`.
   """
   def post_versions(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policies/{id}/versions", %{"id" => id}, body, opts)
@@ -83,6 +103,8 @@ defmodule Atlas.Policies do
   One version, by id or label.
 
   `GET /v1/policies/{id}/versions/{versionId}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `policy_id`, `policy`, `version`, `status`, `content_markdown`, `content_html`, `content_url`, `content_sha256`, `summary_of_changes`, `locale`, `published_at`, `effective_at`, `retired_at`, `created_at`, `updated_at`, `acceptance_count`.
   """
   def get_by_id_versions_by_version_id(client, id, version_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policies/{id}/versions/{versionId}", %{"id" => id, "versionId" => version_id}, nil, opts)
@@ -91,6 +113,9 @@ defmodule Atlas.Policies do
   Edit a draft (409 for a published version: publish a new version instead).
 
   `PATCH /v1/policies/{id}/versions/{versionId}`. Required scope: `instance:write`.
+
+  Body fields: `version` (string), `content_markdown` (string), `content_html` (string), `content_url` (string|null), `summary_of_changes` (string|null), `locale` (string|null), `publish` (boolean), `effective_at` (integer|string).
+  Response fields: `object`, `id`, `policy_id`, `policy`, `version`, `status`, `content_markdown`, `content_html`, `content_url`, `content_sha256`, `summary_of_changes`, `locale`, `published_at`, `effective_at`, `retired_at`, `created_at`, `updated_at`, `acceptance_count`.
   """
   def update_versions(client, id, version_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/policies/{id}/versions/{versionId}", %{"id" => id, "versionId" => version_id}, body, opts)
@@ -99,6 +124,8 @@ defmodule Atlas.Policies do
   Delete a draft (409 for a published version: retire it instead).
 
   `DELETE /v1/policies/{id}/versions/{versionId}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_versions(client, id, version_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/policies/{id}/versions/{versionId}", %{"id" => id, "versionId" => version_id}, nil, opts)
@@ -107,6 +134,9 @@ defmodule Atlas.Policies do
   Publish a draft. effective_at (epoch ms or ISO, default now) is when sign-ups must accept it and sign-ins re-ask per the reaccept rule; it can be accepted early once published. Fires policy.version_published.
 
   `POST /v1/policies/{id}/versions/{versionId}/publish`. Required scope: `instance:write`.
+
+  Body fields: `effective_at` (integer|string).
+  Response fields: `object`, `id`, `policy_id`, `policy`, `version`, `status`, `content_markdown`, `content_html`, `content_url`, `content_sha256`, `summary_of_changes`, `locale`, `published_at`, `effective_at`, `retired_at`, `created_at`, `updated_at`, `acceptance_count`.
   """
   def post_versions_publish(client, id, version_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policies/{id}/versions/{versionId}/publish", %{"id" => id, "versionId" => version_id}, body, opts)
@@ -115,6 +145,8 @@ defmodule Atlas.Policies do
   Retire a published version: it no longer gates or is offered; its acceptances stay.
 
   `POST /v1/policies/{id}/versions/{versionId}/retire`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `policy_id`, `policy`, `version`, `status`, `content_markdown`, `content_html`, `content_url`, `content_sha256`, `summary_of_changes`, `locale`, `published_at`, `effective_at`, `retired_at`, `created_at`, `updated_at`, `acceptance_count`.
   """
   def post_versions_retire(client, id, version_id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/policies/{id}/versions/{versionId}/retire", %{"id" => id, "versionId" => version_id}, nil, opts)
@@ -123,16 +155,79 @@ defmodule Atlas.Policies do
   Who accepted the policy (optionally one version), newest first, with the evidence (version id, content hash, display, scrolled_to_end, view_ms, locale, source, IP, user agent). format=csv returns text/csv (up to 100,000 rows).
 
   `GET /v1/policies/{id}/acceptances`. Required scope: `users:read`.
+
+  Query params (`params:`): `version`, `status`, `limit`, `starting_after`, `format`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.policy`, `data.version`, `data.policy_version_id`, `data.status`, `data.source`, `data.content_sha256`, `data.display`, `data.scrolled_to_end`, `data.view_ms`, `data.locale`, `data.ip`, `data.user_agent`, `data.accepted_at`, `has_more`, `next_cursor`.
   """
   def get_acceptances(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/policies/{id}/acceptances", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_acceptances/2`, following the cursor page by page.
+  Lazy stream over every item of `get_acceptances`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_acceptances(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/policies/{id}/acceptances", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Who a policy is asked of: everyone, or the members of the listed organizations.
+
+  `GET /v1/policies/{id}/audience`. Required scope: `instance:read`.
+
+  Response fields: `object`, `policy`, `policy_id`, `audience`, `organization_ids`.
+  """
+  def get_audience(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/policies/{id}/audience", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Set a policy's audience. orgs asks only members of the listed organizations (1-200, all must exist) at their next sign-in, and never at sign-up; everyone (the default) clears the list. A user who is in none of the organizations is not asked and is not blocked.
+
+  `PUT /v1/policies/{id}/audience`. Required scope: `instance:write`.
+
+  Body fields: `audience` (enum, required), `organization_ids` (array).
+  Response fields: `object`, `policy`, `policy_id`, `audience`, `organization_ids`.
+  """
+  def put_audience(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/policies/{id}/audience", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  A policy version's texts in other languages.
+
+  `GET /v1/policies/{id}/versions/{versionId}/translations`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.policy`, `data.version_id`, `data.version`, `data.locale`, `data.title`, `data.content_markdown`, `data.content_html`, `data.content_sha256`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  """
+  def get_versions_translations(client, id, version_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/policies/{id}/versions/{versionId}/translations", %{"id" => id, "versionId" => version_id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_versions_translations`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_versions_translations(client, id, version_id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/policies/{id}/versions/{versionId}/translations", %{"id" => id, "versionId" => version_id}, opts)
+
+  @doc ~S"""
+  Add or replace the text of a version in one language (content_markdown or content_html, sanitised like the version itself). GET /v1/client/policies?locale= then serves it, and an acceptance records the hash of the text that was shown. A published version can gain languages but a language already there cannot change (409); a draft can change freely. 400 for an external policy.
+
+  `PUT /v1/policies/{id}/versions/{versionId}/translations/{locale}`. Required scope: `instance:write`.
+
+  Body fields: `title` (string|null), `content_markdown` (string), `content_html` (string).
+  Response fields: `object`, `id`, `policy`, `version_id`, `version`, `locale`, `title`, `content_markdown`, `content_html`, `content_sha256`, `created_at`, `updated_at`.
+  """
+  def put_versions_translations(client, id, version_id, locale, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/policies/{id}/versions/{versionId}/translations/{locale}", %{"id" => id, "versionId" => version_id, "locale" => locale}, body, opts)
+
+  @doc ~S"""
+  Remove a translation from a draft version. A published version's translations stay (409).
+
+  `DELETE /v1/policies/{id}/versions/{versionId}/translations/{locale}`. Required scope: `instance:write`.
+
+  Response fields: `object`, `version_id`, `locale`, `deleted`.
+  """
+  def delete_versions_translations(client, id, version_id, locale, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/policies/{id}/versions/{versionId}/translations/{locale}", %{"id" => id, "versionId" => version_id, "locale" => locale}, nil, opts)
 
   @doc false
   def __operations__, do: [
@@ -148,6 +243,11 @@ defmodule Atlas.Policies do
     {:delete_versions, :delete, "/v1/policies/{id}/versions/{versionId}", 2, false, false},
     {:post_versions_publish, :post, "/v1/policies/{id}/versions/{versionId}/publish", 2, true, false},
     {:post_versions_retire, :post, "/v1/policies/{id}/versions/{versionId}/retire", 2, false, false},
-    {:get_acceptances, :get, "/v1/policies/{id}/acceptances", 1, false, true}
+    {:get_acceptances, :get, "/v1/policies/{id}/acceptances", 1, false, true},
+    {:get_audience, :get, "/v1/policies/{id}/audience", 1, false, false},
+    {:put_audience, :put, "/v1/policies/{id}/audience", 1, true, false},
+    {:get_versions_translations, :get, "/v1/policies/{id}/versions/{versionId}/translations", 2, false, true},
+    {:put_versions_translations, :put, "/v1/policies/{id}/versions/{versionId}/translations/{locale}", 3, true, false},
+    {:delete_versions_translations, :delete, "/v1/policies/{id}/versions/{versionId}/translations/{locale}", 3, false, false}
   ]
 end

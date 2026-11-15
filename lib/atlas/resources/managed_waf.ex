@@ -5,7 +5,8 @@ defmodule Atlas.ManagedWaf do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.ManagedWaf do
   §5 Read the managed AWS WAF configuration and provisioning state. AWS credential secrets are never returned, only has_* markers.
 
   `GET /v1/managed_waf`. Required scope: `managed_waf:read`.
+
+  Response fields: `object`, `configured`, `enabled`, `status`, `scope`, `region`, `web_acl_name`, `edge_resource_arn`, `cloudfront_distribution_id`, `token_domains`, `gated_paths`, `immunity_seconds`, `credential`, `credential.mode`, `credential.access_key_id`, `credential.has_secret_access_key`, `credential.role_arn`, `credential.has_external_id`, `web_acl_id`, `web_acl_arn`, `last_error`, `last_provisioned_at`, `updated_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/managed_waf", %{}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.ManagedWaf do
   §5 Configure the managed AWS WAF: scope/region, edge target, token domains, gated paths, and the write-only BYO AWS credentials. Enabling points auth_config.captcha at awswaf.
 
   `PUT /v1/managed_waf`. Required scope: `managed_waf:write`.
+
+  Body fields: `enabled` (boolean), `scope` (enum), `region` (string), `web_acl_name` (string), `edge_resource_arn` (string|null), `cloudfront_distribution_id` (string|null), `token_domains` (array), `gated_paths` (array), `immunity_seconds` (integer), `credential` (object).
+  Nested body fields: `credential.mode`, `credential.access_key_id`, `credential.secret_access_key`, `credential.role_arn`, `credential.external_id`.
+  Response fields: `object`, `configured`, `enabled`, `status`, `scope`, `region`, `web_acl_name`, `edge_resource_arn`, `cloudfront_distribution_id`, `token_domains`, `gated_paths`, `immunity_seconds`, `credential`, `credential.mode`, `credential.access_key_id`, `credential.has_secret_access_key`, `credential.role_arn`, `credential.has_external_id`, `web_acl_id`, `web_acl_arn`, `last_error`, `last_provisioned_at`, `updated_at`.
   """
   def put(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/managed_waf", %{}, body, opts)
@@ -29,6 +36,8 @@ defmodule Atlas.ManagedWaf do
   §5 Read just the managed AWS WAF provisioning state: status, WebACL id/arn, last error and last-provisioned time.
 
   `GET /v1/managed_waf/status`. Required scope: `managed_waf:read`.
+
+  Response fields: `object`, `enabled`, `status`, `web_acl_id`, `web_acl_arn`, `last_error`, `last_provisioned_at`.
   """
   def get_status(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/managed_waf/status", %{}, nil, opts)
@@ -37,6 +46,8 @@ defmodule Atlas.ManagedWaf do
   §5 Provision now: idempotently create-or-update the AWS WAF WebACL with the CAPTCHA rule and associate it with the edge (ALB or CloudFront). Fail-safe: AWS errors are recorded, not thrown into auth. 422 MANAGED_WAF_NOT_CONFIGURED when no WAF configuration has been saved.
 
   `POST /v1/managed_waf/provision`. Required scope: `managed_waf:write`.
+
+  Response fields: `object`, `configured`, `enabled`, `status`, `scope`, `region`, `web_acl_name`, `edge_resource_arn`, `cloudfront_distribution_id`, `token_domains`, `gated_paths`, `immunity_seconds`, `credential`, `credential.mode`, `credential.access_key_id`, `credential.has_secret_access_key`, `credential.role_arn`, `credential.has_external_id`, `web_acl_id`, `web_acl_arn`, `last_error`, `last_provisioned_at`, `updated_at`, `ok`, `error`.
   """
   def post_provision(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/managed_waf/provision", %{}, nil, opts)
@@ -45,6 +56,8 @@ defmodule Atlas.ManagedWaf do
   §5 Deprovision: disassociate the WebACL from the edge and delete it, then clear the stored state. Fail-safe like provision. 422 MANAGED_WAF_NOT_CONFIGURED when no WAF configuration has been saved.
 
   `POST /v1/managed_waf/deprovision`. Required scope: `managed_waf:write`.
+
+  Response fields: `object`, `configured`, `enabled`, `status`, `scope`, `region`, `web_acl_name`, `edge_resource_arn`, `cloudfront_distribution_id`, `token_domains`, `gated_paths`, `immunity_seconds`, `credential`, `credential.mode`, `credential.access_key_id`, `credential.has_secret_access_key`, `credential.role_arn`, `credential.has_external_id`, `web_acl_id`, `web_acl_arn`, `last_error`, `last_provisioned_at`, `updated_at`, `ok`, `error`.
   """
   def post_deprovision(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/managed_waf/deprovision", %{}, nil, opts)

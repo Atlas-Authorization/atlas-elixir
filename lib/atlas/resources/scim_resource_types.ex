@@ -5,7 +5,8 @@ defmodule Atlas.ScimResourceTypes do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ScimResourceTypes do
   List the custom SCIM resource types this instance serves beyond Users and Groups.
 
   `GET /v1/scim_resource_types`. Required scope: `scim:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.endpoint`, `data.schema_uri`, `data.description`, `data.attributes`, `data.created_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_resource_types", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.ScimResourceTypes do
   Define a custom SCIM resource type: a name, an endpoint served at /scim/v2/<endpoint>, a schema URN and attribute definitions (type, multiValued, required, mutability). Directory tokens then create, read, filter, patch and delete resources of it, per organization.
 
   `POST /v1/scim_resource_types`. Required scope: `scim:write`.
+
+  Body fields: `name` (string, required), `endpoint` (string, required), `schema_uri` (string, required), `description` (string), `attributes` (array).
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_resource_types", %{}, body, opts)
@@ -36,6 +42,8 @@ defmodule Atlas.ScimResourceTypes do
   Read one custom SCIM resource type.
 
   `GET /v1/scim_resource_types/{id}`. Required scope: `scim:read`.
+
+  Response fields: `object`, `id`, `name`, `endpoint`, `schema_uri`, `description`, `attributes`, `created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_resource_types/{id}", %{"id" => id}, nil, opts)

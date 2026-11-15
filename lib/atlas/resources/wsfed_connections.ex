@@ -5,7 +5,8 @@ defmodule Atlas.WsfedConnections do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.WsfedConnections do
   List WS-Federation relying-party connections (sign people in through AD FS or another WS-Federation provider).
 
   `GET /v1/wsfed_connections`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.status`, `data.issuer`, `data.passive_endpoint`, `data.realm`, `data.signing_certificate_count`, `data.allowed_domains`, `data.attribute_mapping`, `data.freshness_minutes`, `data.auth_method`, `data.acs_url`, `data.logout_start_url`, `data.created_at`, `data.updated_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/wsfed_connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.WsfedConnections do
   Add a WS-Federation connection. Give the provider's federation metadata (metadata_url or metadata_xml) or its issuer, passive endpoint and signing certificates, and the realm. Sign-in starts at POST /v1/client/sign_ins/wsfed.
 
   `POST /v1/wsfed_connections`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `status` (enum), `metadata_url` (string), `metadata_xml` (string), `issuer` (string), `passive_endpoint` (string), `signing_certificates` (string), `realm` (string), `allowed_domains` (array), `attribute_mapping` (object|null), `freshness_minutes` (integer|null), `auth_method` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `status`, `issuer`, `passive_endpoint`, `realm`, `signing_certificate_count`, `allowed_domains`, `attribute_mapping`, `freshness_minutes`, `auth_method`, `acs_url`, `logout_start_url`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/wsfed_connections", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.WsfedConnections do
   Read one WS-Federation connection with the reply URL to enter at the provider.
 
   `GET /v1/wsfed_connections/{id}`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `status`, `issuer`, `passive_endpoint`, `realm`, `signing_certificate_count`, `allowed_domains`, `attribute_mapping`, `freshness_minutes`, `auth_method`, `acs_url`, `logout_start_url`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/wsfed_connections/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.WsfedConnections do
   Change a WS-Federation connection; sending metadata refreshes the certificates after a provider rollover.
 
   `PATCH /v1/wsfed_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `status` (enum), `metadata_url` (string), `metadata_xml` (string), `issuer` (string), `passive_endpoint` (string), `signing_certificates` (string), `realm` (string), `allowed_domains` (array), `attribute_mapping` (object|null), `freshness_minutes` (integer|null), `auth_method` (string|null).
+  Response fields: `object`, `id`, `organization_id`, `status`, `issuer`, `passive_endpoint`, `realm`, `signing_certificate_count`, `allowed_domains`, `attribute_mapping`, `freshness_minutes`, `auth_method`, `acs_url`, `logout_start_url`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/wsfed_connections/{id}", %{"id" => id}, body, opts)

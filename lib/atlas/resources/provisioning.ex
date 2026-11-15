@@ -5,7 +5,8 @@ defmodule Atlas.Provisioning do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Provisioning do
   Evaluate an attribute mapping for one user and return each attribute's value and the payload a connector would receive. Takes the mapping and lookups, or a target_id to use its own, and a real user_id or a made-up sample user. Writes nothing and contacts nobody; this is the live preview behind the mapping editor.
 
   `POST /v1/provisioning/preview`. Required scope: `scim_provisioning:read`.
+
+  Body fields: `attribute_mapping` (object), `lookups` (object), `target_id` (string), `user_id` (string), `user` (object).
+  Response fields: `object`, `user_id`, `attributes`, `attributes.attribute`, `attributes.source`, `attributes.expression`, `attributes.ok`, `attributes.value`, `attributes.error`, `payload`.
   """
   def post_preview(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/provisioning/preview", %{}, body, opts)

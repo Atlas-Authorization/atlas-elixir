@@ -5,7 +5,8 @@ defmodule Atlas.BetterAuthImports do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.BetterAuthImports do
   The instance's import public key (created on first read). Seal a Better Auth export to it; only this instance can open the bundle. A key with jobs:write may read it too.
 
   `GET /v1/better_auth_imports/public_key`. Required scope: `jobs:read`.
+
+  Response fields: `object`, `kid`, `public_key`, `alg`, `status`, `fingerprint`, `compact`, `created_at`, `retired_at`.
   """
   def get_public_key(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/better_auth_imports/public_key", %{}, nil, opts)
@@ -21,6 +24,8 @@ defmodule Atlas.BetterAuthImports do
   Replace the import key with a new one. A bundle sealed to the old key no longer finalizes; export again with the new key.
 
   `POST /v1/better_auth_imports/public_key/rotate`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `kid`, `public_key`, `alg`, `status`, `fingerprint`, `compact`, `created_at`, `retired_at`.
   """
   def post_public_key_rotate(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/better_auth_imports/public_key/rotate", %{}, nil, opts)
@@ -29,12 +34,15 @@ defmodule Atlas.BetterAuthImports do
   List Better Auth imports, newest first (cursor pagination).
 
   `GET /v1/better_auth_imports`. Required scope: `jobs:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.status`, `data.key_id`, `data.parts`, `data.bytes`, `data.bundle_sha256`, `data.bundle_purged`, `data.options`, `data.options.models`, `data.options.on_email_conflict`, `data.options.default_role`, `data.options.create_app_roles`, `data.options.import_oauth_tokens`, `data.options.passkeys_on_rp_mismatch`, `data.options.import_subscriptions`, `data.options.plan_map`, `data.options.import_jwks`, `data.options.jwks_cutover_days`, `data.options.import_sessions`, `data.options.retain_bundle`, `data.source`, `data.source.exported_at`, `data.source.exporter`, `data.source.exporter.name`, `data.source.exporter.version`, `data.source.better_auth_version`, `data.source.base_url`, `data.source.plugins`, `data.source.models`, `data.source.rp_id`, `data.source.social_providers`, `data.total`, `data.progress`, `data.progress.total`, `data.progress.processed`, `data.progress.succeeded`, `data.progress.failed`, `data.progress.percent`, `data.report`, `data.report.models`, `data.report.skipped`, `data.report.skipped_total`, `data.report.skipped_by_code`, `data.report.conflicts`, `data.report.conflicts_total`, `data.report.action_items`, `data.report.warnings`, `data.report.notes`, `data.result`, `data.result.models`, `data.result.completed_at`, `data.result.skipped`, `data.result.skipped_total`, `data.result.skipped_by_code`, `data.result.conflicts`, `data.result.conflicts_total`, `data.result.action_items`, `data.result.warnings`, `data.result.notes`, `data.error`, `data.error.code`, `data.error.message`, `data.created_at`, `data.updated_at`, `data.analyzed_at`, `data.apply_started_at`, `data.completed_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/better_auth_imports", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -44,6 +52,10 @@ defmodule Atlas.BetterAuthImports do
   Start a Better Auth import (status `uploading`). Then upload the sealed bundle with PUT …/parts/{part} and call …/finalize. Nothing is written to users until apply.
 
   `POST /v1/better_auth_imports`. Required scope: `jobs:write`.
+
+  Body fields: `options` (object).
+  Nested body fields: `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`.
+  Response fields: `object`, `id`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`, `source`, `source.exported_at`, `source.exporter`, `source.exporter.name`, `source.exporter.version`, `source.better_auth_version`, `source.base_url`, `source.plugins`, `source.models`, `source.rp_id`, `source.social_providers`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts.value`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts.value`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/better_auth_imports", %{}, body, opts)
@@ -52,12 +64,15 @@ defmodule Atlas.BetterAuthImports do
   Better Auth JWT verification keys published in this instance's JWKS for the cutover window, so tokens Better Auth signed keep verifying.
 
   `GET /v1/better_auth_imports/jwks`. Required scope: `jobs:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kid`, `data.source`, `data.jwk`, `data.import_id`, `data.expires_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_jwks(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/better_auth_imports/jwks", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_jwks/1`, following the cursor page by page.
+  Lazy stream over every item of `get_jwks`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_jwks(client, opts \\ []),
@@ -67,6 +82,8 @@ defmodule Atlas.BetterAuthImports do
   Stop publishing one imported key in the JWKS (tokens it signed stop verifying).
 
   `DELETE /v1/better_auth_imports/jwks/{kid}`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `kid`, `deleted`.
   """
   def delete_jwks(client, kid, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/better_auth_imports/jwks/{kid}", %{"kid" => kid}, nil, opts)
@@ -75,6 +92,8 @@ defmodule Atlas.BetterAuthImports do
   Fetch one import: status, the dry-run report, live progress and the apply result.
 
   `GET /v1/better_auth_imports/{id}`. Required scope: `jobs:read`.
+
+  Response fields: `object`, `id`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`, `source`, `source.exported_at`, `source.exporter`, `source.exporter.name`, `source.exporter.version`, `source.better_auth_version`, `source.base_url`, `source.plugins`, `source.models`, `source.rp_id`, `source.social_providers`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts.value`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts.value`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/better_auth_imports/{id}", %{"id" => id}, nil, opts)
@@ -83,6 +102,8 @@ defmodule Atlas.BetterAuthImports do
   Delete an import and its stored bundle. Data it already imported stays. Refused (409) while it is analyzing or applying.
 
   `DELETE /v1/better_auth_imports/{id}`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/better_auth_imports/{id}", %{"id" => id}, nil, opts)
@@ -91,6 +112,9 @@ defmodule Atlas.BetterAuthImports do
   Upload part `part` (1, 2, …) of the sealed bundle file: whole lines, at most 10 MiB, as `{ "data": "…" }` or as a text/plain body. Re-sending a part replaces it. Only while the import is `uploading`.
 
   `PUT /v1/better_auth_imports/{id}/parts/{part}`. Required scope: `jobs:write`.
+
+  Body fields: `data` (string, required).
+  Response fields: `object`, `import_id`, `part`, `bytes`, `sha256`.
   """
   def put_parts(client, id, part, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/better_auth_imports/{id}/parts/{part}", %{"id" => id, "part" => part}, body, opts)
@@ -99,6 +123,8 @@ defmodule Atlas.BetterAuthImports do
   Close the upload: every part 1..n must be present and the bundle must be sealed to the active import key (else 400 or status `invalid`). The dry run then runs: inline for a bundle up to 4 MiB (200, status `ready`), otherwise in the background (202, status `analyzing`; poll GET).
 
   `POST /v1/better_auth_imports/{id}/finalize`. Required scope: `jobs:write`.
+
+  Response fields: `object`, `id`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`, `source`, `source.exported_at`, `source.exporter`, `source.exporter.name`, `source.exporter.version`, `source.better_auth_version`, `source.base_url`, `source.plugins`, `source.models`, `source.rp_id`, `source.social_providers`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts.value`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts.value`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_finalize(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/better_auth_imports/{id}/finalize", %{"id" => id}, nil, opts)
@@ -107,6 +133,10 @@ defmodule Atlas.BetterAuthImports do
   Run the dry run again, optionally with new options (they replace the stored ones). Reads only. After a completed import whose bundle was kept, the next apply goes over every record again.
 
   `POST /v1/better_auth_imports/{id}/dry_run`. Required scope: `jobs:write`.
+
+  Body fields: `options` (object).
+  Nested body fields: `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`.
+  Response fields: `object`, `id`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`, `source`, `source.exported_at`, `source.exporter`, `source.exporter.name`, `source.exporter.version`, `source.better_auth_version`, `source.base_url`, `source.plugins`, `source.models`, `source.rp_id`, `source.social_providers`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts.value`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts.value`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_dry_run(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/better_auth_imports/{id}/dry_run", %{"id" => id}, body, opts)
@@ -115,6 +145,9 @@ defmodule Atlas.BetterAuthImports do
   Import the bundle. Every record is an idempotent upsert keyed by its Better Auth id, so applying a failed import again resumes where it stopped and nothing is created twice. Up to 1,000 remaining records run inline (200, `completed`); more are queued (202) and progress shows on GET. When the dry run found conflicts with existing data, send confirm_conflicts: true.
 
   `POST /v1/better_auth_imports/{id}/apply`. Required scope: `jobs:write`.
+
+  Body fields: `confirm_conflicts` (boolean).
+  Response fields: `object`, `id`, `status`, `key_id`, `parts`, `bytes`, `bundle_sha256`, `bundle_purged`, `options`, `options.models`, `options.on_email_conflict`, `options.default_role`, `options.create_app_roles`, `options.import_oauth_tokens`, `options.passkeys_on_rp_mismatch`, `options.import_subscriptions`, `options.plan_map`, `options.import_jwks`, `options.jwks_cutover_days`, `options.import_sessions`, `options.retain_bundle`, `source`, `source.exported_at`, `source.exporter`, `source.exporter.name`, `source.exporter.version`, `source.better_auth_version`, `source.base_url`, `source.plugins`, `source.models`, `source.rp_id`, `source.social_providers`, `total`, `progress`, `progress.total`, `progress.processed`, `progress.succeeded`, `progress.failed`, `progress.percent`, `report`, `report.models`, `report.models.model`, `report.models.label`, `report.models.found`, `report.models.will_create`, `report.models.will_update`, `report.models.will_skip`, `report.skipped`, `report.skipped.model`, `report.skipped.row_id`, `report.skipped.reason_code`, `report.skipped.reason`, `report.skipped_total`, `report.skipped_by_code`, `report.conflicts`, `report.conflicts.model`, `report.conflicts.row_id`, `report.conflicts.code`, `report.conflicts.message`, `report.conflicts.resolution`, `report.conflicts.existing_id`, `report.conflicts.value`, `report.conflicts_total`, `report.action_items`, `report.action_items.code`, `report.action_items.severity`, `report.action_items.message`, `report.action_items.count`, `report.action_items.items`, `report.warnings`, `report.notes`, `result`, `result.models`, `result.models.model`, `result.models.label`, `result.models.found`, `result.models.created`, `result.models.updated`, `result.models.unchanged`, `result.models.skipped`, `result.models.failed`, `result.completed_at`, `result.skipped`, `result.skipped.model`, `result.skipped.row_id`, `result.skipped.reason_code`, `result.skipped.reason`, `result.skipped_total`, `result.skipped_by_code`, `result.conflicts`, `result.conflicts.model`, `result.conflicts.row_id`, `result.conflicts.code`, `result.conflicts.message`, `result.conflicts.resolution`, `result.conflicts.existing_id`, `result.conflicts.value`, `result.conflicts_total`, `result.action_items`, `result.action_items.code`, `result.action_items.severity`, `result.action_items.message`, `result.action_items.count`, `result.action_items.items`, `result.warnings`, `result.notes`, `error`, `error.code`, `error.message`, `created_at`, `updated_at`, `analyzed_at`, `apply_started_at`, `completed_at`.
   """
   def post_apply(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/better_auth_imports/{id}/apply", %{"id" => id}, body, opts)

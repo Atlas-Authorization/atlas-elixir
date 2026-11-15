@@ -5,7 +5,8 @@ defmodule Atlas.Whoami do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Whoami do
   Introspect the presented credential: a secret key, a partner link, an access token, or a publishable key (as `Authorization: Bearer pk_…` or `X-Atlas-Publishable-Key`). Returns the key's id, type, prefix, environment, scopes (and presets expanded), owner, created/expires/last-used, the instance (id, environment, issuer) and the account. No scope required.
 
   `GET /v1/whoami`.
+
+  Response fields: `object`, `key`, `key.id`, `key.type`, `key.prefix`, `key.environment`, `key.scopes`, `key.effective_scopes`, `key.owner`, `key.created_at`, `key.expires_at`, `key.last_used_at`, `key.last_used_ip`, `instance`, `instance.id`, `instance.environment`, `instance.issuer`, `account`, `account.id`, `partner`, `operator`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/whoami", %{}, nil, opts)

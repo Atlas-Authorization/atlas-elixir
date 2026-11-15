@@ -5,7 +5,8 @@ defmodule Atlas.OauthLoginRequests do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.OauthLoginRequests do
   Read a login challenge: which application is signing a user in, with what scopes, and who (if anyone) is already signed in on this browser.
 
   `GET /v1/oauth_login_requests`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `login_challenge`.
+  Response fields: `object`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `page`, `session_subject`, `ui_locales`, `login_hint`, `expires_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_login_requests", %{}, nil, opts)
@@ -21,6 +25,10 @@ defmodule Atlas.OauthLoginRequests do
   Accept a login challenge: the visitor authenticated as `subject` (an Atlas user id). Returns redirect_to; when the browser follows it Atlas signs the user in and continues the authorization. The returned link is single-use and valid for five minutes.
 
   `PUT /v1/oauth_login_requests/accept`. Required scope: `oauth_clients:write`.
+
+  Query params (`params:`): `login_challenge`.
+  Body fields: `subject` (string, required), `remember` (boolean), `amr` (array), `acr` (string).
+  Response fields: `object`, `redirect_to`.
   """
   def put_accept(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_login_requests/accept", %{}, body, opts)
@@ -29,6 +37,10 @@ defmodule Atlas.OauthLoginRequests do
   Reject a login challenge. Following redirect_to returns the application to its redirect_uri with the OAuth error.
 
   `PUT /v1/oauth_login_requests/reject`. Required scope: `oauth_clients:write`.
+
+  Query params (`params:`): `login_challenge`.
+  Body fields: `error` (enum), `error_description` (string).
+  Response fields: `object`, `redirect_to`.
   """
   def put_reject(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/oauth_login_requests/reject", %{}, body, opts)

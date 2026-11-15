@@ -5,7 +5,8 @@ defmodule Atlas.PartnerPlatforms do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.PartnerPlatforms do
   The products this instance is a partner platform of: each one's key set and signature header (how Atlas verifies its signed deliveries), the receiver URL it delivers to, the sites consent is accepted from, whether its partner token is stored, and the last delivery. `presets` lists the built-in partners (cookiemunch). Never a token.
 
   `GET /v1/partner_platforms`. Required scope: `partner_links:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.partner`, `data.name`, `data.preset`, `data.platform_id`, `data.enabled`, `data.jwks_url`, `data.signature_header`, `data.signature_scheme`, `data.tolerance_seconds`, `data.allowed_sources`, `data.record_consents`, `data.receiver_url`, `data.receiver_url_template`, `data.serves_deployment`, `data.registration`, `data.registration.status`, `data.registration.registered_at`, `data.token_set`, `data.token_prefix`, `data.last_delivery_at`, `data.last_delivery_error`, `data.created_at`, `data.updated_at`, `presets`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_platforms", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.PartnerPlatforms do
   One partner platform setting. Never the partner token.
 
   `GET /v1/partner_platforms/{partner}`. Required scope: `partner_links:read`.
+
+  Response fields: `object`, `id`, `partner`, `name`, `preset`, `platform_id`, `enabled`, `jwks_url`, `signature_header`, `signature_scheme`, `tolerance_seconds`, `allowed_sources`, `record_consents`, `receiver_url`, `receiver_url_template`, `serves_deployment`, `registration`, `registration.status`, `registration.registered_at`, `token_set`, `token_prefix`, `last_delivery_at`, `last_delivery_error`, `created_at`, `updated_at`.
   """
   def get(client, partner, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_platforms/{partner}", %{"partner" => partner}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.PartnerPlatforms do
   Set up or change this instance as a partner platform of `partner`. A preset (`cookiemunch`) fills the platform id, key set (`https://api.cookiemunch.net/v1/partner/jwks.json`), signature header (`CookieMunch-Partner-Signature`) and tolerance (300 s); any other partner names `platform_id`, `jwks_url` and `signature_header`. `allowed_sources` lists the partner-side sites (Cookie Munch: cbids) consent deliveries are recorded from, besides the site the instance already connected. `serves_deployment` only on the deployment's own platform instance. → 201 on create.
 
   `PUT /v1/partner_platforms/{partner}`. Required scope: `partner_links:write`.
+
+  Body fields: `name` (string|null), `platform_id` (string), `enabled` (boolean), `jwks_url` (string), `signature_header` (string), `signature_scheme` (enum), `tolerance_seconds` (integer), `allowed_sources` (array), `record_consents` (boolean), `serves_deployment` (boolean).
+  Response fields: `object`, `id`, `partner`, `name`, `preset`, `platform_id`, `enabled`, `jwks_url`, `signature_header`, `signature_scheme`, `tolerance_seconds`, `allowed_sources`, `record_consents`, `receiver_url`, `receiver_url_template`, `serves_deployment`, `registration`, `registration.status`, `registration.registered_at`, `token_set`, `token_prefix`, `last_delivery_at`, `last_delivery_error`, `created_at`, `updated_at`.
   """
   def put(client, partner, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/partner_platforms/{partner}", %{"partner" => partner}, body, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.PartnerPlatforms do
   Remove the partner platform setting and the partner token stored for it. Deliveries to its receiver answer 404 afterwards.
 
   `DELETE /v1/partner_platforms/{partner}`. Required scope: `partner_links:write`.
+
+  Response fields: `object`, `partner`, `deleted`.
   """
   def delete(client, partner, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/partner_platforms/{partner}", %{"partner" => partner}, nil, opts)
@@ -52,6 +63,8 @@ defmodule Atlas.PartnerPlatforms do
   What to send the partner to be registered as its partner platform (the partner registers platforms itself; Cookie Munch by email to its support): the platform id, the receiver URL (a template with `{externalId}` = the instance id when the registration serves the deployment), the events, how Atlas verifies a delivery, and where to send it. The partner then hands back a partner token once: store it with `POST /v1/partner_platforms/{partner}/token`.
 
   `GET /v1/partner_platforms/{partner}/registration`. Required scope: `partner_links:read`.
+
+  Response fields: `object`, `partner`, `platform_id`, `receiver_url`, `receiver_url_is_template`, `external_id`, `events`, `signature`, `send_to`, `token_prefix`, `executor_key_url`, `next_step`.
   """
   def get_registration(client, partner, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_platforms/{partner}/registration", %{"partner" => partner}, nil, opts)
@@ -60,6 +73,9 @@ defmodule Atlas.PartnerPlatforms do
   Store the partner token the partner handed over after registering this platform (Cookie Munch: `cmpt_…`). Encrypted at rest as the outbound partner credential for that partner (`source: registration`, `auth_method: bearer_secret`) and never returned by any read. Once: a second call answers 409 `already_registered` unless `rotate: true`. A partner that is not a preset also needs `api_base_url`.
 
   `POST /v1/partner_platforms/{partner}/token`. Required scope: `partner_links:write`.
+
+  Body fields: `token` (string, required), `rotate` (boolean), `api_base_url` (string).
+  Response fields: `object`, `id`, `partner`, `name`, `preset`, `platform_id`, `enabled`, `jwks_url`, `signature_header`, `signature_scheme`, `tolerance_seconds`, `allowed_sources`, `record_consents`, `receiver_url`, `receiver_url_template`, `serves_deployment`, `registration`, `registration.status`, `registration.registered_at`, `token_set`, `token_prefix`, `last_delivery_at`, `last_delivery_error`, `created_at`, `updated_at`.
   """
   def post_token(client, partner, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_platforms/{partner}/token", %{"partner" => partner}, body, opts)
@@ -68,12 +84,15 @@ defmodule Atlas.PartnerPlatforms do
   The signed deliveries received from the partner in the last 7 days, newest first, and what Atlas did with each: `recorded`, `unchanged`, `no_subject` (the delivery named nobody; nothing written), `no_user` (no user matched), `source_not_allowed` (a site this instance did not name) or `ignored`.
 
   `GET /v1/partner_platforms/{partner}/deliveries`. Required scope: `partner_links:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.event_id`, `data.event_type`, `data.outcome`, `data.user_id`, `data.received_at`.
   """
   def get_deliveries(client, partner, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_platforms/{partner}/deliveries", %{"partner" => partner}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_deliveries/2`, following the cursor page by page.
+  Lazy stream over every item of `get_deliveries`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_deliveries(client, partner, opts \\ []),

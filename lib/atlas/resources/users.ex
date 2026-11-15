@@ -5,7 +5,8 @@ defmodule Atlas.Users do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,27 @@ defmodule Atlas.Users do
   The actions a user currently owes, oldest first.
 
   `GET /v1/users/{id}/required_actions`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.action`, `data.url`, `data.reason`, `data.created_by`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_required_actions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/required_actions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_required_actions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_required_actions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_required_actions(client, id, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/users/{id}/required_actions", %{"id" => id}, opts)
 
   @doc ~S"""
-  Make a user owe an action at their next sign-in, whatever the method: update_password, verify_email, accept_policy, configure_mfa, update_profile, or custom (sent to an https url; the app closes it with DELETE). The sign-in attempt holds at needs_required_action until it is done (configure_mfa alone routes through MFA enrollment; accept_policy is closed once the policy gate passes; verify_email and configure_mfa clear themselves when already true). Re-requesting an open action is a 200 with the same row. Emits user.required_action_requested. → 201.
+  Make a user owe an action at their next sign-in, whatever the method: update_password, verify_email, accept_policy, configure_mfa, update_profile, custom (sent to an https url; the app closes it with DELETE), or transfer_ownership (never holds a sign-in: it is a standing task for an only-admin owner that the app shows, and it closes by itself once the user is no longer the only admin of an organization that has other members). The sign-in attempt holds at needs_required_action until it is done (configure_mfa alone routes through MFA enrollment; accept_policy is closed once the policy gate passes; verify_email and configure_mfa clear themselves when already true). Re-requesting an open action is a 200 with the same row. Emits user.required_action_requested. → 201.
 
   `POST /v1/users/{id}/required_actions`. Required scope: `users:write`.
+
+  Body fields: `action` (enum, required), `url` (string), `reason` (string).
+  Response fields: `object`, `id`, `user_id`, `action`, `url`, `reason`, `created_by`, `created_at`.
   """
   def post_required_actions(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/required_actions", %{"id" => id}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Users do
   Withdraw an owed action. This is also how an application closes a custom action once the user has finished its step. Emits user.required_action_cleared. 404 when it is not open.
 
   `DELETE /v1/users/{id}/required_actions/{rid}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_required_actions(client, id, rid, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/required_actions/{rid}", %{"id" => id, "rid" => rid}, nil, opts)
@@ -44,12 +53,15 @@ defmodule Atlas.Users do
   The notes on a user: pinned notes first, then newest first.
 
   `GET /v1/users/{id}/notes`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.body`, `data.pinned`, `data.author`, `data.author.type`, `data.author.id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_notes(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/notes", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_notes/2`, following the cursor page by page.
+  Lazy stream over every item of `get_notes`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_notes(client, id, opts \\ []),
@@ -59,6 +71,9 @@ defmodule Atlas.Users do
   Add a note to a user (up to 5000 characters; at most 500 notes per user). The audit log records that a note was added, never its text. → 201.
 
   `POST /v1/users/{id}/notes`. Required scope: `users:write`.
+
+  Body fields: `body` (string, required), `pinned` (boolean).
+  Response fields: `object`, `id`, `user_id`, `body`, `pinned`, `author`, `author.type`, `author.id`, `created_at`, `updated_at`.
   """
   def post_notes(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/notes", %{"id" => id}, body, opts)
@@ -67,6 +82,9 @@ defmodule Atlas.Users do
   Edit a note: its text, its pin, or both.
 
   `PATCH /v1/users/{id}/notes/{noteId}`. Required scope: `users:write`.
+
+  Body fields: `body` (string), `pinned` (boolean).
+  Response fields: `object`, `id`, `user_id`, `body`, `pinned`, `author`, `author.type`, `author.id`, `created_at`, `updated_at`.
   """
   def update_notes(client, id, note_id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/users/{id}/notes/{noteId}", %{"id" => id, "noteId" => note_id}, body, opts)
@@ -75,6 +93,8 @@ defmodule Atlas.Users do
   Delete a note from a user. The audit log keeps that it was deleted.
 
   `DELETE /v1/users/{id}/notes/{noteId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_notes(client, id, note_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/notes/{noteId}", %{"id" => id, "noteId" => note_id}, nil, opts)
@@ -83,12 +103,15 @@ defmodule Atlas.Users do
   The user change history, newest first: every profile, metadata and status change (ban, lock, directives and their reversal) with who made it, the reason and expiry, and each changed field with its value before and after. A password change and private_metadata values are recorded as redacted (the field name only). Pages with starting_after.
 
   `GET /v1/users/{id}/history`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `action`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.action`, `data.actor`, `data.actor.type`, `data.actor.id`, `data.changes`, `data.changes.field`, `data.changes.before`, `data.changes.after`, `data.changes.redacted`, `data.reason`, `data.expires_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_history(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/history", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_history/2`, following the cursor page by page.
+  Lazy stream over every item of `get_history`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_history(client, id, opts \\ []),
@@ -98,6 +121,8 @@ defmodule Atlas.Users do
   A user's parental-consent state (not_required for anyone at or above the age of digital consent) and their guardian links, newest first.
 
   `GET /v1/users/{id}/minor_status`. Required scope: `users:read`.
+
+  Response fields: `object`, `status`, `birthdate`, `age_at_assessment`, `consent_age`, `jurisdiction`, `consented_at`, `age_assurance`, `age_assurance.over_age`, `age_assurance.method`, `age_assurance.level`, `age_assurance.expires_at`, `guardians`, `guardians.object`, `guardians.id`, `guardians.child_user_id`, `guardians.guardian_user_id`, `guardians.guardian_email`, `guardians.relationship`, `guardians.status`, `guardians.expires_at`, `guardians.consent_method`, `guardians.assurance_level`, `guardians.consent_reference`, `guardians.verification_id`, `guardians.consented_at`, `guardians.created_at`.
   """
   def get_minor_status(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/minor_status", %{"id" => id}, nil, opts)
@@ -106,22 +131,30 @@ defmodule Atlas.Users do
   Re-assess a user from their date-of-birth trait now (for users created before age gating was turned on). 400 when compliance.minors is off.
 
   `POST /v1/users/{id}/minor_status/assess`. Required scope: `users:write`.
+
+  Response fields: `object`, `status`, `birthdate`, `age_at_assessment`, `consent_age`, `jurisdiction`, `consented_at`, `age_assurance`, `age_assurance.over_age`, `age_assurance.method`, `age_assurance.level`, `age_assurance.expires_at`, `guardians`, `guardians.object`, `guardians.id`, `guardians.child_user_id`, `guardians.guardian_user_id`, `guardians.guardian_email`, `guardians.relationship`, `guardians.status`, `guardians.expires_at`, `guardians.consent_method`, `guardians.assurance_level`, `guardians.consent_reference`, `guardians.verification_id`, `guardians.consented_at`, `guardians.created_at`.
   """
   def post_minor_status_assess(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/minor_status/assess", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Ask a parent or guardian to approve a minor's account. Name them by email or by guardian_user_id (their address is used). Returns the pending link with a one-time consent_url that expires after compliance.minors.consentTtlHours. With send_email: true Atlas mails it through the application's own email provider (422 when none is set up); otherwise deliver consent_url yourself. → 201.
+  Ask a parent or guardian to approve a minor's account. Name them by email or by guardian_user_id (their address is used). Returns the pending link with a one-time consent_url that expires after compliance.minors.consentTtlHours (consent_url is null when email links are not an accepted consent method: the request only records the guardian, send_email is refused with 400, and consent is recorded with the approve route). With send_email: true Atlas mails it through the application's own email provider (422 when none is set up); otherwise deliver consent_url yourself. → 201.
 
   `POST /v1/users/{id}/guardians`. Required scope: `users:write`.
+
+  Body fields: `email` (string), `guardian_user_id` (string), `relationship` (string), `send_email` (boolean).
+  Response fields: `object`, `id`, `child_user_id`, `guardian_user_id`, `guardian_email`, `relationship`, `status`, `expires_at`, `consent_method`, `assurance_level`, `consent_reference`, `verification_id`, `consented_at`, `created_at`, `consent_url`, `emailed`.
   """
   def post_guardians(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/guardians", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Record consent obtained another way (a signed form, a verified call): the link becomes active with consent_method admin and the account is consented. 409 for a revoked link.
+  Record consent obtained another way: the link becomes active and the account is consented. method says how (default admin): admin, signed_form, payment_card, video_call, id_document (needs the guardian's approved identity verification, verification_id) or third_party (states its own assurance_level). The method must be in compliance.minors.consentMethods and reach compliance.minors.minAssuranceLevel (400 otherwise). 409 for a revoked link.
 
   `POST /v1/users/{id}/guardians/{linkId}/approve`. Required scope: `users:write`.
+
+  Body fields: `note` (string), `method` (enum), `assurance_level` (enum), `reference` (string), `verification_id` (string).
+  Response fields: `object`, `id`, `child_user_id`, `guardian_user_id`, `guardian_email`, `relationship`, `status`, `expires_at`, `consent_method`, `assurance_level`, `consent_reference`, `verification_id`, `consented_at`, `created_at`.
   """
   def post_guardians_approve(client, id, link_id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/guardians/{linkId}/approve", %{"id" => id, "linkId" => link_id}, body, opts)
@@ -130,22 +163,78 @@ defmodule Atlas.Users do
   Withdraw a guardian link. When no active guardian is left, the account needs consent again.
 
   `DELETE /v1/users/{id}/guardians/{linkId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `child_user_id`, `guardian_user_id`, `guardian_email`, `relationship`, `status`, `expires_at`, `consent_method`, `assurance_level`, `consent_reference`, `verification_id`, `consented_at`, `created_at`.
   """
   def delete_guardians(client, id, link_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/guardians/{linkId}", %{"id" => id, "linkId" => link_id}, nil, opts)
 
   @doc ~S"""
+  One user's journey runs, newest first, with what they saved so far (draft, by step) so an onboarding resumes where they stopped.
+
+  `GET /v1/users/{id}/journeys`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.journey_id`, `data.user_id`, `data.stage`, `data.status`, `data.open_steps`, `data.completed_steps`, `data.draft`, `data.started_at`, `data.updated_at`, `data.completed_at`, `data.abandoned_at`, `has_more`.
+  """
+  def get_journeys(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/journeys", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_journeys`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_journeys(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/{id}/journeys", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Start a user's onboarding over: deletes their runs and the open steps those journeys asked of them, so the journey asks again at the next sign-in. journey_id limits it to one journey. Audited.
+
+  `DELETE /v1/users/{id}/journeys`. Required scope: `users:write`.
+
+  Query params (`params:`): `journey_id`.
+  Response fields: `object`, `user_id`, `journey_id`, `runs_removed`, `steps_cleared`.
+  """
+  def delete_journeys(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}/journeys", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Search users with a boolean filter tree (and/or/not) over profile columns, traits and metadata keys, organization and org role, MFA enrolled/strategy, sign-in strategy, last sign-in country or IP, and date ranges. Sort with order_by; page with starting_after (creation/update order) or offset (last_sign_in_at order). include_total_count adds total_count. Containment tests on public metadata and traits are answered by an index. Same user objects as GET /v1/users.
 
   `POST /v1/users/search`. Required scope: `users:read`.
+
+  Body fields: `filter` (object), `query` (string), `order_by` (string), `include_deleted` (boolean), `segment_id` (string), `limit` (integer), `starting_after` (string), `offset` (integer), `include_total_count` (boolean).
+  Nested body fields: `filter.and`, `filter.or`, `filter.not`, `filter.field`, `filter.op`, `filter.value`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.username`, `data.sign_in`, `data.first_name`, `data.last_name`, `data.image_url`, `data.email_addresses`, `data.email_addresses.id`, `data.email_addresses.object`, `data.email_addresses.email_address`, `data.email_addresses.verification`, `data.email_addresses.verified`, `data.email_addresses.primary`, `data.primary_email_address_id`, `data.primary_email`, `data.external_id`, `data.password_enabled`, `data.public_metadata`, `data.mfa_enabled`, `data.has_passkey`, `data.required_factors`, `data.is_anonymous`, `data.banned`, `data.ban_reason`, `data.ban_note`, `data.locked`, `data.status`, `data.deleted_at`, `data.last_sign_in_at`, `data.sessions_revoked_at`, `data.created_at`, `data.updated_at`, `data.version`, `data.referral`, `data.referral.status`, `data.referral.partner_id`, `data.referral.partner_external_ref`, `data.referral.referrer_external_id`, `data.referral.referrer_user_id`, `data.referral.matched_via`, `data.referral.referral_status`, `data.referral.notes`, `data.referral.risk_level`, `data.referral.flagged`, `data.referral_code`, `data.warnings`, `data.referral_link`, `data.external_accounts`, `data.external_accounts.object`, `data.external_accounts.id`, `data.external_accounts.provider`, `data.external_accounts.provider_user_id`, `data.external_accounts.provider_email`, `data.external_accounts.email_verified`, `data.external_accounts.first_name`, `data.external_accounts.last_name`, `data.external_accounts.image_url`, `data.external_accounts.connected_at`, `has_more`, `next_cursor`.
   """
   def post_search(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/search", %{}, body, opts)
 
   @doc ~S"""
+  What a user search can filter on: the built-in fields, plus every metadata path the instance metadata schema declares (public_metadata.plan, ...) with its type, allowed values and whether it is required. Use it to autocomplete a filter builder. A name with <...> is a pattern you fill in.
+
+  `GET /v1/users/search/fields`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.field`, `data.source`, `data.type`, `data.enum`, `data.description`, `data.required`, `has_more`, `next_cursor`.
+  """
+  def get_search_fields(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/search/fields", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_search_fields`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_search_fields(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/search/fields", %{}, opts)
+
+  @doc ~S"""
   Export every user a search matches (up to 10,000; x-export-truncated says when more matched) as CSV (default) or NDJSON. fields picks columns: id, primary_email, username, first_name, last_name, external_id, created_at, last_sign_in_at, banned, mfa_enrolled, plus traits.<key> / public_metadata.<path>. CSV cells that start with = + - @ are prefixed with an apostrophe so a spreadsheet never runs them as formulas.
 
   `POST /v1/users/search/export`. Required scope: `users:read`.
+
+  Body fields: `filter` (object), `query` (string), `order_by` (string), `include_deleted` (boolean), `segment_id` (string), `format` (enum), `fields` (array).
+  Nested body fields: `filter.and`, `filter.or`, `filter.not`, `filter.field`, `filter.op`, `filter.value`.
   """
   def post_search_export(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/search/export", %{}, body, opts)
@@ -154,12 +243,15 @@ defmodule Atlas.Users do
   The saved user-search views of the instance, by name.
 
   `GET /v1/users/search/views`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.member_count`, `data.counted_at`, `data.filter`, `data.order_by`, `data.created_by`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_search_views(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/search/views", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_search_views/1`, following the cursor page by page.
+  Lazy stream over every item of `get_search_views`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_search_views(client, opts \\ []),
@@ -169,6 +261,10 @@ defmodule Atlas.Users do
   Save a named filter (and sort) to re-run. A filter that could never run is refused; a duplicate name is a 400. → 201.
 
   `POST /v1/users/search/views`. Required scope: `users:write`.
+
+  Body fields: `name` (string, required), `description` (string|null), `filter` (object), `order_by` (string|null).
+  Nested body fields: `filter.and`, `filter.or`, `filter.not`, `filter.field`, `filter.op`, `filter.value`.
+  Response fields: `object`, `id`, `name`, `description`, `member_count`, `counted_at`, `filter`, `order_by`, `created_by`, `created_at`, `updated_at`.
   """
   def post_search_views(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/search/views", %{}, body, opts)
@@ -177,6 +273,10 @@ defmodule Atlas.Users do
   Rename a saved view or change its filter or sort.
 
   `PATCH /v1/users/search/views/{id}`. Required scope: `users:write`.
+
+  Body fields: `name` (string), `description` (string|null), `filter` (object), `order_by` (string|null).
+  Nested body fields: `filter.and`, `filter.or`, `filter.not`, `filter.field`, `filter.op`, `filter.value`.
+  Response fields: `object`, `id`, `name`, `description`, `member_count`, `counted_at`, `filter`, `order_by`, `created_by`, `created_at`, `updated_at`.
   """
   def update_search_views(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/users/search/views/{id}", %{"id" => id}, body, opts)
@@ -185,20 +285,33 @@ defmodule Atlas.Users do
   Delete a saved user-search view.
 
   `DELETE /v1/users/search/views/{id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_search_views(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/search/views/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
+  Count a saved search (a segment) now and keep the number and the time on it (member_count, counted_at).
+
+  `POST /v1/users/search/views/{id}/count`. Required scope: `users:write`.
+  """
+  def post_search_views_count(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/search/views/{id}/count", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   A user's direct groups and how they joined each.
 
   `GET /v1/users/{id}/groups`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.slug`, `data.name`, `data.description`, `data.parent_id`, `data.attributes`, `data.app_role_keys`, `data.include_in_token`, `data.dynamic_filter`, `data.sso_match`, `data.member_count`, `data.source`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_groups(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/groups", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_groups/2`, following the cursor page by page.
+  Lazy stream over every item of `get_groups`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_groups(client, id, opts \\ []),
@@ -208,6 +321,9 @@ defmodule Atlas.Users do
   Mint an email-verification or password-reset link (and code) for a user WITHOUT sending it, for support tools and invite flows that deliver it themselves. type "email_verification" needs an unverified address (default: the primary); the url opens GET /v1/client/email_addresses/verify and the code works wherever the address is verified by code. type "password_reset" needs a verified address and returns the url and/or code the instance's password-reset setting would have mailed, plus the reset attempt_id; redeeming it is the ordinary reset (it still asks for the second factor and sets a new password). Single-use, expires_in_seconds 60 to 86400 (default 3600). Audited as user.link_generated, never with the secret. Treat the response as a credential. → 201.
 
   `POST /v1/users/{id}/links`. Required scope: `users:write`.
+
+  Body fields: `type` (enum, required), `email_address_id` (string), `expires_in_seconds` (integer).
+  Response fields: `object`, `type`, `user_id`, `email_address_id`, `email_address`, `url`, `code`, `attempt_id`, `expires_at`.
   """
   def post_links(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/links", %{"id" => id}, body, opts)
@@ -216,12 +332,15 @@ defmodule Atlas.Users do
   List and search users. Cursor-paginated by default (follow next_cursor); send offset instead of starting_after for offset paging. All filters combine with AND.
 
   `GET /v1/users`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `offset`, `query`, `email_address`, `username`, `phone_number`, `external_id`, `banned`, `email_verified`, `organization_id`, `created_after`, `created_before`, `updated_after`, `updated_before`, `order_by`, `include_total_count`, `include_deleted`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.username`, `data.sign_in`, `data.first_name`, `data.last_name`, `data.image_url`, `data.email_addresses`, `data.email_addresses.id`, `data.email_addresses.object`, `data.email_addresses.email_address`, `data.email_addresses.verification`, `data.email_addresses.verified`, `data.email_addresses.primary`, `data.primary_email_address_id`, `data.primary_email`, `data.external_id`, `data.password_enabled`, `data.public_metadata`, `data.mfa_enabled`, `data.has_passkey`, `data.required_factors`, `data.is_anonymous`, `data.banned`, `data.ban_reason`, `data.ban_note`, `data.locked`, `data.status`, `data.deleted_at`, `data.last_sign_in_at`, `data.sessions_revoked_at`, `data.created_at`, `data.updated_at`, `data.version`, `data.referral`, `data.referral.status`, `data.referral.partner_id`, `data.referral.partner_external_ref`, `data.referral.referrer_external_id`, `data.referral.referrer_user_id`, `data.referral.matched_via`, `data.referral.referral_status`, `data.referral.notes`, `data.referral.risk_level`, `data.referral.flagged`, `data.referral_code`, `data.warnings`, `data.referral_link`, `data.external_accounts`, `data.external_accounts.object`, `data.external_accounts.id`, `data.external_accounts.provider`, `data.external_accounts.provider_user_id`, `data.external_accounts.provider_email`, `data.external_accounts.email_verified`, `data.external_accounts.first_name`, `data.external_accounts.last_name`, `data.external_accounts.image_url`, `data.external_accounts.connected_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -231,6 +350,10 @@ defmodule Atlas.Users do
   Create a user from an email and optional password (plaintext `password`, Argon2id-hashed; or an existing hash: `password_hash`, alias `password_digest`. A self-describing hash (Argon2id, bcrypt, Django / passlib PBKDF2 and scrypt, Node `scrypt$N$r$p$salt$key`, Firebase scrypt, phpass, LDAP {SSHA}) is stored as given (a Node scrypt string whose salt is all digits is also a valid Django one: 400 until you name `scrypt_node` or `scrypt_django`); any other is named with `password_hash_algorithm` (scrypt, pbkdf2, md5, sha1, sha256, sha512, hmac_sha256, …) plus `password_hash_params` (e.g. scrypt { n, r, p, key_length, salt_encoding }) and `password_salt`, or as `<name>$<salt>$<hash>`; `password_hasher` is the Clerk name, used only when the hash does not describe itself. An imported hash is upgraded to Argon2id on the first successful sign-in; one Atlas cannot check is a 400 naming the field), name, profile picture (image_url, alias profile_image_url: an https URL stored as given) and metadata. Emits user.created (a webhook to your endpoints). Never notifies the user: with notify false (the default) no email, SMS or push is sent as a consequence of the create, whatever templates are configured — not even a verification code. notify:true is reserved for future welcome messages and currently sends nothing. A backend create is never reported to the referral platform unless the body carries a `referral` object ({ code, click_id, anon_id }: an imported referral); `referral_code` sets the user's own code (unique, 409 REFERRAL_CODE_TAKEN).
 
   `POST /v1/users`. Required scope: `users:write`.
+
+  Body fields: `email_address` (any), `password` (string), `password_hash` (string|null), `password_digest` (string|null), `password_hash_algorithm` (string|null), `password_hash_params` (object), `password_salt` (string|null), `password_hasher` (string|null), `first_name` (string), `last_name` (string), `image_url` (string|null), `profile_image_url` (string|null), `email_verified` (boolean), `password_change_required` (boolean), `external_id` (string|null), `identities` (array), `public_metadata` (object), `private_metadata` (object), `unsafe_metadata` (object), `referral` (object), `referral_code` (string|null), `notify` (boolean), `mfa` (object).
+  Nested body fields: `identities.provider`, `identities.provider_user_id`, `identities.email_address`, `identities.verified`, `referral.code`, `referral.click_id`, `referral.anon_id`, `mfa.totp`, `mfa.totp.secret_base32`, `mfa.totp.algorithm`, `mfa.totp.digits`, `mfa.totp.period`, `mfa.totp.verified_at`, `mfa.hotp`, `mfa.hotp.secret_base32`, `mfa.hotp.algorithm`, `mfa.hotp.digits`, `mfa.hotp.counter`, `mfa.hotp.verified_at`, `mfa.backup_codes`.
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users", %{}, body, opts)
@@ -239,6 +362,9 @@ defmodule Atlas.Users do
   Fetch a single user. Never includes private_metadata.
 
   `GET /v1/users/{id}`. Required scope: `users:read`.
+
+  Query params (`params:`): `include_deleted`.
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}", %{"id" => id}, nil, opts)
@@ -247,6 +373,9 @@ defmodule Atlas.Users do
   Partially update a user. Every field is optional; only the fields present are changed. Mirrors POST /v1/users. external_id set to null/"" clears it; a non-empty password performs an admin reset (prefer POST /v1/users/:id/password). Each metadata bag must be a JSON object within the same limits as every other metadata write (8 KB serialized, 8 levels deep) — otherwise 400 naming the field.
 
   `PATCH /v1/users/{id}`. Required scope: `users:write`.
+
+  Body fields: `first_name` (string|null), `last_name` (string|null), `image_url` (string|null), `profile_image_url` (string|null), `external_id` (string|null), `required_factors` (array|null), `password` (string), `skip_password_checks` (boolean), `referral_code` (string|null), `public_metadata` (object), `private_metadata` (object), `unsafe_metadata` (object).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/users/{id}", %{"id" => id}, body, opts)
@@ -255,14 +384,31 @@ defmodule Atlas.Users do
   Soft-delete a user; PII is scrubbed after 30 days.
 
   `DELETE /v1/users/{id}`. Required scope: `users:delete`.
+
+  Body fields: `audit_actor_ids` (array), `audit_actor_emails` (array).
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
+  Soft-delete a user; PII is scrubbed after 30 days.
+
+  `DELETE /v1/users/{id}`. Required scope: `users:delete`.
+
+  Body fields: `audit_actor_ids` (array), `audit_actor_emails` (array).
+  Response fields: `object`, `id`, `deleted`.
+  """
+  def delete_with_body(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Set (reset) a user's password from the backend. Routes through the password-history choke point, stamps passwordUpdatedAt, and optionally signs the user out of every other session. skip_password_checks is accepted for Clerk-parity.
 
   `POST /v1/users/{id}/password`. Required scope: `users:write`.
+
+  Body fields: `password` (string, required), `skip_password_checks` (boolean), `sign_out_of_other_sessions` (boolean).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_password(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/password", %{"id" => id}, body, opts)
@@ -271,6 +417,10 @@ defmodule Atlas.Users do
   Remove a user's password: password_enabled becomes false and the old password stops working at once. Also allowed when it is the user's only sign-in method. Idempotent: on a user with no password nothing changes and the answer is the same. Signs the user out of their sessions unless sign_out_of_other_sessions is false (in the body, or as a query parameter for clients that cannot send a body on DELETE).
 
   `DELETE /v1/users/{id}/password`. Required scope: `users:write`.
+
+  Query params (`params:`): `sign_out_of_other_sessions`.
+  Body fields: `sign_out_of_other_sessions` (boolean).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def delete_password(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/password", %{"id" => id}, body, opts)
@@ -279,6 +429,9 @@ defmodule Atlas.Users do
   Replace the metadata bags wholesale. Each bag present overwrites the stored one; a bag omitted is untouched. At least one bag is required.
 
   `PUT /v1/users/{id}/metadata`. Required scope: `users:write`.
+
+  Body fields: `public_metadata` (object), `private_metadata` (object), `unsafe_metadata` (object).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def put_metadata(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/users/{id}/metadata", %{"id" => id}, body, opts)
@@ -287,6 +440,9 @@ defmodule Atlas.Users do
   Ban a user and revoke every session. Permanent by default; send expires_in_seconds or expires_at (Unix ms) for a timed ban that lifts itself (the user can sign in again the moment it lapses, and user.unbanned is sent shortly after).
 
   `POST /v1/users/{id}/ban`. Required scope: `users:write`.
+
+  Body fields: `reason` (string), `note` (string), `expires_in_seconds` (number), `expires_at` (number).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_ban(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/ban", %{"id" => id}, body, opts)
@@ -295,6 +451,9 @@ defmodule Atlas.Users do
   Impose a cross-property directive on a user (e.g. suspended_until / read_only / forced_logout). Revokes sessions and emits a webhook where applicable.
 
   `POST /v1/users/{id}/directives`. Required scope: `users:write`.
+
+  Body fields: `suspended_until` (string), `read_only` (boolean), `forced_logout` (boolean), `reason` (string).
+  Response fields: `object`, `user_id`, `suspended_until`, `read_only`, `forced_logout`, `reason`, `sessions_revoked`.
   """
   def post_directives(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/directives", %{"id" => id}, body, opts)
@@ -303,6 +462,8 @@ defmodule Atlas.Users do
   Lift a previously imposed directive from a user.
 
   `DELETE /v1/users/{id}/directives`. Required scope: `users:write`.
+
+  Response fields: `object`, `user_id`, `lifted`.
   """
   def delete_directives(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/directives", %{"id" => id}, nil, opts)
@@ -311,6 +472,8 @@ defmodule Atlas.Users do
   Lift a ban. Sessions are not restored.
 
   `POST /v1/users/{id}/unban`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_unban(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/unban", %{"id" => id}, nil, opts)
@@ -319,6 +482,9 @@ defmodule Atlas.Users do
   Protect one existing unverified user, so a proof of its address reaches it instead of making a second account. Body: `password_policy` must be `until_email_verified`. A user with a password gets the same hold an import gives. A user with no credential is marked as yours, and a proof of its address then claims it. Naming the exact user id is what makes this safe, so nothing matches by address. Answers 409 ACCOUNT_NOT_CLAIMABLE with `meta.reasons` when the user has a verified address or anything else that signs in, and 422 when it has no email address. Safe to repeat.
 
   `POST /v1/users/{id}/account_claim`. Required scope: `users:write`.
+
+  Body fields: `password_policy` (string).
+  Response fields: `object`, `user_id`, `protection`.
   """
   def post_account_claim(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/account_claim", %{"id" => id}, body, opts)
@@ -327,6 +493,9 @@ defmodule Atlas.Users do
   Lock an account so it cannot sign in, for an optional duration (default one year) and with an optional reason. The lock, its expiry and reason are recorded in the user history.
 
   `POST /v1/users/{id}/lock`. Required scope: `users:write`.
+
+  Body fields: `duration_in_seconds` (number), `reason` (string).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_lock(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/lock", %{"id" => id}, body, opts)
@@ -335,6 +504,8 @@ defmodule Atlas.Users do
   Clear a lockout so the account can sign in again.
 
   `POST /v1/users/{id}/unlock`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_unlock(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/unlock", %{"id" => id}, nil, opts)
@@ -343,6 +514,8 @@ defmodule Atlas.Users do
   Remove every second factor and its recovery codes.
 
   `POST /v1/users/{id}/reset_mfa`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `mfa_enabled`.
   """
   def post_reset_mfa(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/reset_mfa", %{"id" => id}, nil, opts)
@@ -351,6 +524,8 @@ defmodule Atlas.Users do
   Remove one second factor. The last factor removed also turns MFA off.
 
   `DELETE /v1/users/{id}/mfa/{factorId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_mfa(client, id, factor_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/mfa/{factorId}", %{"id" => id, "factorId" => factor_id}, nil, opts)
@@ -359,6 +534,8 @@ defmodule Atlas.Users do
   Remove one of a user’s passkeys (Clerk deleteUserPasskey). Scoped to the user.
 
   `DELETE /v1/users/{id}/passkeys/{passkeyId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_passkeys(client, id, passkey_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/passkeys/{passkeyId}", %{"id" => id, "passkeyId" => passkey_id}, nil, opts)
@@ -367,12 +544,15 @@ defmodule Atlas.Users do
   List a user’s device keys (native biometric sign-in). Never returns key material.
 
   `GET /v1/users/{id}/device_keys`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.label`, `data.platform`, `data.biometric_bound`, `data.last_used_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_device_keys(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/device_keys", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_device_keys/2`, following the cursor page by page.
+  Lazy stream over every item of `get_device_keys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_device_keys(client, id, opts \\ []),
@@ -382,6 +562,8 @@ defmodule Atlas.Users do
   Revoke one of a user’s device keys so that device can no longer sign in. Scoped to the user; the account holder is notified when account-change notices are on.
 
   `DELETE /v1/users/{id}/device_keys/{keyId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_device_keys(client, id, key_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/device_keys/{keyId}", %{"id" => id, "keyId" => key_id}, nil, opts)
@@ -390,6 +572,8 @@ defmodule Atlas.Users do
   Clear a user’s profile image (Clerk deleteUserProfileImage).
 
   `DELETE /v1/users/{id}/profile_image`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def delete_profile_image(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/profile_image", %{"id" => id}, nil, opts)
@@ -398,12 +582,15 @@ defmodule Atlas.Users do
   List a user's active sessions.
 
   `GET /v1/users/{id}/sessions`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.status`, `data.last_active_organization_id`, `data.impersonated_by`, `data.last_active_at`, `data.expire_at`, `data.abandon_at`, `data.idle_expires_at`, `data.created_at`, `data.custom_data`, `data.sign_in_method`, `data.provider`, `data.amr`, `data.user_agent`, `data.ip_address`, `data.location`, `data.location.country`, `data.location.region`, `data.location.city`, `data.risk`, `data.risk.score`, `data.risk.level`, `data.risk.reasons`, `data.risk.computed_at`, `data.revoked_at`, `data.revoked_reason`, `has_more`, `next_cursor`.
   """
   def get_sessions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/sessions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_sessions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_sessions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_sessions(client, id, opts \\ []),
@@ -413,6 +600,9 @@ defmodule Atlas.Users do
   Revoke every session a user holds and bump sessions_version. Every session is always revoked, whatever the body says; the body only decides whether the user's OAuth app grants (Sign in with Atlas and other OAuth client sign-ins) are revoked too. No body, {}, or both flags false: sessions only. revoke_grants: true (or the deprecated alias all: true): sessions and every active grant, each grant emitting grant.revoked; the response then carries grants_revoked.
 
   `POST /v1/users/{id}/sessions/revoke`. Required scope: `users:write`.
+
+  Body fields: `revoke_grants` (boolean), `all` (boolean).
+  Response fields: `object`, `id`, `sessions_revoked`, `grants_revoked`.
   """
   def post_sessions_revoke(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/sessions/revoke", %{"id" => id}, body, opts)
@@ -421,6 +611,9 @@ defmodule Atlas.Users do
   Add an email address to a user. Starts unverified.
 
   `POST /v1/users/{id}/email_addresses`. Required scope: `users:write`.
+
+  Body fields: `email_address` (string).
+  Response fields: `id`, `object`, `email_address`, `verification`, `verification.status`, `verification.strategy`, `verified`, `primary`.
   """
   def post_email_addresses(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/email_addresses", %{"id" => id}, body, opts)
@@ -429,6 +622,8 @@ defmodule Atlas.Users do
   Mark an address verified on the backend authority, no code round-trip.
 
   `POST /v1/users/{id}/email_addresses/{eid}/verify`. Required scope: `users:write`.
+
+  Response fields: `id`, `object`, `email_address`, `verification`, `verification.status`, `verification.strategy`, `verified`, `primary`.
   """
   def post_email_addresses_verify(client, id, eid, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/email_addresses/{eid}/verify", %{"id" => id, "eid" => eid}, nil, opts)
@@ -437,6 +632,8 @@ defmodule Atlas.Users do
   Make a verified address primary. Unverified addresses are refused.
 
   `POST /v1/users/{id}/email_addresses/{eid}/primary`. Required scope: `users:write`.
+
+  Response fields: `id`, `object`, `email_address`, `verification`, `verification.status`, `verification.strategy`, `verified`, `primary`.
   """
   def post_email_addresses_primary(client, id, eid, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/email_addresses/{eid}/primary", %{"id" => id, "eid" => eid}, nil, opts)
@@ -445,6 +642,9 @@ defmodule Atlas.Users do
   Add a phone number to a user. Starts unverified (the SMS-OTP counterpart of email_addresses).
 
   `POST /v1/users/{id}/phone_numbers`. Required scope: `users:write`.
+
+  Body fields: `phone_number` (string).
+  Response fields: `object`, `id`, `phone_number`, `verified`, `created_at`.
   """
   def post_phone_numbers(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/phone_numbers", %{"id" => id}, body, opts)
@@ -453,6 +653,8 @@ defmodule Atlas.Users do
   Mark a phone number verified on the backend authority. 409 if already verified elsewhere.
 
   `POST /v1/users/{id}/phone_numbers/{pid}/verify`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `phone_number`, `verified`, `created_at`.
   """
   def post_phone_numbers_verify(client, id, pid, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/phone_numbers/{pid}/verify", %{"id" => id, "pid" => pid}, nil, opts)
@@ -461,6 +663,8 @@ defmodule Atlas.Users do
   Remove a phone number from a user.
 
   `DELETE /v1/users/{id}/phone_numbers/{pid}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_phone_numbers(client, id, pid, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/phone_numbers/{pid}", %{"id" => id, "pid" => pid}, nil, opts)
@@ -469,6 +673,9 @@ defmodule Atlas.Users do
   Append an idempotent progression event (XP / level / state) for a user, scoped to the calling source.
 
   `POST /v1/users/{id}/progression/events`. Required scope: `users:write`.
+
+  Body fields: `track` (string), `amount` (number), `reason` (string), `idempotency_key` (string).
+  Response fields: `object`, `track`, `xp`, `level`, `level_changed`, `delta`.
   """
   def post_progression_events(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/progression/events", %{"id" => id}, body, opts)
@@ -477,6 +684,8 @@ defmodule Atlas.Users do
   Read a user's portable state — progression, tier, flair, entitlements, directives and roles.
 
   `GET /v1/users/{id}/state`. Required scope: `users:read`.
+
+  Response fields: `object`, `attributes`, `attributes.progression`, `attributes.tier`, `attributes.flair`, `entitlements`, `directives`, `directives.object`, `directives.user_id`, `directives.suspended_until`, `directives.read_only`, `directives.forced_logout`, `directives.reason`, `directives.sessions_revoked`, `roles`.
   """
   def get_state(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/state", %{"id" => id}, nil, opts)
@@ -485,12 +694,15 @@ defmodule Atlas.Users do
   List a user's recorded consents with their versions and timestamps.
 
   `GET /v1/users/{id}/consents`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.policy`, `data.version`, `data.status`, `data.source`, `data.metadata`, `data.policy_version_id`, `data.content_sha256`, `data.display`, `data.scrolled_to_end`, `data.view_ms`, `data.locale`, `data.created_at`.
   """
   def get_consents(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/consents", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_consents/2`, following the cursor page by page.
+  Lazy stream over every item of `get_consents`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_consents(client, id, opts \\ []),
@@ -500,6 +712,9 @@ defmodule Atlas.Users do
   Record a versioned consent grant (or withdrawal, `status: "withdrawn"`) for a user. Append-only: a change of standing — e.g. re-accepting a version after withdrawing it — adds a new current record; repeating the current standing returns the existing record.
 
   `POST /v1/users/{id}/consents`. Required scope: `users:write`.
+
+  Body fields: `policy` (string), `version` (string), `status` (string), `source` (string), `metadata` (object), `policy_version_id` (string), `content_sha256` (string), `display` (enum), `scrolled_to_end` (boolean), `view_ms` (number), `locale` (string).
+  Response fields: `object`, `id`, `policy`, `version`, `status`, `source`, `metadata`, `policy_version_id`, `content_sha256`, `display`, `scrolled_to_end`, `view_ms`, `locale`, `created_at`.
   """
   def post_consents(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/consents", %{"id" => id}, body, opts)
@@ -508,12 +723,15 @@ defmodule Atlas.Users do
   List the organizations a user belongs to with each membership's role, the org's resolved plan, and the join time. The server-side counterpart to the session `orgs` claim, for background jobs that hold no session token. Cursor-paginated.
 
   `GET /v1/users/{id}/organization_memberships`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.organization_id`, `data.organization_slug`, `data.role`, `data.role_source`, `data.plan`, `data.joined_at`, `has_more`, `next_cursor`.
   """
   def get_organization_memberships(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/organization_memberships", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_organization_memberships/2`, following the cursor page by page.
+  Lazy stream over every item of `get_organization_memberships`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_organization_memberships(client, id, opts \\ []),
@@ -523,6 +741,8 @@ defmodule Atlas.Users do
   The user's stored referral result: where attribution stands (pending, attributed, none, failed, held, flagged), who referred them, the platform's notes, the id the platform knows them by, and their own code. Read from Atlas, never from the platform. 404 when the user was never reported.
 
   `GET /v1/users/{id}/referral`. Required scope: `users:read`.
+
+  Response fields: `object`, `user_id`, `status`, `customer_ref`, `partner_id`, `partner_external_ref`, `referrer_user_id`, `matched_via`, `referral_status`, `notes`, `referral_code`, `referral_link`, `self_partner_id`, `context`, `risk_level`, `flagged`, `hold_reason`, `signed_up_at`, `updated_at`.
   """
   def get_referral(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/referral", %{"id" => id}, nil, opts)
@@ -531,6 +751,9 @@ defmodule Atlas.Users do
   Mark a user's referral as fraudulent. The referral reads flagged on the user, the referral platform is sent a fraud_confirmed signal (when referral attribution is on) so it can void the commission, and the action is audited. The user's account is not changed. 404 when the user has no referral.
 
   `POST /v1/users/{id}/referral/flag`. Required scope: `users:write`.
+
+  Body fields: `reason` (string).
+  Response fields: `object`, `user_id`, `status`, `flagged`, `flag_reason`, `flagged_at`, `risk_level`.
   """
   def post_referral_flag(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/referral/flag", %{"id" => id}, body, opts)
@@ -539,6 +762,8 @@ defmodule Atlas.Users do
   Re-report one user to the referral platform: their sign-up call is sent again now (same customerRef, original signed-up time, the stored arrival context, the user's current email and name) and the answer (code, link, partner) is applied to the user. For a user whose earlier answer is final on the platform (e.g. enroll_email_taken) but has since been fixed there. A code the user already has is kept. 404 for an unknown user; 422 REFERRALS_NOT_CONFIGURED when referral attribution is off. With `?dry_run=true` nothing is sent.
 
   `POST /v1/users/{id}/referral/resync`. Required scope: `users:write`.
+
+  Response fields: `object`, `user_id`, `call_id`, `call_status`, `error`, `referral`.
   """
   def post_referral_resync(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/referral/resync", %{"id" => id}, nil, opts)
@@ -547,14 +772,19 @@ defmodule Atlas.Users do
   Merge another user INTO this one (the one kept). Emails, phones, social accounts, MFA factors, passkeys, API tokens, devices, organization and group memberships, app roles, consents, billing subscriptions and credits move across (a membership the target already has is left as it is, and the target's role wins); metadata merges key by key with the target winning; blank profile fields are filled. The source user's sessions end and it is deleted, firing `user.deleted` and `user.merged`. Refused when the users are the same, the source is banned and the target is not, or the target is a guest. `dry_run` reports what would move. Needs users:write and users:delete.
 
   `POST /v1/users/{id}/merge`. Required scope: `users:write`.
+
+  Body fields: `source_user_id` (string), `dry_run` (boolean).
   """
   def post_merge(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/merge", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Schedule a GRACEFUL deletion of a user: opens a cancellation grace window (grace_seconds, default the instance erasure grace of 7 days) and emits user.deletion_scheduled. When the window lapses the worker finalizes the purge (reusing the shared soft-delete → 30-day PII scrub). DELETE /v1/users/:id remains the immediate path.
+  Schedule a GRACEFUL deletion of a user: opens a cancellation grace window (grace_seconds, default the instance erasure grace of 7 days) and emits user.deletion_scheduled. When the window lapses the worker finalizes the purge (reusing the shared soft-delete → 30-day PII scrub). DELETE /v1/users/:id remains the immediate path. The instance's `pre_user_deletion` Actions are asked first: one may refuse (403 ACTION_BLOCKED with its reason, nothing is scheduled) or pause it (scheduled but held: user.deletion_paused is emitted and the person must re-confirm). The person is emailed (deletion_scheduled, then the reminders in compliance.retention.deletionReminders) through the instance's own email provider.
 
   `POST /v1/users/{id}/deletion`. Required scope: `users:delete`.
+
+  Body fields: `grace_seconds` (number).
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_deletion(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/deletion", %{"id" => id}, body, opts)
@@ -563,14 +793,28 @@ defmodule Atlas.Users do
   Cancel a scheduled deletion inside its grace window, aborting the purge so the account is NOT erased; emits user.deletion_canceled. Only a still-scheduled, not-yet-finalized account cancels — otherwise a 409, never a silent success implying an erased account came back.
 
   `POST /v1/users/{id}/deletion/cancel`. Required scope: `users:delete`.
+
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
   """
   def post_deletion_cancel(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/deletion/cancel", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Finalize a scheduled deletion whose grace window has lapsed — the idempotent purge trigger the worker calls on schedule (a cron/operator may too). Runs the shared erase path, which emits user.deleted. A replay on an already-erased user is a 200; a user with no due deletion is a 409.
+  Resume a PAUSED scheduled deletion: a `pre_user_deletion` Action held it until the person re-confirmed, and your backend confirms on their behalf. The deletion keeps its original schedule and reminder plan, no mail is sent (nothing was cancelled), and user.deletion_resumed is emitted; it then runs on its date. 409 when the user has no scheduled deletion or it is not paused.
+
+  `POST /v1/users/{id}/deletion/reconfirm`. Required scope: `users:delete`.
+
+  Response fields: `object`, `id`, `username`, `sign_in`, `first_name`, `last_name`, `image_url`, `email_addresses`, `email_addresses.id`, `email_addresses.object`, `email_addresses.email_address`, `email_addresses.verification`, `email_addresses.verification.status`, `email_addresses.verification.strategy`, `email_addresses.verified`, `email_addresses.primary`, `primary_email_address_id`, `primary_email`, `external_id`, `password_enabled`, `public_metadata`, `mfa_enabled`, `has_passkey`, `required_factors`, `is_anonymous`, `banned`, `ban_reason`, `ban_note`, `locked`, `status`, `deleted_at`, `last_sign_in_at`, `sessions_revoked_at`, `created_at`, `updated_at`, `version`, `referral`, `referral.status`, `referral.partner_id`, `referral.partner_external_ref`, `referral.referrer_external_id`, `referral.referrer_user_id`, `referral.matched_via`, `referral.referral_status`, `referral.notes`, `referral.risk_level`, `referral.flagged`, `referral_code`, `warnings`, `referral_link`, `external_accounts`, `external_accounts.object`, `external_accounts.id`, `external_accounts.provider`, `external_accounts.provider_user_id`, `external_accounts.provider_email`, `external_accounts.email_verified`, `external_accounts.first_name`, `external_accounts.last_name`, `external_accounts.image_url`, `external_accounts.connected_at`.
+  """
+  def post_deletion_reconfirm(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/deletion/reconfirm", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Finalize a scheduled deletion whose grace window has lapsed — the idempotent purge trigger the worker calls on schedule (a cron/operator may too). Runs the shared erase path, which emits user.deleted. A replay on an already-erased user is a 200; a user with no due deletion is a 409. Before it erases, the deletion gate runs: a paused deletion, one pushed back by compliance.retention.requireFinalNotice, or one a `pre_user_deletion` Action refuses or pauses is NOT finalized and answers 409.
 
   `POST /v1/users/{id}/deletion/finalize`. Required scope: `users:delete`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def post_deletion_finalize(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/deletion/finalize", %{"id" => id}, nil, opts)
@@ -579,6 +823,9 @@ defmodule Atlas.Users do
   An integrating app acknowledges it has purged its copy of the user data during a scheduled deletion, identified by source (or the app_id alias), and may contribute a JSON payload Atlas folds into the DSAR erasure export. Upsert on (user, source), so a retry or revised blob overwrites rather than duplicates. → 201.
 
   `POST /v1/users/{id}/erasure_acks`. Required scope: `users:write`.
+
+  Body fields: `source` (string, required), `app_id` (string), `payload` (object).
+  Response fields: `object`, `id`, `user_id`, `source`, `created_at`.
   """
   def post_erasure_acks(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/erasure_acks", %{"id" => id}, body, opts)
@@ -587,14 +834,20 @@ defmodule Atlas.Users do
   The DSAR erasure export: Atlas's own data about the subject (the same no-secret bundle the self-service export produces) PLUS every app's contributed blob from its erasure ack, aggregated into one package.
 
   `GET /v1/users/{id}/erasure_export`. Required scope: `users:read`.
+
+  Response fields: `object`, `format_version`, `generated_at`, `user_id`, `atlas`, `app_contributions`, `app_contributions.source`, `app_contributions.contributed_at`, `app_contributions.payload`.
   """
   def get_erasure_export(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/erasure_export", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Request a transaction approval from a user: push a number-matching "approve this action" prompt (carrying a human-readable description and optional context) to the user's registered push devices. Returns the approval id and the match_number the CALLER displays to the user to confirm on their phone — the number is never sent inside the push. Reuses the in-house push sender + number-matching core (the MFA-push mechanism), but is not a sign-in step. 409 when the user has no registered push device. → 201.
+  Request a transaction approval from a user: push a number-matching "approve this action" prompt (carrying a human-readable description and optional context) to the user's registered push devices. Returns the approval id and the match_number the CALLER displays to the user to confirm on their phone: the number is never sent inside the push. Optional `ttl_seconds`, `approvers` (N of M named users or an organization role), `require_signature`, `binding` and `reference`; see POST /v1/approval_requests. 409 when the user has no registered push device (subject mode). Accepts Idempotency-Key. Needs `approvals:write` (a key with `users:write` keeps working). → 201.
 
-  `POST /v1/users/{id}/approval_requests`. Required scope: `users:write`.
+  `POST /v1/users/{id}/approval_requests`. Required scope: `approvals:write`.
+
+  Body fields: `description` (string, required), `context` (object), `ttl_seconds` (integer), `approvers` (object), `require_signature` (boolean), `require_trusted_device` (boolean), `binding` (string), `reference` (string).
+  Nested body fields: `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`.
+  Response fields: `object`, `id`, `status`, `user_id`, `match_number`, `expires_at`, `approvers`, `require_signature`, `require_trusted_device`, `digest`, `reference`, `binding`.
   """
   def post_approval_requests(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/approval_requests", %{"id" => id}, body, opts)
@@ -602,15 +855,69 @@ defmodule Atlas.Users do
   @doc ~S"""
   Poll a transaction-approval request: pending | approved | denied | expired, with the approving device and resolution timestamp. A pending request past its short TTL reads as expired.
 
-  `GET /v1/users/{id}/approval_requests/{approvalId}`. Required scope: `users:read`.
+  `GET /v1/users/{id}/approval_requests/{approvalId}`. Required scope: `approvals:read`.
+
+  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
   """
   def get_approval_requests(client, id, approval_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/approval_requests/{approvalId}", %{"id" => id, "approvalId" => approval_id}, nil, opts)
 
   @doc ~S"""
+  Withdraw a pending transaction-approval request so the device can no longer answer it. 404 for a request that is not this user's, 409 once it is approved, denied, expired or already cancelled. Emits approval_request.cancelled.
+
+  `POST /v1/users/{id}/approval_requests/{approvalId}/cancel`. Required scope: `approvals:write`.
+
+  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
+  """
+  def post_approval_requests_cancel(client, id, approval_id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/approval_requests/{approvalId}/cancel", %{"id" => id, "approvalId" => approval_id}, nil, opts)
+
+  @doc ~S"""
+  Every device the user can approve from (registered signing keys, passkeys and verified push devices), each marked trusted or not, with the `trusted_device_id` to revoke. Needs `approvals:read` (`users:read` keeps working).
+
+  `GET /v1/users/{id}/approval_devices`. Required scope: `approvals:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kind`, `data.ref`, `data.label`, `data.platform`, `data.created_at`, `data.last_used_at`, `data.trusted`, `data.trusted_device_id`, `data.trusted_at`, `data.trusted_by`, `data.trusted_by.type`, `data.trusted_by.id`, `has_more`, `next_cursor`.
+  """
+  def get_approval_devices(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/approval_devices", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_approval_devices`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_approval_devices(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/{id}/approval_devices", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Trust one of the user's devices for approval decisions. Send `kind` (`device_key`, `passkey` or `push_device`), the device `ref` and an optional `label`. A device that does not exist or is not this user's is a 404. Trusting a trusted device changes nothing; trusting one whose trust was revoked restores it with the same id. Emits approval_trusted_device.added. Accepts Idempotency-Key. Needs `approvals:write`. → 201.
+
+  `POST /v1/users/{id}/approval_devices/trust`. Required scope: `approvals:write`.
+
+  Body fields: `kind` (enum, required), `ref` (string, required), `label` (string).
+  Response fields: `object`, `kind`, `ref`, `label`, `platform`, `created_at`, `last_used_at`, `trusted`, `trusted_device_id`, `trusted_at`, `trusted_by`, `trusted_by.type`, `trusted_by.id`.
+  """
+  def post_approval_devices_trust(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/approval_devices/trust", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Stop trusting a device by its `trusted_device_id`. Approvals it already decided keep their receipts; a request that needs a trusted device refuses it from now on. A trusted-device id that is unknown, another user's or already revoked is a 404. Emits approval_trusted_device.revoked. Needs `approvals:write`.
+
+  `DELETE /v1/users/{id}/approval_devices/{deviceId}`. Required scope: `approvals:write`.
+
+  Response fields: `object`, `id`, `kind`, `ref`, `revoked`, `revoked_at`.
+  """
+  def delete_approval_devices(client, id, device_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}/approval_devices/{deviceId}", %{"id" => id, "deviceId" => device_id}, nil, opts)
+
+  @doc ~S"""
   Resolve a batch of email addresses to user ids in one call. VERIFIED, LIVE users match by default. For RIGHTS FULFILMENT / DSAR, pass include_unverified:true so an account whose email was never confirmed is still found — otherwise a rights request for such a subject would wrongly complete as "no record". Deleted users are excluded by default (after DELETE /v1/users/:id an address stops resolving here, so a rights orchestrator is not told an erased subject still exists and a uniqueness check does not turn a returning user away); pass include_deleted:true to match them, flagged with `deleted`. Each result carries a `verified` flag, so you can always tell the cases apart: ABSENT from `data` means no such live user; PRESENT with `verified:false` means the account exists but hasn't confirmed that email. (For a DSAR you can skip this lookup entirely by opening the request with subject_email on POST /v1/data_subject_requests, which resolves verified-then-unverified server-side.) Boolean flags also accept "true"/"1"/"yes"/1.
 
   `POST /v1/users/by_emails`. Required scope: `users:read`.
+
+  Body fields: `email_addresses` (array, required), `include_unverified` (boolean), `include_deleted` (boolean).
+  Response fields: `object`, `data`, `data.email_address`, `data.user_id`, `data.verified`.
   """
   def post_by_emails(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/by_emails", %{}, body, opts)
@@ -619,12 +926,15 @@ defmodule Atlas.Users do
   List a user's linked identities: their Atlas email/password identity plus each linked external/OAuth provider account. No tokens.
 
   `GET /v1/users/{id}/identities`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.provider`, `data.provider_user_id`, `data.email`, `data.email_verified`, `data.is_primary`, `data.has_password`.
   """
   def get_identities(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/identities", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_identities/2`, following the cursor page by page.
+  Lazy stream over every item of `get_identities`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_identities(client, id, opts \\ []),
@@ -634,6 +944,9 @@ defmodule Atlas.Users do
   Merge a secondary user into this primary: moves the secondary's provider accounts and verified identifiers over (skipping collisions), re-points org memberships without escalating role, revokes the secondary's sessions and retires it. Never clears the primary's MFA or ban.
 
   `POST /v1/users/{id}/identities`. Required scope: `users:write`.
+
+  Body fields: `secondary_user_id` (string), `user_id` (string), `link_with` (string).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.provider`, `data.provider_user_id`, `data.email`, `data.email_verified`, `data.is_primary`, `data.has_password`, `collisions`, `collisions.type`, `collisions.detail`.
   """
   def post_identities(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/identities", %{"id" => id}, body, opts)
@@ -642,6 +955,8 @@ defmodule Atlas.Users do
   Resolve a user to a FLAT identity in one call: the real primary email (never the @no-email.invalid placeholder), email_verified, name, image_url, and the linked provider identities (provider + provider_user_id). The one call an integrator's backend needs to go from a verified session/user id to who they are — no field-name guessing, no /identities probing.
 
   `GET /v1/users/{id}/resolved`. Required scope: `users:read`.
+
+  Response fields: `object`, `user_id`, `email`, `email_verified`, `name`, `image_url`, `identities`, `identities.provider`, `identities.provider_user_id`, `identities.email`.
   """
   def get_resolved(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/resolved", %{"id" => id}, nil, opts)
@@ -650,6 +965,9 @@ defmodule Atlas.Users do
   Backend-initiated connect: start an OAuth flow that links a NEW provider identity to this user (the caller supplies the user id). Returns an authorization_url to redirect the browser to; the callback links the provider without minting a session. Refuses an identity already owned by another user (IDENTITY_ALREADY_LINKED).
 
   `POST /v1/users/{id}/external_accounts/connect`. Required scope: `users:write`.
+
+  Body fields: `provider` (string), `redirect_url` (string), `additional_scopes` (any).
+  Response fields: `object`, `provider`, `user_id`, `attempt_id`, `authorization_url`, `scopes`.
   """
   def post_external_accounts_connect(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/external_accounts/connect", %{"id" => id}, body, opts)
@@ -658,6 +976,9 @@ defmodule Atlas.Users do
   Import a KNOWN provider identity (migration) without an interactive OAuth flow — link { provider, provider_user_id, email_address?, verified? } directly. (provider, provider_user_id) is unique per instance: a collision is a 409 naming the conflicting user, and the next real sign-in resolves to this user. Idempotent on the same user.
 
   `POST /v1/users/{id}/identities/import`. Required scope: `users:write`.
+
+  Body fields: `provider` (string), `provider_user_id` (string), `email_address` (string), `verified` (boolean).
+  Response fields: `object`, `id`, `type`, `provider`, `provider_user_id`, `email`, `email_verified`, `is_primary`, `has_password`.
   """
   def post_identities_import(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/identities/import", %{"id" => id}, body, opts)
@@ -666,14 +987,39 @@ defmodule Atlas.Users do
   Hard-remove a provider identity from a user (undo a mis-import). Distinct from the :identityId unlink, which extracts to a new user; this deletes it. The account's sole sign-in identity is refused.
 
   `DELETE /v1/users/{id}/identities/by-provider/{provider}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `provider`, `removed`.
   """
   def delete_identities_by_provider(client, id, provider, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/identities/by-provider/{provider}", %{"id" => id, "provider" => provider}, nil, opts)
 
   @doc ~S"""
+  Attach a non-sign-in identity (a chat id, a marketplace username) to a user for display and notifications. `provider` must be namespaced like `telegram:bot`; `sign_in` must be false or omitted. The account is returned on the user object (`external_accounts`, `sign_in: false`) and in `user.updated`, and can never be used to sign in. Idempotent on the same user; 409 when another user holds it.
+
+  `POST /v1/users/{id}/external_accounts`. Required scope: `users:write`.
+
+  Body fields: `provider` (string), `provider_user_id` (string), `sign_in` (boolean), `email_address` (string).
+  Response fields: `object`, `id`, `provider`, `provider_user_id`, `provider_email`, `email_verified`, `first_name`, `last_name`, `image_url`, `connected_at`.
+  """
+  def post_external_accounts(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/external_accounts", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Remove a link-only account added with POST /v1/users/{id}/external_accounts. Sign-in identities are removed through the identities routes.
+
+  `DELETE /v1/users/{id}/external_accounts/{account_id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `removed`.
+  """
+  def delete_external_accounts(client, id, account_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}/external_accounts/{account_id}", %{"id" => id, "account_id" => account_id}, nil, opts)
+
+  @doc ~S"""
   Unlink a provider identity, extracting it into a new standalone user (Auth0 semantics). The sole/primary identity cannot be unlinked.
 
   `DELETE /v1/users/{id}/identities/{identityId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `provider`, `unlinked`, `new_user_id`.
   """
   def delete_identities(client, id, identity_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/identities/{identityId}", %{"id" => id, "identityId" => identity_id}, nil, opts)
@@ -682,12 +1028,15 @@ defmodule Atlas.Users do
   List the OAuth clients a user has authorized, with the granted scopes and grant time. Never returns tokens.
 
   `GET /v1/users/{id}/grants`. Required scope: `grants:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.client_name`, `data.scopes`, `data.granted_at`, `data.updated_at`.
   """
   def get_grants(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/grants", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_grants/2`, following the cursor page by page.
+  Lazy stream over every item of `get_grants`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_grants(client, id, opts \\ []),
@@ -697,6 +1046,8 @@ defmodule Atlas.Users do
   Revoke every consent grant a user holds and cascade-revoke all associated tokens through the standard revocation path.
 
   `DELETE /v1/users/{id}/grants`. Required scope: `grants:write`.
+
+  Response fields: `object`, `id`, `grants_revoked`, `tokens_revoked`.
   """
   def delete_grants(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/grants", %{"id" => id}, nil, opts)
@@ -705,12 +1056,15 @@ defmodule Atlas.Users do
   List the certificate attributes registered for a user.
 
   `GET /v1/users/{id}/smartcard_mappings`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.kind`, `data.value`, `data.label`, `data.last_used_at`, `data.created_at`.
   """
   def get_smartcard_mappings(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/smartcard_mappings", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_smartcard_mappings/2`, following the cursor page by page.
+  Lazy stream over every item of `get_smartcard_mappings`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_smartcard_mappings(client, id, opts \\ []),
@@ -720,6 +1074,9 @@ defmodule Atlas.Users do
   Pre-register the certificate attribute that signs this user in with a smart card: kind fingerprint (SHA-256, 64 hex), serial (hex, plus the issuer DN), san_email, san_upn or subject_cn. A registered mapping only applies while its kind is listed in mfa.smartCard.mappingRules. 409 when the value is already mapped.
 
   `POST /v1/users/{id}/smartcard_mappings`. Required scope: `users:write`.
+
+  Body fields: `kind` (enum, required), `value` (string, required), `issuer` (string), `label` (string).
+  Response fields: `object`, `id`, `user_id`, `kind`, `value`, `label`, `last_used_at`, `created_at`.
   """
   def post_smartcard_mappings(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/smartcard_mappings", %{"id" => id}, body, opts)
@@ -728,6 +1085,8 @@ defmodule Atlas.Users do
   Remove a registered certificate mapping.
 
   `DELETE /v1/users/{id}/smartcard_mappings/{mappingId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_smartcard_mappings(client, id, mapping_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/smartcard_mappings/{mappingId}", %{"id" => id, "mappingId" => mapping_id}, nil, opts)
@@ -736,6 +1095,8 @@ defmodule Atlas.Users do
   Clear a user's security-question answers (and any lockout). They set new ones from their account.
 
   `DELETE /v1/users/{id}/security_questions`. Required scope: `users:write`.
+
+  Response fields: `object`, `user_id`, `deleted`.
   """
   def delete_security_questions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/security_questions", %{"id" => id}, nil, opts)
@@ -744,6 +1105,8 @@ defmodule Atlas.Users do
   Fetch a stored provider token, refreshing it single-flight if stale.
 
   `GET /v1/users/{id}/oauth_access_tokens/{provider}`. Required scope: `oauth_tokens:read`.
+
+  Response fields: `object`, `provider`, `token`, `expires_at`, `scopes`, `metadata`, `refreshed`.
   """
   def get_oauth_access_tokens(client, id, provider, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/oauth_access_tokens/{provider}", %{"id" => id, "provider" => provider}, nil, opts)
@@ -752,6 +1115,8 @@ defmodule Atlas.Users do
   Read an end-user's security-notification preferences: every category with whether it is enabled and whether it is optional (security-critical categories are non-optional and always enabled).
 
   `GET /v1/users/{id}/notification_preferences`. Required scope: `notifications:read`.
+
+  Response fields: `object`, `preferences`, `preferences.category`, `preferences.label`, `preferences.enabled`, `preferences.optional`.
   """
   def get_notification_preferences(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/notification_preferences", %{"id" => id}, nil, opts)
@@ -760,6 +1125,9 @@ defmodule Atlas.Users do
   Change an end-user's security-notification preferences with a { preferences: { category: enabled } } patch. An unknown category is a 400; disabling a security-critical category is refused.
 
   `PATCH /v1/users/{id}/notification_preferences`. Required scope: `notifications:write`.
+
+  Body fields: `preferences` (object, required).
+  Response fields: `object`, `preferences`, `preferences.category`, `preferences.label`, `preferences.enabled`, `preferences.optional`.
   """
   def update_notification_preferences(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/users/{id}/notification_preferences", %{"id" => id}, body, opts)
@@ -768,6 +1136,8 @@ defmodule Atlas.Users do
   A user's app roles and the permissions they grant.
 
   `GET /v1/users/{id}/app_roles`. Required scope: `users:read`.
+
+  Response fields: `object`, `user_id`, `roles`, `roles.object`, `roles.id`, `roles.key`, `roles.name`, `roles.description`, `roles.permissions`, `roles.users_count`, `roles.created_at`, `roles.updated_at`, `role_keys`, `permissions`.
   """
   def get_app_roles(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/app_roles", %{"id" => id}, nil, opts)
@@ -776,6 +1146,9 @@ defmodule Atlas.Users do
   Change a user's app roles: roles replaces the whole set, add / remove change it (role keys or ids; send one form). At most 50 roles per user. Emits user.app_roles_updated when anything changed; the user's session token carries the new app_roles / app_permissions from its next refresh.
 
   `POST /v1/users/{id}/app_roles`. Required scope: `users:write`.
+
+  Body fields: `roles` (array), `add` (array), `remove` (array).
+  Response fields: `object`, `user_id`, `roles`, `roles.object`, `roles.id`, `roles.key`, `roles.name`, `roles.description`, `roles.permissions`, `roles.users_count`, `roles.created_at`, `roles.updated_at`, `role_keys`, `permissions`.
   """
   def post_app_roles(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/app_roles", %{"id" => id}, body, opts)
@@ -784,6 +1157,8 @@ defmodule Atlas.Users do
   Take one app role (id or key) from a user. Emits user.app_roles_updated when they held it.
 
   `DELETE /v1/users/{id}/app_roles/{roleId}`. Required scope: `users:write`.
+
+  Response fields: `object`, `user_id`, `roles`, `roles.object`, `roles.id`, `roles.key`, `roles.name`, `roles.description`, `roles.permissions`, `roles.users_count`, `roles.created_at`, `roles.updated_at`, `role_keys`, `permissions`.
   """
   def delete_app_roles(client, id, role_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/app_roles/{roleId}", %{"id" => id, "roleId" => role_id}, nil, opts)
@@ -792,12 +1167,15 @@ defmodule Atlas.Users do
   A user's identity checks, newest first.
 
   `GET /v1/users/{id}/identity_verifications`. Required scope: `identity_verification:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.provider`, `data.status`, `data.reason`, `data.imported`, `data.verified_at`, `data.verified_attributes_status`, `data.url`, `data.decided_by`, `data.created_at`, `data.completed_at`, `has_more`, `next_cursor`.
   """
   def get_identity_verifications(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/identity_verifications", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_identity_verifications/2`, following the cursor page by page.
+  Lazy stream over every item of `get_identity_verifications`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_identity_verifications(client, id, opts \\ []),
@@ -807,20 +1185,47 @@ defmodule Atlas.Users do
   Start an identity check for a user and get the verification service's hosted page (`url`) to send them to. A check started in the last 30 minutes and still pending is returned instead of a new one; at most 5 checks per user per hour. 409 when identity verification is not turned on.
 
   `POST /v1/users/{id}/identity_verifications`. Required scope: `identity_verification:write`.
+
+  Body fields: `redirect_url` (string).
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
   """
   def post_identity_verifications(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/identity_verifications", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Read one of a user's identity checks (needs only `users:read`). A pending check is refreshed from the verification service. When you opted into verified attributes and the check is approved, the FIRST read also returns them in `verified_attributes`; that read destroys Atlas's copy (and redacts the provider's where the provider supports it), so a second read, or a webhook delivery that already succeeded, has none. 404 for a check that belongs to another user.
+
+  `GET /v1/users/{id}/identity_verifications/{attemptId}`. Required scope: `users:read`.
+
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`, `verified_attributes`, `verified_attributes.full_name`, `verified_attributes.birth_year`, `verified_attributes.birth_month`, `verified_attributes.age_over`, `verified_attributes.document_country`.
+  """
+  def get_by_id_identity_verifications_by_attempt_id(client, id, attempt_id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/identity_verifications/{attemptId}", %{"id" => id, "attemptId" => attempt_id}, nil, opts)
+
+  @doc ~S"""
+  Record a check the person already passed at the verification service (Stripe Identity, Persona or Veriff, whichever connector is set up). Atlas re-reads the session through the connector and records an approved check only if the service reports it verified (409 otherwise); the check carries the SERVICE's verification time, so it counts as the MFA-recovery baseline once the configured baseline age has passed since then. The same session for the same user returns the existing check (200); a session already recorded for another user is 409. Sends `identity_verification.completed`.
+
+  `POST /v1/users/{id}/identity_verifications/import`. Required scope: `identity_verification:write`.
+
+  Body fields: `provider` (enum, required), `session_id` (string, required).
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
+  """
+  def post_identity_verifications_import(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/identity_verifications/import", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   A user's standing on every policy (accepted / current version, needs_reaccept, blocking, grace_ends_at).
 
   `GET /v1/users/{id}/policies`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.policy`, `data.policy_id`, `data.title`, `data.display`, `data.required`, `data.applies_to`, `data.reaccept`, `data.current_version_id`, `data.current_version`, `data.content_sha256`, `data.summary_of_changes`, `data.accepted_version_id`, `data.accepted_version`, `data.accepted_at`, `data.needs_reaccept`, `data.blocking`, `data.grace_ends_at`, `user_id`, `needs_acceptance`.
   """
   def get_policies(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/policies", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_policies/2`, following the cursor page by page.
+  Lazy stream over every item of `get_policies`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_policies(client, id, opts \\ []),
@@ -830,6 +1235,9 @@ defmodule Atlas.Users do
   Assign a user's entitlements the same way as for an organization.
 
   `PUT /v1/users/{id}/entitlements`. Required scope: `billing:write`.
+
+  Body fields: `plan` (string|null), `features` (array|null), `limits` (object|null), `expires_at` (integer|string|null).
+  Response fields: `object`, `subject_type`, `subject_id`, `plan`, `features`, `limits`, `expires_at`.
   """
   def put_entitlements(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/users/{id}/entitlements", %{"id" => id}, body, opts)
@@ -838,12 +1246,15 @@ defmodule Atlas.Users do
   A user's successful sign-ins, newest first, keyset-paginated. Each entry carries the method, provider (for social logins), the IP it came from, any impersonator, and the time. `limit` (1–100, default 50) + `starting_after` (the previous page's next_cursor) page it; the response carries has_more + next_cursor.
 
   `GET /v1/users/{id}/sign_in_history`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.method`, `data.provider`, `data.provider_email`, `data.ip`, `data.impersonated_by`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_sign_in_history(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/sign_in_history", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_sign_in_history/2`, following the cursor page by page.
+  Lazy stream over every item of `get_sign_in_history`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_sign_in_history(client, id, opts \\ []),
@@ -853,6 +1264,9 @@ defmodule Atlas.Users do
   Contain an account in one action: sign-in disabled, password invalidated (a new one is required), sessions and OIDC sessions ended, personal API tokens, API keys, agent grants, device keys, desktop devices, remembered devices and temporary passes revoked. Sends `user.banned` (and the Shared Signals account-disabled event) and `user.contained`, and writes one audit record. Idempotent.
 
   `POST /v1/users/{id}/contain`. Required scope: `risky_users:write`.
+
+  Body fields: `reason` (string).
+  Response fields: `object`, `id`, `user_id`, `state`, `reason`, `source`, `revoked`, `contained_by`, `released_by`, `created_at`, `released_at`, `already_contained`.
   """
   def post_contain(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/contain", %{"id" => id}, body, opts)
@@ -861,6 +1275,8 @@ defmodule Atlas.Users do
   Release a contained account. The user can sign in again and still owes the password change.
 
   `POST /v1/users/{id}/release`. Required scope: `risky_users:write`.
+
+  Response fields: `object`, `id`, `user_id`, `state`, `reason`, `source`, `revoked`, `contained_by`, `released_by`, `created_at`, `released_at`.
   """
   def post_release(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/release", %{"id" => id}, nil, opts)
@@ -869,12 +1285,15 @@ defmodule Atlas.Users do
   The user's active temporary access passes (never the codes).
 
   `GET /v1/users/{id}/temporary_access`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.expires_at`, `data.uses_left`, `data.require_enrolment`, `data.bound_ip`, `data.issued_by`, `data.reason`, `data.last_used_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_temporary_access(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/users/{id}/temporary_access", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_temporary_access/2`, following the cursor page by page.
+  Lazy stream over every item of `get_temporary_access`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_temporary_access(client, id, opts \\ []),
@@ -884,6 +1303,9 @@ defmodule Atlas.Users do
   Issue a temporary access pass: a time-limited code (60 seconds to 7 days, one use by default) that signs the user in with `strategy: "temporary_access_pass"`, counts as MFA for that sign-in, and (unless `require_enrolment` is false) makes them register a passkey or second factor. Optionally bound to an IP. The code is shown once.
 
   `POST /v1/users/{id}/temporary_access`. Required scope: `users:write`.
+
+  Body fields: `lifetime_seconds` (integer), `one_time` (boolean), `uses` (integer), `require_enrolment` (boolean), `bound_ip` (string), `reason` (string).
+  Response fields: `object`, `id`, `user_id`, `expires_at`, `uses_left`, `require_enrolment`, `bound_ip`, `issued_by`, `reason`, `last_used_at`, `created_at`, `code`.
   """
   def post_temporary_access(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/users/{id}/temporary_access", %{"id" => id}, body, opts)
@@ -892,9 +1314,182 @@ defmodule Atlas.Users do
   Revoke a temporary access pass.
 
   `DELETE /v1/users/{id}/temporary_access/{pass_id}`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_temporary_access(client, id, pass_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/users/{id}/temporary_access/{pass_id}", %{"id" => id, "pass_id" => pass_id}, nil, opts)
+
+  @doc ~S"""
+  The bulk user actions of the instance, newest first.
+
+  `GET /v1/users/bulk_actions`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `status`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.action`, `data.status`, `data.total`, `data.processed`, `data.succeeded`, `data.failed`, `data.skipped`, `data.progress`, `data.errors`, `data.errors.user_id`, `data.errors.code`, `data.errors.message`, `data.cancel_requested`, `data.created_by`, `data.created_at`, `data.updated_at`, `data.completed_at`, `has_more`, `next_cursor`.
+  """
+  def get_bulk_actions(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/bulk_actions", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_bulk_actions`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_bulk_actions(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/bulk_actions", %{}, opts)
+
+  @doc ~S"""
+  Run one action over many users: ban, unban, revoke_sessions, add_to_org, set_metadata, delete or require_action. Pick users with user_ids, or with a search (filter, query, segment_id). With dry_run: true nothing changes and the answer is the matched count, how many the action would skip and why, and a sample of ids. Without it a job starts (202) that the worker runs in chunks: poll GET /v1/users/bulk_actions/{id} for progress, cancel with POST …/cancel. Each user gets the same effects, events and audit rows as the single-user call; one failing user does not stop the rest. delete needs expected_count (from a dry run) and the users:delete scope, add_to_org the organizations:write scope; a user on legal hold, or one who must hand over organizations first, is skipped. Honours Idempotency-Key. Emits bulk_user_action.completed or .failed.
+
+  `POST /v1/users/bulk_actions`. Required scope: `users:write`.
+
+  Body fields: `action` (enum, required), `params` (object), `filter` (object), `query` (string), `segment_id` (string), `user_ids` (array), `include_deleted` (boolean), `dry_run` (boolean), `expected_count` (integer).
+  Response fields: `object`, `id`, `action`, `status`, `total`, `processed`, `succeeded`, `failed`, `skipped`, `progress`, `errors`, `errors.user_id`, `errors.code`, `errors.message`, `cancel_requested`, `created_by`, `created_at`, `updated_at`, `completed_at`.
+  """
+  def post_bulk_actions(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/bulk_actions", %{}, body, opts)
+
+  @doc ~S"""
+  One bulk user action: status, progress, counts and the first errors.
+
+  `GET /v1/users/bulk_actions/{id}`. Required scope: `users:read`.
+
+  Response fields: `object`, `id`, `action`, `status`, `total`, `processed`, `succeeded`, `failed`, `skipped`, `progress`, `errors`, `errors.user_id`, `errors.code`, `errors.message`, `cancel_requested`, `created_by`, `created_at`, `updated_at`, `completed_at`.
+  """
+  def get_bulk_actions_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/bulk_actions/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Stop a bulk action. One that has not started is cancelled at once; a running one stops after the chunk in hand (users already handled stay handled). 409 when it already finished.
+
+  `POST /v1/users/bulk_actions/{id}/cancel`. Required scope: `users:write`.
+
+  Response fields: `object`, `id`, `action`, `status`, `total`, `processed`, `succeeded`, `failed`, `skipped`, `progress`, `errors`, `errors.user_id`, `errors.code`, `errors.message`, `cancel_requested`, `created_by`, `created_at`, `updated_at`, `completed_at`.
+  """
+  def post_bulk_actions_cancel(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/bulk_actions/{id}/cancel", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Remember email addresses and E.164 phone numbers of accounts that were deleted before this instance recorded deletions, so deletedUserReturn "block" refuses them. Same keyed, unreadable hash a delete writes. Up to 5000 per call, safe to repeat. The answer counts new, already remembered and invalid entries (with the first invalid positions). Honours Idempotency-Key.
+
+  `POST /v1/users/deleted_addresses`. Required scope: `users:delete`.
+
+  Body fields: `addresses` (array, required).
+  Response fields: `object`, `received`, `added`, `already_remembered`, `invalid`, `invalid_indexes`.
+  """
+  def post_deleted_addresses(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/deleted_addresses", %{}, body, opts)
+
+  @doc ~S"""
+  Whether an address is remembered as belonging to a deleted account, whatever the instance's deletedUserReturn mode.
+
+  `POST /v1/users/deleted_addresses/check`. Required scope: `users:read`.
+
+  Body fields: `address` (string, required).
+  Response fields: `object`, `remembered`.
+  """
+  def post_deleted_addresses_check(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/deleted_addresses/check", %{}, body, opts)
+
+  @doc ~S"""
+  Whether the user is on legal hold, the active hold, and every hold they ever had.
+
+  `GET /v1/users/{id}/legal_hold`. Required scope: `data_subject_requests:read`.
+
+  Response fields: `object`, `user_id`, `on_hold`, `active`, `active.object`, `active.id`, `active.user_id`, `active.reason`, `active.case_ref`, `active.placed_by`, `active.placed_at`, `active.released_at`, `active.released_by`, `active.release_reason`, `active.active`, `history`, `history.object`, `history.id`, `history.user_id`, `history.reason`, `history.case_ref`, `history.placed_by`, `history.placed_at`, `history.released_at`, `history.released_by`, `history.release_reason`, `history.active`.
+  """
+  def get_legal_hold(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/legal_hold", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Place a legal hold on a user. While it is active no path erases them: the delete call, a scheduled deletion (it stays scheduled and does not run), a data subject request, a workflow and a bulk delete all refuse or wait, and a merge that would delete this user is refused (409 LEGAL_HOLD). Placing a hold on a user already held returns the existing hold (200). Audited; emits user.legal_hold_placed. Honours Idempotency-Key.
+
+  `POST /v1/users/{id}/legal_hold`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `reason` (string, required), `case_ref` (string|null).
+  Response fields: `object`, `id`, `user_id`, `reason`, `case_ref`, `placed_by`, `placed_at`, `released_at`, `released_by`, `release_reason`, `active`.
+  """
+  def post_legal_hold(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/legal_hold", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Release the active legal hold. A deletion that was waiting on it runs on the next pass. 404 when there is no active hold. Audited; emits user.legal_hold_released.
+
+  `POST /v1/users/{id}/legal_hold/release`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `reason` (string|null).
+  Response fields: `object`, `id`, `user_id`, `reason`, `case_ref`, `placed_by`, `placed_at`, `released_at`, `released_by`, `release_reason`, `active`.
+  """
+  def post_legal_hold_release(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/legal_hold/release", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The organizations this user is the only admin of that still have other members: what deleting them would orphan. Hand each one over (promote another member to admin) before deleting. Empty when none.
+
+  `GET /v1/users/{id}/owned_organizations`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.slug`, `data.other_members`, `has_more`, `next_cursor`.
+  """
+  def get_owned_organizations(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/owned_organizations", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_owned_organizations`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_owned_organizations(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/{id}/owned_organizations", %{"id" => id}, opts)
+
+  @doc ~S"""
+  The age assurance records of a user, newest first, with whether each is trusted by compliance.minors.trustedAgeMethods.
+
+  `GET /v1/users/{id}/age_assurance`. Required scope: `users:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.method`, `data.level`, `data.over_age`, `data.provider`, `data.reference`, `data.verification_id`, `data.status`, `data.trusted`, `data.expires_at`, `data.revoked_at`, `data.revoked_reason`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_age_assurance(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/users/{id}/age_assurance", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_age_assurance`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_age_assurance(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/users/{id}/age_assurance", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Record that a method established the user is at least over_age years old (self_declared, id_document, payment_card, estimation, credential, third_party, admin). The record holds the outcome and an opaque reference, never the evidence. id_document needs the user's approved identity verification (verification_id). third_party states its own assurance_level. When compliance.minors.trustedAgeMethods lists the method and over_age reaches the user's age of consent, the user is no longer treated as a minor. Emits user.age_assurance_recorded. Honours Idempotency-Key.
+
+  `POST /v1/users/{id}/age_assurance`. Required scope: `users:write`.
+
+  Body fields: `method` (enum, required), `over_age` (integer, required), `assurance_level` (enum), `provider` (string|null), `reference` (string|null), `verification_id` (string), `expires_at` (integer|null).
+  Response fields: `object`, `id`, `user_id`, `method`, `level`, `over_age`, `provider`, `reference`, `verification_id`, `status`, `trusted`, `expires_at`, `revoked_at`, `revoked_reason`, `created_at`.
+  """
+  def post_age_assurance(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/age_assurance", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Withdraw an age assurance record. The user is re-assessed from their date of birth. Revoking twice returns the same record.
+
+  `POST /v1/users/{id}/age_assurance/{assuranceId}/revoke`. Required scope: `users:write`.
+
+  Body fields: `reason` (string|null).
+  Response fields: `object`, `id`, `user_id`, `method`, `level`, `over_age`, `provider`, `reference`, `verification_id`, `status`, `trusted`, `expires_at`, `revoked_at`, `revoked_reason`, `created_at`.
+  """
+  def post_age_assurance_revoke(client, id, assurance_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/users/{id}/age_assurance/{assuranceId}/revoke", %{"id" => id, "assuranceId" => assurance_id}, body, opts)
+
+  @doc ~S"""
+  Erase the cookie consent records linked to a user. Deleting the user does this too. Audited.
+
+  `DELETE /v1/users/{id}/cookie_consents`. Required scope: `data_subject_requests:write`.
+
+  Response fields: `object`, `removed`.
+  """
+  def delete_cookie_consents(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/users/{id}/cookie_consents", %{"id" => id}, nil, opts)
 
   @doc false
   def __operations__, do: [
@@ -911,12 +1506,16 @@ defmodule Atlas.Users do
     {:post_guardians, :post, "/v1/users/{id}/guardians", 1, true, false},
     {:post_guardians_approve, :post, "/v1/users/{id}/guardians/{linkId}/approve", 2, true, false},
     {:delete_guardians, :delete, "/v1/users/{id}/guardians/{linkId}", 2, false, false},
+    {:get_journeys, :get, "/v1/users/{id}/journeys", 1, false, true},
+    {:delete_journeys, :delete, "/v1/users/{id}/journeys", 1, false, false},
     {:post_search, :post, "/v1/users/search", 0, true, false},
+    {:get_search_fields, :get, "/v1/users/search/fields", 0, false, true},
     {:post_search_export, :post, "/v1/users/search/export", 0, true, false},
     {:get_search_views, :get, "/v1/users/search/views", 0, false, true},
     {:post_search_views, :post, "/v1/users/search/views", 0, true, false},
     {:update_search_views, :patch, "/v1/users/search/views/{id}", 1, true, false},
     {:delete_search_views, :delete, "/v1/users/search/views/{id}", 1, false, false},
+    {:post_search_views_count, :post, "/v1/users/search/views/{id}/count", 1, false, false},
     {:get_groups, :get, "/v1/users/{id}/groups", 1, false, true},
     {:post_links, :post, "/v1/users/{id}/links", 1, true, false},
     {:list, :get, "/v1/users", 0, false, true},
@@ -924,6 +1523,7 @@ defmodule Atlas.Users do
     {:get, :get, "/v1/users/{id}", 1, false, false},
     {:update, :patch, "/v1/users/{id}", 1, true, false},
     {:delete, :delete, "/v1/users/{id}", 1, false, false},
+    {:delete_with_body, :delete, "/v1/users/{id}", 1, true, false},
     {:post_password, :post, "/v1/users/{id}/password", 1, true, false},
     {:delete_password, :delete, "/v1/users/{id}/password", 1, true, false},
     {:put_metadata, :put, "/v1/users/{id}/metadata", 1, true, false},
@@ -959,11 +1559,16 @@ defmodule Atlas.Users do
     {:post_merge, :post, "/v1/users/{id}/merge", 1, true, false},
     {:post_deletion, :post, "/v1/users/{id}/deletion", 1, true, false},
     {:post_deletion_cancel, :post, "/v1/users/{id}/deletion/cancel", 1, false, false},
+    {:post_deletion_reconfirm, :post, "/v1/users/{id}/deletion/reconfirm", 1, false, false},
     {:post_deletion_finalize, :post, "/v1/users/{id}/deletion/finalize", 1, false, false},
     {:post_erasure_acks, :post, "/v1/users/{id}/erasure_acks", 1, true, false},
     {:get_erasure_export, :get, "/v1/users/{id}/erasure_export", 1, false, false},
     {:post_approval_requests, :post, "/v1/users/{id}/approval_requests", 1, true, false},
     {:get_approval_requests, :get, "/v1/users/{id}/approval_requests/{approvalId}", 2, false, false},
+    {:post_approval_requests_cancel, :post, "/v1/users/{id}/approval_requests/{approvalId}/cancel", 2, false, false},
+    {:get_approval_devices, :get, "/v1/users/{id}/approval_devices", 1, false, true},
+    {:post_approval_devices_trust, :post, "/v1/users/{id}/approval_devices/trust", 1, true, false},
+    {:delete_approval_devices, :delete, "/v1/users/{id}/approval_devices/{deviceId}", 2, false, false},
     {:post_by_emails, :post, "/v1/users/by_emails", 0, true, false},
     {:get_identities, :get, "/v1/users/{id}/identities", 1, false, true},
     {:post_identities, :post, "/v1/users/{id}/identities", 1, true, false},
@@ -971,6 +1576,8 @@ defmodule Atlas.Users do
     {:post_external_accounts_connect, :post, "/v1/users/{id}/external_accounts/connect", 1, true, false},
     {:post_identities_import, :post, "/v1/users/{id}/identities/import", 1, true, false},
     {:delete_identities_by_provider, :delete, "/v1/users/{id}/identities/by-provider/{provider}", 2, false, false},
+    {:post_external_accounts, :post, "/v1/users/{id}/external_accounts", 1, true, false},
+    {:delete_external_accounts, :delete, "/v1/users/{id}/external_accounts/{account_id}", 2, false, false},
     {:delete_identities, :delete, "/v1/users/{id}/identities/{identityId}", 2, false, false},
     {:get_grants, :get, "/v1/users/{id}/grants", 1, false, true},
     {:delete_grants, :delete, "/v1/users/{id}/grants", 1, false, false},
@@ -986,6 +1593,8 @@ defmodule Atlas.Users do
     {:delete_app_roles, :delete, "/v1/users/{id}/app_roles/{roleId}", 2, false, false},
     {:get_identity_verifications, :get, "/v1/users/{id}/identity_verifications", 1, false, true},
     {:post_identity_verifications, :post, "/v1/users/{id}/identity_verifications", 1, true, false},
+    {:get_by_id_identity_verifications_by_attempt_id, :get, "/v1/users/{id}/identity_verifications/{attemptId}", 2, false, false},
+    {:post_identity_verifications_import, :post, "/v1/users/{id}/identity_verifications/import", 1, true, false},
     {:get_policies, :get, "/v1/users/{id}/policies", 1, false, true},
     {:put_entitlements, :put, "/v1/users/{id}/entitlements", 1, true, false},
     {:get_sign_in_history, :get, "/v1/users/{id}/sign_in_history", 1, false, true},
@@ -993,6 +1602,20 @@ defmodule Atlas.Users do
     {:post_release, :post, "/v1/users/{id}/release", 1, false, false},
     {:get_temporary_access, :get, "/v1/users/{id}/temporary_access", 1, false, true},
     {:post_temporary_access, :post, "/v1/users/{id}/temporary_access", 1, true, false},
-    {:delete_temporary_access, :delete, "/v1/users/{id}/temporary_access/{pass_id}", 2, false, false}
+    {:delete_temporary_access, :delete, "/v1/users/{id}/temporary_access/{pass_id}", 2, false, false},
+    {:get_bulk_actions, :get, "/v1/users/bulk_actions", 0, false, true},
+    {:post_bulk_actions, :post, "/v1/users/bulk_actions", 0, true, false},
+    {:get_bulk_actions_by_id, :get, "/v1/users/bulk_actions/{id}", 1, false, false},
+    {:post_bulk_actions_cancel, :post, "/v1/users/bulk_actions/{id}/cancel", 1, false, false},
+    {:post_deleted_addresses, :post, "/v1/users/deleted_addresses", 0, true, false},
+    {:post_deleted_addresses_check, :post, "/v1/users/deleted_addresses/check", 0, true, false},
+    {:get_legal_hold, :get, "/v1/users/{id}/legal_hold", 1, false, false},
+    {:post_legal_hold, :post, "/v1/users/{id}/legal_hold", 1, true, false},
+    {:post_legal_hold_release, :post, "/v1/users/{id}/legal_hold/release", 1, true, false},
+    {:get_owned_organizations, :get, "/v1/users/{id}/owned_organizations", 1, false, true},
+    {:get_age_assurance, :get, "/v1/users/{id}/age_assurance", 1, false, true},
+    {:post_age_assurance, :post, "/v1/users/{id}/age_assurance", 1, true, false},
+    {:post_age_assurance_revoke, :post, "/v1/users/{id}/age_assurance/{assuranceId}/revoke", 2, true, false},
+    {:delete_cookie_consents, :delete, "/v1/users/{id}/cookie_consents", 1, false, false}
   ]
 end

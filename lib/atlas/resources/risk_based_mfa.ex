@@ -5,7 +5,8 @@ defmodule Atlas.RiskBasedMfa do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.RiskBasedMfa do
   Read the instance's adaptive (risk-based) MFA policy: enabled, step-up threshold, no-factor handling, and the signal weights/toggles.
 
   `GET /v1/risk_based_mfa`. Required scope: `risk_based_mfa:read`.
+
+  Response fields: `object`, `enabled`, `step_up_threshold`, `on_high_risk_no_factor`, `mode`, `level_actions`, `level_actions.medium`, `level_actions.high`, `fraud`, `fraud.sanctioned_countries`, `fraud.device_rate_limit`, `fraud.device_rate_limit.enabled`, `fraud.device_rate_limit.per_hour`, `fraud.device_rate_limit.adaptive`, `fraud.rules`, `fraud.rules.id`, `fraud.rules.name`, `fraud.rules.enabled`, `fraud.rules.action`, `fraud.rules.reason`, `fraud.rules.conditions`, `baseline`, `baseline.enabled`, `baseline.weight`, `mid_session`, `mid_session.enabled`, `mid_session.action`, `reputation`, `reputation.provider`, `reputation.ip_weight`, `reputation.min_score`, `reputation.flag_anonymizers`, `reputation.email_checks`, `reputation.email_weight`, `weights`, `weights.newDevice`, `weights.newSubnet`, `weights.newIp`, `weights.velocity`, `weights.impossibleTravel`, `weights.dormantAccount`, `signals`, `signals.newDevice`, `signals.newSubnet`, `signals.newIp`, `signals.velocity`, `signals.impossibleTravel`, `signals.dormantAccount`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/risk_based_mfa", %{}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.RiskBasedMfa do
   Tune adaptive MFA: enable it, choose `mode` (enforce, or audit to score and record without acting), set the step-up threshold, the per-level action matrix (`level_actions`: default, allow, notify, mfa, block) and the high-risk-no-factor policy, and adjust the per-signal weights/toggles, configure the `fraud` rules and sanctions list used by POST /v1/fraud/lookup, and configure the `reputation` feeds (IP reputation via your own ipqs/spur/minfraud key, plus disposable-domain and no-MX email checks) that add risk signals. Off by default; it can only add friction, never weaken the gate.
 
   `PATCH /v1/risk_based_mfa`. Required scope: `risk_based_mfa:write`.
+
+  Body fields: `enabled` (boolean), `step_up_threshold` (enum), `on_high_risk_no_factor` (enum), `weights` (object), `signals` (object), `mode` (enum), `level_actions` (object), `reputation` (object), `fraud` (object), `baseline` (object), `mid_session` (object).
+  Nested body fields: `weights.newDevice`, `weights.newSubnet`, `weights.newIp`, `weights.velocity`, `weights.impossibleTravel`, `weights.dormantAccount`, `signals.newDevice`, `signals.newSubnet`, `signals.newIp`, `signals.velocity`, `signals.impossibleTravel`, `signals.dormantAccount`, `level_actions.medium`, `level_actions.high`, `reputation.provider`, `reputation.ip_weight`, `reputation.min_score`, `reputation.flag_anonymizers`, `reputation.email_checks`, `reputation.email_weight`, `fraud.sanctioned_countries`, `fraud.device_rate_limit`, `fraud.device_rate_limit.enabled`, `fraud.device_rate_limit.per_hour`, `fraud.device_rate_limit.adaptive`, `fraud.rules`, `fraud.rules.id`, `fraud.rules.name`, `fraud.rules.enabled`, `fraud.rules.action`, `fraud.rules.reason`, `fraud.rules.conditions`, `baseline.enabled`, `baseline.weight`, `mid_session.enabled`, `mid_session.action`.
+  Response fields: `object`, `enabled`, `step_up_threshold`, `on_high_risk_no_factor`, `mode`, `level_actions`, `level_actions.medium`, `level_actions.high`, `fraud`, `fraud.sanctioned_countries`, `fraud.device_rate_limit`, `fraud.device_rate_limit.enabled`, `fraud.device_rate_limit.per_hour`, `fraud.device_rate_limit.adaptive`, `fraud.rules`, `fraud.rules.id`, `fraud.rules.name`, `fraud.rules.enabled`, `fraud.rules.action`, `fraud.rules.reason`, `fraud.rules.conditions`, `baseline`, `baseline.enabled`, `baseline.weight`, `mid_session`, `mid_session.enabled`, `mid_session.action`, `reputation`, `reputation.provider`, `reputation.ip_weight`, `reputation.min_score`, `reputation.flag_anonymizers`, `reputation.email_checks`, `reputation.email_weight`, `weights`, `weights.newDevice`, `weights.newSubnet`, `weights.newIp`, `weights.velocity`, `weights.impossibleTravel`, `weights.dormantAccount`, `signals`, `signals.newDevice`, `signals.newSubnet`, `signals.newIp`, `signals.velocity`, `signals.impossibleTravel`, `signals.dormantAccount`.
   """
   def update(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/risk_based_mfa", %{}, body, opts)
@@ -29,6 +36,9 @@ defmodule Atlas.RiskBasedMfa do
   Store (write-only, encrypted) the API key of your IP-reputation provider (ipqs, spur or minfraud; minFraud uses "<account id>:<license key>"). Then set `reputation.provider` on PATCH /v1/risk_based_mfa. Lookups are cached and fail open: a provider outage never blocks a sign-in.
 
   `PUT /v1/risk_based_mfa/reputation_secret`. Required scope: `risk_based_mfa:write`.
+
+  Body fields: `secret` (string), `provider` (string).
+  Response fields: `object`, `provider`, `set`.
   """
   def put_reputation_secret(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/risk_based_mfa/reputation_secret", %{}, body, opts)
@@ -37,15 +47,30 @@ defmodule Atlas.RiskBasedMfa do
   Remove a stored IP-reputation provider key (default: the configured provider). IP lookups for that provider stop; sign-in is unaffected.
 
   `DELETE /v1/risk_based_mfa/reputation_secret`. Required scope: `risk_based_mfa:write`.
+
+  Query params (`params:`): `provider`.
+  Response fields: `object`, `provider`, `deleted`.
   """
   def delete_reputation_secret(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/risk_based_mfa/reputation_secret", %{}, nil, opts)
+
+  @doc ~S"""
+  What-if replay: re-score the recorded sign-ins of the last `days` days (1 to 30) under the current risk policy and under the policy with `candidate` applied (any of step_up_threshold, on_high_risk_no_factor, weights, signals, level_actions, baseline, as in PATCH /v1/risk_based_mfa), and report how levels and actions move, how many sign-ins would see more or less friction, and up to 25 changed sign-ins. Reported risk signals are replayed over the time each was live; reputation feeds are not. Changes nothing.
+
+  `POST /v1/risk_based_mfa/replay`. Required scope: `risk_based_mfa:read`.
+
+  Body fields: `days` (integer), `user_id` (string), `limit` (integer), `candidate` (object).
+  Response fields: `object`, `window`, `window.since`, `window.until`, `window.days`, `truncated`, `sign_ins`, `users`, `current`, `current.levels`, `current.levels.low`, `current.levels.medium`, `current.levels.high`, `current.actions`, `candidate`, `candidate.levels`, `candidate.levels.low`, `candidate.levels.medium`, `candidate.levels.high`, `candidate.actions`, `changed`, `adds_friction`, `removes_friction`, `samples`, `samples.user_id`, `samples.at`, `samples.ip`, `samples.current`, `samples.current.level`, `samples.current.score`, `samples.current.action`, `samples.current.signals`, `samples.candidate`, `samples.candidate.level`, `samples.candidate.score`, `samples.candidate.action`, `samples.candidate.signals`, `notes`.
+  """
+  def post_replay(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/risk_based_mfa/replay", %{}, body, opts)
 
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/risk_based_mfa", 0, false, false},
     {:update, :patch, "/v1/risk_based_mfa", 0, true, false},
     {:put_reputation_secret, :put, "/v1/risk_based_mfa/reputation_secret", 0, true, false},
-    {:delete_reputation_secret, :delete, "/v1/risk_based_mfa/reputation_secret", 0, false, false}
+    {:delete_reputation_secret, :delete, "/v1/risk_based_mfa/reputation_secret", 0, false, false},
+    {:post_replay, :post, "/v1/risk_based_mfa/replay", 0, true, false}
   ]
 end

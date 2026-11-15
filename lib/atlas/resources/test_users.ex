@@ -5,7 +5,8 @@ defmodule Atlas.TestUsers do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.TestUsers do
   Dispose test users in bulk (development instances only): soft-delete every user whose email carries a reserved test token (+clerk_test / +atlas_test). Refused on a production instance; never touches a real account. Returns { purged, has_more } — loop until has_more is false.
 
   `POST /v1/test_users/purge`. Required scope: `users:delete`.
+
+  Body fields: `limit` (integer).
+  Response fields: `object`, `purged`, `has_more`.
   """
   def post_purge(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/test_users/purge", %{}, body, opts)

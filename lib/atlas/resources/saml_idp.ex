@@ -5,7 +5,8 @@ defmodule Atlas.SamlIdp do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.SamlIdp do
   List the SAML service providers Atlas issues assertions to, with their NameID format, encryption, request-signing, algorithm and logout settings.
 
   `GET /v1/saml_idp/service_providers`. Required scope: `app_catalog:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.entity_id`, `data.acs_url`, `data.acs_urls`, `data.name_id_format`, `data.name_id_field`, `data.attributes`, `data.encrypt_assertions`, `data.has_encryption_cert`, `data.signing_cert_count`, `data.require_signed_requests`, `data.signature_algorithm`, `data.digest_algorithm`, `data.sign_response`, `data.artifact_binding`, `data.ecp`, `data.attribute_query`, `data.slo_url`, `data.slo_binding`, `data.authn_context_class_ref`, `data.assertion_lifetime_seconds`.
   """
   def get_service_providers(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/saml_idp/service_providers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_service_providers/1`, following the cursor page by page.
+  Lazy stream over every item of `get_service_providers`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_service_providers(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.SamlIdp do
   Read one SAML service provider's settings.
 
   `GET /v1/saml_idp/service_providers/{id}`. Required scope: `app_catalog:read`.
+
+  Response fields: `object`, `id`, `name`, `entity_id`, `acs_url`, `acs_urls`, `name_id_format`, `name_id_field`, `attributes`, `encrypt_assertions`, `has_encryption_cert`, `signing_cert_count`, `require_signed_requests`, `signature_algorithm`, `digest_algorithm`, `sign_response`, `artifact_binding`, `ecp`, `attribute_query`, `slo_url`, `slo_binding`, `authn_context_class_ref`, `assertion_lifetime_seconds`.
   """
   def get_service_providers_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/saml_idp/service_providers/{id}", %{"id" => id}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.SamlIdp do
   Change a SAML service provider's NameID format (emailAddress, persistent, transient, unspecified), assertion encryption, request-signing certificates, signature and digest algorithms, Response signing, assertion lifetime, authentication context and single-logout endpoint.
 
   `PATCH /v1/saml_idp/service_providers/{id}`. Required scope: `app_catalog:write`.
+
+  Body fields: `name` (string), `acs_urls` (array), `name_id_format` (enum), `name_id_field` (enum), `attributes` (object), `encrypt_assertions` (boolean), `encryption_cert` (string|null), `signing_certs` (array), `require_signed_requests` (boolean), `signature_algorithm` (enum), `digest_algorithm` (enum), `sign_response` (boolean), `artifact_binding` (boolean), `ecp` (boolean), `attribute_query` (boolean), `slo_url` (string|null), `slo_binding` (enum), `authn_context_class_ref` (string|null), `assertion_lifetime_seconds` (integer|null).
+  Response fields: `object`, `id`, `name`, `entity_id`, `acs_url`, `acs_urls`, `name_id_format`, `name_id_field`, `attributes`, `encrypt_assertions`, `has_encryption_cert`, `signing_cert_count`, `require_signed_requests`, `signature_algorithm`, `digest_algorithm`, `sign_response`, `artifact_binding`, `ecp`, `attribute_query`, `slo_url`, `slo_binding`, `authn_context_class_ref`, `assertion_lifetime_seconds`.
   """
   def update_service_providers(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/saml_idp/service_providers/{id}", %{"id" => id}, body, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.SamlIdp do
   Read a service provider's SAML metadata (pasted XML or an https URL) into entity id, ACS URLs, NameID format, request-signing and encryption certificates and logout endpoint. With save_as the service provider is saved (201); without it nothing is stored.
 
   `POST /v1/saml_idp/service_providers/import_metadata`. Required scope: `app_catalog:write`.
+
+  Body fields: `metadata_xml` (string), `metadata_url` (string), `entity_id` (string), `mdq_base_url` (string), `federation_certificate` (string), `save_as` (string), `name` (string).
+  Response fields: `object`, `saved`, `entity_id`, `acs_url`, `acs_urls`, `name_id_format`, `signing_certs`, `encryption_cert`, `slo_url`, `slo_binding`, `authn_requests_signed`, `want_assertions_signed`, `requested_attributes`, `service_provider`, `service_provider.object`, `service_provider.id`, `service_provider.name`, `service_provider.entity_id`, `service_provider.acs_url`, `service_provider.acs_urls`, `service_provider.name_id_format`, `service_provider.name_id_field`, `service_provider.attributes`, `service_provider.encrypt_assertions`, `service_provider.has_encryption_cert`, `service_provider.signing_cert_count`, `service_provider.require_signed_requests`, `service_provider.signature_algorithm`, `service_provider.digest_algorithm`, `service_provider.sign_response`, `service_provider.artifact_binding`, `service_provider.ecp`, `service_provider.attribute_query`, `service_provider.slo_url`, `service_provider.slo_binding`, `service_provider.authn_context_class_ref`, `service_provider.assertion_lifetime_seconds`.
   """
   def post_service_providers_import_metadata(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/saml_idp/service_providers/import_metadata", %{}, body, opts)

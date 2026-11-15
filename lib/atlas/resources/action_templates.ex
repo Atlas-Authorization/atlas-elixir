@@ -5,7 +5,8 @@ defmodule Atlas.ActionTemplates do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ActionTemplates do
   The gallery templates this instance publishes, with every version and its review status.
 
   `GET /v1/action_templates`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.slug`, `data.name`, `data.author_name`, `data.summary`, `data.description`, `data.category`, `data.tags`, `data.trigger`, `data.license`, `data.repository_url`, `data.status`, `data.latest_version`, `data.verified`, `data.featured`, `data.install_count`, `data.view_count`, `data.published_at`, `data.created_at`, `data.updated_at`, `data.versions`, `data.versions.object`, `data.versions.version`, `data.versions.status`, `data.versions.trigger`, `data.versions.secrets`, `data.versions.changelog`, `data.versions.review_note`, `data.versions.code`, `data.versions.submitted_at`, `data.versions.reviewed_at`, `data.versions.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/action_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.ActionTemplates do
   Create a gallery template (slug, name, author_name, summary, trigger, licence…), optionally with its first version (version, code, secret names). Versions stay drafts until submitted for review.
 
   `POST /v1/action_templates`. Required scope: `actions:write`.
+
+  Body fields: `slug` (string), `name` (string), `author_name` (string), `summary` (string), `description` (string), `category` (string), `tags` (array), `trigger` (string), `license` (string), `repository_url` (string), `version` (string), `code` (string), `secrets` (array), `changelog` (string), `submit` (boolean).
+  Nested body fields: `secrets.name`, `secrets.description`, `secrets.required`.
+  Response fields: `object`, `id`, `slug`, `name`, `author_name`, `summary`, `description`, `category`, `tags`, `trigger`, `license`, `repository_url`, `status`, `latest_version`, `verified`, `featured`, `install_count`, `view_count`, `published_at`, `created_at`, `updated_at`, `versions`, `versions.object`, `versions.version`, `versions.status`, `versions.trigger`, `versions.secrets`, `versions.secrets.name`, `versions.secrets.description`, `versions.secrets.required`, `versions.changelog`, `versions.review_note`, `versions.code`, `versions.submitted_at`, `versions.reviewed_at`, `versions.created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/action_templates", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.ActionTemplates do
   One of your gallery templates, with every version.
 
   `GET /v1/action_templates/{id}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `id`, `slug`, `name`, `author_name`, `summary`, `description`, `category`, `tags`, `trigger`, `license`, `repository_url`, `status`, `latest_version`, `verified`, `featured`, `install_count`, `view_count`, `published_at`, `created_at`, `updated_at`, `versions`, `versions.object`, `versions.version`, `versions.status`, `versions.trigger`, `versions.secrets`, `versions.secrets.name`, `versions.secrets.description`, `versions.secrets.required`, `versions.changelog`, `versions.review_note`, `versions.code`, `versions.submitted_at`, `versions.reviewed_at`, `versions.created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/action_templates/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,9 @@ defmodule Atlas.ActionTemplates do
   Edit a template's listing. A published template keeps its slug and trigger.
 
   `PATCH /v1/action_templates/{id}`. Required scope: `actions:write`.
+
+  Body fields: `slug` (string), `name` (string), `author_name` (string), `summary` (string), `description` (string), `category` (string), `tags` (array), `trigger` (string), `license` (string), `repository_url` (string).
+  Response fields: `object`, `id`, `slug`, `name`, `author_name`, `summary`, `description`, `category`, `tags`, `trigger`, `license`, `repository_url`, `status`, `latest_version`, `verified`, `featured`, `install_count`, `view_count`, `published_at`, `created_at`, `updated_at`, `versions`, `versions.object`, `versions.version`, `versions.status`, `versions.trigger`, `versions.secrets`, `versions.secrets.name`, `versions.secrets.description`, `versions.secrets.required`, `versions.changelog`, `versions.review_note`, `versions.code`, `versions.submitted_at`, `versions.reviewed_at`, `versions.created_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/action_templates/{id}", %{"id" => id}, body, opts)
@@ -52,6 +65,8 @@ defmodule Atlas.ActionTemplates do
   Delete a template and its versions from the gallery. Actions already installed from it keep working.
 
   `DELETE /v1/action_templates/{id}`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/action_templates/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +75,10 @@ defmodule Atlas.ActionTemplates do
   Add a draft version (semver, higher than every existing one). The code must compile; secrets are declared by name only. `submit: true` sends it to review at once.
 
   `POST /v1/action_templates/{id}/versions`. Required scope: `actions:write`.
+
+  Body fields: `version` (string), `code` (string), `secrets` (array), `changelog` (string), `submit` (boolean).
+  Nested body fields: `secrets.name`, `secrets.description`, `secrets.required`.
+  Response fields: `object`, `version`, `status`, `trigger`, `secrets`, `secrets.name`, `secrets.description`, `secrets.required`, `changelog`, `review_note`, `code`, `submitted_at`, `reviewed_at`, `created_at`.
   """
   def post_versions(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/action_templates/{id}/versions", %{"id" => id}, body, opts)
@@ -68,6 +87,8 @@ defmodule Atlas.ActionTemplates do
   Submit a draft (or rejected) version for review. Once approved it becomes the version the gallery shows and installs.
 
   `POST /v1/action_templates/{id}/versions/{version}/submit`. Required scope: `actions:write`.
+
+  Response fields: `object`, `version`, `status`, `trigger`, `secrets`, `secrets.name`, `secrets.description`, `secrets.required`, `changelog`, `review_note`, `code`, `submitted_at`, `reviewed_at`, `created_at`.
   """
   def post_versions_submit(client, id, version, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/action_templates/{id}/versions/{version}/submit", %{"id" => id, "version" => version}, nil, opts)
@@ -76,6 +97,8 @@ defmodule Atlas.ActionTemplates do
   Delete a version that was never approved. Approved versions are immutable.
 
   `DELETE /v1/action_templates/{id}/versions/{version}`. Required scope: `actions:write`.
+
+  Response fields: `object`, `version`, `deleted`.
   """
   def delete_versions(client, id, version, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/action_templates/{id}/versions/{version}", %{"id" => id, "version" => version}, nil, opts)
@@ -84,6 +107,8 @@ defmodule Atlas.ActionTemplates do
   List an approved template in the gallery again after unlisting it.
 
   `POST /v1/action_templates/{id}/publish`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `slug`, `name`, `author_name`, `summary`, `description`, `category`, `tags`, `trigger`, `license`, `repository_url`, `status`, `latest_version`, `verified`, `featured`, `install_count`, `view_count`, `published_at`, `created_at`, `updated_at`, `versions`, `versions.object`, `versions.version`, `versions.status`, `versions.trigger`, `versions.secrets`, `versions.secrets.name`, `versions.secrets.description`, `versions.secrets.required`, `versions.changelog`, `versions.review_note`, `versions.code`, `versions.submitted_at`, `versions.reviewed_at`, `versions.created_at`.
   """
   def post_publish(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/action_templates/{id}/publish", %{"id" => id}, nil, opts)
@@ -92,6 +117,8 @@ defmodule Atlas.ActionTemplates do
   Hide a template from the gallery. Existing installs keep working; nobody new can install it.
 
   `POST /v1/action_templates/{id}/unlist`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `slug`, `name`, `author_name`, `summary`, `description`, `category`, `tags`, `trigger`, `license`, `repository_url`, `status`, `latest_version`, `verified`, `featured`, `install_count`, `view_count`, `published_at`, `created_at`, `updated_at`, `versions`, `versions.object`, `versions.version`, `versions.status`, `versions.trigger`, `versions.secrets`, `versions.secrets.name`, `versions.secrets.description`, `versions.secrets.required`, `versions.changelog`, `versions.review_note`, `versions.code`, `versions.submitted_at`, `versions.reviewed_at`, `versions.created_at`.
   """
   def post_unlist(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/action_templates/{id}/unlist", %{"id" => id}, nil, opts)

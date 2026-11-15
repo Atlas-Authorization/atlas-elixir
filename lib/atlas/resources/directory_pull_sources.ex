@@ -5,7 +5,8 @@ defmodule Atlas.DirectoryPullSources do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.DirectoryPullSources do
   List HR / directory pull sources, optionally for one organization (organization_id). Credentials are never returned.
 
   `GET /v1/directory_pull_sources`. Required scope: `directory_pull:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.name`, `data.provider`, `data.status`, `data.config`, `data.settings`, `data.default_role_id`, `data.has_credentials`, `data.has_uploaded_csv`, `data.next_sync_at`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/directory_pull_sources", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.DirectoryPullSources do
   Create a pull source for an organization: provider (entra, google_workspace, bamboohr, hibob, personio, workday, successfactors, gusto, csv, rest_json), config, write-only credentials and settings (schedule, role mappings, disable on removal).
 
   `POST /v1/directory_pull_sources`. Required scope: `directory_pull:write`.
+
+  Body fields: `organization_id` (string, required), `name` (string, required), `provider` (enum, required), `status` (enum), `config` (object), `credentials` (object), `default_role_id` (string|null), `settings` (object).
+  Response fields: `object`, `id`, `organization_id`, `name`, `provider`, `status`, `config`, `settings`, `default_role_id`, `has_credentials`, `has_uploaded_csv`, `next_sync_at`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/directory_pull_sources", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.DirectoryPullSources do
   Read one pull source.
 
   `GET /v1/directory_pull_sources/{id}`. Required scope: `directory_pull:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `name`, `provider`, `status`, `config`, `settings`, `default_role_id`, `has_credentials`, `has_uploaded_csv`, `next_sync_at`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/directory_pull_sources/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.DirectoryPullSources do
   Change the source name, status (active or paused), config, credentials, default role or settings. Settings are merged.
 
   `PATCH /v1/directory_pull_sources/{id}`. Required scope: `directory_pull:write`.
+
+  Body fields: `organization_id` (string), `name` (string), `provider` (enum), `status` (enum), `config` (object), `credentials` (object), `default_role_id` (string|null), `settings` (object).
+  Response fields: `object`, `id`, `organization_id`, `name`, `provider`, `status`, `config`, `settings`, `default_role_id`, `has_credentials`, `has_uploaded_csv`, `next_sync_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/directory_pull_sources/{id}", %{"id" => id}, body, opts)
@@ -60,6 +72,8 @@ defmodule Atlas.DirectoryPullSources do
   Upload the CSV a csv source without a URL reads on its next run (up to 5 MiB).
 
   `PUT /v1/directory_pull_sources/{id}/csv`. Required scope: `directory_pull:write`.
+
+  Body fields: `csv` (string).
   """
   def put_csv(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/directory_pull_sources/{id}/csv", %{"id" => id}, body, opts)
@@ -68,12 +82,15 @@ defmodule Atlas.DirectoryPullSources do
   List the runs of a source with counts of people seen, created, re-roled, disabled and re-enabled.
 
   `GET /v1/directory_pull_sources/{id}/sync_runs`. Required scope: `directory_pull:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.source_id`, `data.organization_id`, `data.trigger`, `data.status`, `data.stats`, `data.error`, `data.created_at`, `data.started_at`, `data.finished_at`, `has_more`.
   """
   def get_by_id_sync_runs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/directory_pull_sources/{id}/sync_runs", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_by_id_sync_runs/2`, following the cursor page by page.
+  Lazy stream over every item of `get_by_id_sync_runs`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_by_id_sync_runs(client, id, opts \\ []),
@@ -83,6 +100,8 @@ defmodule Atlas.DirectoryPullSources do
   Queue a pull now. One run at a time per source (409 otherwise); the worker executes it.
 
   `POST /v1/directory_pull_sources/{id}/sync_runs`. Required scope: `directory_pull:write`.
+
+  Response fields: `object`, `id`, `source_id`, `organization_id`, `trigger`, `status`, `stats`, `error`, `created_at`, `started_at`, `finished_at`.
   """
   def post_sync_runs(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/directory_pull_sources/{id}/sync_runs", %{"id" => id}, nil, opts)
@@ -91,6 +110,8 @@ defmodule Atlas.DirectoryPullSources do
   Read one directory pull run with its counts and error.
 
   `GET /v1/directory_pull_sources/{id}/sync_runs/{runId}`. Required scope: `directory_pull:read`.
+
+  Response fields: `object`, `id`, `source_id`, `organization_id`, `trigger`, `status`, `stats`, `error`, `created_at`, `started_at`, `finished_at`.
   """
   def get_by_id_sync_runs_by_run_id(client, id, run_id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/directory_pull_sources/{id}/sync_runs/{runId}", %{"id" => id, "runId" => run_id}, nil, opts)

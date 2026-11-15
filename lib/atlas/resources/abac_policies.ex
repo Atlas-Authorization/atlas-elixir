@@ -5,7 +5,8 @@ defmodule Atlas.AbacPolicies do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AbacPolicies do
   List the ABAC policies (current version of each).
 
   `GET /v1/abac_policies`. Required scope: `abac:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.enabled`, `data.current_version`, `data.fga_store_id`, `data.source`, `data.tests`, `data.tests.name`, `data.tests.request`, `data.tests.expect`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_policies", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AbacPolicies do
   Create an ABAC policy from `source` written in the Cedar-subset policy language (permit/forbid with when/unless over principal, action, resource and context attributes; `fga.check(...)` consults the policy’s FGA store). Source that does not parse is refused with the character position; with an entity schema set it is also type-checked and every problem is reported. Optional `tests` are saved with version 1.
 
   `POST /v1/abac_policies`. Required scope: `abac:write`.
+
+  Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `fga_store_id` (string|null), `source` (string), `tests` (array).
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `current_version`, `fga_store_id`, `source`, `tests`, `tests.name`, `tests.request`, `tests.expect`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac_policies", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AbacPolicies do
   Read one ABAC policy with its current source and tests.
 
   `GET /v1/abac_policies/{id}`. Required scope: `abac:read`.
+
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `current_version`, `fga_store_id`, `source`, `tests`, `tests.name`, `tests.request`, `tests.expect`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_policies/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AbacPolicies do
   Update an ABAC policy. Sending `source` appends a new version and makes it current; `current_version` (without `source`) rolls back to an earlier version; name, description, enabled and fga_store_id change in place.
 
   `PATCH /v1/abac_policies/{id}`. Required scope: `abac:write`.
+
+  Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `fga_store_id` (string|null), `source` (string), `tests` (array), `current_version` (integer).
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `current_version`, `fga_store_id`, `source`, `tests`, `tests.name`, `tests.request`, `tests.expect`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/abac_policies/{id}", %{"id" => id}, body, opts)
@@ -60,12 +72,15 @@ defmodule Atlas.AbacPolicies do
   List every saved version of an ABAC policy, newest first.
 
   `GET /v1/abac_policies/{id}/versions`. Required scope: `abac:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.policy_id`, `data.version`, `data.source`, `data.tests`, `data.tests.name`, `data.tests.request`, `data.tests.expect`, `data.current`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_versions(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_policies/{id}/versions", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_versions/2`, following the cursor page by page.
+  Lazy stream over every item of `get_versions`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_versions(client, id, opts \\ []),
@@ -75,6 +90,9 @@ defmodule Atlas.AbacPolicies do
   Run test cases against a policy version (default: the current one), or against a draft `source` and `tests` sent in the body, without saving anything. Each test is a request plus the expected decision; the policy is evaluated on its own, not with the rest of the set. The response also carries `coverage`: which rules and `when`/`unless` clauses the tests exercised (a clause no test saw both true and false is listed as a gap), with line numbers.
 
   `POST /v1/abac_policies/{id}/test`. Required scope: `abac:read`.
+
+  Body fields: `version` (integer), `source` (string), `tests` (array).
+  Response fields: `object`, `passed`, `coverage`, `coverage.object`, `coverage.tests`, `coverage.rules`, `coverage.rules.rule`, `coverage.rules.effect`, `coverage.rules.line`, `coverage.rules.in_scope`, `coverage.rules.matched`, `coverage.rules.status`, `coverage.rules.clauses`, `coverage.summary`, `coverage.summary.rules`, `coverage.summary.reached`, `coverage.summary.matched`, `coverage.summary.clauses`, `coverage.summary.clauses_both_ways`, `coverage.summary.percent`, `coverage.gaps`, `results`, `results.name`, `results.expect`, `results.actual`, `results.passed`.
   """
   def post_test(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac_policies/{id}/test", %{"id" => id}, body, opts)
@@ -91,6 +109,9 @@ defmodule Atlas.AbacPolicies do
   Compare two versions of a policy: a line diff of the source and, unless `semantic=false`, the requests whose decision changes. The semantic part enumerates a bounded set of requests built from the attributes, groups and actions the policies test (from the entity schema when one is set), and lists those that come out differently, with newly-allowed and newly-denied counts per action. `exhaustive` says whether every request in the space was compared or the space was sampled.
 
   `GET /v1/abac_policies/{id}/diff`. Required scope: `abac:read`.
+
+  Query params (`params:`): `from`, `to`, `semantic`, `max_requests`, `max_changes`.
+  Response fields: `object`, `policy_id`, `from`, `to`, `text`, `text.identical`, `text.added`, `text.removed`, `text.lines`, `text.lines.type`, `text.lines.text`, `text.lines.before_line`, `text.lines.after_line`, `semantic`, `semantic.enumerated`, `semantic.space`, `semantic.exhaustive`, `semantic.changed`, `semantic.newly_allowed`, `semantic.newly_denied`, `semantic.by_action`, `semantic.truncated`, `semantic.changes`, `semantic.changes.request`, `semantic.changes.before`, `semantic.changes.after`, `semantic.changes.assuming`, `semantic.changes.assuming.fga_check`.
   """
   def get_diff(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_policies/{id}/diff", %{"id" => id}, nil, opts)

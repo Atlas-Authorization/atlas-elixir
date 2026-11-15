@@ -5,7 +5,8 @@ defmodule Atlas.Iga do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Iga do
   List the governed entitlement catalog.
 
   `GET /v1/iga/entitlements`. Required scope: `iga:read`.
+
+  Query params (`params:`): `kind`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.kind`, `data.target`, `data.owner_user_id`, `data.risk_level`, `data.approval_rules`, `data.approval_rules.steps`, `data.max_duration_seconds`, `data.requestable`, `data.require_justification`, `data.activation_rules`, `data.activation_rules.max_duration_seconds`, `data.activation_rules.require_justification`, `data.activation_rules.require_ticket`, `data.activation_rules.require_mfa`, `data.activation_rules.require_approval`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_entitlements(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/entitlements", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_entitlements/1`, following the cursor page by page.
+  Lazy stream over every item of `get_entitlements`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_entitlements(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.Iga do
   Add an entitlement to the catalog: a role, organization membership, group, resource role, installed-app assignment or custom item, with an owner, a risk level and approval rules. The target must exist. 409 for a key already in use.
 
   `POST /v1/iga/entitlements`. Required scope: `iga:write`.
+
+  Body fields: `key` (string, required), `name` (string, required), `description` (string|null), `kind` (enum, required), `target` (object, required), `owner_user_id` (string|null), `risk_level` (enum), `approval_rules` (object), `max_duration_seconds` (integer|null), `requestable` (boolean), `require_justification` (boolean), `activation_rules` (any).
+  Nested body fields: `approval_rules.steps`, `approval_rules.steps.type`, `approval_rules.steps.ids`, `approval_rules.steps.mode`, `approval_rules.steps.timeout_seconds`, `approval_rules.steps.escalate_to`, `approval_rules.steps.escalate_to.type`, `approval_rules.steps.escalate_to.ids`, `approval_rules.steps.fallback_approver`, `approval_rules.steps.fallback_approver.type`, `approval_rules.steps.fallback_approver.ids`, `activation_rules.max_duration_seconds`, `activation_rules.require_justification`, `activation_rules.require_ticket`, `activation_rules.require_mfa`, `activation_rules.require_approval`.
+  Response fields: `object`, `id`, `key`, `name`, `description`, `kind`, `target`, `owner_user_id`, `risk_level`, `approval_rules`, `approval_rules.steps`, `approval_rules.steps.type`, `approval_rules.steps.ids`, `approval_rules.steps.mode`, `approval_rules.steps.timeout_seconds`, `approval_rules.steps.escalate_to`, `approval_rules.steps.escalate_to.type`, `approval_rules.steps.escalate_to.ids`, `approval_rules.steps.fallback_approver`, `approval_rules.steps.fallback_approver.type`, `approval_rules.steps.fallback_approver.ids`, `max_duration_seconds`, `requestable`, `require_justification`, `activation_rules`, `activation_rules.max_duration_seconds`, `activation_rules.require_justification`, `activation_rules.require_ticket`, `activation_rules.require_mfa`, `activation_rules.require_approval`, `created_at`, `updated_at`.
   """
   def post_entitlements(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/entitlements", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.Iga do
   Read one entitlement by id or key.
 
   `GET /v1/iga/entitlements/{id}`. Required scope: `iga:read`.
+
+  Response fields: `object`, `id`, `key`, `name`, `description`, `kind`, `target`, `owner_user_id`, `risk_level`, `approval_rules`, `approval_rules.steps`, `approval_rules.steps.type`, `approval_rules.steps.ids`, `approval_rules.steps.mode`, `approval_rules.steps.timeout_seconds`, `approval_rules.steps.escalate_to`, `approval_rules.steps.escalate_to.type`, `approval_rules.steps.escalate_to.ids`, `approval_rules.steps.fallback_approver`, `approval_rules.steps.fallback_approver.type`, `approval_rules.steps.fallback_approver.ids`, `max_duration_seconds`, `requestable`, `require_justification`, `activation_rules`, `activation_rules.max_duration_seconds`, `activation_rules.require_justification`, `activation_rules.require_ticket`, `activation_rules.require_mfa`, `activation_rules.require_approval`, `created_at`, `updated_at`.
   """
   def get_entitlements_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/entitlements/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.Iga do
   Change an entitlement (its kind cannot change). A change to the approval rules applies to requests filed afterwards.
 
   `PATCH /v1/iga/entitlements/{id}`. Required scope: `iga:write`.
+
+  Body fields: `key` (string), `name` (string), `description` (string|null), `kind` (enum), `target` (object), `owner_user_id` (string|null), `risk_level` (enum), `approval_rules` (object), `max_duration_seconds` (integer|null), `requestable` (boolean), `require_justification` (boolean), `activation_rules` (any).
+  Nested body fields: `approval_rules.steps`, `approval_rules.steps.type`, `approval_rules.steps.ids`, `approval_rules.steps.mode`, `approval_rules.steps.timeout_seconds`, `approval_rules.steps.escalate_to`, `approval_rules.steps.escalate_to.type`, `approval_rules.steps.escalate_to.ids`, `approval_rules.steps.fallback_approver`, `approval_rules.steps.fallback_approver.type`, `approval_rules.steps.fallback_approver.ids`, `activation_rules.max_duration_seconds`, `activation_rules.require_justification`, `activation_rules.require_ticket`, `activation_rules.require_mfa`, `activation_rules.require_approval`.
+  Response fields: `object`, `id`, `key`, `name`, `description`, `kind`, `target`, `owner_user_id`, `risk_level`, `approval_rules`, `approval_rules.steps`, `approval_rules.steps.type`, `approval_rules.steps.ids`, `approval_rules.steps.mode`, `approval_rules.steps.timeout_seconds`, `approval_rules.steps.escalate_to`, `approval_rules.steps.escalate_to.type`, `approval_rules.steps.escalate_to.ids`, `approval_rules.steps.fallback_approver`, `approval_rules.steps.fallback_approver.type`, `approval_rules.steps.fallback_approver.ids`, `max_duration_seconds`, `requestable`, `require_justification`, `activation_rules`, `activation_rules.max_duration_seconds`, `activation_rules.require_justification`, `activation_rules.require_ticket`, `activation_rules.require_mfa`, `activation_rules.require_approval`, `created_at`, `updated_at`.
   """
   def update_entitlements(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/iga/entitlements/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.Iga do
   Remove an entitlement. 409 while it still has active grants.
 
   `DELETE /v1/iga/entitlements/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_entitlements(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/entitlements/{id}", %{"id" => id}, nil, opts)
@@ -60,12 +76,15 @@ defmodule Atlas.Iga do
   List access requests, newest first.
 
   `GET /v1/iga/requests`. Required scope: `iga:read`.
+
+  Query params (`params:`): `status`, `user_id`, `requester_user_id`, `entitlement`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.entitlement_id`, `data.requester_user_id`, `data.beneficiary_user_id`, `data.source`, `data.justification`, `data.ticket_ref`, `data.activation`, `data.duration_seconds`, `data.status`, `data.current_step`, `data.steps`, `data.steps.index`, `data.steps.type`, `data.steps.mode`, `data.steps.approvers`, `data.steps.status`, `data.steps.escalated`, `data.steps.timeout_seconds`, `data.steps.sod_rule_id`, `data.sod`, `data.sod.rule_id`, `data.sod.rule_name`, `data.sod.mode`, `data.sod.conflicting_entitlement_id`, `data.approvals`, `data.approvals.step`, `data.approvals.approver_user_id`, `data.approvals.acting_for_user_id`, `data.approvals.decision`, `data.approvals.comment`, `data.approvals.decided_at`, `data.failure`, `data.decided_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_requests(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/requests", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_requests/1`, following the cursor page by page.
+  Lazy stream over every item of `get_requests`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_requests(client, opts \\ []),
@@ -75,6 +94,9 @@ defmodule Atlas.Iga do
   File an access request on behalf of a user. It follows the entitlement's approval steps (and any extra step a separation-of-duties rule adds); with no steps it is fulfilled at once. A blocking separation-of-duties conflict, a user who already holds the access, or a pending duplicate is a 409. `duration_seconds` makes the grant time-bound (default and maximum: the entitlement's limit).
 
   `POST /v1/iga/requests`. Required scope: `iga:write`.
+
+  Body fields: `entitlement` (string, required), `user_id` (string, required), `requester_user_id` (string), `justification` (string), `duration_seconds` (integer).
+  Response fields: `object`, `id`, `entitlement_id`, `requester_user_id`, `beneficiary_user_id`, `source`, `justification`, `ticket_ref`, `activation`, `duration_seconds`, `status`, `current_step`, `steps`, `steps.index`, `steps.type`, `steps.mode`, `steps.approvers`, `steps.status`, `steps.escalated`, `steps.timeout_seconds`, `steps.sod_rule_id`, `sod`, `sod.rule_id`, `sod.rule_name`, `sod.mode`, `sod.conflicting_entitlement_id`, `approvals`, `approvals.step`, `approvals.approver_user_id`, `approvals.acting_for_user_id`, `approvals.decision`, `approvals.comment`, `approvals.decided_at`, `failure`, `decided_at`, `created_at`.
   """
   def post_requests(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/requests", %{}, body, opts)
@@ -83,6 +105,8 @@ defmodule Atlas.Iga do
   Read one request with its steps and the approvals recorded so far.
 
   `GET /v1/iga/requests/{id}`. Required scope: `iga:read`.
+
+  Response fields: `object`, `id`, `entitlement_id`, `requester_user_id`, `beneficiary_user_id`, `source`, `justification`, `ticket_ref`, `activation`, `duration_seconds`, `status`, `current_step`, `steps`, `steps.index`, `steps.type`, `steps.mode`, `steps.approvers`, `steps.status`, `steps.escalated`, `steps.timeout_seconds`, `steps.sod_rule_id`, `sod`, `sod.rule_id`, `sod.rule_name`, `sod.mode`, `sod.conflicting_entitlement_id`, `approvals`, `approvals.step`, `approvals.approver_user_id`, `approvals.acting_for_user_id`, `approvals.decision`, `approvals.comment`, `approvals.decided_at`, `failure`, `decided_at`, `created_at`.
   """
   def get_requests_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/requests/{id}", %{"id" => id}, nil, opts)
@@ -91,6 +115,9 @@ defmodule Atlas.Iga do
   Decide the open step. With `approver_user_id` the decision is recorded as that person (who must be an approver of the step or hold a delegation); without it the call is an administrator override that settles the step. A denial ends the request. 409 when it is no longer pending.
 
   `POST /v1/iga/requests/{id}/decide`. Required scope: `iga:write`.
+
+  Body fields: `decision` (enum, required), `comment` (string), `approver_user_id` (string).
+  Response fields: `object`, `id`, `entitlement_id`, `requester_user_id`, `beneficiary_user_id`, `source`, `justification`, `ticket_ref`, `activation`, `duration_seconds`, `status`, `current_step`, `steps`, `steps.index`, `steps.type`, `steps.mode`, `steps.approvers`, `steps.status`, `steps.escalated`, `steps.timeout_seconds`, `steps.sod_rule_id`, `sod`, `sod.rule_id`, `sod.rule_name`, `sod.mode`, `sod.conflicting_entitlement_id`, `approvals`, `approvals.step`, `approvals.approver_user_id`, `approvals.acting_for_user_id`, `approvals.decision`, `approvals.comment`, `approvals.decided_at`, `failure`, `decided_at`, `created_at`.
   """
   def post_requests_decide(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/requests/{id}/decide", %{"id" => id}, body, opts)
@@ -99,6 +126,8 @@ defmodule Atlas.Iga do
   Cancel a pending request.
 
   `POST /v1/iga/requests/{id}/cancel`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `entitlement_id`, `requester_user_id`, `beneficiary_user_id`, `source`, `justification`, `ticket_ref`, `activation`, `duration_seconds`, `status`, `current_step`, `steps`, `steps.index`, `steps.type`, `steps.mode`, `steps.approvers`, `steps.status`, `steps.escalated`, `steps.timeout_seconds`, `steps.sod_rule_id`, `sod`, `sod.rule_id`, `sod.rule_name`, `sod.mode`, `sod.conflicting_entitlement_id`, `approvals`, `approvals.step`, `approvals.approver_user_id`, `approvals.acting_for_user_id`, `approvals.decision`, `approvals.comment`, `approvals.decided_at`, `failure`, `decided_at`, `created_at`.
   """
   def post_requests_cancel(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/requests/{id}/cancel", %{"id" => id}, nil, opts)
@@ -107,12 +136,15 @@ defmodule Atlas.Iga do
   The requests waiting on one person's decision, including those delegated to them.
 
   `GET /v1/iga/approvals`. Required scope: `iga:read`.
+
+  Query params (`params:`): `approver_user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.entitlement_id`, `data.requester_user_id`, `data.beneficiary_user_id`, `data.source`, `data.justification`, `data.ticket_ref`, `data.activation`, `data.duration_seconds`, `data.status`, `data.current_step`, `data.steps`, `data.steps.index`, `data.steps.type`, `data.steps.mode`, `data.steps.approvers`, `data.steps.status`, `data.steps.escalated`, `data.steps.timeout_seconds`, `data.steps.sod_rule_id`, `data.sod`, `data.sod.rule_id`, `data.sod.rule_name`, `data.sod.mode`, `data.sod.conflicting_entitlement_id`, `data.approvals`, `data.approvals.step`, `data.approvals.approver_user_id`, `data.approvals.acting_for_user_id`, `data.approvals.decision`, `data.approvals.comment`, `data.approvals.decided_at`, `data.failure`, `data.decided_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_approvals(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/approvals", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_approvals/1`, following the cursor page by page.
+  Lazy stream over every item of `get_approvals`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_approvals(client, opts \\ []),
@@ -122,12 +154,15 @@ defmodule Atlas.Iga do
   List grants (what each user was given through governance), newest first.
 
   `GET /v1/iga/grants`. Required scope: `iga:read`.
+
+  Query params (`params:`): `user_id`, `entitlement`, `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.entitlement_id`, `data.request_id`, `data.source`, `data.status`, `data.granted_at`, `data.expires_at`, `data.revoked_at`, `data.revoked_reason`, `data.revoked_by`, `data.adopted`, `has_more`, `next_cursor`.
   """
   def get_grants(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/grants", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_grants/1`, following the cursor page by page.
+  Lazy stream over every item of `get_grants`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_grants(client, opts \\ []),
@@ -137,6 +172,9 @@ defmodule Atlas.Iga do
   Give a user an entitlement now, without a request. `expires_at` makes it time-bound. A blocking separation-of-duties rule refuses it; a require-approval rule refuses unless `override_reason` is given, which records an accepted violation.
 
   `POST /v1/iga/grants`. Required scope: `iga:write`.
+
+  Body fields: `entitlement` (string, required), `user_id` (string, required), `expires_at` (integer), `override_reason` (string).
+  Response fields: `object`, `id`, `user_id`, `entitlement_id`, `request_id`, `source`, `status`, `granted_at`, `expires_at`, `revoked_at`, `revoked_reason`, `revoked_by`, `adopted`.
   """
   def post_grants(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/grants", %{}, body, opts)
@@ -145,6 +183,9 @@ defmodule Atlas.Iga do
   Take the access away and close the grant, including access that existed before governance adopted it (an expiry, by contrast, leaves adopted access in place).
 
   `POST /v1/iga/grants/{id}/revoke`. Required scope: `iga:write`.
+
+  Body fields: `reason` (string).
+  Response fields: `object`, `id`, `user_id`, `entitlement_id`, `request_id`, `source`, `status`, `granted_at`, `expires_at`, `revoked_at`, `revoked_reason`, `revoked_by`, `adopted`.
   """
   def post_grants_revoke(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/grants/{id}/revoke", %{"id" => id}, body, opts)
@@ -153,12 +194,15 @@ defmodule Atlas.Iga do
   List approval delegations.
 
   `GET /v1/iga/delegations`. Required scope: `iga:read`.
+
+  Query params (`params:`): `delegator_user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.delegator_user_id`, `data.delegate_user_id`, `data.starts_at`, `data.ends_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_delegations(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/delegations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_delegations/1`, following the cursor page by page.
+  Lazy stream over every item of `get_delegations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_delegations(client, opts \\ []),
@@ -168,6 +212,9 @@ defmodule Atlas.Iga do
   Let another user decide a person's approvals (and reviews) for a period of up to a year.
 
   `POST /v1/iga/delegations`. Required scope: `iga:write`.
+
+  Body fields: `delegator_user_id` (string, required), `delegate_user_id` (string, required), `starts_at` (integer), `ends_at` (integer, required).
+  Response fields: `object`, `id`, `delegator_user_id`, `delegate_user_id`, `starts_at`, `ends_at`, `created_at`.
   """
   def post_delegations(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/delegations", %{}, body, opts)
@@ -176,6 +223,8 @@ defmodule Atlas.Iga do
   End an approval delegation.
 
   `DELETE /v1/iga/delegations/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_delegations(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/delegations/{id}", %{"id" => id}, nil, opts)
@@ -184,12 +233,15 @@ defmodule Atlas.Iga do
   List separation-of-duties rules: pairs of entitlements one person should not hold together.
 
   `GET /v1/iga/sod_rules`. Required scope: `iga:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.entitlement_a`, `data.entitlement_b`, `data.mode`, `data.approver`, `data.approver.type`, `data.approver.ids`, `data.approver.mode`, `data.approver.timeout_seconds`, `data.approver.escalate_to`, `data.approver.fallback_approver`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_sod_rules(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/sod_rules", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_sod_rules/1`, following the cursor page by page.
+  Lazy stream over every item of `get_sod_rules`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_sod_rules(client, opts \\ []),
@@ -199,6 +251,10 @@ defmodule Atlas.Iga do
   Create a rule. `mode` is `block` (refuse) or `require_approval` (an extra approval step on a request; `approver` names who, default the owner).
 
   `POST /v1/iga/sod_rules`. Required scope: `iga:write`.
+
+  Body fields: `name` (string, required), `description` (string), `entitlement_a` (string, required), `entitlement_b` (string, required), `mode` (enum), `approver` (object), `enabled` (boolean).
+  Nested body fields: `approver.type`, `approver.ids`, `approver.mode`, `approver.timeout_seconds`, `approver.escalate_to`, `approver.escalate_to.type`, `approver.escalate_to.ids`, `approver.fallback_approver`, `approver.fallback_approver.type`, `approver.fallback_approver.ids`.
+  Response fields: `object`, `id`, `name`, `description`, `entitlement_a`, `entitlement_b`, `mode`, `approver`, `approver.type`, `approver.ids`, `approver.mode`, `approver.timeout_seconds`, `approver.escalate_to`, `approver.escalate_to.type`, `approver.escalate_to.ids`, `approver.fallback_approver`, `approver.fallback_approver.type`, `approver.fallback_approver.ids`, `enabled`, `created_at`, `updated_at`.
   """
   def post_sod_rules(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/sod_rules", %{}, body, opts)
@@ -207,6 +263,10 @@ defmodule Atlas.Iga do
   Change a separation-of-duties rule.
 
   `PATCH /v1/iga/sod_rules/{id}`. Required scope: `iga:write`.
+
+  Body fields: `name` (string), `description` (string), `mode` (enum), `approver` (object), `enabled` (boolean).
+  Nested body fields: `approver.type`, `approver.ids`, `approver.mode`, `approver.timeout_seconds`, `approver.escalate_to`, `approver.escalate_to.type`, `approver.escalate_to.ids`, `approver.fallback_approver`, `approver.fallback_approver.type`, `approver.fallback_approver.ids`.
+  Response fields: `object`, `id`, `name`, `description`, `entitlement_a`, `entitlement_b`, `mode`, `approver`, `approver.type`, `approver.ids`, `approver.mode`, `approver.timeout_seconds`, `approver.escalate_to`, `approver.escalate_to.type`, `approver.escalate_to.ids`, `approver.fallback_approver`, `approver.fallback_approver.type`, `approver.fallback_approver.ids`, `enabled`, `created_at`, `updated_at`.
   """
   def update_sod_rules(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/iga/sod_rules/{id}", %{"id" => id}, body, opts)
@@ -215,6 +275,8 @@ defmodule Atlas.Iga do
   Delete a rule and its recorded violations.
 
   `DELETE /v1/iga/sod_rules/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_sod_rules(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/sod_rules/{id}", %{"id" => id}, nil, opts)
@@ -223,12 +285,15 @@ defmodule Atlas.Iga do
   The violations report: users who hold both sides of a rule (found by a scan, or accepted at request or assignment time).
 
   `GET /v1/iga/sod_violations`. Required scope: `iga:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.rule_id`, `data.rule_name`, `data.mode`, `data.user_id`, `data.status`, `data.source`, `data.request_id`, `data.note`, `data.detected_at`, `data.resolved_at`, `has_more`, `next_cursor`.
   """
   def get_sod_violations(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/sod_violations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_sod_violations/1`, following the cursor page by page.
+  Lazy stream over every item of `get_sod_violations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_sod_violations(client, opts \\ []),
@@ -238,6 +303,8 @@ defmodule Atlas.Iga do
   Check every rule against what people hold right now: record new conflicts and resolve those that cleared.
 
   `POST /v1/iga/sod_violations/scan`. Required scope: `iga:write`.
+
+  Response fields: `object`, `found`, `resolved`.
   """
   def post_sod_violations_scan(client, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/sod_violations/scan", %{}, nil, opts)
@@ -246,12 +313,15 @@ defmodule Atlas.Iga do
   List birthright rules.
 
   `GET /v1/iga/birthright_rules`. Required scope: `iga:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.match`, `data.match.group`, `data.match.organization_id`, `data.match.org_role`, `data.match.app_role`, `data.match.email_domain`, `data.entitlement_ids`, `data.revoke_on_unmatch`, `data.enabled`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_birthright_rules(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/birthright_rules", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_birthright_rules/1`, following the cursor page by page.
+  Lazy stream over every item of `get_birthright_rules`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_birthright_rules(client, opts \\ []),
@@ -261,6 +331,10 @@ defmodule Atlas.Iga do
   Create a birthright rule: everyone matching `match` (a group, organization and role, app role or verified email domain; all conditions must hold) holds the listed entitlements. When someone stops matching, the grants the rule gave are revoked unless `revoke_on_unmatch` is false.
 
   `POST /v1/iga/birthright_rules`. Required scope: `iga:write`.
+
+  Body fields: `name` (string, required), `match` (object, required), `entitlement_ids` (array, required), `revoke_on_unmatch` (boolean), `enabled` (boolean).
+  Nested body fields: `match.group`, `match.organization_id`, `match.org_role`, `match.app_role`, `match.email_domain`.
+  Response fields: `object`, `id`, `name`, `match`, `match.group`, `match.organization_id`, `match.org_role`, `match.app_role`, `match.email_domain`, `entitlement_ids`, `revoke_on_unmatch`, `enabled`, `created_at`.
   """
   def post_birthright_rules(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/birthright_rules", %{}, body, opts)
@@ -269,6 +343,10 @@ defmodule Atlas.Iga do
   Change a birthright rule.
 
   `PATCH /v1/iga/birthright_rules/{id}`. Required scope: `iga:write`.
+
+  Body fields: `name` (string), `match` (object), `entitlement_ids` (array), `revoke_on_unmatch` (boolean), `enabled` (boolean).
+  Nested body fields: `match.group`, `match.organization_id`, `match.org_role`, `match.app_role`, `match.email_domain`.
+  Response fields: `object`, `id`, `name`, `match`, `match.group`, `match.organization_id`, `match.org_role`, `match.app_role`, `match.email_domain`, `entitlement_ids`, `revoke_on_unmatch`, `enabled`, `created_at`.
   """
   def update_birthright_rules(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/iga/birthright_rules/{id}", %{"id" => id}, body, opts)
@@ -277,6 +355,8 @@ defmodule Atlas.Iga do
   Delete a birthright rule (grants it already gave stay until revoked).
 
   `DELETE /v1/iga/birthright_rules/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_birthright_rules(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/birthright_rules/{id}", %{"id" => id}, nil, opts)
@@ -285,6 +365,8 @@ defmodule Atlas.Iga do
   Re-evaluate one user's birthright access now (joiner or mover).
 
   `POST /v1/iga/users/{id}/reconcile`. Required scope: `iga:write`.
+
+  Response fields: `object`, `user_id`, `granted`, `revoked`.
   """
   def post_users_reconcile(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/users/{id}/reconcile", %{"id" => id}, nil, opts)
@@ -293,6 +375,9 @@ defmodule Atlas.Iga do
   Offboard a leaver: revoke every grant, cancel pending requests and delegations, and with `close_account` schedule the account closure through the data-rights path (so downstream erasure webhooks and any DSAR orchestrator run as for any deletion). `grace_seconds` sets the cancellation window.
 
   `POST /v1/iga/users/{id}/offboard`. Required scope: `iga:write`.
+
+  Body fields: `close_account` (boolean), `grace_seconds` (integer), `reason` (string).
+  Response fields: `object`, `user_id`, `revoked_grants`, `cancelled_requests`, `account_closure`, `account_closure.effective_at`, `account_closure.request_id`.
   """
   def post_users_offboard(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/users/{id}/offboard", %{"id" => id}, body, opts)
@@ -301,6 +386,8 @@ defmodule Atlas.Iga do
   Joiner/mover/leaver settings.
 
   `GET /v1/iga/settings`. Required scope: `iga:read`.
+
+  Response fields: `object`, `jml_enabled`, `leaver_action`, `leaver_close_grace_seconds`.
   """
   def get_settings(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/settings", %{}, nil, opts)
@@ -309,6 +396,9 @@ defmodule Atlas.Iga do
   Turn the joiner/mover/leaver automation on or off and choose what a deactivated account triggers: `revoke` (end the grants) or `revoke_and_close` (also schedule the closure after `leaver_close_grace_seconds`).
 
   `PUT /v1/iga/settings`. Required scope: `iga:write`.
+
+  Body fields: `jml_enabled` (boolean), `leaver_action` (enum), `leaver_close_grace_seconds` (integer|null).
+  Response fields: `object`, `jml_enabled`, `leaver_action`, `leaver_close_grace_seconds`.
   """
   def put_settings(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/iga/settings", %{}, body, opts)
@@ -317,12 +407,15 @@ defmodule Atlas.Iga do
   List certification (access review) campaigns.
 
   `GET /v1/iga/campaigns`. Required scope: `iga:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.scope_type`, `data.scope_ids`, `data.reviewer_type`, `data.reviewer_ids`, `data.status`, `data.due_at`, `data.reminder_days`, `data.auto_revoke`, `data.stages`, `data.stages.name`, `data.stages.reviewer_type`, `data.stages.reviewer_ids`, `data.recurrence`, `data.recurrence.cron`, `data.recurrence.due_in_days`, `data.next_run_at`, `data.parent_campaign_id`, `data.item_filter`, `data.item_filter.inactive_days`, `data.item_filter.exclude_email_domains`, `data.launched_at`, `data.closed_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_campaigns(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaigns", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_campaigns/1`, following the cursor page by page.
+  Lazy stream over every item of `get_campaigns`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_campaigns(client, opts \\ []),
@@ -332,6 +425,10 @@ defmodule Atlas.Iga do
   Create a draft campaign scoped to everything, specific entitlements, or the entitlements for an app, role, group or organization, with reviewers (the person's manager, the entitlement owner, or named users), a due date and reminder days. With `auto_revoke` the access reviewers mark for revocation is removed when the campaign closes.
 
   `POST /v1/iga/campaigns`. Required scope: `iga:write`.
+
+  Body fields: `name` (string, required), `description` (string), `scope_type` (enum), `scope_ids` (array), `reviewer_type` (enum), `reviewer_ids` (array), `due_at` (integer), `reminder_days` (array), `auto_revoke` (boolean), `stages` (array), `recurrence` (object), `item_filter` (object).
+  Nested body fields: `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence.cron`, `recurrence.due_in_days`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`.
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def post_campaigns(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaigns", %{}, body, opts)
@@ -340,6 +437,8 @@ defmodule Atlas.Iga do
   Read a campaign with its progress.
 
   `GET /v1/iga/campaigns/{id}`. Required scope: `iga:read`.
+
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def get_campaigns_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaigns/{id}", %{"id" => id}, nil, opts)
@@ -348,6 +447,8 @@ defmodule Atlas.Iga do
   Delete a draft or closed campaign.
 
   `DELETE /v1/iga/campaigns/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_campaigns(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/campaigns/{id}", %{"id" => id}, nil, opts)
@@ -356,6 +457,8 @@ defmodule Atlas.Iga do
   Launch a draft campaign: it adopts access that exists in Atlas but was never granted through governance, freezes the review list and notifies reviewers.
 
   `POST /v1/iga/campaigns/{id}/launch`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def post_campaigns_launch(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/{id}/launch", %{"id" => id}, nil, opts)
@@ -364,6 +467,8 @@ defmodule Atlas.Iga do
   Close a campaign and apply its revoke decisions (with `auto_revoke`). Items nobody reviewed are left in place and reported as pending.
 
   `POST /v1/iga/campaigns/{id}/close`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def post_campaigns_close(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/{id}/close", %{"id" => id}, nil, opts)
@@ -372,12 +477,15 @@ defmodule Atlas.Iga do
   The review items of a campaign.
 
   `GET /v1/iga/campaigns/{id}/items`. Required scope: `iga:read`.
+
+  Query params (`params:`): `decision`, `reviewer_user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.campaign_id`, `data.grant_id`, `data.user_id`, `data.entitlement_id`, `data.reviewer_user_id`, `data.decision`, `data.decided_by`, `data.decided_at`, `data.comment`, `data.revoked_applied`, `data.stage`, `data.stage_history`, `data.stage_history.stage`, `data.stage_history.stage_name`, `data.stage_history.decision`, `data.stage_history.decided_by`, `data.stage_history.decided_at`, `data.stage_history.comment`, `has_more`, `next_cursor`.
   """
   def get_campaigns_items(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaigns/{id}/items", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_campaigns_items/2`, following the cursor page by page.
+  Lazy stream over every item of `get_campaigns_items`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_campaigns_items(client, id, opts \\ []),
@@ -387,6 +495,8 @@ defmodule Atlas.Iga do
   Progress: totals, percent complete, whether it is overdue, and per-reviewer counts.
 
   `GET /v1/iga/campaigns/{id}/progress`. Required scope: `iga:read`.
+
+  Response fields: `object`, `campaign_id`, `status`, `total`, `pending`, `certified`, `revoked`, `percent_complete`, `overdue`, `reviewers`, `reviewers.reviewer_user_id`, `reviewers.total`, `reviewers.decided`.
   """
   def get_campaigns_progress(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaigns/{id}/progress", %{"id" => id}, nil, opts)
@@ -395,6 +505,9 @@ defmodule Atlas.Iga do
   The audit evidence for a campaign as JSON, or CSV with `format=csv`. People are identified by id only (an erased user is flagged), free-text comments are never included, and `masked_emails=true` adds an address reduced to its first letter and domain.
 
   `GET /v1/iga/campaigns/{id}/evidence`. Required scope: `iga:read`.
+
+  Query params (`params:`): `format`, `masked_emails`.
+  Response fields: `object`, `campaign`, `campaign.object`, `campaign.id`, `campaign.name`, `campaign.description`, `campaign.scope_type`, `campaign.scope_ids`, `campaign.reviewer_type`, `campaign.reviewer_ids`, `campaign.status`, `campaign.due_at`, `campaign.reminder_days`, `campaign.auto_revoke`, `campaign.stages`, `campaign.stages.name`, `campaign.stages.reviewer_type`, `campaign.stages.reviewer_ids`, `campaign.recurrence`, `campaign.recurrence.cron`, `campaign.recurrence.due_in_days`, `campaign.next_run_at`, `campaign.parent_campaign_id`, `campaign.item_filter`, `campaign.item_filter.inactive_days`, `campaign.item_filter.exclude_email_domains`, `campaign.launched_at`, `campaign.closed_at`, `campaign.created_at`, `progress`, `progress.object`, `progress.campaign_id`, `progress.status`, `progress.total`, `progress.pending`, `progress.certified`, `progress.revoked`, `progress.percent_complete`, `progress.overdue`, `progress.reviewers`, `progress.reviewers.reviewer_user_id`, `progress.reviewers.total`, `progress.reviewers.decided`, `generated_at`, `items`, `items.item_id`, `items.user_id`, `items.user_erased`, `items.user_email_masked`, `items.entitlement_key`, `items.entitlement_name`, `items.risk_level`, `items.reviewer_user_id`, `items.decision`, `items.decided_by`, `items.decided_at`, `items.revoked_applied`.
   """
   def get_campaigns_evidence(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaigns/{id}/evidence", %{"id" => id}, nil, opts)
@@ -403,6 +516,9 @@ defmodule Atlas.Iga do
   Certify or revoke one review item. With `reviewer_user_id` the decision is the reviewer's (they must be allowed to review it, and may not review their own access); without it it is an administrator decision.
 
   `POST /v1/iga/campaign_items/{id}/decide`. Required scope: `iga:write`.
+
+  Body fields: `decision` (enum, required), `comment` (string), `reviewer_user_id` (string).
+  Response fields: `object`, `id`, `campaign_id`, `grant_id`, `user_id`, `entitlement_id`, `reviewer_user_id`, `decision`, `decided_by`, `decided_at`, `comment`, `revoked_applied`, `stage`, `stage_history`, `stage_history.stage`, `stage_history.stage_name`, `stage_history.decision`, `stage_history.decided_by`, `stage_history.decided_at`, `stage_history.comment`.
   """
   def post_campaign_items_decide(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaign_items/{id}/decide", %{"id" => id}, body, opts)
@@ -411,12 +527,15 @@ defmodule Atlas.Iga do
   People who may activate an entitlement (eligible assignments).
 
   `GET /v1/iga/eligibilities`. Required scope: `iga:read`.
+
+  Query params (`params:`): `user_id`, `entitlement`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.entitlement_id`, `data.expires_at`, `data.created_by`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_eligibilities(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/eligibilities", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_eligibilities/1`, following the cursor page by page.
+  Lazy stream over every item of `get_eligibilities`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_eligibilities(client, opts \\ []),
@@ -426,6 +545,9 @@ defmodule Atlas.Iga do
   Make a person eligible for an entitlement: they hold nothing until they activate it. The entitlement needs `activation_rules`. `expires_at` ends the eligibility.
 
   `POST /v1/iga/eligibilities`. Required scope: `iga:write`.
+
+  Body fields: `user_id` (string, required), `entitlement` (string, required), `expires_at` (integer).
+  Response fields: `object`, `id`, `user_id`, `entitlement_id`, `expires_at`, `created_by`, `created_at`.
   """
   def post_eligibilities(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/eligibilities", %{}, body, opts)
@@ -434,6 +556,8 @@ defmodule Atlas.Iga do
   Remove an eligibility. Access already activated stays until it ends.
 
   `DELETE /v1/iga/eligibilities/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_eligibilities(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/eligibilities/{id}", %{"id" => id}, nil, opts)
@@ -442,12 +566,15 @@ defmodule Atlas.Iga do
   The activation history, newest first, with each activation's live status.
 
   `GET /v1/iga/activations`. Required scope: `iga:read`.
+
+  Query params (`params:`): `user_id`, `entitlement`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.entitlement_id`, `data.justification`, `data.ticket_ref`, `data.duration_seconds`, `data.acr`, `data.grant_id`, `data.request_id`, `data.status`, `data.created_at`, `data.ends_at`, `has_more`, `next_cursor`.
   """
   def get_activations(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/activations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_activations/1`, following the cursor page by page.
+  Lazy stream over every item of `get_activations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_activations(client, opts \\ []),
@@ -457,6 +584,9 @@ defmodule Atlas.Iga do
   Activate eligible access for a person as an administrator (the MFA the entitlement asks for is waived and the activation is marked `admin`). Justification, ticket and duration limits still apply. With `require_approval` the entitlement's approval steps run first and the status is `pending_approval`.
 
   `POST /v1/iga/activations`. Required scope: `iga:write`.
+
+  Body fields: `user_id` (string, required), `entitlement` (string, required), `justification` (string), `ticket_ref` (string), `duration_seconds` (integer).
+  Response fields: `object`, `id`, `user_id`, `entitlement_id`, `justification`, `ticket_ref`, `duration_seconds`, `acr`, `grant_id`, `request_id`, `status`, `created_at`, `ends_at`.
   """
   def post_activations(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/activations", %{}, body, opts)
@@ -465,6 +595,8 @@ defmodule Atlas.Iga do
   End an activation now: closes the grant, or cancels the pending approval.
 
   `POST /v1/iga/activations/{id}/end`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `user_id`, `entitlement_id`, `justification`, `ticket_ref`, `duration_seconds`, `acr`, `grant_id`, `request_id`, `status`, `created_at`, `ends_at`.
   """
   def post_activations_end(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/activations/{id}/end", %{"id" => id}, nil, opts)
@@ -473,12 +605,15 @@ defmodule Atlas.Iga do
   List access bundles (packages of entitlements requested together).
 
   `GET /v1/iga/bundles`. Required scope: `iga:read`.
+
+  Query params (`params:`): `catalog`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.key`, `data.name`, `data.description`, `data.catalog`, `data.entitlement_ids`, `data.form`, `data.form.key`, `data.form.label`, `data.form.required`, `data.policy`, `data.policy.allowed_email_domains`, `data.policy.internal_email_domains`, `data.policy.guest_expiry_days`, `data.policy.duration_seconds`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_bundles(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/bundles", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_bundles/1`, following the cursor page by page.
+  Lazy stream over every item of `get_bundles`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_bundles(client, opts \\ []),
@@ -488,6 +623,10 @@ defmodule Atlas.Iga do
   Create a bundle: several catalog entitlements, request form fields, and a policy (who may ask, guest expiry).
 
   `POST /v1/iga/bundles`. Required scope: `iga:write`.
+
+  Body fields: `key` (string, required), `name` (string, required), `description` (string), `catalog` (string), `entitlements` (array, required), `form` (array), `policy` (object), `enabled` (boolean).
+  Nested body fields: `form.key`, `form.label`, `form.required`, `policy.allowed_email_domains`, `policy.internal_email_domains`, `policy.guest_expiry_days`, `policy.duration_seconds`.
+  Response fields: `object`, `id`, `key`, `name`, `description`, `catalog`, `entitlement_ids`, `form`, `form.key`, `form.label`, `form.required`, `policy`, `policy.allowed_email_domains`, `policy.internal_email_domains`, `policy.guest_expiry_days`, `policy.duration_seconds`, `enabled`, `created_at`, `updated_at`.
   """
   def post_bundles(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/bundles", %{}, body, opts)
@@ -496,6 +635,8 @@ defmodule Atlas.Iga do
   Read one bundle by id or key.
 
   `GET /v1/iga/bundles/{id}`. Required scope: `iga:read`.
+
+  Response fields: `object`, `id`, `key`, `name`, `description`, `catalog`, `entitlement_ids`, `form`, `form.key`, `form.label`, `form.required`, `policy`, `policy.allowed_email_domains`, `policy.internal_email_domains`, `policy.guest_expiry_days`, `policy.duration_seconds`, `enabled`, `created_at`, `updated_at`.
   """
   def get_bundles_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/bundles/{id}", %{"id" => id}, nil, opts)
@@ -504,6 +645,10 @@ defmodule Atlas.Iga do
   Change an access bundle, its entitlements, form fields or policy.
 
   `PATCH /v1/iga/bundles/{id}`. Required scope: `iga:write`.
+
+  Body fields: `key` (string), `name` (string), `description` (string), `catalog` (string), `entitlements` (array), `form` (array), `policy` (object), `enabled` (boolean).
+  Nested body fields: `form.key`, `form.label`, `form.required`, `policy.allowed_email_domains`, `policy.internal_email_domains`, `policy.guest_expiry_days`, `policy.duration_seconds`.
+  Response fields: `object`, `id`, `key`, `name`, `description`, `catalog`, `entitlement_ids`, `form`, `form.key`, `form.label`, `form.required`, `policy`, `policy.allowed_email_domains`, `policy.internal_email_domains`, `policy.guest_expiry_days`, `policy.duration_seconds`, `enabled`, `created_at`, `updated_at`.
   """
   def update_bundles(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/iga/bundles/{id}", %{"id" => id}, body, opts)
@@ -512,6 +657,8 @@ defmodule Atlas.Iga do
   Delete a bundle (access already granted stays).
 
   `DELETE /v1/iga/bundles/{id}`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete_bundles(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/iga/bundles/{id}", %{"id" => id}, nil, opts)
@@ -520,6 +667,9 @@ defmodule Atlas.Iga do
   Request every entitlement of a bundle for a person. Each one follows its own approval steps and separation-of-duties rules; the response says which were requested, skipped (already held or pending) or failed.
 
   `POST /v1/iga/bundles/{id}/request`. Required scope: `iga:write`.
+
+  Body fields: `user_id` (string, required), `requester_user_id` (string), `justification` (string), `answers` (object).
+  Response fields: `object`, `bundle_id`, `user_id`, `results`, `results.entitlement_id`, `results.entitlement_key`, `results.outcome`, `results.request_id`, `results.status`, `results.reason`.
   """
   def post_bundles_request(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/bundles/{id}/request", %{"id" => id}, body, opts)
@@ -528,6 +678,9 @@ defmodule Atlas.Iga do
   Add catalog entitlements (not requestable, no approval steps) for the groups or app roles that exist but are not in the catalog yet.
 
   `POST /v1/iga/entitlements/import`. Required scope: `iga:write`.
+
+  Body fields: `source` (enum, required).
+  Response fields: `object`, `source`, `created`, `skipped`.
   """
   def post_entitlements_import(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/entitlements/import", %{}, body, opts)
@@ -536,12 +689,15 @@ defmodule Atlas.Iga do
   Ready-made access reviews: inactive users, guest and contractor access, and a quarterly two-stage review.
 
   `GET /v1/iga/campaign_templates`. Required scope: `iga:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.key`, `data.name`, `data.description`, `data.parameters`, `has_more`, `next_cursor`.
   """
   def get_campaign_templates(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaign_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_campaign_templates/1`, following the cursor page by page.
+  Lazy stream over every item of `get_campaign_templates`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_campaign_templates(client, opts \\ []),
@@ -551,6 +707,9 @@ defmodule Atlas.Iga do
   Create a campaign from a template. `parameters` fill the template (inactive_days; company_domains).
 
   `POST /v1/iga/campaigns/from_template`. Required scope: `iga:write`.
+
+  Body fields: `template` (enum, required), `name` (string), `parameters` (object), `recurrence` (object).
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def post_campaigns_from_template(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/from_template", %{}, body, opts)
@@ -559,6 +718,8 @@ defmodule Atlas.Iga do
   Start a copy of a recurring campaign now, outside its schedule.
 
   `POST /v1/iga/campaigns/{id}/run_now`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def post_campaigns_run_now(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/{id}/run_now", %{"id" => id}, nil, opts)
@@ -567,6 +728,8 @@ defmodule Atlas.Iga do
   Stop a recurring campaign. Copies already started are unaffected.
 
   `POST /v1/iga/campaigns/{id}/stop_recurrence`. Required scope: `iga:write`.
+
+  Response fields: `object`, `id`, `name`, `description`, `scope_type`, `scope_ids`, `reviewer_type`, `reviewer_ids`, `status`, `due_at`, `reminder_days`, `auto_revoke`, `stages`, `stages.name`, `stages.reviewer_type`, `stages.reviewer_ids`, `recurrence`, `recurrence.cron`, `recurrence.due_in_days`, `next_run_at`, `parent_campaign_id`, `item_filter`, `item_filter.inactive_days`, `item_filter.exclude_email_domains`, `launched_at`, `closed_at`, `created_at`.
   """
   def post_campaigns_stop_recurrence(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/iga/campaigns/{id}/stop_recurrence", %{"id" => id}, nil, opts)
@@ -575,12 +738,15 @@ defmodule Atlas.Iga do
   The open review items with advice for the reviewer: revoke (no sign-in for 90 days, or none since the access was granted), review (held by few of the manager's other reports) or certify. Advice only.
 
   `GET /v1/iga/campaigns/{id}/recommendations`. Required scope: `iga:read`.
+
+  Query params (`params:`): `reviewer_user_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.campaign_id`, `data.grant_id`, `data.user_id`, `data.entitlement_id`, `data.reviewer_user_id`, `data.decision`, `data.decided_by`, `data.decided_at`, `data.comment`, `data.revoked_applied`, `data.stage`, `data.stage_history`, `data.recommendation`, `data.recommendation.action`, `data.recommendation.reasons`, `data.recommendation.last_sign_in_at`, `data.recommendation.granted_at`, `has_more`, `next_cursor`.
   """
   def get_campaigns_recommendations(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/iga/campaigns/{id}/recommendations", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_campaigns_recommendations/2`, following the cursor page by page.
+  Lazy stream over every item of `get_campaigns_recommendations`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_campaigns_recommendations(client, id, opts \\ []),

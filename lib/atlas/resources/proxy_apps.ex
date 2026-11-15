@@ -5,7 +5,8 @@ defmodule Atlas.ProxyApps do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ProxyApps do
   List the identity-aware proxy apps — hostnames protected by the forward-auth endpoint, with their path rules.
 
   `GET /v1/proxy_apps`. Required scope: `proxy_apps:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.hostname`, `data.upstream_url`, `data.rules`, `data.public_paths`, `data.inject_headers`, `data.inject_token`, `data.allow_agent_tokens`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/proxy_apps", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.ProxyApps do
   Create a proxy app: a hostname, optional upstream URL, ordered path/method rules requiring a role, permission or entitlement, public paths, and header/token injection. The hostname is unique across the deployment.
 
   `POST /v1/proxy_apps`. Required scope: `proxy_apps:write`.
+
+  Body fields: `name` (string, required), `hostname` (string, required), `upstream_url` (string, required), `rules` (array), `public_paths` (array), `inject_headers` (boolean), `inject_token` (boolean), `allow_agent_tokens` (boolean), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `hostname`, `upstream_url`, `rules`, `public_paths`, `inject_headers`, `inject_token`, `allow_agent_tokens`, `enabled`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/proxy_apps", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.ProxyApps do
   Read one identity-aware proxy app.
 
   `GET /v1/proxy_apps/{id}`. Required scope: `proxy_apps:read`.
+
+  Response fields: `object`, `id`, `name`, `hostname`, `upstream_url`, `rules`, `public_paths`, `inject_headers`, `inject_token`, `allow_agent_tokens`, `enabled`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/proxy_apps/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.ProxyApps do
   Update a proxy app. Omitted fields keep their value.
 
   `PATCH /v1/proxy_apps/{id}`. Required scope: `proxy_apps:write`.
+
+  Body fields: `name` (string), `hostname` (string), `upstream_url` (string), `rules` (array), `public_paths` (array), `inject_headers` (boolean), `inject_token` (boolean), `allow_agent_tokens` (boolean), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `hostname`, `upstream_url`, `rules`, `public_paths`, `inject_headers`, `inject_token`, `allow_agent_tokens`, `enabled`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/proxy_apps/{id}", %{"id" => id}, body, opts)

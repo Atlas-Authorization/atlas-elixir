@@ -5,7 +5,8 @@ defmodule Atlas.LogStreams do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.LogStreams do
   List log streams (event forwarding to Datadog, Splunk or a generic HTTP sink). Secret values are never returned, only has_* markers.
 
   `GET /v1/log_streams`. Required scope: `log_streams:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.type`, `data.enabled`, `data.status`, `data.event_filter`, `data.destination`, `data.cursor`, `data.consecutive_failures`, `data.last_error`, `data.last_delivered_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/log_streams", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.LogStreams do
   Create a log stream. destination secrets (api_key / token / auth headers) are write-only; the cursor starts at the current event so only new events forward.
 
   `POST /v1/log_streams`. Required scope: `log_streams:write`.
+
+  Body fields: `name` (string), `type` (enum), `destination` (any), `event_filter` (array|null), `enabled` (boolean).
+  Nested body fields: `destination.url`, `destination.headers`, `destination.site`, `destination.api_key`, `destination.hec_endpoint`, `destination.token`.
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `event_filter`, `destination`, `cursor`, `consecutive_failures`, `last_error`, `last_delivered_at`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/log_streams", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.LogStreams do
   Read one log stream, including its forwarding status, cursor and last error. Reports secret markers only, never their values.
 
   `GET /v1/log_streams/{id}`. Required scope: `log_streams:read`.
+
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `event_filter`, `destination`, `cursor`, `consecutive_failures`, `last_error`, `last_delivered_at`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/log_streams/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.LogStreams do
   Update a log stream's name, destination, event_filter, enabled flag, or status (active/paused). A secret left out of destination is preserved.
 
   `PATCH /v1/log_streams/{id}`. Required scope: `log_streams:write`.
+
+  Body fields: `name` (string), `destination` (any), `event_filter` (array|null), `enabled` (boolean), `status` (enum).
+  Nested body fields: `destination.url`, `destination.headers`, `destination.site`, `destination.api_key`, `destination.hec_endpoint`, `destination.token`.
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `event_filter`, `destination`, `cursor`, `consecutive_failures`, `last_error`, `last_delivered_at`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/log_streams/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.LogStreams do
   Delete a log stream. Forwarding stops immediately; no further events are sent to the sink.
 
   `DELETE /v1/log_streams/{id}`. Required scope: `log_streams:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/log_streams/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +76,8 @@ defmodule Atlas.LogStreams do
   Send one synthetic event to the sink with the stream's real credentials and return the sink's status. Touches no real event and never moves the cursor.
 
   `POST /v1/log_streams/{id}/test`. Required scope: `log_streams:write`.
+
+  Response fields: `object`, `id`, `ok`, `status`, `error`.
   """
   def post_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/log_streams/{id}/test", %{"id" => id}, nil, opts)

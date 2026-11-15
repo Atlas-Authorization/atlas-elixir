@@ -5,7 +5,8 @@ defmodule Atlas.Actions do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,28 @@ defmodule Atlas.Actions do
   List Actions (tenant code that runs at auth-pipeline hooks). Secret values are never returned, only their names.
 
   `GET /v1/actions`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.trigger`, `data.code`, `data.runtime`, `data.http_target`, `data.http_target.url`, `data.http_target.timeout_ms`, `data.http_target.failure_mode`, `data.enabled`, `data.signing_secret`, `data.secret_names`, `data.current_version`, `data.egress_allowlist`, `data.rollout`, `data.rollout.version`, `data.rollout.percent`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/actions", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/actions", %{}, opts)
 
   @doc ~S"""
-  Create an Action for a trigger (see the Actions guide for the 22 triggers: sign-in, registration, tokens, credentials, MFA, profile, organizations, billing). Secrets are write-only. `runtime: "http"` (with `http_target` and an optional `signing_secret`) makes the Action call your own HTTPS endpoint, Standard Webhooks signed, instead of running code; a generated signing secret is returned once as `signing_secret`.
+  Create an Action for a trigger (see the Actions guide for the 22 triggers: sign-in, registration, tokens, credentials, MFA, profile, organizations, billing). Secrets are write-only. `runtime: "http"` (with `http_target` and an optional `signing_secret`) makes the Action call your own HTTPS endpoint, Standard Webhooks signed, instead of running code; a generated signing secret is returned once as `signing_secret`. `egress_allowlist` limits the hosts the Action's `api.http` calls may reach (`api.example.com` or `*.example.com`); empty means any public host.
 
   `POST /v1/actions`. Required scope: `actions:write`.
+
+  Body fields: `name` (string), `trigger` (string), `code` (string), `enabled` (boolean), `secrets` (object), `runtime` (enum), `http_target` (object), `signing_secret` (string), `egress_allowlist` (array).
+  Nested body fields: `http_target.url`, `http_target.timeout_ms`, `http_target.failure_mode`.
+  Response fields: `object`, `id`, `name`, `trigger`, `code`, `runtime`, `http_target`, `http_target.url`, `http_target.timeout_ms`, `http_target.failure_mode`, `enabled`, `signing_secret`, `secret_names`, `current_version`, `egress_allowlist`, `rollout`, `rollout.version`, `rollout.percent`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/actions", %{}, body, opts)
@@ -36,14 +44,20 @@ defmodule Atlas.Actions do
   Read one Action. Reports secret names only, never their values.
 
   `GET /v1/actions/{id}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `id`, `name`, `trigger`, `code`, `runtime`, `http_target`, `http_target.url`, `http_target.timeout_ms`, `http_target.failure_mode`, `enabled`, `signing_secret`, `secret_names`, `current_version`, `egress_allowlist`, `rollout`, `rollout.version`, `rollout.percent`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/actions/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Update an Action's name, code, enabled flag, or secrets. A secret set to "" is deleted; one left out is preserved.
+  Update an Action's name, code, enabled flag, egress allowlist, or secrets. A secret set to "" is deleted; one left out is preserved. A change to the code or HTTP target is recorded as a new version (see GET /v1/actions/{id}/versions) and is 409 while a staged rollout is in progress.
 
   `PATCH /v1/actions/{id}`. Required scope: `actions:write`.
+
+  Body fields: `name` (string), `code` (string), `enabled` (boolean), `secrets` (object), `http_target` (object), `signing_secret` (string), `rotate_signing_secret` (boolean), `egress_allowlist` (array).
+  Nested body fields: `http_target.url`, `http_target.timeout_ms`, `http_target.failure_mode`.
+  Response fields: `object`, `id`, `name`, `trigger`, `code`, `runtime`, `http_target`, `http_target.url`, `http_target.timeout_ms`, `http_target.failure_mode`, `enabled`, `signing_secret`, `secret_names`, `current_version`, `egress_allowlist`, `rollout`, `rollout.version`, `rollout.percent`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/actions/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.Actions do
   Delete an Action. Its trigger bindings cascade away, so it stops running everywhere.
 
   `DELETE /v1/actions/{id}`. Required scope: `actions:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/actions/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +76,10 @@ defmodule Atlas.Actions do
   Dry-run an Action against a sample event in the sandbox and return its claims, deny, lock, suppressed claims, user edits, sign-up changes and logs. The sample event takes the trigger's `context`, `sign_up_fields` and `organization`. Touches no real data.
 
   `POST /v1/actions/{id}/test`. Required scope: `actions:write`.
+
+  Body fields: `event` (object).
+  Nested body fields: `event.user`, `event.connection`, `event.connection.strategy`, `event.connection.method`, `event.request`, `event.request.ip`, `event.request.user_agent`, `event.request.country`, `event.context`, `event.sign_up_fields`, `event.organization`, `event.organization.id`, `event.organization.name`, `event.organization.slug`, `event.organization.publicMetadata`, `event.organization.privateMetadata`, `event.organization.entitlements`, `event.organization.entitlements.plan`, `event.organization.entitlements.features`, `event.organization.entitlements.limits`.
+  Response fields: `object`, `id`, `denied`, `deny_reason`, `access_token_claims`, `id_token_claims`, `app_metadata`, `challenge`, `challenge_accepted`, `lock_reason`, `pause_reason`, `suppressed_access_claims`, `suppressed_id_claims`, `user_edits`, `user_edits.banned`, `user_edits.banned.value`, `user_edits.banned.reason`, `user_edits.emailVerified`, `user_edits.firstName`, `user_edits.lastName`, `user_edits.imageUrl`, `sign_up_prefill`, `sign_up_modify`, `http_call`, `http_call.status`, `http_call.http_status`, `http_call.latency_ms`, `http_call.error`, `logs`, `http_requests`, `http_requests.method`, `http_requests.url`, `http_requests.header_names`, `http_requests.has_body`, `http_requests.save_response_as`, `error`.
   """
   def post_test(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/actions/{id}/test", %{"id" => id}, body, opts)
@@ -68,12 +88,15 @@ defmodule Atlas.Actions do
   The call log of an `http` Action (an Action that calls your own endpoint), newest first, with 24 hour stats: calls, denied, failed, timeouts and p95 latency. Real calls and dry-run tests are both logged (`test`). 409 for a `node` Action.
 
   `GET /v1/actions/{id}/calls`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `status`, `test`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.action_id`, `data.trigger`, `data.user_id`, `data.test`, `data.status`, `data.http_status`, `data.latency_ms`, `data.error`, `data.answer`, `data.created_at`, `has_more`, `next_cursor`, `stats`, `stats.calls_24h`, `stats.denied_24h`, `stats.failed_24h`, `stats.timeouts_24h`, `stats.p95_latency_ms`, `stats.last_failed_at`.
   """
   def get_calls(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/actions/{id}/calls", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_calls/2`, following the cursor page by page.
+  Lazy stream over every item of `get_calls`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_calls(client, id, opts \\ []),
@@ -83,6 +106,8 @@ defmodule Atlas.Actions do
   Read the ordered list of Action ids bound to a trigger.
 
   `GET /v1/actions/bindings/{trigger}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `trigger`, `action_ids`.
   """
   def get_bindings(client, trigger, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/actions/bindings/{trigger}", %{"trigger" => trigger}, nil, opts)
@@ -91,6 +116,9 @@ defmodule Atlas.Actions do
   Replace the ordered list of Actions bound to a trigger — the single source of truth for what runs, and in what order.
 
   `PUT /v1/actions/bindings/{trigger}`. Required scope: `actions:write`.
+
+  Body fields: `action_ids` (array).
+  Response fields: `object`, `trigger`, `action_ids`.
   """
   def put_bindings(client, trigger, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/actions/bindings/{trigger}", %{"trigger" => trigger}, body, opts)
@@ -99,9 +127,73 @@ defmodule Atlas.Actions do
   Update an installed action to its template's latest version. The code is replaced; name, enabled state, bindings and secrets stay. Pass any newly required secrets; a changed trigger is a 409.
 
   `POST /v1/actions/{id}/gallery_update`. Required scope: `actions:write`.
+
+  Body fields: `secrets` (object).
+  Response fields: `object`, `updated`, `action`, `action.object`, `action.id`, `action.name`, `action.trigger`, `action.code`, `action.runtime`, `action.http_target`, `action.http_target.url`, `action.http_target.timeout_ms`, `action.http_target.failure_mode`, `action.enabled`, `action.signing_secret`, `action.secret_names`, `action.current_version`, `action.egress_allowlist`, `action.rollout`, `action.rollout.version`, `action.rollout.percent`, `action.created_at`, `action.updated_at`, `from_version`, `version`.
   """
   def post_gallery_update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/actions/{id}/gallery_update", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Every kept version of an Action (up to 50, newest first), with which one is live and which one is staged. Each is an immutable snapshot of the code (or HTTP target); the first change to an Action that predates versions snapshots what it was.
+
+  `GET /v1/actions/{id}/versions`. Required scope: `actions:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.action_id`, `data.version`, `data.name`, `data.code`, `data.runtime`, `data.http_target`, `data.note`, `data.created_by`, `data.created_at`, `data.current`, `data.staged`, `has_more`, `current_version`, `rollout`.
+  """
+  def get_versions(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/actions/{id}/versions", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_versions`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_versions(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/actions/{id}/versions", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Publish new code (or a new HTTP target) as the next version. By default it goes live at once. With `rollout_percent` from 1 to 99 it is staged: that share of executions runs it (one user always lands on the same side), the rest keep the current version, until you move or end the rollout with PATCH /v1/actions/{id}/rollout. 409 while another rollout is in progress. Writes an audit row naming the versions.
+
+  `POST /v1/actions/{id}/versions`. Required scope: `actions:write`.
+
+  Body fields: `code` (string), `http_target` (object), `note` (string), `rollout_percent` (integer).
+  Response fields: `object`, `action_id`, `version`, `name`, `code`, `runtime`, `http_target`, `note`, `created_by`, `created_at`, `current`, `staged`, `action`, `action.object`, `action.id`, `action.name`, `action.trigger`, `action.code`, `action.runtime`, `action.http_target`, `action.http_target.url`, `action.http_target.timeout_ms`, `action.http_target.failure_mode`, `action.enabled`, `action.signing_secret`, `action.secret_names`, `action.current_version`, `action.egress_allowlist`, `action.rollout`, `action.rollout.version`, `action.rollout.percent`, `action.created_at`, `action.updated_at`.
+  """
+  def post_versions(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/actions/{id}/versions", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  One version of an Action, with its code.
+
+  `GET /v1/actions/{id}/versions/{version}`. Required scope: `actions:read`.
+
+  Response fields: `object`, `action_id`, `version`, `name`, `code`, `runtime`, `http_target`, `note`, `created_by`, `created_at`, `current`, `staged`.
+  """
+  def get_by_id_versions_by_version(client, id, version, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/actions/{id}/versions/{version}", %{"id" => id, "version" => version}, nil, opts)
+
+  @doc ~S"""
+  Move a staged rollout: 1-99 changes its share, 100 promotes the staged version to current, 0 aborts it and drops it. 409 when the Action has no staged version.
+
+  `PATCH /v1/actions/{id}/rollout`. Required scope: `actions:write`.
+
+  Body fields: `percent` (integer, required).
+  Response fields: `object`, `id`, `name`, `trigger`, `code`, `runtime`, `http_target`, `http_target.url`, `http_target.timeout_ms`, `http_target.failure_mode`, `enabled`, `signing_secret`, `secret_names`, `current_version`, `egress_allowlist`, `rollout`, `rollout.version`, `rollout.percent`, `created_at`, `updated_at`.
+  """
+  def update_rollout(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/actions/{id}/rollout", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Put an earlier version's code and target back live, as a NEW version (history stays linear). Also ends any staged rollout. 404 for a version that is not kept.
+
+  `POST /v1/actions/{id}/rollback`. Required scope: `actions:write`.
+
+  Body fields: `version` (integer, required).
+  Response fields: `object`, `action_id`, `version`, `name`, `code`, `runtime`, `http_target`, `note`, `created_by`, `created_at`, `current`, `staged`, `action`, `action.object`, `action.id`, `action.name`, `action.trigger`, `action.code`, `action.runtime`, `action.http_target`, `action.http_target.url`, `action.http_target.timeout_ms`, `action.http_target.failure_mode`, `action.enabled`, `action.signing_secret`, `action.secret_names`, `action.current_version`, `action.egress_allowlist`, `action.rollout`, `action.rollout.version`, `action.rollout.percent`, `action.created_at`, `action.updated_at`.
+  """
+  def post_rollback(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/actions/{id}/rollback", %{"id" => id}, body, opts)
 
   @doc false
   def __operations__, do: [
@@ -114,6 +206,11 @@ defmodule Atlas.Actions do
     {:get_calls, :get, "/v1/actions/{id}/calls", 1, false, true},
     {:get_bindings, :get, "/v1/actions/bindings/{trigger}", 1, false, false},
     {:put_bindings, :put, "/v1/actions/bindings/{trigger}", 1, true, false},
-    {:post_gallery_update, :post, "/v1/actions/{id}/gallery_update", 1, true, false}
+    {:post_gallery_update, :post, "/v1/actions/{id}/gallery_update", 1, true, false},
+    {:get_versions, :get, "/v1/actions/{id}/versions", 1, false, true},
+    {:post_versions, :post, "/v1/actions/{id}/versions", 1, true, false},
+    {:get_by_id_versions_by_version, :get, "/v1/actions/{id}/versions/{version}", 2, false, false},
+    {:update_rollout, :patch, "/v1/actions/{id}/rollout", 1, true, false},
+    {:post_rollback, :post, "/v1/actions/{id}/rollback", 1, true, false}
   ]
 end

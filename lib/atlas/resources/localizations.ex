@@ -5,7 +5,8 @@ defmodule Atlas.Localizations do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Localizations do
   List per-language localization overrides (email/SMS templates, hosted-page copy).
 
   `GET /v1/localizations`. Required scope: `localizations:read`.
+
+  Query params (`params:`): `resource_type`, `resource_name`, `locale`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.resource_type`, `data.resource_name`, `data.locale`, `data.content`, `data.enabled`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/localizations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Localizations do
   Create or replace a localization override for one resource + locale. Validated on save.
 
   `POST /v1/localizations`. Required scope: `localizations:write`.
+
+  Body fields: `resource_type` (string), `resource_name` (string), `locale` (string), `content` (object), `enabled` (boolean).
+  Response fields: `object`, `id`, `resource_type`, `resource_name`, `locale`, `content`, `enabled`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/localizations", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.Localizations do
   Read one localization override by id.
 
   `GET /v1/localizations/{id}`. Required scope: `localizations:read`.
+
+  Response fields: `object`, `id`, `resource_type`, `resource_name`, `locale`, `content`, `enabled`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/localizations/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.Localizations do
   Update a localization override content or enabled flag. Re-validated on save.
 
   `PATCH /v1/localizations/{id}`. Required scope: `localizations:write`.
+
+  Body fields: `content` (object), `enabled` (boolean).
+  Response fields: `object`, `id`, `resource_type`, `resource_name`, `locale`, `content`, `enabled`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/localizations/{id}", %{"id" => id}, body, opts)
@@ -56,12 +68,67 @@ defmodule Atlas.Localizations do
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/localizations/{id}", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  Move a translation through review: submit (draft or changes_requested to in_review), approve (in_review to approved; records who and the hash of the approved text), request_changes (in_review to changes_requested; note required), reopen (back to draft). Any other move is 409. With localization.requireFourEyes on, approve by the person who last wrote the text is 403. Editing an approved text sends it back to draft. With localization.requireReview on, only approved translations are served. Emits localization.review_decided.
+
+  `POST /v1/localizations/{id}/review`. Required scope: `localizations:write`.
+
+  Body fields: `action` (enum, required), `note` (string|null), `reviewer_hint` (string|null).
+  Response fields: `object`, `id`, `resource_type`, `resource_name`, `locale`, `content`, `enabled`, `review_status`, `authored_by`, `reviewed_by`, `reviewed_at`, `reviewer_hint`, `changed_since_approval`, `created_at`, `updated_at`.
+  """
+  def post_review(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/localizations/{id}/review", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The review decisions on a translation, newest first.
+
+  `GET /v1/localizations/{id}/reviews`. Required scope: `localizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.localization_id`, `data.action`, `data.from_status`, `data.to_status`, `data.actor`, `data.note`, `data.content_hash`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_reviews(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/localizations/{id}/reviews", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_reviews`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_reviews(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/localizations/{id}/reviews", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Translations per review status, the review queue (in review and changes requested), and approved translations whose text changed after approval.
+
+  `GET /v1/localizations/review_summary`. Required scope: `localizations:read`.
+
+  Response fields: `object`, `counts`, `queue`, `queue.object`, `queue.id`, `queue.resource_type`, `queue.resource_name`, `queue.locale`, `queue.content`, `queue.enabled`, `queue.review_status`, `queue.authored_by`, `queue.reviewed_by`, `queue.reviewed_at`, `queue.reviewer_hint`, `queue.changed_since_approval`, `queue.created_at`, `queue.updated_at`, `changed_since_approval`, `changed_since_approval.object`, `changed_since_approval.id`, `changed_since_approval.resource_type`, `changed_since_approval.resource_name`, `changed_since_approval.locale`, `changed_since_approval.content`, `changed_since_approval.enabled`, `changed_since_approval.review_status`, `changed_since_approval.authored_by`, `changed_since_approval.reviewed_by`, `changed_since_approval.reviewed_at`, `changed_since_approval.reviewer_hint`, `changed_since_approval.changed_since_approval`, `changed_since_approval.created_at`, `changed_since_approval.updated_at`.
+  """
+  def get_review_summary(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/localizations/review_summary", %{}, nil, opts)
+
+  @doc ~S"""
+  Validate translations without saving (a CI step): the checks a save runs, plus empty strings, unknown keys and placeholders that differ from an approved translation of the same resource in another language. With require_approved, a translation that is not stored, not approved, or changed since approval fails too. Never writes. 1 to 500 items.
+
+  `POST /v1/localizations/check`. Required scope: `localizations:read`.
+
+  Body fields: `items` (array, required), `require_approved` (boolean).
+  Nested body fields: `items.resource_type`, `items.resource_name`, `items.locale`, `items.content`.
+  Response fields: `object`, `ok`, `checked`, `failed`, `results`, `results.index`, `results.ok`, `results.problems`, `results.problems.code`, `results.problems.message`.
+  """
+  def post_check(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/localizations/check", %{}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/localizations", 0, false, true},
     {:create, :post, "/v1/localizations", 0, true, false},
     {:get, :get, "/v1/localizations/{id}", 1, false, false},
     {:update, :patch, "/v1/localizations/{id}", 1, true, false},
-    {:delete, :delete, "/v1/localizations/{id}", 1, false, false}
+    {:delete, :delete, "/v1/localizations/{id}", 1, false, false},
+    {:post_review, :post, "/v1/localizations/{id}/review", 1, true, false},
+    {:get_reviews, :get, "/v1/localizations/{id}/reviews", 1, false, true},
+    {:get_review_summary, :get, "/v1/localizations/review_summary", 0, false, false},
+    {:post_check, :post, "/v1/localizations/check", 0, true, false}
   ]
 end

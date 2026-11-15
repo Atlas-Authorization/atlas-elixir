@@ -5,7 +5,8 @@ defmodule Atlas.Agents do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Agents do
   Backend-assisted claim: bind an agent to a user you already know and promote it to trusted. Audited as agent.claimed.
 
   `POST /v1/agents/{id}/claim`. Required scope: `machines:write`.
+
+  Body fields: `user_id` (string, required).
   """
   def post_claim(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agents/{id}/claim", %{"id" => id}, body, opts)
@@ -21,12 +24,15 @@ defmodule Atlas.Agents do
   The agent registry: every registered agent with its tier, owner and status. Filter by owner_user_id or tier; page with limit and starting_after.
 
   `GET /v1/agents`. Required scope: `machines:read`.
+
+  Query params (`params:`): `owner_user_id`, `tier`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agents", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -44,6 +50,8 @@ defmodule Atlas.Agents do
   Set the owning user of an agent, or null to remove the owner (which also drops the agent back to untrusted).
 
   `PUT /v1/agents/{id}/owner`. Required scope: `machines:write`.
+
+  Body fields: `user_id` (string|null, required).
   """
   def put_owner(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/agents/{id}/owner", %{"id" => id}, body, opts)
@@ -52,14 +60,29 @@ defmodule Atlas.Agents do
   Revoke every grant and cancel every pending request of an agent. With disable: true the agent itself is revoked and can no longer get tokens. Emits agent.access_revoked.
 
   `POST /v1/agents/{id}/revoke_access`. Required scope: `machines:write`.
+
+  Body fields: `disable` (boolean).
   """
   def post_revoke_access(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agents/{id}/revoke_access", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Check a signed bot request (Web Bot Auth, RFC 9421 HTTP Message Signatures, Ed25519, tag web-bot-auth). Send the method, the absolute URL and the headers your server received. Atlas reads the Signature-Agent header, fetches the bot's key directory from <Signature-Agent>/.well-known/http-message-signatures-directory (cached, over a transport that refuses private addresses), checks the keyid against the keys' JWK thumbprints, verifies the signature and its created/expires window, then applies your allow and block lists. decision is allow, block or unknown; only a verified request is ever allowed or blocked. The decision is written to the audit log (agent.web_bot_auth_decision). 600 calls per minute.
+
+  `POST /v1/agents/verify_request`. Required scope: `machines:read`.
+
+  Body fields: `method` (string, required), `url` (string, required), `headers` (object, required), `reject_replays` (boolean).
+  Response fields: `object`, `verified`, `agent`, `agent.directory`, `agent.key_id`, `agent.name`, `tier`, `decision`, `reason`.
+  """
+  def post_verify_request(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/agents/verify_request", %{}, body, opts)
+
+  @doc ~S"""
   An agent's sponsor, backup sponsor and expiry.
 
   `GET /v1/agents/{id}/lifecycle`. Required scope: `machines:read`.
+
+  Response fields: `object`, `agent_id`, `sponsor_user_id`, `backup_sponsor_user_id`, `expires_at`, `renewed_at`, `renewal_count`.
   """
   def get_lifecycle(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agents/{id}/lifecycle", %{"id" => id}, nil, opts)
@@ -68,6 +91,9 @@ defmodule Atlas.Agents do
   Set an agent's sponsor, backup sponsor and expiry (omitted fields keep their value; null clears). Emits agent.sponsor_changed. When the sponsor's account is gone, banned or locked the backup is promoted automatically; at the expiry the agent's grants are revoked and the agent is revoked, after an agent.expiring warning 14 days ahead.
 
   `PUT /v1/agents/{id}/lifecycle`. Required scope: `machines:write`.
+
+  Body fields: `sponsor_user_id` (string|null), `backup_sponsor_user_id` (string|null), `expires_at` (integer|string|null).
+  Response fields: `object`, `agent_id`, `sponsor_user_id`, `backup_sponsor_user_id`, `expires_at`, `renewed_at`, `renewal_count`.
   """
   def put_lifecycle(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/agents/{id}/lifecycle", %{"id" => id}, body, opts)
@@ -76,6 +102,9 @@ defmodule Atlas.Agents do
   Extend an agent's registration by extend_days (1 to 365) from its current expiry (or now, when that has passed). A revoked agent cannot be renewed.
 
   `POST /v1/agents/{id}/renew`. Required scope: `machines:write`.
+
+  Body fields: `extend_days` (integer, required).
+  Response fields: `object`, `agent_id`, `sponsor_user_id`, `backup_sponsor_user_id`, `expires_at`, `renewed_at`, `renewal_count`.
   """
   def post_renew(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agents/{id}/renew", %{"id" => id}, body, opts)
@@ -84,12 +113,15 @@ defmodule Atlas.Agents do
   Everything an agent did, newest first: audit entries about it and entries it caused (gateway tool calls with their outcome, connection tokens and actions, access decisions). Defaults to the last 30 days.
 
   `GET /v1/agents/{id}/activity`. Required scope: `machines:read`.
+
+  Query params (`params:`): `since`, `before`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.action`, `data.target_type`, `data.target_id`, `data.metadata`, `data.at`, `has_more`.
   """
   def get_activity(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agents/{id}/activity", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_activity/2`, following the cursor page by page.
+  Lazy stream over every item of `get_activity`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_activity(client, id, opts \\ []),
@@ -102,6 +134,7 @@ defmodule Atlas.Agents do
     {:get, :get, "/v1/agents/{id}", 1, false, false},
     {:put_owner, :put, "/v1/agents/{id}/owner", 1, true, false},
     {:post_revoke_access, :post, "/v1/agents/{id}/revoke_access", 1, true, false},
+    {:post_verify_request, :post, "/v1/agents/verify_request", 0, true, false},
     {:get_lifecycle, :get, "/v1/agents/{id}/lifecycle", 1, false, false},
     {:put_lifecycle, :put, "/v1/agents/{id}/lifecycle", 1, true, false},
     {:post_renew, :post, "/v1/agents/{id}/renew", 1, true, false},

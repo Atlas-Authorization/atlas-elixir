@@ -5,7 +5,8 @@ defmodule Atlas.Pca do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Pca do
   Revoke a capability id under a grant; any PCActn whose chain contains it is denied. Revoking the grant_ref itself revokes the whole grant.
 
   `POST /v1/pca/revocations`. Required scope: `pca:write`.
+
+  Body fields: `grant_ref` (string, required), `cap_id` (string, required).
+  Response fields: `object`, `grant_ref`, `cap_id`, `revoked`.
   """
   def post_revocations(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/pca/revocations", %{}, body, opts)
@@ -21,6 +25,9 @@ defmodule Atlas.Pca do
   Engage the instance-wide PCA kill switch: every PCActn is denied until it is cleared.
 
   `POST /v1/pca/freeze`. Required scope: `pca:write`.
+
+  Body fields: `reason` (string).
+  Response fields: `object`, `frozen`.
   """
   def post_freeze(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/pca/freeze", %{}, body, opts)
@@ -29,6 +36,8 @@ defmodule Atlas.Pca do
   Clear the instance-wide PCA kill switch.
 
   `DELETE /v1/pca/freeze`. Required scope: `pca:write`.
+
+  Response fields: `object`, `frozen`.
   """
   def delete_freeze(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/pca/freeze", %{}, nil, opts)
@@ -37,6 +46,9 @@ defmodule Atlas.Pca do
   Deny a pending step-up: the held action is never anchored. Audited.
 
   `POST /v1/pca/stepups/{id}/deny`. Required scope: `pca:write`.
+
+  Body fields: `reason` (string).
+  Response fields: `object`, `stepup_id`, `grant_ref`, `action_digest`, `required_t`, `status`, `shares`, `created_at`, `expires_at`, `receipt`, `step_up_required`.
   """
   def post_stepups_deny(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/pca/stepups/{id}/deny", %{"id" => id}, body, opts)
@@ -45,6 +57,8 @@ defmodule Atlas.Pca do
   The instance's trusted software-attestor public keys.
 
   `GET /v1/pca/attestors`. Required scope: `pca:read`.
+
+  Response fields: `object`, `trusted_attestor_keys`.
   """
   def get_attestors(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/pca/attestors", %{}, nil, opts)
@@ -53,6 +67,9 @@ defmodule Atlas.Pca do
   Replace the trusted software-attestor key list. When non-empty, a PCActn that presents an attestation is verified against these keys (enforced); empty leaves attestation not-enforced. Audited.
 
   `PUT /v1/pca/attestors`. Required scope: `pca:write`.
+
+  Body fields: `trusted_attestor_keys` (array, required).
+  Response fields: `object`, `trusted_attestor_keys`.
   """
   def put_attestors(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/pca/attestors", %{}, body, opts)

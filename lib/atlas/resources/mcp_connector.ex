@@ -5,7 +5,8 @@ defmodule Atlas.McpConnector do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.McpConnector do
   Read the instance's remote MCP connector: enabled state, exposed tool scopes, dynamic-registration policy, plus the computed discovery URL, resource identifier and whether the resource server exists.
 
   `GET /v1/mcp_connector`. Required scope: `mcp_connector:read`.
+
+  Response fields: `object`, `enabled`, `name`, `exposed_scopes`, `dynamic_registration`, `allowed_redirect_hosts`, `discovery_url`, `resource`, `resource_server_exists`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/mcp_connector", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.McpConnector do
   Configure the remote MCP connector (enabled, name, exposed_scopes, dynamic_registration, allowed_redirect_hosts). Only the fields you send change. Enabling provisions the MCP resource server and requires a frontend API host; an unknown scope is a 422.
 
   `PUT /v1/mcp_connector`. Required scope: `mcp_connector:write`.
+
+  Body fields: `enabled` (boolean), `name` (string), `exposed_scopes` (array), `dynamic_registration` (boolean), `allowed_redirect_hosts` (array).
+  Response fields: `object`, `enabled`, `name`, `exposed_scopes`, `dynamic_registration`, `allowed_redirect_hosts`, `discovery_url`, `resource`, `resource_server_exists`.
   """
   def put(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/mcp_connector", %{}, body, opts)
@@ -29,6 +35,8 @@ defmodule Atlas.McpConnector do
   Disable the remote MCP connector. Stored preferences (name, scopes, hosts) are kept so a later re-enable restores them; existing OAuth access tokens stop working immediately.
 
   `DELETE /v1/mcp_connector`. Required scope: `mcp_connector:write`.
+
+  Response fields: `object`, `enabled`, `name`, `exposed_scopes`, `dynamic_registration`, `allowed_redirect_hosts`, `discovery_url`, `resource`, `resource_server_exists`.
   """
   def delete(client, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/mcp_connector", %{}, nil, opts)

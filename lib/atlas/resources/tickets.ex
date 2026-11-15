@@ -5,7 +5,8 @@ defmodule Atlas.Tickets do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Tickets do
   Mint a one-time capability ticket: an opaque, high-entropy handle carrying an arbitrary JSON payload a holder can later redeem (e.g. a scoped download grant or short-lived action token). ttl_seconds is clamped to 24h; single_use defaults to true; optional bound_user / bound_org pin who may redeem. The plaintext `tkt_…` secret is returned ONCE — only its hash is stored. → 201.
 
   `POST /v1/tickets`. Required scope: `tickets:write`.
+
+  Body fields: `payload` (any), `ttl_seconds` (integer, required), `single_use` (boolean), `bound_user` (string), `bound_org` (string).
+  Response fields: `object`, `id`, `ticket`, `single_use`, `bound_user`, `bound_org`, `created_at`, `expires_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/tickets", %{}, body, opts)
@@ -21,6 +25,9 @@ defmodule Atlas.Tickets do
   Redeem a capability ticket server-to-server and return its payload. A single-use ticket is consumed atomically so a concurrent double-redeem yields exactly one success. An expired, already-redeemed or unknown ticket is a 404; a bound ticket whose binding the asserted for_user / for_org does not match is a 403. The redemption is audited (ticket.redeemed).
 
   `POST /v1/tickets/redeem`. Required scope: `tickets:write`.
+
+  Body fields: `ticket` (string, required), `for_user` (string), `for_org` (string).
+  Response fields: `object`, `id`, `payload`, `single_use`.
   """
   def post_redeem(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/tickets/redeem", %{}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.DevicePosture do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.DevicePosture do
   Posture ingestion for your MDM/EDR or its relay: up to 500 device reports per call, same fields as PUT /v1/devices.
 
   `POST /v1/device_posture`. Required scope: `users:write`.
+
+  Body fields: `devices` (array).
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.source`, `data.external_id`, `data.name`, `data.platform`, `data.managed`, `data.compliant`, `data.posture`, `data.last_reported_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/device_posture", %{}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.MachineEnrolmentTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,27 @@ defmodule Atlas.MachineEnrolmentTokens do
   List machine enrolment tokens (never the secret), newest first. Filter by organization and page with a keyset cursor.
 
   `GET /v1/machine_enrolment_tokens`. Required scope: `machines:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.max_uses`, `data.uses`, `data.expires_at`, `data.requires_approval`, `data.format`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/machine_enrolment_tokens", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/machine_enrolment_tokens", %{}, opts)
 
   @doc ~S"""
-  Mint a machine enrolment token (single/multi-use, expiring, org-bound, approval-gated).
+  Mint a machine enrolment token (single/multi-use, expiring, org-bound, approval-gated). With format user_code the token is a short single-use code (8 letters, shown as XXXX-XXXX, no look-alikes) with a 5 to 15 minute lifetime, returned once as user_code; a device redeems it at /v1/machines/enroll in place of the token. Redemption is rate limited per IP and per code.
 
   `POST /v1/machine_enrolment_tokens`. Required scope: `machines:write`.
+
+  Body fields: `format` (enum), `organization_id` (string), `max_uses` (integer), `expires_in_seconds` (integer), `requires_approval` (boolean), `data` (object), `owner_user_id` (string), `single_session` (boolean), `max_machines` (integer).
+  Response fields: `object`, `id`, `organization_id`, `max_uses`, `uses`, `expires_at`, `requires_approval`, `format`, `created_at`, `token`, `user_code`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machine_enrolment_tokens", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.MachineEnrolmentTokens do
   Delete a machine enrolment token; it can no longer enrol new devices.
 
   `DELETE /v1/machine_enrolment_tokens/{id}`. Required scope: `machines:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/machine_enrolment_tokens/{id}", %{"id" => id}, nil, opts)

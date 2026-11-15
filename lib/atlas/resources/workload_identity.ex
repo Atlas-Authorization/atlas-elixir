@@ -5,7 +5,8 @@ defmodule Atlas.WorkloadIdentity do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.WorkloadIdentity do
   List the workload platforms Atlas knows defaults for (SPIFFE, Kubernetes, GitHub Actions, GCP, Azure): issuer, JWKS URL and the shape of the token subject.
 
   `GET /v1/workload_identity/presets`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kind`, `data.title`, `data.issuer`, `data.jwks_uri`, `data.subject_example`, `data.notes`, `has_more`, `next_cursor`.
   """
   def get_presets(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workload_identity/presets", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_presets/1`, following the cursor page by page.
+  Lazy stream over every item of `get_presets`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_presets(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.WorkloadIdentity do
   Trust-policy snippets that make AWS (AssumeRoleWithWebIdentity), GCP (workload identity federation) or Azure (federated credentials) accept an access token issued by this instance. Nothing is changed in the cloud.
 
   `GET /v1/workload_identity/cloud_trust`. Required scope: `oauth_clients:read`.
+
+  Query params (`params:`): `provider`, `audience`, `subject`, `tenant_id`.
+  Response fields: `object`, `provider`, `steps`, `trust_policy`, `provider_config`, `principal`, `federated_credential`, `token_endpoint`.
   """
   def get_cloud_trust(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workload_identity/cloud_trust", %{}, nil, opts)

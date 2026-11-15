@@ -5,7 +5,8 @@ defmodule Atlas.PartnerLinks do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.PartnerLinks do
   Partner links with scopes, last_used_at and calls_30d. Never returns a secret.
 
   `GET /v1/partner_links`. Required scope: `partner_links:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.partner`, `data.name`, `data.preset`, `data.resource`, `data.scopes`, `data.client_secret_prefix`, `data.token_endpoint`, `data.cert_fingerprints`, `data.auth_methods`, `data.request_id`, `data.status`, `data.expires_at`, `data.revoked_at`, `data.last_used_at`, `data.last_used_ip`, `data.calls_30d`, `data.created_at`, `data.client_secret`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_links", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.PartnerLinks do
   Allow a partner product to call this instance: `partner` (any lowercase id; cookiemunch, chatly, forumulate and referalli are presets), optional `name`, `scopes[]` (e.g. privacy:execute, privacy:grants:revoke, users:read, sessions:write, integrations:verify_errors; only scopes the calling key holds; never "*") and `expires_at`. Returns `client_id` and `client_secret` (once). The partner uses the secret as a Bearer credential or swaps it at POST /v1/oauth/token (client_credentials). Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext.
 
   `POST /v1/partner_links`. Required scope: `partner_links:write`.
+
+  Body fields: `partner` (string, required), `name` (string), `scopes` (array, required), `expires_at` (integer|string), `cert_fingerprints` (array).
+  Response fields: `object`, `id`, `client_id`, `partner`, `name`, `preset`, `resource`, `scopes`, `client_secret_prefix`, `token_endpoint`, `cert_fingerprints`, `auth_methods`, `request_id`, `status`, `expires_at`, `revoked_at`, `last_used_at`, `last_used_ip`, `calls_30d`, `created_at`, `client_secret`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_links", %{}, body, opts)
@@ -36,12 +43,15 @@ defmodule Atlas.PartnerLinks do
   The links partners granted Atlas for this instance (Atlas calling them). Never returns a secret.
 
   `GET /v1/partner_links/outbound`. Required scope: `partner_links:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.partner`, `data.name`, `data.preset`, `data.resource`, `data.scopes`, `data.base_url`, `data.token_url`, `data.client_id`, `data.auth_method`, `data.has_client_secret`, `data.source`, `data.status`, `data.cmp`, `data.cmp.script_url`, `data.cmp.script_id`, `data.cmp.site_id`, `data.cmp.blocking_mode`, `data.cmp.extra_origins`, `data.cmp.settings_preset`, `data.cmp_default`, `data.expires_at`, `data.last_used_at`, `data.last_error`, `data.calls_30d`, `has_more`, `next_cursor`.
   """
   def get_outbound(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_links/outbound", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_outbound/1`, following the cursor page by page.
+  Lazy stream over every item of `get_outbound`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_outbound(client, opts \\ []),
@@ -51,6 +61,8 @@ defmodule Atlas.PartnerLinks do
   One partner link, with its last use and 30-day call count.
 
   `GET /v1/partner_links/{id}`. Required scope: `partner_links:read`.
+
+  Response fields: `object`, `id`, `client_id`, `partner`, `name`, `preset`, `resource`, `scopes`, `client_secret_prefix`, `token_endpoint`, `cert_fingerprints`, `auth_methods`, `request_id`, `status`, `expires_at`, `revoked_at`, `last_used_at`, `last_used_ip`, `calls_30d`, `created_at`, `client_secret`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_links/{id}", %{"id" => id}, nil, opts)
@@ -59,6 +71,9 @@ defmodule Atlas.PartnerLinks do
   Lock a partner link to client certificates (mTLS): `cert_fingerprints[]` (SHA-256, hex or base64url; at most 5; [] removes the lock). With a lock, every use of the link (its secret, client_credentials, and tokens minted from it) must come with one of these certificates, and the token endpoint accepts the certificate in place of the secret. Tokens minted before the change stop working.
 
   `PATCH /v1/partner_links/{id}`. Required scope: `partner_links:write`.
+
+  Body fields: `cert_fingerprints` (array, required).
+  Response fields: `object`, `id`, `client_id`, `partner`, `name`, `preset`, `resource`, `scopes`, `client_secret_prefix`, `token_endpoint`, `cert_fingerprints`, `auth_methods`, `request_id`, `status`, `expires_at`, `revoked_at`, `last_used_at`, `last_used_ip`, `calls_30d`, `created_at`, `client_secret`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/partner_links/{id}", %{"id" => id}, body, opts)
@@ -67,6 +82,8 @@ defmodule Atlas.PartnerLinks do
   Revoke a partner link. Its secret and every token minted from it stop now.
 
   `DELETE /v1/partner_links/{id}`. Required scope: `partner_links:write`.
+
+  Response fields: `object`, `id`, `client_id`, `partner`, `name`, `preset`, `resource`, `scopes`, `client_secret_prefix`, `token_endpoint`, `cert_fingerprints`, `auth_methods`, `request_id`, `status`, `expires_at`, `revoked_at`, `last_used_at`, `last_used_ip`, `calls_30d`, `created_at`, `client_secret`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/partner_links/{id}", %{"id" => id}, nil, opts)
@@ -75,6 +92,8 @@ defmodule Atlas.PartnerLinks do
   Replace a partner link's client secret. The old secret and every token minted with it stop now. Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext.
 
   `POST /v1/partner_links/{id}/rotate_secret`. Required scope: `partner_links:write`.
+
+  Response fields: `object`, `id`, `client_id`, `partner`, `name`, `preset`, `resource`, `scopes`, `client_secret_prefix`, `token_endpoint`, `cert_fingerprints`, `auth_methods`, `request_id`, `status`, `expires_at`, `revoked_at`, `last_used_at`, `last_used_ip`, `calls_30d`, `created_at`, `client_secret`.
   """
   def post_rotate_secret(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_links/{id}/rotate_secret", %{"id" => id}, nil, opts)
@@ -83,12 +102,15 @@ defmodule Atlas.PartnerLinks do
   Partner link requests: `?direction=inbound` (default; partners asking this instance) or `outbound` (Atlas asking partners), optional `?status=pending,delivery_failed`. Never returns a secret.
 
   `GET /v1/partner_links/requests`. Required scope: `partner_links:read`.
+
+  Query params (`params:`): `direction`, `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.direction`, `data.partner`, `data.name`, `data.preset`, `data.resource`, `data.scopes`, `data.callback_url`, `data.callback_host`, `data.cert_fingerprints`, `data.status`, `data.link_id`, `data.remote_request_id`, `data.decided_by`, `data.decided_at`, `data.delivery_attempts`, `data.delivered_at`, `data.last_error`, `data.expires_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def get_requests(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_links/requests", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_requests/1`, following the cursor page by page.
+  Lazy stream over every item of `get_requests`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_requests(client, opts \\ []),
@@ -98,6 +120,8 @@ defmodule Atlas.PartnerLinks do
   One partner link request.
 
   `GET /v1/partner_links/requests/{id}`. Required scope: `partner_links:read`.
+
+  Response fields: `object`, `id`, `direction`, `partner`, `name`, `preset`, `resource`, `scopes`, `callback_url`, `callback_host`, `cert_fingerprints`, `status`, `link_id`, `remote_request_id`, `decided_by`, `decided_at`, `delivery_attempts`, `delivered_at`, `last_error`, `expires_at`, `created_at`.
   """
   def get_requests_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/partner_links/requests/{id}", %{"id" => id}, nil, opts)
@@ -106,6 +130,9 @@ defmodule Atlas.PartnerLinks do
   Approve a partner's link request: Atlas creates the link and delivers its client credentials server to server to the partner's callback, signed with the request secret (Atlas-Signature). The owner never sees a secret. Optional `scopes[]` narrows what was requested; `expires_at` (default one year). If the callback does not answer 2xx the new link is revoked at once and the request is `delivery_failed`; approve again to retry. With an operator token, needs multi-factor sign-in within 5 minutes.
 
   `POST /v1/partner_links/requests/{id}/approve`. Required scope: `partner_links:write`.
+
+  Body fields: `scopes` (array), `expires_at` (integer|string).
+  Response fields: `object`, `id`, `direction`, `partner`, `name`, `preset`, `resource`, `scopes`, `callback_url`, `callback_host`, `cert_fingerprints`, `status`, `link_id`, `remote_request_id`, `decided_by`, `decided_at`, `delivery_attempts`, `delivered_at`, `last_error`, `expires_at`, `created_at`, `delivered`, `link`, `link.object`, `link.id`, `link.client_id`, `link.partner`, `link.name`, `link.preset`, `link.resource`, `link.scopes`, `link.client_secret_prefix`, `link.token_endpoint`, `link.cert_fingerprints`, `link.auth_methods`, `link.request_id`, `link.status`, `link.expires_at`, `link.revoked_at`, `link.last_used_at`, `link.last_used_ip`, `link.calls_30d`, `link.created_at`, `link.client_secret`, `note`.
   """
   def post_requests_approve(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_links/requests/{id}/approve", %{"id" => id}, body, opts)
@@ -114,6 +141,8 @@ defmodule Atlas.PartnerLinks do
   Deny a partner's link request. The partner's callback is told (`partner_link.denied`, signed), best effort.
 
   `POST /v1/partner_links/requests/{id}/deny`. Required scope: `partner_links:write`.
+
+  Response fields: `object`, `id`, `direction`, `partner`, `name`, `preset`, `resource`, `scopes`, `callback_url`, `callback_host`, `cert_fingerprints`, `status`, `link_id`, `remote_request_id`, `decided_by`, `decided_at`, `delivery_attempts`, `delivered_at`, `last_error`, `expires_at`, `created_at`.
   """
   def post_requests_deny(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_links/requests/{id}/deny", %{"id" => id}, nil, opts)
@@ -122,6 +151,9 @@ defmodule Atlas.PartnerLinks do
   Ask a partner for a link on this instance's behalf, instead of pasting the credentials it issues: Atlas POSTs `<partner base>/v1/partner_link_requests` with `scopes[]` (partner-side scopes), `resource` and Atlas's own callback. Once the partner's owner approves, the partner delivers the credentials to Atlas signed, and they are stored as an outbound link (`source: oauth_install`). `base_url` is required for a partner that is not a preset. With an operator token, needs multi-factor sign-in within 5 minutes.
 
   `POST /v1/partner_links/outbound/{partner}/request`. Required scope: `partner_links:write`.
+
+  Body fields: `scopes` (array, required), `resource` (string), `base_url` (string), `token_url` (string), `name` (string).
+  Response fields: `object`, `id`, `direction`, `partner`, `name`, `preset`, `resource`, `scopes`, `callback_url`, `callback_host`, `cert_fingerprints`, `status`, `link_id`, `remote_request_id`, `decided_by`, `decided_at`, `delivery_attempts`, `delivered_at`, `last_error`, `expires_at`, `created_at`.
   """
   def post_outbound_request(client, partner, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_links/outbound/{partner}/request", %{"partner" => partner}, body, opts)
@@ -130,6 +162,10 @@ defmodule Atlas.PartnerLinks do
   Store the client credentials a partner issued Atlas: `client_id`, `client_secret`, `scopes[]`, `resource` (the partner-side id), and for a partner that is not a preset `base_url` (and optionally `token_url`; default `<base_url>/v1/oauth/token`). `auth_method` `client_credentials` (default) or `bearer_secret`. The secret is encrypted and never returned. A consent-manager partner (any CMP) may carry `cmp` (its script for the hosted pages; null clears it, absent keeps it); a Cookie Munch link with a `site:<id>` resource brings Cookie Munch's script without one. While the instance has no cookie_consent setting of its own, the hosted pages then load that banner.
 
   `PUT /v1/partner_links/outbound/{partner}`. Required scope: `partner_links:write`.
+
+  Body fields: `client_id` (string, required), `client_secret` (string, required), `scopes` (array), `resource` (string), `base_url` (string), `token_url` (string), `auth_method` (enum), `name` (string), `expires_at` (integer|string|null), `cmp` (object|null).
+  Nested body fields: `cmp.script_url`, `cmp.script_id`, `cmp.site_id`, `cmp.blocking_mode`, `cmp.extra_origins`, `cmp.settings_preset`.
+  Response fields: `object`, `id`, `partner`, `name`, `preset`, `resource`, `scopes`, `base_url`, `token_url`, `client_id`, `auth_method`, `has_client_secret`, `source`, `status`, `cmp`, `cmp.script_url`, `cmp.script_id`, `cmp.site_id`, `cmp.blocking_mode`, `cmp.extra_origins`, `cmp.settings_preset`, `cmp_default`, `expires_at`, `last_used_at`, `last_error`, `calls_30d`.
   """
   def put_outbound(client, partner, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/partner_links/outbound/{partner}", %{"partner" => partner}, body, opts)
@@ -138,6 +174,8 @@ defmodule Atlas.PartnerLinks do
   Delete the outbound credential Atlas holds for a partner.
 
   `DELETE /v1/partner_links/outbound/{partner}`. Required scope: `partner_links:write`.
+
+  Response fields: `object`, `partner`, `deleted`.
   """
   def delete_outbound(client, partner, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/partner_links/outbound/{partner}", %{"partner" => partner}, nil, opts)
@@ -146,6 +184,8 @@ defmodule Atlas.PartnerLinks do
   Fetch a fresh token from the partner to prove the stored credentials work: `{ ok, error? }`.
 
   `POST /v1/partner_links/outbound/{partner}/test`. Required scope: `partner_links:write`.
+
+  Response fields: `object`, `ok`, `error`.
   """
   def post_outbound_test(client, partner, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/partner_links/outbound/{partner}/test", %{"partner" => partner}, nil, opts)

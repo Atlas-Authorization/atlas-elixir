@@ -5,7 +5,8 @@ defmodule Atlas.AbacTemplates do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AbacTemplates do
   List the ABAC policy templates, with their slots and how many links each has.
 
   `GET /v1/abac_templates`. Required scope: `abac:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.source`, `data.version`, `data.slots`, `data.fga_store_id`, `data.link_count`, `data.links_updated`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_templates", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AbacTemplates do
   Create a policy template: policy source whose scope uses the slots `?principal` and/or `?resource` (`principal == ?principal`, `resource in ?resource`, `resource is Doc in ?resource`). Slots are filled by a link. With an entity schema set, the template is type-checked on save (a slot stands for any entity type).
 
   `POST /v1/abac_templates`. Required scope: `abac:write`.
+
+  Body fields: `name` (string, required), `description` (string|null), `source` (string, required), `fga_store_id` (string|null).
+  Response fields: `object`, `id`, `name`, `description`, `source`, `version`, `slots`, `fga_store_id`, `link_count`, `links_updated`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/abac_templates", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AbacTemplates do
   Read one policy template.
 
   `GET /v1/abac_templates/{id}`. Required scope: `abac:read`.
+
+  Response fields: `object`, `id`, `name`, `description`, `source`, `version`, `slots`, `fga_store_id`, `link_count`, `links_updated`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/abac_templates/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AbacTemplates do
   Change a template. A new `source` bumps `version` and takes effect on every link at once (`links_updated` counts them). It is refused, with one error per problem and the link named, if any link could no longer be filled in or would fail the entity schema.
 
   `PATCH /v1/abac_templates/{id}`. Required scope: `abac:write`.
+
+  Body fields: `name` (string), `description` (string|null), `source` (string), `fga_store_id` (string|null).
+  Response fields: `object`, `id`, `name`, `description`, `source`, `version`, `slots`, `fga_store_id`, `link_count`, `links_updated`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/abac_templates/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.AbacTemplates do
   Delete a template. A template with links is refused with 409 unless `force=true`, which deletes the links too.
 
   `DELETE /v1/abac_templates/{id}`. Required scope: `abac:write`.
+
+  Query params (`params:`): `force`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/abac_templates/{id}", %{"id" => id}, nil, opts)

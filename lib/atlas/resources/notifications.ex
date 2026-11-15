@@ -5,7 +5,8 @@ defmodule Atlas.Notifications do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Notifications do
   Send a templated, instance-branded security-notification email to one of your end-users, honouring their per-category notification preferences. `template` resolves to a tenant-defined template (POST /v1/notification_templates) first, falling back to a built-in (new_device, unattended_access, password_changed, mfa_changed, email_changed, phone_changed, identity_linked, identity_unlinked, passkey_added, passkey_removed, recovery_codes_regenerated, factor_removed, device_key_added, device_key_removed, risk_alert). Returns sent, or suppressed when the user opted out of an optional category. Returns 422 EMAIL_DELIVERY_NOT_CONFIGURED when the instance cannot deliver email.
 
   `POST /v1/notifications`. Required scope: `notifications:send`.
+
+  Body fields: `user_id` (string, required), `template` (string, required), `data` (object).
+  Response fields: `object`, `id`, `status`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/notifications", %{}, body, opts)

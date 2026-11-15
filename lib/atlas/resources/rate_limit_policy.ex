@@ -5,7 +5,8 @@ defmodule Atlas.RateLimitPolicy do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.RateLimitPolicy do
   Read the per-instance rate-limit policy (sign-in/up create per IP, and BAPI per key), its bounds, the per-endpoint rules and the endpoint-group catalog they can name. Defaults equal the built-in fixed limits.
 
   `GET /v1/rate_limit_policy`. Required scope: `rate_limit:read`.
+
+  Response fields: `object`, `fapi_create_per_min`, `fapi_verify_per_min`, `bapi_per_min`, `ldap_per_ip_per_min`, `ldap_per_user_per_min`, `bounds`, `rules`, `rules.group`, `rules.window_seconds`, `rules.max`, `rules.key`, `groups`, `groups.name`, `groups.api`, `groups.label`, `groups.description`, `groups.replaces_built_in`, `groups.recommended`, `groups.recommended.window_seconds`, `groups.recommended.max`, `groups.recommended.key`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/rate_limit_policy", %{}, nil, opts)
@@ -21,6 +24,10 @@ defmodule Atlas.RateLimitPolicy do
   Tune the per-instance rate-limit budgets. Values are bounded so protection cannot be disabled or set to self-DoS; a lower value tightens the limiter. `rules` replaces the whole list of per-endpoint rules ({ group, window_seconds, max, key: ip | user | instance }, one per group): a rule on a group with a built-in budget replaces that budget for its routes, any other rule adds a budget on top. Preflight warns when a rule is looser than the built-in or recommended budget.
 
   `PATCH /v1/rate_limit_policy`. Required scope: `rate_limit:write`.
+
+  Body fields: `fapi_create_per_min` (integer), `fapi_verify_per_min` (integer), `bapi_per_min` (integer), `ldap_per_ip_per_min` (integer), `ldap_per_user_per_min` (integer), `rules` (array).
+  Nested body fields: `rules.group`, `rules.window_seconds`, `rules.max`, `rules.key`.
+  Response fields: `object`, `fapi_create_per_min`, `fapi_verify_per_min`, `bapi_per_min`, `ldap_per_ip_per_min`, `ldap_per_user_per_min`, `bounds`, `rules`, `rules.group`, `rules.window_seconds`, `rules.max`, `rules.key`, `groups`, `groups.name`, `groups.api`, `groups.label`, `groups.description`, `groups.replaces_built_in`, `groups.recommended`, `groups.recommended.window_seconds`, `groups.recommended.max`, `groups.recommended.key`.
   """
   def update(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/rate_limit_policy", %{}, body, opts)

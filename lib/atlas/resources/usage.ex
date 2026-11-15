@@ -5,7 +5,8 @@ defmodule Atlas.Usage do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Usage do
   Read usage analytics: daily sign-in/active-user series with peaks and trends over a window, plus monthly active users. active_users has no additive total by design.
 
   `GET /v1/usage`. Required scope: `usage:read`.
+
+  Query params (`params:`): `days`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.days`, `previous_window`, `previous_window.from`, `previous_window.to`, `metrics`, `metrics.metric`, `metrics.label`, `metrics.description`, `metrics.additive`, `metrics.points`, `metrics.points.day`, `metrics.points.count`, `metrics.peak`, `metrics.total`, `metrics.trend`, `metrics.trend.current`, `metrics.trend.previous`, `metrics.trend.changePercent`, `metrics.trend.direction`, `monthly_active_users`, `monthly_active_users.value`, `monthly_active_users.window_days`, `monthly_active_users.trend`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/usage", %{}, nil, opts)
@@ -21,12 +25,15 @@ defmodule Atlas.Usage do
   Usage records for connections: relay calls, action runs, agent token and action use, and MCP gateway calls, counted from the audit trail over a range of up to 92 days. Never reads what was sent or received.
 
   `GET /v1/usage/connections`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `from`, `to`, `group_by`, `limit`, `starting_after`.
+  Response fields: `object`, `from`, `to`, `group_by`, `data`, `data.object`, `data.key`, `data.calls`, `has_more`.
   """
   def get_connections(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/usage/connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_connections/1`, following the cursor page by page.
+  Lazy stream over every item of `get_connections`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_connections(client, opts \\ []),

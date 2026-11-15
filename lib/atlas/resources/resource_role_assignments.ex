@@ -5,7 +5,8 @@ defmodule Atlas.ResourceRoleAssignments do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ResourceRoleAssignments do
   List role assignments, filtered by `resource_id`, `subject_type` or `subject_id`.
 
   `GET /v1/resource_role_assignments`. Required scope: `resources:read`.
+
+  Query params (`params:`): `resource_id`, `subject_type`, `subject_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.resource_id`, `data.subject`, `data.subject.type`, `data.subject.id`, `data.role`, `data.inherit`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resource_role_assignments", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,9 +32,30 @@ defmodule Atlas.ResourceRoleAssignments do
   Assign a `role` on a `resource` to a `subject` (`{type: user|group|org, id}`). `inherit` (default true) also applies it to the resource’s descendants. Re-assigning the same role updates `inherit`.
 
   `POST /v1/resource_role_assignments`. Required scope: `resources:write`.
+
+  Body fields: `resource` (object), `subject` (object), `role` (string), `inherit` (boolean).
+  Response fields: `object`, `id`, `resource_id`, `subject`, `subject.type`, `subject.id`, `role`, `inherit`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/resource_role_assignments", %{}, body, opts)
+
+  @doc ~S"""
+  The change feed of role assignments, oldest first: every assignment created (re-assigning a role to update `inherit` counts) and every one deleted, including those that ended because their resource or resource type was deleted. Keep the `next_cursor` of each page and send it back as `after`; a caught-up poll returns an empty page and the same cursor. Without `after` it replays every live assignment as `created`, then what changed since. Feeds a local mirror (`createResourceRoleMirror`) that answers permission checks with no network call; the `resource_role_assignment.created` / `.deleted` webhooks carry the same changes between polls.
+
+  `GET /v1/resource_role_assignments/changes`. Required scope: `resources:read`.
+
+  Query params (`params:`): `after`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.seq`, `data.change`, `data.assignment_id`, `data.resource_id`, `data.resource_type`, `data.resource_external_id`, `data.subject`, `data.subject.type`, `data.subject.id`, `data.role`, `data.inherit`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_changes(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/resource_role_assignments/changes", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_changes`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_changes(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/resource_role_assignments/changes", %{}, opts)
 
   @doc ~S"""
   Revoke a role assignment.
@@ -44,6 +69,7 @@ defmodule Atlas.ResourceRoleAssignments do
   def __operations__, do: [
     {:list, :get, "/v1/resource_role_assignments", 0, false, true},
     {:create, :post, "/v1/resource_role_assignments", 0, true, false},
+    {:get_changes, :get, "/v1/resource_role_assignments/changes", 0, false, true},
     {:delete, :delete, "/v1/resource_role_assignments/{id}", 1, false, false}
   ]
 end

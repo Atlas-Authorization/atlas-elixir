@@ -5,7 +5,8 @@ defmodule Atlas.DataSubjectRequests do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.DataSubjectRequests do
   List GDPR/DSAR export and erasure requests, filterable by type/status/user (cursor pagination).
 
   `GET /v1/data_subject_requests`. Required scope: `data_subject_requests:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `type`, `status`, `user_id`, `overdue`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.canonical_type`, `data.canonicalType`, `data.source`, `data.detail`, `data.case_id`, `data.external_case`, `data.external_case.product`, `data.external_case.id`, `data.external_case.status`, `data.external_case.attempts`, `data.external_case.last_error`, `data.external_case.opened_at`, `data.external_case.atlas_id_app_id`, `data.trace_id`, `data.steps`, `data.retention`, `data.deletion_effective_at`, `data.status`, `data.user_id`, `data.requested_by_type`, `data.requested_by_id`, `data.reason`, `data.scheduled_for`, `data.eta`, `data.requested_at`, `data.updated_at`, `data.completed_at`, `data.due_at`, `data.overdue`, `data.due_extended_reason`, `data.result`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/data_subject_requests", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.DataSubjectRequests do
   Create a DSAR (export or erasure) for a user from the backend — the twin of the self-service /client/me flows, for a DSAR orchestrator. Identify the subject by user_id OR subject_email (an orchestrator that knows people by email need not translate to an id itself). Flows through the same worker, grace window and data_subject_request.* webhooks; idempotent on an in-flight request. An erasure also emits user.deletion_scheduled (with deletion_effective_at) and opens one case at the instance's data-rights orchestrator, shown as external_case. → 202.
 
   `POST /v1/data_subject_requests`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `user_id` (string), `subject_email` (string), `type` (enum, required), `reason` (string).
+  Response fields: `object`, `id`, `type`, `canonical_type`, `canonicalType`, `source`, `detail`, `case_id`, `external_case`, `external_case.product`, `external_case.id`, `external_case.status`, `external_case.attempts`, `external_case.last_error`, `external_case.opened_at`, `external_case.atlas_id_app_id`, `trace_id`, `steps`, `retention`, `deletion_effective_at`, `status`, `user_id`, `requested_by_type`, `requested_by_id`, `reason`, `scheduled_for`, `eta`, `requested_at`, `updated_at`, `completed_at`, `due_at`, `overdue`, `due_extended_reason`, `result`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/data_subject_requests", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.DataSubjectRequests do
   Fetch a data-subject request, including an export's produced package.
 
   `GET /v1/data_subject_requests/{id}`. Required scope: `data_subject_requests:read`.
+
+  Response fields: `object`, `id`, `type`, `canonical_type`, `canonicalType`, `source`, `detail`, `case_id`, `external_case`, `external_case.product`, `external_case.id`, `external_case.status`, `external_case.attempts`, `external_case.last_error`, `external_case.opened_at`, `external_case.atlas_id_app_id`, `trace_id`, `steps`, `retention`, `deletion_effective_at`, `status`, `user_id`, `requested_by_type`, `requested_by_id`, `reason`, `scheduled_for`, `eta`, `requested_at`, `updated_at`, `completed_at`, `due_at`, `overdue`, `due_extended_reason`, `result`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/data_subject_requests/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.DataSubjectRequests do
   Fulfil a request now: build the export package, or run the erasure through the same soft-delete + PII-purge path a user-delete uses, ahead of the grace window. Terminal — a fulfilled erasure is irreversible.
 
   `POST /v1/data_subject_requests/{id}/fulfill`. Required scope: `data_subject_requests:write`.
+
+  Response fields: `object`, `id`, `type`, `canonical_type`, `canonicalType`, `source`, `detail`, `case_id`, `external_case`, `external_case.product`, `external_case.id`, `external_case.status`, `external_case.attempts`, `external_case.last_error`, `external_case.opened_at`, `external_case.atlas_id_app_id`, `trace_id`, `steps`, `retention`, `deletion_effective_at`, `status`, `user_id`, `requested_by_type`, `requested_by_id`, `reason`, `scheduled_for`, `eta`, `requested_at`, `updated_at`, `completed_at`, `due_at`, `overdue`, `due_extended_reason`, `result`.
   """
   def post_fulfill(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/fulfill", %{"id" => id}, nil, opts)
@@ -52,6 +63,9 @@ defmodule Atlas.DataSubjectRequests do
   Reject a request with a recorded reason. Terminal — cannot be re-actioned.
 
   `POST /v1/data_subject_requests/{id}/reject`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `reason` (string).
+  Response fields: `object`, `id`, `type`, `canonical_type`, `canonicalType`, `source`, `detail`, `case_id`, `external_case`, `external_case.product`, `external_case.id`, `external_case.status`, `external_case.attempts`, `external_case.last_error`, `external_case.opened_at`, `external_case.atlas_id_app_id`, `trace_id`, `steps`, `retention`, `deletion_effective_at`, `status`, `user_id`, `requested_by_type`, `requested_by_id`, `reason`, `scheduled_for`, `eta`, `requested_at`, `updated_at`, `completed_at`, `due_at`, `overdue`, `due_extended_reason`, `result`.
   """
   def post_reject(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/reject", %{"id" => id}, body, opts)
@@ -60,9 +74,103 @@ defmodule Atlas.DataSubjectRequests do
   Cancel a scheduled erasure within its grace window — the sibling to /fulfill (which expedites). Aborts the deletion so the account is not erased, and cancels the case at the instance's data-rights orchestrator. Only a `scheduled` (or legacy `pending`) erasure, or a restriction / rectification still waiting, cancels; once processing or terminal it is a 409. Export requests are not cancellable.
 
   `POST /v1/data_subject_requests/{id}/cancel`. Required scope: `data_subject_requests:write`.
+
+  Response fields: `object`, `id`, `type`, `canonical_type`, `canonicalType`, `source`, `detail`, `case_id`, `external_case`, `external_case.product`, `external_case.id`, `external_case.status`, `external_case.attempts`, `external_case.last_error`, `external_case.opened_at`, `external_case.atlas_id_app_id`, `trace_id`, `steps`, `retention`, `deletion_effective_at`, `status`, `user_id`, `requested_by_type`, `requested_by_id`, `reason`, `scheduled_for`, `eta`, `requested_at`, `updated_at`, `completed_at`, `due_at`, `overdue`, `due_extended_reason`, `result`.
   """
   def post_cancel(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/cancel", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Move the response deadline of an open data subject request later, with the reason recorded on it. due_at must be after the current deadline and within three years of the request. Re-arms dsr.overdue for the new date. Audited. 409 when the request is already finished.
+
+  `POST /v1/data_subject_requests/{id}/extend`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `due_at` (integer|string, required), `reason` (string, required).
+  Response fields: `object`, `id`, `type`, `canonical_type`, `canonicalType`, `source`, `detail`, `case_id`, `external_case`, `external_case.product`, `external_case.id`, `external_case.status`, `external_case.attempts`, `external_case.last_error`, `external_case.opened_at`, `external_case.atlas_id_app_id`, `trace_id`, `steps`, `retention`, `deletion_effective_at`, `status`, `user_id`, `requested_by_type`, `requested_by_id`, `reason`, `scheduled_for`, `eta`, `requested_at`, `updated_at`, `completed_at`, `due_at`, `overdue`, `due_extended_reason`, `result`.
+  """
+  def post_extend(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/extend", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The signed deletion receipt of a completed erasure: proof, signed with the instance key, that it ran. The claims carry ids and dates only (instance, request, subject id, requested/erased/scrub dates, steps, retention); verify the JWS in `receipt` with the keys at `jwks_uri`. Issued the first time it is asked for and stored, so asking again returns the same receipt. 409 for a request that is not a completed erasure.
+
+  `GET /v1/data_subject_requests/{id}/receipt`. Required scope: `data_subject_requests:read`.
+
+  Response fields: `object`, `id`, `request_id`, `subject_id`, `issued_at`, `receipt`, `claims`, `kid`, `jwks_uri`.
+  """
+  def get_receipt(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/data_subject_requests/{id}/receipt", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Triage a request: who works it, how urgent it is, free labels. Only what is sent changes; send at least one. Audited.
+
+  `PATCH /v1/data_subject_requests/{id}/triage`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `assignee` (string|null), `priority` (enum), `labels` (array).
+  """
+  def update_triage(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/data_subject_requests/{id}/triage", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Internal notes on a request, oldest first. Never shown to the data subject.
+
+  `GET /v1/data_subject_requests/{id}/notes`. Required scope: `data_subject_requests:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.request_id`, `data.author`, `data.body`, `data.created_at`, `has_more`, `next_cursor`.
+  """
+  def get_notes(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/data_subject_requests/{id}/notes", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_notes`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_notes(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/data_subject_requests/{id}/notes", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Add an internal note to a request (at most 4000 characters). Honours Idempotency-Key.
+
+  `POST /v1/data_subject_requests/{id}/notes`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `body` (string, required).
+  Response fields: `object`, `id`, `request_id`, `author`, `body`, `created_at`.
+  """
+  def post_notes(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/notes", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  What each enabled downstream erasure connector has done for this request: pending, done (acknowledged by the system or marked by an operator) or not applicable. complete is true when every enabled connector is done or not applicable.
+
+  `GET /v1/data_subject_requests/{id}/downstream`. Required scope: `data_subject_requests:read`.
+
+  Response fields: `object`, `request_id`, `complete`, `pending`, `failed`, `connectors`, `connectors.connector_id`, `connectors.key`, `connectors.name`, `connectors.mode`, `connectors.status`, `connectors.by`, `connectors.note`, `connectors.error`, `connectors.attempts`, `connectors.completed_at`.
+  """
+  def get_downstream(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/data_subject_requests/{id}/downstream", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Mark a manual erasure connector done (or not_applicable) for this request. An ack connector confirms itself and is refused (400). Marking twice keeps the first answer. Audited. Honours Idempotency-Key.
+
+  `POST /v1/data_subject_requests/{id}/downstream/{connectorId}`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `status` (enum), `note` (string).
+  Response fields: `object`, `request_id`, `complete`, `pending`, `failed`, `connectors`, `connectors.connector_id`, `connectors.key`, `connectors.name`, `connectors.mode`, `connectors.status`, `connectors.by`, `connectors.note`, `connectors.error`, `connectors.attempts`, `connectors.completed_at`.
+  """
+  def post_downstream(client, id, connector_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/downstream/{connectorId}", %{"id" => id, "connectorId" => connector_id}, body, opts)
+
+  @doc ~S"""
+  Run (or retry) an automatic (mode api) erasure connector for this erasure request, for example after a failed run. With dry_run true it only proves the key works and says what would be looked up; nothing is deleted. A connector that already finished is skipped. Audited. Honours Idempotency-Key.
+
+  `POST /v1/data_subject_requests/{id}/downstream/{connectorId}/run`. Required scope: `data_subject_requests:write`.
+
+  Body fields: `dry_run` (boolean).
+  Response fields: `object`, `dry_run`, `results`, `results.connector_id`, `results.key`, `results.vendor`, `results.status`, `results.note`, `results.error`, `downstream`, `downstream.object`, `downstream.request_id`, `downstream.complete`, `downstream.pending`, `downstream.failed`, `downstream.connectors`, `downstream.connectors.connector_id`, `downstream.connectors.key`, `downstream.connectors.name`, `downstream.connectors.mode`, `downstream.connectors.status`, `downstream.connectors.by`, `downstream.connectors.note`, `downstream.connectors.error`, `downstream.connectors.attempts`, `downstream.connectors.completed_at`.
+  """
+  def post_downstream_run(client, id, connector_id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/data_subject_requests/{id}/downstream/{connectorId}/run", %{"id" => id, "connectorId" => connector_id}, body, opts)
 
   @doc false
   def __operations__, do: [
@@ -71,6 +179,14 @@ defmodule Atlas.DataSubjectRequests do
     {:get, :get, "/v1/data_subject_requests/{id}", 1, false, false},
     {:post_fulfill, :post, "/v1/data_subject_requests/{id}/fulfill", 1, false, false},
     {:post_reject, :post, "/v1/data_subject_requests/{id}/reject", 1, true, false},
-    {:post_cancel, :post, "/v1/data_subject_requests/{id}/cancel", 1, false, false}
+    {:post_cancel, :post, "/v1/data_subject_requests/{id}/cancel", 1, false, false},
+    {:post_extend, :post, "/v1/data_subject_requests/{id}/extend", 1, true, false},
+    {:get_receipt, :get, "/v1/data_subject_requests/{id}/receipt", 1, false, false},
+    {:update_triage, :patch, "/v1/data_subject_requests/{id}/triage", 1, true, false},
+    {:get_notes, :get, "/v1/data_subject_requests/{id}/notes", 1, false, true},
+    {:post_notes, :post, "/v1/data_subject_requests/{id}/notes", 1, true, false},
+    {:get_downstream, :get, "/v1/data_subject_requests/{id}/downstream", 1, false, false},
+    {:post_downstream, :post, "/v1/data_subject_requests/{id}/downstream/{connectorId}", 2, true, false},
+    {:post_downstream_run, :post, "/v1/data_subject_requests/{id}/downstream/{connectorId}/run", 2, true, false}
   ]
 end

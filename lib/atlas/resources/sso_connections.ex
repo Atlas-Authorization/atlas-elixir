@@ -5,7 +5,8 @@ defmodule Atlas.SsoConnections do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.SsoConnections do
   List enterprise SSO connections (OIDC / SAML / DiscourseConnect). Never the client secret. Optional `?organization_id=` filters to one organization server-side.
 
   `GET /v1/sso_connections`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.type`, `data.status`, `data.oidc_issuer`, `data.oidc_client_id`, `data.has_secret`, `data.saml_idp_entity_id`, `data.saml_idp_sso_url`, `data.saml_sp_entity_id`, `data.has_saml_certificate`, `data.saml_allow_idp_initiated`, `data.saml_sign_authn_requests`, `data.saml_want_response_signed`, `data.saml_single_logout`, `data.saml_idp_slo_url`, `data.saml_idp_slo_response_url`, `data.saml_idp_slo_binding`, `data.saml_idp_slo_soap_url`, `data.saml_artifact_resolution_url`, `data.saml_artifact_mtls`, `data.saml_require_encrypted_assertions`, `data.saml_honor_idp_session_lifetime`, `data.require_consent_screen`, `data.saml_acs_path`, `data.github_access`, `data.github_access.allowed_organizations`, `data.github_access.allowed_teams`, `data.has_saml_encryption_key`, `data.has_previous_saml_encryption_key`, `data.saml_encryption_rotated_at`, `data.manual_endpoints`, `data.has_discourse_secret`, `data.discourse_provider_url`, `data.allowed_domains`, `data.claim_role_mappings`, `data.default_role_id`, `data.provisioning_mode`, `data.attribute_mapping`, `data.oidc_scopes`, `data.rerole_on_sign_in`, `data.profile_mapping`, `data.profile_mapping.fields`, `data.profile_mapping.fields.id`, `data.profile_mapping.fields.email`, `data.profile_mapping.fields.email_verified`, `data.profile_mapping.fields.first_name`, `data.profile_mapping.fields.last_name`, `data.profile_mapping.fields.full_name`, `data.profile_mapping.fields.username`, `data.profile_mapping.fields.image_url`, `data.profile_mapping.fields.phone_number`, `data.profile_mapping.fields.external_id`, `data.profile_mapping.public_metadata`, `data.profile_mapping.private_metadata`, `data.profile_mapping.update_on_sign_in`, `data.token_endpoint_auth_method`, `data.client_assertion_audience`, `data.oidc_max_age_seconds`, `data.logout`, `data.logout.rp_initiated`, `data.logout.post_logout_redirect_url`, `data.logout.backchannel`, `data.logout.frontchannel`, `data.logout.frontchannel_session_required`, `data.logout.end_session_endpoint`, `data.idp_initiated_login`, `data.idp_initiated_login.enabled`, `data.idp_initiated_login.allowed_targets`, `data.idp_initiated_login.default_target`, `data.upstream_urls`, `data.upstream_urls.client_jwks_uri`, `data.upstream_urls.backchannel_logout_uri`, `data.upstream_urls.frontchannel_logout_uri`, `data.upstream_urls.post_logout_redirect_uri`, `data.upstream_urls.initiate_login_uri`, `data.domain_warnings`, `data.domain_warnings.domain`, `data.domain_warnings.code`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_connections", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,10 @@ defmodule Atlas.SsoConnections do
   Create an enterprise SSO connection. The IdP client secret is write-only.
 
   `POST /v1/sso_connections`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `type` (enum), `status` (enum), `oidc_issuer` (string), `oidc_client_id` (string), `oidc_client_secret` (string), `saml_idp_entity_id` (string), `saml_idp_sso_url` (string), `saml_idp_certificate` (string), `saml_sp_entity_id` (string), `saml_allow_idp_initiated` (boolean), `saml_sign_authn_requests` (boolean), `saml_want_response_signed` (boolean), `saml_single_logout` (boolean), `saml_idp_slo_url` (string|null), `saml_idp_slo_response_url` (string|null), `saml_idp_slo_binding` (string|null), `saml_idp_slo_soap_url` (string|null), `saml_artifact_resolution_url` (string|null), `saml_artifact_mtls` (boolean), `saml_require_encrypted_assertions` (boolean), `saml_honor_idp_session_lifetime` (boolean), `require_consent_screen` (boolean), `github_access` (object|null), `saml_acs_path` (string|null), `discourse_secret` (string), `discourse_provider_url` (string), `allowed_domains` (array), `attribute_mapping` (object|null), `oidc_scopes` (array|null), `rerole_on_sign_in` (boolean|null), `claim_role_mappings` (array), `default_role_id` (string|null), `provisioning_mode` (enum), `manual_endpoints` (object), `profile_mapping` (object|null), `token_endpoint_auth_method` (enum), `client_assertion_audience` (string|null), `oidc_max_age_seconds` (integer|null), `logout` (object|null), `idp_initiated_login` (object|null).
+  Nested body fields: `github_access.allowed_organizations`, `github_access.allowed_teams`, `attribute_mapping.email`, `attribute_mapping.email_verified`, `attribute_mapping.first_name`, `attribute_mapping.last_name`, `attribute_mapping.username`, `claim_role_mappings.claim`, `claim_role_mappings.value`, `claim_role_mappings.role_id`, `profile_mapping.fields`, `profile_mapping.fields.id`, `profile_mapping.fields.id.from`, `profile_mapping.fields.id.template`, `profile_mapping.fields.id.value`, `profile_mapping.fields.id.transforms`, `profile_mapping.fields.email`, `profile_mapping.fields.email.from`, `profile_mapping.fields.email.template`, `profile_mapping.fields.email.value`, `profile_mapping.fields.email.transforms`, `profile_mapping.fields.email_verified`, `profile_mapping.fields.email_verified.from`, `profile_mapping.fields.email_verified.template`, `profile_mapping.fields.email_verified.value`, `profile_mapping.fields.email_verified.transforms`, `profile_mapping.fields.first_name`, `profile_mapping.fields.first_name.from`, `profile_mapping.fields.first_name.template`, `profile_mapping.fields.first_name.value`, `profile_mapping.fields.first_name.transforms`, `profile_mapping.fields.last_name`, `profile_mapping.fields.last_name.from`, `profile_mapping.fields.last_name.template`, `profile_mapping.fields.last_name.value`, `profile_mapping.fields.last_name.transforms`, `profile_mapping.fields.full_name`, `profile_mapping.fields.full_name.from`, `profile_mapping.fields.full_name.template`, `profile_mapping.fields.full_name.value`, `profile_mapping.fields.full_name.transforms`, `profile_mapping.fields.username`, `profile_mapping.fields.username.from`, `profile_mapping.fields.username.template`, `profile_mapping.fields.username.value`, `profile_mapping.fields.username.transforms`, `profile_mapping.fields.image_url`, `profile_mapping.fields.image_url.from`, `profile_mapping.fields.image_url.template`, `profile_mapping.fields.image_url.value`, `profile_mapping.fields.image_url.transforms`, `profile_mapping.fields.phone_number`, `profile_mapping.fields.phone_number.from`, `profile_mapping.fields.phone_number.template`, `profile_mapping.fields.phone_number.value`, `profile_mapping.fields.phone_number.transforms`, `profile_mapping.fields.external_id`, `profile_mapping.fields.external_id.from`, `profile_mapping.fields.external_id.template`, `profile_mapping.fields.external_id.value`, `profile_mapping.fields.external_id.transforms`, `profile_mapping.public_metadata`, `profile_mapping.private_metadata`, `profile_mapping.update_on_sign_in`, `logout.rp_initiated`, `logout.post_logout_redirect_url`, `logout.backchannel`, `logout.frontchannel`, `logout.frontchannel_session_required`, `logout.end_session_endpoint`, `idp_initiated_login.enabled`, `idp_initiated_login.allowed_targets`, `idp_initiated_login.default_target`.
+  Response fields: `object`, `id`, `organization_id`, `type`, `status`, `oidc_issuer`, `oidc_client_id`, `has_secret`, `saml_idp_entity_id`, `saml_idp_sso_url`, `saml_sp_entity_id`, `has_saml_certificate`, `saml_allow_idp_initiated`, `saml_sign_authn_requests`, `saml_want_response_signed`, `saml_single_logout`, `saml_idp_slo_url`, `saml_idp_slo_response_url`, `saml_idp_slo_binding`, `saml_idp_slo_soap_url`, `saml_artifact_resolution_url`, `saml_artifact_mtls`, `saml_require_encrypted_assertions`, `saml_honor_idp_session_lifetime`, `require_consent_screen`, `saml_acs_path`, `github_access`, `github_access.allowed_organizations`, `github_access.allowed_teams`, `has_saml_encryption_key`, `has_previous_saml_encryption_key`, `saml_encryption_rotated_at`, `manual_endpoints`, `has_discourse_secret`, `discourse_provider_url`, `allowed_domains`, `claim_role_mappings`, `default_role_id`, `provisioning_mode`, `attribute_mapping`, `oidc_scopes`, `rerole_on_sign_in`, `profile_mapping`, `profile_mapping.fields`, `profile_mapping.fields.id`, `profile_mapping.fields.id.from`, `profile_mapping.fields.id.template`, `profile_mapping.fields.id.value`, `profile_mapping.fields.id.transforms`, `profile_mapping.fields.email`, `profile_mapping.fields.email.from`, `profile_mapping.fields.email.template`, `profile_mapping.fields.email.value`, `profile_mapping.fields.email.transforms`, `profile_mapping.fields.email_verified`, `profile_mapping.fields.email_verified.from`, `profile_mapping.fields.email_verified.template`, `profile_mapping.fields.email_verified.value`, `profile_mapping.fields.email_verified.transforms`, `profile_mapping.fields.first_name`, `profile_mapping.fields.first_name.from`, `profile_mapping.fields.first_name.template`, `profile_mapping.fields.first_name.value`, `profile_mapping.fields.first_name.transforms`, `profile_mapping.fields.last_name`, `profile_mapping.fields.last_name.from`, `profile_mapping.fields.last_name.template`, `profile_mapping.fields.last_name.value`, `profile_mapping.fields.last_name.transforms`, `profile_mapping.fields.full_name`, `profile_mapping.fields.full_name.from`, `profile_mapping.fields.full_name.template`, `profile_mapping.fields.full_name.value`, `profile_mapping.fields.full_name.transforms`, `profile_mapping.fields.username`, `profile_mapping.fields.username.from`, `profile_mapping.fields.username.template`, `profile_mapping.fields.username.value`, `profile_mapping.fields.username.transforms`, `profile_mapping.fields.image_url`, `profile_mapping.fields.image_url.from`, `profile_mapping.fields.image_url.template`, `profile_mapping.fields.image_url.value`, `profile_mapping.fields.image_url.transforms`, `profile_mapping.fields.phone_number`, `profile_mapping.fields.phone_number.from`, `profile_mapping.fields.phone_number.template`, `profile_mapping.fields.phone_number.value`, `profile_mapping.fields.phone_number.transforms`, `profile_mapping.fields.external_id`, `profile_mapping.fields.external_id.from`, `profile_mapping.fields.external_id.template`, `profile_mapping.fields.external_id.value`, `profile_mapping.fields.external_id.transforms`, `profile_mapping.public_metadata`, `profile_mapping.private_metadata`, `profile_mapping.update_on_sign_in`, `token_endpoint_auth_method`, `client_assertion_audience`, `oidc_max_age_seconds`, `logout`, `logout.rp_initiated`, `logout.post_logout_redirect_url`, `logout.backchannel`, `logout.frontchannel`, `logout.frontchannel_session_required`, `logout.end_session_endpoint`, `idp_initiated_login`, `idp_initiated_login.enabled`, `idp_initiated_login.allowed_targets`, `idp_initiated_login.default_target`, `upstream_urls`, `upstream_urls.client_jwks_uri`, `upstream_urls.backchannel_logout_uri`, `upstream_urls.frontchannel_logout_uri`, `upstream_urls.post_logout_redirect_uri`, `upstream_urls.initiate_login_uri`, `domain_warnings`, `domain_warnings.domain`, `domain_warnings.code`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_connections", %{}, body, opts)
@@ -36,6 +44,8 @@ defmodule Atlas.SsoConnections do
   Fetch one SSO connection. Another instance id is 404, never 403. Reports has_secret, never the secret.
 
   `GET /v1/sso_connections/{id}`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `id`, `organization_id`, `type`, `status`, `oidc_issuer`, `oidc_client_id`, `has_secret`, `saml_idp_entity_id`, `saml_idp_sso_url`, `saml_sp_entity_id`, `has_saml_certificate`, `saml_allow_idp_initiated`, `saml_sign_authn_requests`, `saml_want_response_signed`, `saml_single_logout`, `saml_idp_slo_url`, `saml_idp_slo_response_url`, `saml_idp_slo_binding`, `saml_idp_slo_soap_url`, `saml_artifact_resolution_url`, `saml_artifact_mtls`, `saml_require_encrypted_assertions`, `saml_honor_idp_session_lifetime`, `require_consent_screen`, `saml_acs_path`, `github_access`, `github_access.allowed_organizations`, `github_access.allowed_teams`, `has_saml_encryption_key`, `has_previous_saml_encryption_key`, `saml_encryption_rotated_at`, `manual_endpoints`, `has_discourse_secret`, `discourse_provider_url`, `allowed_domains`, `claim_role_mappings`, `default_role_id`, `provisioning_mode`, `attribute_mapping`, `oidc_scopes`, `rerole_on_sign_in`, `profile_mapping`, `profile_mapping.fields`, `profile_mapping.fields.id`, `profile_mapping.fields.id.from`, `profile_mapping.fields.id.template`, `profile_mapping.fields.id.value`, `profile_mapping.fields.id.transforms`, `profile_mapping.fields.email`, `profile_mapping.fields.email.from`, `profile_mapping.fields.email.template`, `profile_mapping.fields.email.value`, `profile_mapping.fields.email.transforms`, `profile_mapping.fields.email_verified`, `profile_mapping.fields.email_verified.from`, `profile_mapping.fields.email_verified.template`, `profile_mapping.fields.email_verified.value`, `profile_mapping.fields.email_verified.transforms`, `profile_mapping.fields.first_name`, `profile_mapping.fields.first_name.from`, `profile_mapping.fields.first_name.template`, `profile_mapping.fields.first_name.value`, `profile_mapping.fields.first_name.transforms`, `profile_mapping.fields.last_name`, `profile_mapping.fields.last_name.from`, `profile_mapping.fields.last_name.template`, `profile_mapping.fields.last_name.value`, `profile_mapping.fields.last_name.transforms`, `profile_mapping.fields.full_name`, `profile_mapping.fields.full_name.from`, `profile_mapping.fields.full_name.template`, `profile_mapping.fields.full_name.value`, `profile_mapping.fields.full_name.transforms`, `profile_mapping.fields.username`, `profile_mapping.fields.username.from`, `profile_mapping.fields.username.template`, `profile_mapping.fields.username.value`, `profile_mapping.fields.username.transforms`, `profile_mapping.fields.image_url`, `profile_mapping.fields.image_url.from`, `profile_mapping.fields.image_url.template`, `profile_mapping.fields.image_url.value`, `profile_mapping.fields.image_url.transforms`, `profile_mapping.fields.phone_number`, `profile_mapping.fields.phone_number.from`, `profile_mapping.fields.phone_number.template`, `profile_mapping.fields.phone_number.value`, `profile_mapping.fields.phone_number.transforms`, `profile_mapping.fields.external_id`, `profile_mapping.fields.external_id.from`, `profile_mapping.fields.external_id.template`, `profile_mapping.fields.external_id.value`, `profile_mapping.fields.external_id.transforms`, `profile_mapping.public_metadata`, `profile_mapping.private_metadata`, `profile_mapping.update_on_sign_in`, `token_endpoint_auth_method`, `client_assertion_audience`, `oidc_max_age_seconds`, `logout`, `logout.rp_initiated`, `logout.post_logout_redirect_url`, `logout.backchannel`, `logout.frontchannel`, `logout.frontchannel_session_required`, `logout.end_session_endpoint`, `idp_initiated_login`, `idp_initiated_login.enabled`, `idp_initiated_login.allowed_targets`, `idp_initiated_login.default_target`, `upstream_urls`, `upstream_urls.client_jwks_uri`, `upstream_urls.backchannel_logout_uri`, `upstream_urls.frontchannel_logout_uri`, `upstream_urls.post_logout_redirect_uri`, `upstream_urls.initiate_login_uri`, `domain_warnings`, `domain_warnings.domain`, `domain_warnings.code`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_connections/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,10 @@ defmodule Atlas.SsoConnections do
   Update an SSO connection. A secret is only re-encrypted when a new one is supplied.
 
   `PATCH /v1/sso_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Body fields: `organization_id` (string|null), `type` (enum), `status` (enum), `oidc_issuer` (string), `oidc_client_id` (string), `oidc_client_secret` (string), `saml_idp_entity_id` (string), `saml_idp_sso_url` (string), `saml_idp_certificate` (string), `saml_sp_entity_id` (string), `saml_allow_idp_initiated` (boolean), `saml_sign_authn_requests` (boolean), `saml_want_response_signed` (boolean), `saml_single_logout` (boolean), `saml_idp_slo_url` (string|null), `saml_idp_slo_response_url` (string|null), `saml_idp_slo_binding` (string|null), `saml_idp_slo_soap_url` (string|null), `saml_artifact_resolution_url` (string|null), `saml_artifact_mtls` (boolean), `saml_require_encrypted_assertions` (boolean), `saml_honor_idp_session_lifetime` (boolean), `require_consent_screen` (boolean), `github_access` (object|null), `saml_acs_path` (string|null), `discourse_secret` (string), `discourse_provider_url` (string), `allowed_domains` (array), `attribute_mapping` (object|null), `oidc_scopes` (array|null), `rerole_on_sign_in` (boolean|null), `claim_role_mappings` (array), `default_role_id` (string|null), `provisioning_mode` (enum), `manual_endpoints` (object), `profile_mapping` (object|null), `token_endpoint_auth_method` (enum), `client_assertion_audience` (string|null), `oidc_max_age_seconds` (integer|null), `logout` (object|null), `idp_initiated_login` (object|null).
+  Nested body fields: `github_access.allowed_organizations`, `github_access.allowed_teams`, `attribute_mapping.email`, `attribute_mapping.email_verified`, `attribute_mapping.first_name`, `attribute_mapping.last_name`, `attribute_mapping.username`, `claim_role_mappings.claim`, `claim_role_mappings.value`, `claim_role_mappings.role_id`, `profile_mapping.fields`, `profile_mapping.fields.id`, `profile_mapping.fields.id.from`, `profile_mapping.fields.id.template`, `profile_mapping.fields.id.value`, `profile_mapping.fields.id.transforms`, `profile_mapping.fields.email`, `profile_mapping.fields.email.from`, `profile_mapping.fields.email.template`, `profile_mapping.fields.email.value`, `profile_mapping.fields.email.transforms`, `profile_mapping.fields.email_verified`, `profile_mapping.fields.email_verified.from`, `profile_mapping.fields.email_verified.template`, `profile_mapping.fields.email_verified.value`, `profile_mapping.fields.email_verified.transforms`, `profile_mapping.fields.first_name`, `profile_mapping.fields.first_name.from`, `profile_mapping.fields.first_name.template`, `profile_mapping.fields.first_name.value`, `profile_mapping.fields.first_name.transforms`, `profile_mapping.fields.last_name`, `profile_mapping.fields.last_name.from`, `profile_mapping.fields.last_name.template`, `profile_mapping.fields.last_name.value`, `profile_mapping.fields.last_name.transforms`, `profile_mapping.fields.full_name`, `profile_mapping.fields.full_name.from`, `profile_mapping.fields.full_name.template`, `profile_mapping.fields.full_name.value`, `profile_mapping.fields.full_name.transforms`, `profile_mapping.fields.username`, `profile_mapping.fields.username.from`, `profile_mapping.fields.username.template`, `profile_mapping.fields.username.value`, `profile_mapping.fields.username.transforms`, `profile_mapping.fields.image_url`, `profile_mapping.fields.image_url.from`, `profile_mapping.fields.image_url.template`, `profile_mapping.fields.image_url.value`, `profile_mapping.fields.image_url.transforms`, `profile_mapping.fields.phone_number`, `profile_mapping.fields.phone_number.from`, `profile_mapping.fields.phone_number.template`, `profile_mapping.fields.phone_number.value`, `profile_mapping.fields.phone_number.transforms`, `profile_mapping.fields.external_id`, `profile_mapping.fields.external_id.from`, `profile_mapping.fields.external_id.template`, `profile_mapping.fields.external_id.value`, `profile_mapping.fields.external_id.transforms`, `profile_mapping.public_metadata`, `profile_mapping.private_metadata`, `profile_mapping.update_on_sign_in`, `logout.rp_initiated`, `logout.post_logout_redirect_url`, `logout.backchannel`, `logout.frontchannel`, `logout.frontchannel_session_required`, `logout.end_session_endpoint`, `idp_initiated_login.enabled`, `idp_initiated_login.allowed_targets`, `idp_initiated_login.default_target`.
+  Response fields: `object`, `id`, `organization_id`, `type`, `status`, `oidc_issuer`, `oidc_client_id`, `has_secret`, `saml_idp_entity_id`, `saml_idp_sso_url`, `saml_sp_entity_id`, `has_saml_certificate`, `saml_allow_idp_initiated`, `saml_sign_authn_requests`, `saml_want_response_signed`, `saml_single_logout`, `saml_idp_slo_url`, `saml_idp_slo_response_url`, `saml_idp_slo_binding`, `saml_idp_slo_soap_url`, `saml_artifact_resolution_url`, `saml_artifact_mtls`, `saml_require_encrypted_assertions`, `saml_honor_idp_session_lifetime`, `require_consent_screen`, `saml_acs_path`, `github_access`, `github_access.allowed_organizations`, `github_access.allowed_teams`, `has_saml_encryption_key`, `has_previous_saml_encryption_key`, `saml_encryption_rotated_at`, `manual_endpoints`, `has_discourse_secret`, `discourse_provider_url`, `allowed_domains`, `claim_role_mappings`, `default_role_id`, `provisioning_mode`, `attribute_mapping`, `oidc_scopes`, `rerole_on_sign_in`, `profile_mapping`, `profile_mapping.fields`, `profile_mapping.fields.id`, `profile_mapping.fields.id.from`, `profile_mapping.fields.id.template`, `profile_mapping.fields.id.value`, `profile_mapping.fields.id.transforms`, `profile_mapping.fields.email`, `profile_mapping.fields.email.from`, `profile_mapping.fields.email.template`, `profile_mapping.fields.email.value`, `profile_mapping.fields.email.transforms`, `profile_mapping.fields.email_verified`, `profile_mapping.fields.email_verified.from`, `profile_mapping.fields.email_verified.template`, `profile_mapping.fields.email_verified.value`, `profile_mapping.fields.email_verified.transforms`, `profile_mapping.fields.first_name`, `profile_mapping.fields.first_name.from`, `profile_mapping.fields.first_name.template`, `profile_mapping.fields.first_name.value`, `profile_mapping.fields.first_name.transforms`, `profile_mapping.fields.last_name`, `profile_mapping.fields.last_name.from`, `profile_mapping.fields.last_name.template`, `profile_mapping.fields.last_name.value`, `profile_mapping.fields.last_name.transforms`, `profile_mapping.fields.full_name`, `profile_mapping.fields.full_name.from`, `profile_mapping.fields.full_name.template`, `profile_mapping.fields.full_name.value`, `profile_mapping.fields.full_name.transforms`, `profile_mapping.fields.username`, `profile_mapping.fields.username.from`, `profile_mapping.fields.username.template`, `profile_mapping.fields.username.value`, `profile_mapping.fields.username.transforms`, `profile_mapping.fields.image_url`, `profile_mapping.fields.image_url.from`, `profile_mapping.fields.image_url.template`, `profile_mapping.fields.image_url.value`, `profile_mapping.fields.image_url.transforms`, `profile_mapping.fields.phone_number`, `profile_mapping.fields.phone_number.from`, `profile_mapping.fields.phone_number.template`, `profile_mapping.fields.phone_number.value`, `profile_mapping.fields.phone_number.transforms`, `profile_mapping.fields.external_id`, `profile_mapping.fields.external_id.from`, `profile_mapping.fields.external_id.template`, `profile_mapping.fields.external_id.value`, `profile_mapping.fields.external_id.transforms`, `profile_mapping.public_metadata`, `profile_mapping.private_metadata`, `profile_mapping.update_on_sign_in`, `token_endpoint_auth_method`, `client_assertion_audience`, `oidc_max_age_seconds`, `logout`, `logout.rp_initiated`, `logout.post_logout_redirect_url`, `logout.backchannel`, `logout.frontchannel`, `logout.frontchannel_session_required`, `logout.end_session_endpoint`, `idp_initiated_login`, `idp_initiated_login.enabled`, `idp_initiated_login.allowed_targets`, `idp_initiated_login.default_target`, `upstream_urls`, `upstream_urls.client_jwks_uri`, `upstream_urls.backchannel_logout_uri`, `upstream_urls.frontchannel_logout_uri`, `upstream_urls.post_logout_redirect_uri`, `upstream_urls.initiate_login_uri`, `domain_warnings`, `domain_warnings.domain`, `domain_warnings.code`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/sso_connections/{id}", %{"id" => id}, body, opts)
@@ -52,6 +66,8 @@ defmodule Atlas.SsoConnections do
   Delete an SSO connection and its domain routing.
 
   `DELETE /v1/sso_connections/{id}`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/sso_connections/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +76,8 @@ defmodule Atlas.SsoConnections do
   The SP EntityDescriptor XML to hand a SAML IdP: entityID, ACS URL, signing / encryption certificates and SingleLogoutService when configured. Public; carries no secret.
 
   `GET /v1/sso_connections/{id}/saml_metadata`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `sp_entity_id`, `acs_url`, `slo_url`, `metadata_xml`.
   """
   def get_saml_metadata(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_connections/{id}/saml_metadata", %{"id" => id}, nil, opts)
@@ -68,6 +86,10 @@ defmodule Atlas.SsoConnections do
   Run an OIDC connection's profile mapping (stored, or the body's) against a pasted sample. Nothing is signed in.
 
   `POST /v1/sso_connections/{id}/profile_mapping/preview`. Required scope: `sso_connections:read`.
+
+  Body fields: `profile_mapping` (object|null), `userinfo` (object), `id_token_claims` (object), `id_token` (string).
+  Nested body fields: `profile_mapping.fields`, `profile_mapping.fields.id`, `profile_mapping.fields.id.from`, `profile_mapping.fields.id.template`, `profile_mapping.fields.id.value`, `profile_mapping.fields.id.transforms`, `profile_mapping.fields.email`, `profile_mapping.fields.email.from`, `profile_mapping.fields.email.template`, `profile_mapping.fields.email.value`, `profile_mapping.fields.email.transforms`, `profile_mapping.fields.email_verified`, `profile_mapping.fields.email_verified.from`, `profile_mapping.fields.email_verified.template`, `profile_mapping.fields.email_verified.value`, `profile_mapping.fields.email_verified.transforms`, `profile_mapping.fields.first_name`, `profile_mapping.fields.first_name.from`, `profile_mapping.fields.first_name.template`, `profile_mapping.fields.first_name.value`, `profile_mapping.fields.first_name.transforms`, `profile_mapping.fields.last_name`, `profile_mapping.fields.last_name.from`, `profile_mapping.fields.last_name.template`, `profile_mapping.fields.last_name.value`, `profile_mapping.fields.last_name.transforms`, `profile_mapping.fields.full_name`, `profile_mapping.fields.full_name.from`, `profile_mapping.fields.full_name.template`, `profile_mapping.fields.full_name.value`, `profile_mapping.fields.full_name.transforms`, `profile_mapping.fields.username`, `profile_mapping.fields.username.from`, `profile_mapping.fields.username.template`, `profile_mapping.fields.username.value`, `profile_mapping.fields.username.transforms`, `profile_mapping.fields.image_url`, `profile_mapping.fields.image_url.from`, `profile_mapping.fields.image_url.template`, `profile_mapping.fields.image_url.value`, `profile_mapping.fields.image_url.transforms`, `profile_mapping.fields.phone_number`, `profile_mapping.fields.phone_number.from`, `profile_mapping.fields.phone_number.template`, `profile_mapping.fields.phone_number.value`, `profile_mapping.fields.phone_number.transforms`, `profile_mapping.fields.external_id`, `profile_mapping.fields.external_id.from`, `profile_mapping.fields.external_id.template`, `profile_mapping.fields.external_id.value`, `profile_mapping.fields.external_id.transforms`, `profile_mapping.public_metadata`, `profile_mapping.private_metadata`, `profile_mapping.update_on_sign_in`.
+  Response fields: `object`, `profile`, `profile.id`, `profile.email`, `profile.email_verified`, `profile.first_name`, `profile.last_name`, `profile.username`, `profile.image_url`, `profile.phone_number`, `profile.external_id`, `profile.public_metadata`, `profile.private_metadata`, `trace`, `warnings`.
   """
   def post_profile_mapping_preview(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_connections/{id}/profile_mapping/preview", %{"id" => id}, body, opts)
@@ -76,12 +98,15 @@ defmodule Atlas.SsoConnections do
   An OIDC connection's private_key_jwt signing keys (public halves only).
 
   `GET /v1/sso_connections/{id}/signing_keys`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.kid`, `data.alg`, `data.status`, `data.public_jwk`, `data.created_at`, `data.retired_at`.
   """
   def get_signing_keys(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_connections/{id}/signing_keys", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_signing_keys/2`, following the cursor page by page.
+  Lazy stream over every item of `get_signing_keys`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_signing_keys(client, id, opts \\ []),
@@ -91,6 +116,9 @@ defmodule Atlas.SsoConnections do
   Generate (rotate) the private_key_jwt signing key of an OIDC connection; the previous one turns retiring.
 
   `POST /v1/sso_connections/{id}/signing_keys`. Required scope: `sso_connections:write`.
+
+  Body fields: `alg` (enum).
+  Response fields: `object`, `kid`, `alg`, `status`, `public_jwk`, `created_at`, `retired_at`.
   """
   def post_signing_keys(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_connections/{id}/signing_keys", %{"id" => id}, body, opts)
@@ -99,6 +127,8 @@ defmodule Atlas.SsoConnections do
   Retire an OIDC connection signing key (not the active one).
 
   `POST /v1/sso_connections/{id}/signing_keys/{kid}/retire`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `kid`, `status`.
   """
   def post_signing_keys_retire(client, id, kid, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_connections/{id}/signing_keys/{kid}/retire", %{"id" => id, "kid" => kid}, nil, opts)
@@ -107,6 +137,8 @@ defmodule Atlas.SsoConnections do
   The SAML connection's SP encryption certificate(s). Never the private key.
 
   `GET /v1/sso_connections/{id}/saml_encryption_key`. Required scope: `sso_connections:read`.
+
+  Response fields: `object`, `connection_id`, `certificate`, `previous_certificate`, `rotated_at`, `require_encrypted_assertions`.
   """
   def get_saml_encryption_key(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sso_connections/{id}/saml_encryption_key", %{"id" => id}, nil, opts)
@@ -115,6 +147,8 @@ defmodule Atlas.SsoConnections do
   Generate the SP encryption key pair (201), or rotate it (200): the current pair becomes the previous one, still advertised in metadata and still able to decrypt until retired. Register the new metadata with the IdP, then retire the previous key.
 
   `POST /v1/sso_connections/{id}/saml_encryption_key`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `connection_id`, `certificate`, `previous_certificate`, `rotated_at`, `require_encrypted_assertions`.
   """
   def post_saml_encryption_key(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sso_connections/{id}/saml_encryption_key", %{"id" => id}, nil, opts)
@@ -123,6 +157,8 @@ defmodule Atlas.SsoConnections do
   Turn assertion encryption off (drops both key pairs). Refused while saml_require_encrypted_assertions is on.
 
   `DELETE /v1/sso_connections/{id}/saml_encryption_key`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `connection_id`, `certificate`, `previous_certificate`, `rotated_at`, `require_encrypted_assertions`.
   """
   def delete_saml_encryption_key(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/sso_connections/{id}/saml_encryption_key", %{"id" => id}, nil, opts)
@@ -131,9 +167,50 @@ defmodule Atlas.SsoConnections do
   Finish a rotation: stop advertising and accepting the previous encryption key.
 
   `DELETE /v1/sso_connections/{id}/saml_encryption_key/previous`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `connection_id`, `certificate`, `previous_certificate`, `rotated_at`, `require_encrypted_assertions`.
   """
   def delete_saml_encryption_key_previous(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/sso_connections/{id}/saml_encryption_key/previous", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Sign-ins through one enterprise connection, newest first, kept 90 days: successful, failed (with a short failure code) and test sign-ins, with the source IP. The summary carries the last successful and failed sign-in and the 24-hour counts. Filter with outcome; page with limit and starting_after.
+
+  `GET /v1/sso_connections/{id}/login_history`. Required scope: `sso_connections:read`.
+
+  Query params (`params:`): `limit`, `starting_after`, `outcome`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.connection_id`, `data.organization_id`, `data.outcome`, `data.failure_code`, `data.user_id`, `data.method`, `data.ip`, `data.created_at`, `has_more`, `next_cursor`, `summary`, `summary.last_successful_login_at`, `summary.last_failed_login_at`, `summary.successes_24h`, `summary.failures_24h`.
+  """
+  def get_login_history(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/sso_connections/{id}/login_history", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_login_history`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_login_history(client, id, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/sso_connections/{id}/login_history", %{"id" => id}, opts)
+
+  @doc ~S"""
+  Check an enterprise connection without signing anyone in. SAML: the IdP entity ID, an https SSO URL and a signing certificate are set (and the encryption key, when assertions must be encrypted). OIDC: the issuer is reachable and matches its discovery document; oidc_issuer tries another issuer without saving it. A failed check answers 200 with ok false and the reason. The answer lists what it did not check (client credentials, assertion signature): only POST /v1/sso_connections/{id}/test_login proves those.
+
+  `POST /v1/sso_connections/{id}/test`. Required scope: `sso_connections:write`.
+
+  Body fields: `oidc_issuer` (string).
+  Response fields: `object`, `id`, `ok`, `message`, `endpoints`, `endpoints.authorization_endpoint`, `endpoints.token_endpoint`, `checked`, `not_checked`.
+  """
+  def post_test(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/sso_connections/{id}/test", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Begin an interactive OIDC test sign-in: returns an authorization_url to open in a browser. The callback shows the claims the identity provider returned and issues no session and provisions no user. The test is filed in the connection's login history as `test`. SAML connections use POST /v1/sso_connections/{id}/test instead (400).
+
+  `POST /v1/sso_connections/{id}/test_login`. Required scope: `sso_connections:write`.
+
+  Response fields: `object`, `authorization_url`.
+  """
+  def post_test_login(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/sso_connections/{id}/test_login", %{"id" => id}, nil, opts)
 
   @doc false
   def __operations__, do: [
@@ -150,6 +227,9 @@ defmodule Atlas.SsoConnections do
     {:get_saml_encryption_key, :get, "/v1/sso_connections/{id}/saml_encryption_key", 1, false, false},
     {:post_saml_encryption_key, :post, "/v1/sso_connections/{id}/saml_encryption_key", 1, false, false},
     {:delete_saml_encryption_key, :delete, "/v1/sso_connections/{id}/saml_encryption_key", 1, false, false},
-    {:delete_saml_encryption_key_previous, :delete, "/v1/sso_connections/{id}/saml_encryption_key/previous", 1, false, false}
+    {:delete_saml_encryption_key_previous, :delete, "/v1/sso_connections/{id}/saml_encryption_key/previous", 1, false, false},
+    {:get_login_history, :get, "/v1/sso_connections/{id}/login_history", 1, false, true},
+    {:post_test, :post, "/v1/sso_connections/{id}/test", 1, true, false},
+    {:post_test_login, :post, "/v1/sso_connections/{id}/test_login", 1, false, false}
   ]
 end

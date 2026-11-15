@@ -5,7 +5,8 @@ defmodule Atlas.IntegrationHealth do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.IntegrationHealth do
   One report of everything that connects the instance to the outside world, in the shared integration-health shape { checks: [{ id, ok, detail, fix, docs, hop? }], generatedAt }: every preflight finding (id = its code), the links to other platforms, each webhook endpoint (failing or disabled, with the hop that fails: dns, tls, http, a challenge page, or auth), back-channel logout receivers, the referral platform, the email sender, the consent manager and the SDK versions seen. ok: null means not known or not configured. Failing receivers are probed live (at most 6 per report).
 
   `GET /v1/integration-health`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `only`, `probe`.
+  Response fields: `object`, `ok`, `summary`, `summary.failing`, `summary.passing`, `summary.unknown`, `checks`, `checks.id`, `checks.ok`, `checks.detail`, `checks.fix`, `checks.docs`, `checks.hop`, `checks.status`, `checks.elapsedMs`, `checks.source`, `checks.severity`, `checks.subject`, `checks.observedAt`, `generatedAt`, `generated_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/integration-health", %{}, nil, opts)
@@ -21,12 +25,15 @@ defmodule Atlas.IntegrationHealth do
   The integration-health check providers (source and what each one reports).
 
   `GET /v1/integration-health/providers`. Required scope: `diagnostics:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.source`, `data.description`, `has_more`.
   """
   def get_providers(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/integration-health/providers", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_providers/1`, following the cursor page by page.
+  Lazy stream over every item of `get_providers`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_providers(client, opts \\ []),

@@ -5,7 +5,8 @@ defmodule Atlas.AgentAccessReviews do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AgentAccessReviews do
   The agent access reviews, newest first.
 
   `GET /v1/agent_access_reviews`. Required scope: `machines:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.status`, `data.due_at`, `data.created_at`, `data.closed_at`, `data.item_count`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agent_access_reviews", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AgentAccessReviews do
   Start an access review of agents' live grants: one item per grant, assigned to the agent's sponsor (else its owner), who certifies or revokes it.
 
   `POST /v1/agent_access_reviews`. Required scope: `machines:write`.
+
+  Body fields: `name` (string, required), `due_at` (integer|string|null), `tier` (enum), `kind` (enum).
+  Response fields: `object`, `id`, `name`, `status`, `due_at`, `created_at`, `closed_at`, `item_count`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agent_access_reviews", %{}, body, opts)
@@ -36,6 +43,9 @@ defmodule Atlas.AgentAccessReviews do
   One review with its items; filter by decision or reviewer.
 
   `GET /v1/agent_access_reviews/{id}`. Required scope: `machines:read`.
+
+  Query params (`params:`): `decision`, `reviewer_user_id`.
+  Response fields: `items`, `items.object`, `items.id`, `items.review_id`, `items.agent_id`, `items.kind`, `items.resource`, `items.reviewer_user_id`, `items.decision`, `items.decided_by`, `items.decided_at`, `items.comment`, `items.revoked_applied`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/agent_access_reviews/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +54,9 @@ defmodule Atlas.AgentAccessReviews do
   Certify or revoke one item. A revoke ends that grant immediately.
 
   `POST /v1/agent_access_reviews/{id}/items/{itemId}/decide`. Required scope: `machines:write`.
+
+  Body fields: `decision` (enum, required), `comment` (string), `decided_by` (string).
+  Response fields: `object`, `id`, `review_id`, `agent_id`, `kind`, `resource`, `reviewer_user_id`, `decision`, `decided_by`, `decided_at`, `comment`, `revoked_applied`.
   """
   def post_items_decide(client, id, item_id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agent_access_reviews/{id}/items/{itemId}/decide", %{"id" => id, "itemId" => item_id}, body, opts)
@@ -52,6 +65,8 @@ defmodule Atlas.AgentAccessReviews do
   Close a review; no further decisions are accepted.
 
   `POST /v1/agent_access_reviews/{id}/close`. Required scope: `machines:write`.
+
+  Response fields: `object`, `id`, `name`, `status`, `due_at`, `created_at`, `closed_at`, `item_count`.
   """
   def post_close(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/agent_access_reviews/{id}/close", %{"id" => id}, nil, opts)

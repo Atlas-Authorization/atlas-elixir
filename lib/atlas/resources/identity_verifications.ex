@@ -5,7 +5,8 @@ defmodule Atlas.IdentityVerifications do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.IdentityVerifications do
   List checks by status (default `needs_review`, the review queue), newest first.
 
   `GET /v1/identity_verifications`. Required scope: `identity_verification:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.provider`, `data.status`, `data.reason`, `data.imported`, `data.verified_at`, `data.verified_attributes_status`, `data.url`, `data.decided_by`, `data.created_at`, `data.completed_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/identity_verifications", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.IdentityVerifications do
   Read one check. A pending check is refreshed from the verification service first.
 
   `GET /v1/identity_verifications/{id}`. Required scope: `identity_verification:read`.
+
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/identity_verifications/{id}", %{"id" => id}, nil, opts)
@@ -36,6 +42,9 @@ defmodule Atlas.IdentityVerifications do
   Decide a check that is waiting for review (or override a pending one) as `approved` or `declined`. The outcome is written to the user as `verification.identity`. 409 when the check is already approved or declined.
 
   `POST /v1/identity_verifications/{id}/decide`. Required scope: `identity_verification:write`.
+
+  Body fields: `decision` (enum), `reason` (string).
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
   """
   def post_decide(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/identity_verifications/{id}/decide", %{"id" => id}, body, opts)

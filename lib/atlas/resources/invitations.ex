@@ -5,7 +5,8 @@ defmodule Atlas.Invitations do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Invitations do
   List instance-level invitations, cursor-paginated.
 
   `GET /v1/invitations`. Required scope: `invitations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.email_address`, `data.status`, `data.public_metadata`, `data.expires_at`, `data.accepted_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/invitations", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.Invitations do
   Create an instance-level invitation (no email is sent). On matching-email sign-up, once the address is proven, it is accepted, its public_metadata is copied onto the new user and invitation.accepted fires. While pending and unexpired it also admits that exact address when the sign-up mode is restricted (invite-only), so your product can share its own allowlist with Atlas. Expires in 7 days unless you send expires_at (epoch ms or ISO 8601, at most 365 days ahead) or expires_in_days (1-365), not both. Fires invitation.created.
 
   `POST /v1/invitations`. Required scope: `invitations:write`.
+
+  Body fields: `email_address` (string), `public_metadata` (object), `expires_at` (integer|string), `expires_in_days` (number).
+  Response fields: `object`, `id`, `email_address`, `status`, `public_metadata`, `expires_at`, `accepted_at`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/invitations", %{}, body, opts)
@@ -36,6 +43,10 @@ defmodule Atlas.Invitations do
   Bulk-create instance invitations (≤100). Each entry takes email_address, public_metadata, expires_at or expires_in_days as on POST /v1/invitations. Per-entry validation/dedup; returns created + errors. Fires invitation.created per created entry.
 
   `POST /v1/invitations/bulk`. Required scope: `invitations:write`.
+
+  Body fields: `invitations` (array).
+  Nested body fields: `invitations.email_address`, `invitations.public_metadata`, `invitations.expires_at`, `invitations.expires_in_days`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.email_address`, `data.status`, `data.public_metadata`, `data.expires_at`, `data.accepted_at`, `data.created_at`, `errors`, `errors.index`, `errors.email_address`, `errors.code`, `errors.message`.
   """
   def post_bulk(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/invitations/bulk", %{}, body, opts)
@@ -44,6 +55,8 @@ defmodule Atlas.Invitations do
   Revoke a pending instance invitation so it can no longer be accepted and no longer admits its address in restricted sign-up mode. Fires invitation.revoked.
 
   `POST /v1/invitations/{id}/revoke`. Required scope: `invitations:write`.
+
+  Response fields: `object`, `id`, `email_address`, `status`, `public_metadata`, `expires_at`, `accepted_at`, `created_at`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/invitations/{id}/revoke", %{"id" => id}, nil, opts)

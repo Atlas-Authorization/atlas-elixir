@@ -5,7 +5,8 @@ defmodule Atlas.ScimTokens do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.ScimTokens do
   List SCIM provisioning tokens. Reports the recognisable prefix only, never the token. Optional `?organization_id=` filters to one organization server-side.
 
   `GET /v1/scim_tokens`. Required scope: `scim:read`.
+
+  Query params (`params:`): `organization_id`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.organization_id`, `data.connection_id`, `data.prefix`, `data.scopes`, `data.role_mappings`, `data.role_mappings.value`, `data.role_mappings.role`, `data.ip_allow_list`, `data.profile_lock`, `data.rotated_at`, `data.rotated_from_id`, `data.rotated_from`, `data.rotated_from.id`, `data.rotated_from.prefix`, `data.rotated_from.valid_until`, `data.secret`, `data.token`, `data.scim_base_url`, `data.warnings`, `data.warnings.code`, `data.warnings.message`, `data.last_used_at`, `data.expires_at`, `data.revoked_at`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/scim_tokens", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,22 +32,43 @@ defmodule Atlas.ScimTokens do
   Mint a SCIM provisioning token for an organization. The token is revealed exactly once. scopes ["read"] makes it read-only; role_mappings maps the SCIM user roles attribute to organization roles.
 
   `POST /v1/scim_tokens`. Required scope: `scim:write`.
+
+  Body fields: `name` (string), `organization_id` (string, required), `connection_id` (string|null), `scopes` (array|null), `role_mappings` (array|null), `ip_allow_list` (array|null), `profile_lock` (boolean).
+  Nested body fields: `role_mappings.value`, `role_mappings.role`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `connection_id`, `prefix`, `scopes`, `role_mappings`, `role_mappings.value`, `role_mappings.role`, `ip_allow_list`, `profile_lock`, `rotated_at`, `rotated_from_id`, `rotated_from`, `rotated_from.id`, `rotated_from.prefix`, `rotated_from.valid_until`, `secret`, `token`, `scim_base_url`, `warnings`, `warnings.code`, `warnings.message`, `last_used_at`, `expires_at`, `revoked_at`, `created_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_tokens", %{}, body, opts)
 
   @doc ~S"""
-  Change a SCIM token's name, scopes (['read'] = read-only) or role mappings (SCIM roles values to organization role keys). The secret is unchanged.
+  Change a SCIM token's name, scopes (['read'] = read-only), role mappings (SCIM roles values to organization role keys), source-IP allow-list (ip_allow_list) or profile lock (profile_lock). The secret is unchanged.
 
   `PATCH /v1/scim_tokens/{id}`. Required scope: `scim:write`.
+
+  Body fields: `name` (string|null), `scopes` (array|null), `role_mappings` (array|null), `ip_allow_list` (array|null), `profile_lock` (boolean).
+  Nested body fields: `role_mappings.value`, `role_mappings.role`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `connection_id`, `prefix`, `scopes`, `role_mappings`, `role_mappings.value`, `role_mappings.role`, `ip_allow_list`, `profile_lock`, `rotated_at`, `rotated_from_id`, `rotated_from`, `rotated_from.id`, `rotated_from.prefix`, `rotated_from.valid_until`, `secret`, `token`, `scim_base_url`, `warnings`, `warnings.code`, `warnings.message`, `last_used_at`, `expires_at`, `revoked_at`, `created_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/scim_tokens/{id}", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Rotate a live SCIM token: mint its replacement (same organization, connection, scopes, role mappings, IP allow-list and profile lock) and retire the old one after grace_period_seconds (default one day; 0 revokes it now), so the identity provider can be switched over without a gap in provisioning. The new secret is revealed once. Only a live token can be rotated (409 otherwise). An operator token needs a recent MFA. Accepts Idempotency-Key.
+
+  `POST /v1/scim_tokens/{id}/rotate`. Required scope: `scim:write`.
+
+  Body fields: `name` (string), `grace_period_seconds` (integer).
+  Response fields: `object`, `id`, `name`, `organization_id`, `connection_id`, `prefix`, `scopes`, `role_mappings`, `role_mappings.value`, `role_mappings.role`, `ip_allow_list`, `profile_lock`, `rotated_at`, `rotated_from_id`, `rotated_from`, `rotated_from.id`, `rotated_from.prefix`, `rotated_from.valid_until`, `secret`, `token`, `scim_base_url`, `warnings`, `warnings.code`, `warnings.message`, `last_used_at`, `expires_at`, `revoked_at`, `created_at`.
+  """
+  def post_rotate(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/scim_tokens/{id}/rotate", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Revoke a SCIM token; provisioning with it fails immediately. The record is kept for the audit log.
 
   `POST /v1/scim_tokens/{id}/revoke`. Required scope: `scim:write`.
+
+  Response fields: `object`, `id`, `revoked`, `note`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/scim_tokens/{id}/revoke", %{"id" => id}, nil, opts)
@@ -53,6 +78,7 @@ defmodule Atlas.ScimTokens do
     {:list, :get, "/v1/scim_tokens", 0, false, true},
     {:create, :post, "/v1/scim_tokens", 0, true, false},
     {:update, :patch, "/v1/scim_tokens/{id}", 1, true, false},
+    {:post_rotate, :post, "/v1/scim_tokens/{id}/rotate", 1, true, false},
     {:post_revoke, :post, "/v1/scim_tokens/{id}/revoke", 1, false, false}
   ]
 end

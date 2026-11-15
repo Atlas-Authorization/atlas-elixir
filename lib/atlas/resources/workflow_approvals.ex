@@ -5,7 +5,8 @@ defmodule Atlas.WorkflowApprovals do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.WorkflowApprovals do
   Approvals that workflow `approval` steps have asked for, newest first.
 
   `GET /v1/workflow_approvals`. Required scope: `actions:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.workflow_id`, `data.run_id`, `data.approver_user_ids`, `data.message`, `data.status`, `data.decided_by`, `data.comment`, `data.expires_at`, `data.decided_at`, `data.created_at`, `has_more`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/workflow_approvals", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.WorkflowApprovals do
   Approve or deny a workflow approval. The run resumes at once. A secret-key caller may decide for anyone; pass `user_id` to record who decided.
 
   `POST /v1/workflow_approvals/{id}/decide`. Required scope: `actions:write`.
+
+  Body fields: `decision` (enum, required), `comment` (string), `user_id` (string).
+  Response fields: `object`, `id`, `workflow_id`, `run_id`, `approver_user_ids`, `message`, `status`, `decided_by`, `comment`, `expires_at`, `decided_at`, `created_at`.
   """
   def post_decide(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/workflow_approvals/{id}/decide", %{"id" => id}, body, opts)

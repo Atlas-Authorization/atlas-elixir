@@ -5,7 +5,8 @@ defmodule Atlas.SecurityAdvisories do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,36 @@ defmodule Atlas.SecurityAdvisories do
   Server-side security advisories: severity, what was affected, when it was fixed, what to do, and whether it applies to THIS instance (`applies`, `detail`). While one applies, preflight reports security_advisory_applies; the owners are emailed once.
 
   `GET /v1/security_advisories`. Required scope: `instance:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.published`, `data.severity`, `data.title`, `data.summary`, `data.affects`, `data.fixed_on`, `data.action`, `data.docs_url`, `data.applies`, `data.detail`, `data.count`, `data.first_seen_at`, `data.emailed_at`, `data.acknowledged_at`, `data.subjects`, `data.subjects.user_id`, `data.subjects.email_address_id`, `data.subjects.email_address`, `data.subjects.reported_verified_at`, `data.subjects_truncated`, `has_more`, `applying`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/security_advisories", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/security_advisories", %{}, opts)
 
   @doc ~S"""
+  One security advisory for this instance, with `subjects`: the affected users and email addresses it names while it applies (up to 100; `subjects_truncated` is true past that and `count` stays the full number). 404 for an unknown id.
+
+  `GET /v1/security_advisories/{id}`. Required scope: `instance:read`.
+
+  Response fields: `object`, `id`, `published`, `severity`, `title`, `summary`, `affects`, `fixed_on`, `action`, `docs_url`, `applies`, `detail`, `count`, `first_seen_at`, `emailed_at`, `acknowledged_at`, `subjects`, `subjects.user_id`, `subjects.email_address_id`, `subjects.email_address`, `subjects.reported_verified_at`, `subjects_truncated`.
+  """
+  def get(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/security_advisories/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
   Mark an advisory handled for this instance. An advisory whose condition is a setting (for example a re-enabled unsafe option) keeps applying until the setting changes.
 
   `POST /v1/security_advisories/{id}/acknowledge`. Required scope: `instance:write`.
+
+  Response fields: `object`, `id`, `published`, `severity`, `title`, `summary`, `affects`, `fixed_on`, `action`, `docs_url`, `applies`, `detail`, `count`, `first_seen_at`, `emailed_at`, `acknowledged_at`, `subjects`, `subjects.user_id`, `subjects.email_address_id`, `subjects.email_address`, `subjects.reported_verified_at`, `subjects_truncated`.
   """
   def post_acknowledge(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/security_advisories/{id}/acknowledge", %{"id" => id}, nil, opts)
@@ -35,6 +51,7 @@ defmodule Atlas.SecurityAdvisories do
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/security_advisories", 0, false, true},
+    {:get, :get, "/v1/security_advisories/{id}", 1, false, false},
     {:post_acknowledge, :post, "/v1/security_advisories/{id}/acknowledge", 1, false, false}
   ]
 end

@@ -5,7 +5,8 @@ defmodule Atlas.RedirectUrls do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.RedirectUrls do
   List the allowlisted OAuth/SSO redirect URLs.
 
   `GET /v1/redirect_urls`. Required scope: `redirect_urls:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.url`, `data.created_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/redirect_urls", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.RedirectUrls do
   Add a permitted OAuth/SSO redirect URL (absolute http(s); idempotent on the URL).
 
   `POST /v1/redirect_urls`. Required scope: `redirect_urls:write`.
+
+  Body fields: `url` (string).
+  Response fields: `object`, `id`, `url`, `created_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/redirect_urls", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.RedirectUrls do
   Fetch one allowlisted redirect URL.
 
   `GET /v1/redirect_urls/{id}`. Required scope: `redirect_urls:read`.
+
+  Response fields: `object`, `id`, `url`, `created_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/redirect_urls/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,8 @@ defmodule Atlas.RedirectUrls do
   Remove a redirect URL from the allowlist.
 
   `DELETE /v1/redirect_urls/{id}`. Required scope: `redirect_urls:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/redirect_urls/{id}", %{"id" => id}, nil, opts)

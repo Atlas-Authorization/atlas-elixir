@@ -5,7 +5,8 @@ defmodule Atlas.Captcha do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Captcha do
   §5 "captcha anywhere": verify a CAPTCHA token server-side against the instance's centrally-configured provider. Resolves the effective provider for an optional `action` (base provider when omitted), posts the token with the stored provider secret, and returns the verdict. Fails CLOSED — an unconfigured provider, missing secret, outage or bad token all return success:false.
 
   `POST /v1/captcha/verify`. Required scope: `captcha:verify`.
+
+  Body fields: `token` (string), `action` (string), `remote_ip` (string).
+  Response fields: `object`, `success`, `action`, `provider`, `score`, `verdict`, `challenge_ts`, `meta`.
   """
   def post_verify(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/captcha/verify", %{}, body, opts)

@@ -5,7 +5,8 @@ defmodule Atlas.Jobs do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.Jobs do
   List bulk import/export jobs, newest first (cursor pagination).
 
   `GET /v1/jobs`. Required scope: `jobs:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.status`, `data.total`, `data.processed`, `data.succeeded`, `data.failed`, `data.error_count`, `data.result`, `data.result.object`, `data.result.id`, `data.result.username`, `data.result.sign_in`, `data.result.first_name`, `data.result.last_name`, `data.result.image_url`, `data.result.email_addresses`, `data.result.primary_email_address_id`, `data.result.primary_email`, `data.result.external_id`, `data.result.password_enabled`, `data.result.public_metadata`, `data.result.mfa_enabled`, `data.result.has_passkey`, `data.result.required_factors`, `data.result.is_anonymous`, `data.result.banned`, `data.result.ban_reason`, `data.result.ban_note`, `data.result.locked`, `data.result.status`, `data.result.deleted_at`, `data.result.last_sign_in_at`, `data.result.sessions_revoked_at`, `data.result.created_at`, `data.result.updated_at`, `data.result.version`, `data.result.referral`, `data.result.referral_code`, `data.result.warnings`, `data.result.referral_link`, `data.result.external_accounts`, `data.results`, `data.results.email_address`, `data.results.user_id`, `data.results.outcome`, `data.results.warnings`, `data.warnings`, `data.warnings.code`, `data.warnings.message`, `data.warnings.count`, `data.warnings.external_ids`, `data.created_at`, `data.updated_at`, `data.completed_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jobs", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,8 @@ defmodule Atlas.Jobs do
   Fetch a job: its status, counters and (for an export) result.
 
   `GET /v1/jobs/{id}`. Required scope: `jobs:read`.
+
+  Response fields: `object`, `id`, `type`, `status`, `total`, `processed`, `succeeded`, `failed`, `error_count`, `result`, `result.object`, `result.id`, `result.username`, `result.sign_in`, `result.first_name`, `result.last_name`, `result.image_url`, `result.email_addresses`, `result.email_addresses.id`, `result.email_addresses.object`, `result.email_addresses.email_address`, `result.email_addresses.verification`, `result.email_addresses.verified`, `result.email_addresses.primary`, `result.primary_email_address_id`, `result.primary_email`, `result.external_id`, `result.password_enabled`, `result.public_metadata`, `result.mfa_enabled`, `result.has_passkey`, `result.required_factors`, `result.is_anonymous`, `result.banned`, `result.ban_reason`, `result.ban_note`, `result.locked`, `result.status`, `result.deleted_at`, `result.last_sign_in_at`, `result.sessions_revoked_at`, `result.created_at`, `result.updated_at`, `result.version`, `result.referral`, `result.referral.status`, `result.referral.partner_id`, `result.referral.partner_external_ref`, `result.referral.referrer_external_id`, `result.referral.referrer_user_id`, `result.referral.matched_via`, `result.referral.referral_status`, `result.referral.notes`, `result.referral.risk_level`, `result.referral.flagged`, `result.referral_code`, `result.warnings`, `result.referral_link`, `result.external_accounts`, `result.external_accounts.object`, `result.external_accounts.id`, `result.external_accounts.provider`, `result.external_accounts.provider_user_id`, `result.external_accounts.provider_email`, `result.external_accounts.email_verified`, `result.external_accounts.first_name`, `result.external_accounts.last_name`, `result.external_accounts.image_url`, `result.external_accounts.connected_at`, `results`, `results.email_address`, `results.user_id`, `results.outcome`, `results.warnings`, `results.warnings.code`, `results.warnings.message`, `warnings`, `warnings.code`, `warnings.message`, `warnings.count`, `warnings.external_ids`, `created_at`, `updated_at`, `completed_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jobs/{id}", %{"id" => id}, nil, opts)
@@ -36,12 +42,15 @@ defmodule Atlas.Jobs do
   List a job's per-row errors ({ index, email, code, message }).
 
   `GET /v1/jobs/{id}/errors`. Required scope: `jobs:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`.
   """
   def get_errors(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/jobs/{id}/errors", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_errors/2`, following the cursor page by page.
+  Lazy stream over every item of `get_errors`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_errors(client, id, opts \\ []),

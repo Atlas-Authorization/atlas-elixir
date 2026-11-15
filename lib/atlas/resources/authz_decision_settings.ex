@@ -5,7 +5,8 @@ defmodule Atlas.AuthzDecisionSettings do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.AuthzDecisionSettings do
   How authorization decisions are captured: on or off, sampling per outcome, how much of each request is kept, redaction paths, event shipping and retention.
 
   `GET /v1/authz_decision_settings`. Required scope: `authz_decisions:read`.
+
+  Response fields: `object`, `enabled`, `sample_rate_allow`, `sample_rate_deny`, `input_mode`, `redact`, `ship_to_events`, `retention_days`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/authz_decision_settings", %{}, nil, opts)
@@ -21,6 +24,9 @@ defmodule Atlas.AuthzDecisionSettings do
   Change how decisions are captured. Fields you omit keep their value. Capture is off by default; `input_mode` defaults to `ids` (identifiers only) so nothing personal is stored until you ask for it. With `ship_to_events` each recorded decision is also an `authz.decision` event for your log streams and webhooks.
 
   `PUT /v1/authz_decision_settings`. Required scope: `authz_decisions:write`.
+
+  Body fields: `enabled` (boolean), `sample_rate_allow` (number), `sample_rate_deny` (number), `input_mode` (enum), `redact` (array), `ship_to_events` (boolean), `retention_days` (integer|null).
+  Response fields: `object`, `enabled`, `sample_rate_allow`, `sample_rate_deny`, `input_mode`, `redact`, `ship_to_events`, `retention_days`.
   """
   def put(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/authz_decision_settings", %{}, body, opts)

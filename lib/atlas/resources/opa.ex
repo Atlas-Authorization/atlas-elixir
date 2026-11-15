@@ -5,7 +5,8 @@ defmodule Atlas.Opa do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,8 @@ defmodule Atlas.Opa do
   OPA Data API over Atlas. POST { "input": ... } to atlas/abac/allow (boolean), atlas/abac/decision, atlas/fga/{store}/allow (input user, relation, object) or atlas/fga/{store}/objects (input user, relation, type); the answer is { "result": ... }. An unknown path answers 200 with no result, as OPA does. Not a Rego runtime: Atlas evaluates Cedar and relationship models.
 
   `POST /v1/opa/v1/data/*`. Required scope: `abac:evaluate`.
+
+  Body fields: `input` (any).
   """
   def post_v1_data_x(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/opa/v1/data/*", %{}, body, opts)

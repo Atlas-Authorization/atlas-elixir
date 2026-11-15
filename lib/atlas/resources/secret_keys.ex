@@ -5,7 +5,8 @@ defmodule Atlas.SecretKeys do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,21 +14,27 @@ defmodule Atlas.SecretKeys do
   List this instance's secret keys with scopes, owner, expiry, last use, last-used IP and provisioning tags. Revoked keys stay listed. Filter by tag with ?metadata[key]=value.
 
   `GET /v1/secret_keys`. Required scope: `secret_keys:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.format`, `data.prefix`, `data.name`, `data.owner`, `data.scopes`, `data.environment`, `data.resource`, `data.resource.type`, `data.resource.id`, `data.expires_at`, `data.expires_in_days`, `data.status`, `data.ip_allowlist`, `data.origin_allowlist`, `data.last_used_at`, `data.last_used_ip`, `data.created_at`, `data.revoked_at`, `data.allowed_ips`, `data.allowed_origins`, `data.organization_ids`, `data.rotated_from`, `data.metadata`, `data.external_ref`, `data.idempotent_replay`, `data.secret`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/secret_keys", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/secret_keys", %{}, opts)
 
   @doc ~S"""
-  Create a scoped secret key: `name`, `scopes[]` (refused when unknown, or when the calling key does not hold them; presets `read_only`, `privacy:execute`, `privacy:grants:revoke`), `expires_at` (at most a year; default one year; "never" is refused), `allowed_ips` (CIDRs), `allowed_origins` (browser origins; a request with another Origin gets 403 ORIGIN_NOT_ALLOWED), `owner` (default: the creating person or key), `external_ref` (idempotent create: a repeat returns the existing key, 200, idempotent_replay, no secret), `metadata` (tags; filter the list with ?metadata[key]=value) and `key_format` (`atlas`, the default `atlas_<env>_sk_…`, or `legacy` `sk_<env>_…`). The secret is returned once. Minting with an operator token needs multi-factor sign-in within 5 minutes (403 STEP_UP_REQUIRED). Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext.
+  Create a scoped secret key: `name`, `scopes[]` (refused when unknown, or when the calling key does not hold them; presets `read_only`, `privacy:execute`, `privacy:grants:revoke`; or `preset: "app-runtime"` for an app server runtime key), `expires_at` (at most a year; default one year; "never" is refused), `allowed_ips` (CIDRs), `allowed_origins` (browser origins; a request with another Origin gets 403 ORIGIN_NOT_ALLOWED), `owner` (default: the creating person or key), `external_ref` (idempotent create: a repeat returns the existing key, 200, idempotent_replay, no secret), `metadata` (tags; filter the list with ?metadata[key]=value) and `key_format` (`atlas`, the default `atlas_<env>_sk_…`, or `legacy` `sk_<env>_…`). The secret is returned once. Minting with an operator token needs multi-factor sign-in within 5 minutes (403 STEP_UP_REQUIRED). Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext.
 
   `POST /v1/secret_keys`. Required scope: `secret_keys:write`.
+
+  Body fields: `name` (string), `scopes` (array), `preset` (enum), `expires_at` (integer|string), `allowed_ips` (array), `ip_allowlist` (array), `allowed_origins` (array), `origin_allowlist` (array), `organization_ids` (array), `owner` (string|null), `key_format` (enum), `external_ref` (string), `metadata` (object).
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/secret_keys", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.SecretKeys do
   One secret key's metadata.
 
   `GET /v1/secret_keys/{id}`. Required scope: `secret_keys:read`.
+
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/secret_keys/{id}", %{"id" => id}, nil, opts)
@@ -44,14 +53,20 @@ defmodule Atlas.SecretKeys do
   Edit a key's name, owner, expires_at (at most a year; a key that expires cannot be made to never expire), allowed_ips, allowed_origins or metadata. Scopes never change; mint a new key instead.
 
   `PATCH /v1/secret_keys/{id}`. Required scope: `secret_keys:write`.
+
+  Body fields: `name` (string|null), `owner` (string|null), `expires_at` (integer|string|null), `allowed_ips` (array), `ip_allowlist` (array), `allowed_origins` (array), `origin_allowlist` (array), `organization_ids` (array), `metadata` (object|null).
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/secret_keys/{id}", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Mint a replacement with the same scopes, owner, IP list and expiry. The old key keeps working for `overlap_seconds` (default 259200 = 72 h, max 7 days; 0 revokes it now). Returns the new secret once and `previous_key_expires_at`. Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext.
+  Mint a replacement with the same scopes (or, with `preset: "app-runtime"`, the preset scopes: one-click move off an all-scope key), owner, IP list and expiry. The old key keeps working for `overlap_seconds` (default 259200 = 72 h, max 7 days; 0 revokes it now). Returns the new secret once and `previous_key_expires_at`. Send `X-Secret-Recipient: x25519:<public key>` to receive the secret sealed (libsodium sealed box) as `sealed_secret` instead of in plaintext.
 
   `POST /v1/secret_keys/{id}/rotate`. Required scope: `secret_keys:write`.
+
+  Body fields: `overlap_seconds` (integer), `key_format` (enum), `preset` (enum).
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def post_rotate(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/secret_keys/{id}/rotate", %{"id" => id}, body, opts)
@@ -60,6 +75,8 @@ defmodule Atlas.SecretKeys do
   Revoke a secret key now. A second revoke is a 409.
 
   `POST /v1/secret_keys/{id}/revoke`. Required scope: `secret_keys:write`.
+
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/secret_keys/{id}/revoke", %{"id" => id}, nil, opts)

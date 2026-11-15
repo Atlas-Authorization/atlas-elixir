@@ -5,7 +5,8 @@ defmodule Atlas.AppCatalog do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AppCatalog do
   List the app presets: about 100 SAML apps (Slack, GitHub, Snowflake, Notion, HubSpot and more) and about 45 OpenID Connect apps (Grafana, GitLab, Argo CD, Vault, Cloudflare Zero Trust and more), each with its protocol, category, the parameters it needs, whether its values were confirmed in the vendor's docs (verified) and that page (source_url).
 
   `GET /v1/app_catalog`. Required scope: `app_catalog:read`.
+
+  Query params (`params:`): `q`, `category`, `protocol`, `verified`, `limit`, `offset`, `starting_after`.
+  Response fields: `object`, `total`, `has_more`, `data`, `data.object`, `data.custom`, `data.id`, `data.protocol`, `data.name`, `data.category`, `data.icon_domain`, `data.verified`, `data.source_url`, `data.note`, `data.params`, `data.params.key`, `data.params.label`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_catalog", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,12 +32,15 @@ defmodule Atlas.AppCatalog do
   List this instance's private SAML presets, in the portable form POST /v1/app_catalog/custom_presets accepts, so a preset can be moved between environments.
 
   `GET /v1/app_catalog/custom_presets`. Required scope: `app_catalog:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `has_more`.
   """
   def get_custom_presets(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_catalog/custom_presets", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_custom_presets/1`, following the cursor page by page.
+  Lazy stream over every item of `get_custom_presets`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_custom_presets(client, opts \\ []),
@@ -43,6 +50,8 @@ defmodule Atlas.AppCatalog do
   Save a private SAML preset for apps that are not in the catalog (an id, name, entityIdTemplate and acsUrlTemplate using {param} placeholders, params with a kind of slug, host, https_url or entity, and an attribute map). It then appears in GET /v1/app_catalog (custom: true, never verified) and installs like any preset. Saving an existing id replaces it.
 
   `POST /v1/app_catalog/custom_presets`. Required scope: `app_catalog:write`.
+
+  Body fields: `preset` (object, required).
   """
   def post_custom_presets(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_catalog/custom_presets", %{}, body, opts)
@@ -59,12 +68,15 @@ defmodule Atlas.AppCatalog do
   The queue of apps people asked for, most wanted first. Filter with status (open, building, available, declined).
 
   `GET /v1/app_catalog/requests`. Required scope: `app_catalog:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.protocol`, `data.docs_url`, `data.note`, `data.status`, `data.requested_by`, `data.votes`, `has_more`.
   """
   def get_requests(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_catalog/requests", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_requests/1`, following the cursor page by page.
+  Lazy stream over every item of `get_requests`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_requests(client, opts \\ []),
@@ -74,6 +86,8 @@ defmodule Atlas.AppCatalog do
   Ask for an app that is not in the catalog (name, protocol, docs_url, note). Asking again for an app already open counts as the requester’s vote (once) instead of a duplicate (200); a new request is 201; an app already in the catalog is 409.
 
   `POST /v1/app_catalog/requests`. Required scope: `app_catalog:write`.
+
+  Body fields: `name` (string, required), `protocol` (enum), `docs_url` (string), `note` (string), `requested_by` (string).
   """
   def post_requests(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_catalog/requests", %{}, body, opts)
@@ -82,6 +96,8 @@ defmodule Atlas.AppCatalog do
   Add one vote to an open or in-progress app request (409 when it is available or declined, 404 when unknown). One vote per person or key: a repeat vote changes nothing.
 
   `POST /v1/app_catalog/requests/{id}/vote`. Required scope: `app_catalog:write`.
+
+  Response fields: `object`, `id`, `name`, `protocol`, `docs_url`, `note`, `status`, `requested_by`, `votes`.
   """
   def post_requests_vote(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_catalog/requests/{id}/vote", %{"id" => id}, nil, opts)
@@ -90,6 +106,8 @@ defmodule Atlas.AppCatalog do
   Move a request along: status open, building, available or declined, and a note.
 
   `PATCH /v1/app_catalog/requests/{id}`. Required scope: `app_catalog:write`.
+
+  Body fields: `status` (enum), `note` (string).
   """
   def update_requests(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/app_catalog/requests/{id}", %{"id" => id}, body, opts)
@@ -106,12 +124,15 @@ defmodule Atlas.AppCatalog do
   List the installed apps (SAML and OpenID Connect) with their email-domain allow-list and assignment.
 
   `GET /v1/app_catalog/installed`. Required scope: `app_catalog:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.protocol`, `data.name`, `data.preset_id`, `data.entity_id`, `data.acs_url`, `data.client_id`, `data.launch_url`, `data.allowed_email_domains`, `data.assignment`, `data.assignment.mode`, `data.assignment.user_ids`, `data.assignment.groups`, `data.assignment.organizations`, `data.assignment.roles`.
   """
   def get_installed(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/app_catalog/installed", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `get_installed/1`, following the cursor page by page.
+  Lazy stream over every item of `get_installed`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_get_installed(client, opts \\ []),
@@ -121,6 +142,10 @@ defmodule Atlas.AppCatalog do
   Install a catalog app from its preset and params, with an optional name, installed_id, allowed_email_domains and assignment. A SAML preset becomes a SAML service provider; an OIDC preset registers a confidential OAuth client with the preset's redirect URIs and returns client_id, client_secret (shown once), redirect_uri and issuer to paste into the app. 409 if the installed_id exists. → 201.
 
   `POST /v1/app_catalog/{id}/install`. Required scope: `app_catalog:write`.
+
+  Body fields: `params` (object), `installed_id` (string), `name` (string), `allowed_email_domains` (array), `assignment` (object).
+  Nested body fields: `assignment.mode`, `assignment.user_ids`, `assignment.groups`, `assignment.organizations`, `assignment.roles`.
+  Response fields: `object`, `id`, `protocol`, `name`, `preset_id`, `entity_id`, `acs_url`, `client_id`, `launch_url`, `allowed_email_domains`, `assignment`, `assignment.mode`, `assignment.user_ids`, `assignment.groups`, `assignment.organizations`, `assignment.roles`.
   """
   def post_install(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/app_catalog/{id}/install", %{"id" => id}, body, opts)
@@ -129,6 +154,10 @@ defmodule Atlas.AppCatalog do
   Change an installed app's name, allowed_email_domains or assignment. Assignment applies to the launcher and to single sign-on: someone not assigned is refused with 403.
 
   `PATCH /v1/app_catalog/installed/{id}`. Required scope: `app_catalog:write`.
+
+  Body fields: `name` (string), `allowed_email_domains` (array), `assignment` (object).
+  Nested body fields: `assignment.mode`, `assignment.user_ids`, `assignment.groups`, `assignment.organizations`, `assignment.roles`.
+  Response fields: `object`, `id`, `protocol`, `name`, `preset_id`, `entity_id`, `acs_url`, `client_id`, `launch_url`, `allowed_email_domains`, `assignment`, `assignment.mode`, `assignment.user_ids`, `assignment.groups`, `assignment.organizations`, `assignment.roles`.
   """
   def update_installed(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/app_catalog/installed/{id}", %{"id" => id}, body, opts)

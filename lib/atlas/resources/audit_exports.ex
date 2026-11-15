@@ -5,7 +5,8 @@ defmodule Atlas.AuditExports do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,12 +14,15 @@ defmodule Atlas.AuditExports do
   Instance audit exports: sinks fed the audit log as CloudEvents 1.0 (webhook: signed application/cloudevents-batch+json POSTs; s3: one object per batch, one event per line, in any S3-compatible bucket). Secrets appear only as has_* markers. Lists the action families every export always carries (key lifecycle and data-rights steps).
 
   `GET /v1/audit_exports`. Required scope: `audit:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.type`, `data.enabled`, `data.status`, `data.action_filter`, `data.destination`, `data.cursor`, `data.cursor.id`, `data.cursor.created_at`, `data.consecutive_failures`, `data.last_error`, `data.last_delivered_at`, `data.exported_count`, `data.mandatory_actions`, `data.secret`, `data.created_at`, `data.updated_at`, `has_more`, `types`, `mandatory_actions`, `format`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_exports", %{}, nil, opts)
 
   @doc ~S"""
-  Lazy stream over every item of `list/1`, following the cursor page by page.
+  Lazy stream over every item of `list`, following the cursor page by page.
   Raises `Atlas.Error` if a page request fails.
   """
   def stream_list(client, opts \\ []),
@@ -28,6 +32,9 @@ defmodule Atlas.AuditExports do
   Create an audit export. type webhook: destination { url } (public https); the signing secret is generated and returned once. type s3: destination { endpoint, bucket, region?, prefix?, access_key_id, secret_access_key }. action_filter: action names or prefixes (key and data-rights events are always exported). backfill_hours (0-720) also exports recent history. Each event: { specversion, id, source, type: "net.atlasauth.audit.<action>", time, data: { actor { type, id, key_name }, action, resource, org, trace } }.
 
   `POST /v1/audit_exports`. Required scope: `audit:write`.
+
+  Body fields: `name` (string), `type` (string), `destination` (object), `action_filter` (array|null), `enabled` (boolean), `backfill_hours` (number).
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `action_filter`, `destination`, `cursor`, `cursor.id`, `cursor.created_at`, `consecutive_failures`, `last_error`, `last_delivered_at`, `exported_count`, `mandatory_actions`, `secret`, `created_at`, `updated_at`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_exports", %{}, body, opts)
@@ -36,6 +43,8 @@ defmodule Atlas.AuditExports do
   One audit export with its cursor, exported count, failure streak and last error. Secrets never returned.
 
   `GET /v1/audit_exports/{id}`. Required scope: `audit:read`.
+
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `action_filter`, `destination`, `cursor`, `cursor.id`, `cursor.created_at`, `consecutive_failures`, `last_error`, `last_delivered_at`, `exported_count`, `mandatory_actions`, `secret`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/audit_exports/{id}", %{"id" => id}, nil, opts)
@@ -44,6 +53,9 @@ defmodule Atlas.AuditExports do
   Update an audit export: name, destination (partial; a secret left out is kept), action_filter, enabled. Re-enabling clears a failing state.
 
   `PATCH /v1/audit_exports/{id}`. Required scope: `audit:write`.
+
+  Body fields: `name` (string), `destination` (object), `action_filter` (array|null), `enabled` (boolean).
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `action_filter`, `destination`, `cursor`, `cursor.id`, `cursor.created_at`, `consecutive_failures`, `last_error`, `last_delivered_at`, `exported_count`, `mandatory_actions`, `secret`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/audit_exports/{id}", %{"id" => id}, body, opts)
@@ -52,6 +64,8 @@ defmodule Atlas.AuditExports do
   Delete an audit export. Nothing more is sent.
 
   `DELETE /v1/audit_exports/{id}`. Required scope: `audit:write`.
+
+  Response fields: `object`, `id`, `deleted`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/audit_exports/{id}", %{"id" => id}, nil, opts)
@@ -60,6 +74,8 @@ defmodule Atlas.AuditExports do
   Send one synthetic audit_export.test CloudEvent to the sink now and report the result (ok, HTTP status or object key, error). The export cursor does not move.
 
   `POST /v1/audit_exports/{id}/test`. Required scope: `audit:write`.
+
+  Response fields: `object`, `id`, `ok`, `status`, `error`, `location`, `event`, `event.specversion`, `event.id`, `event.source`, `event.type`, `event.subject`, `event.time`, `event.datacontenttype`, `event.atlasinstance`, `event.data`, `event.data.actor`, `event.data.actor.type`, `event.data.actor.id`, `event.data.actor.key_name`, `event.data.actor.key_prefix`, `event.data.action`, `event.data.resource`, `event.data.org`, `event.data.trace`, `event.data.ip`, `event.data.metadata`.
   """
   def post_test(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_exports/{id}/test", %{"id" => id}, nil, opts)
@@ -68,6 +84,8 @@ defmodule Atlas.AuditExports do
   Rotate a webhook export's signing secret. The new secret is in this response only; the old one stops signing at once.
 
   `POST /v1/audit_exports/{id}/rotate_secret`. Required scope: `audit:write`.
+
+  Response fields: `object`, `id`, `name`, `type`, `enabled`, `status`, `action_filter`, `destination`, `cursor`, `cursor.id`, `cursor.created_at`, `consecutive_failures`, `last_error`, `last_delivered_at`, `exported_count`, `mandatory_actions`, `secret`, `created_at`, `updated_at`.
   """
   def post_rotate_secret(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/audit_exports/{id}/rotate_secret", %{"id" => id}, nil, opts)

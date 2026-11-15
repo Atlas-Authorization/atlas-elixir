@@ -218,24 +218,30 @@ defmodule AtlasAuth.Verifier do
     end
   end
 
+  @algs ["RS256", "ES256", "ES384", "PS256", "EdDSA"]
+
   @doc """
   The JWS algorithms Atlas signs tokens with: an instance key is RS256 (the
-  default) or ES256, and an API may use either. Every verifier here is pinned to
-  exactly this list.
+  default), ES256, ES384, PS256 or EdDSA (Ed25519). Every verifier here (session
+  tokens, ID tokens, logout tokens, transaction tokens) is pinned to exactly this
+  list; `none` and every HMAC algorithm are refused.
   """
   @spec signing_algs() :: [String.t()]
-  def signing_algs, do: ["RS256", "ES256"]
+  def signing_algs, do: @algs
 
-  # Pin RS256 / ES256. This is the single most important line: without it a token
+  # Pin the list. This is the single most important line: without it a token
   # whose header says `alg: none`, or one coercing the key into HMAC, could verify.
-  defp check_alg(%{"alg" => alg}) when alg in ["RS256", "ES256"], do: {:ok, alg}
+  defp check_alg(%{"alg" => alg}) when alg in @algs, do: {:ok, alg}
   defp check_alg(_), do: {:error, :invalid}
 
   # The selected key's type must match the header: an RSA key verifies only
-  # RS256, a P-256 key only ES256 (and a key whose own `alg` disagrees, neither).
-  defp key_alg(%{"kty" => "RSA"} = k), do: declared(k, "RS256")
-  defp key_alg(%{"kty" => "EC", "crv" => "P-256"} = k), do: declared(k, "ES256")
-  defp key_alg(_), do: nil
+  # RS256 or PS256, a P-256 key only ES256, a P-384 key only ES384, an Ed25519
+  # key only EdDSA (and a key whose own `alg` disagrees, none).
+  defp key_alg(%{"kty" => "RSA"} = k, alg) when alg in ["RS256", "PS256"], do: declared(k, alg)
+  defp key_alg(%{"kty" => "EC", "crv" => "P-256"} = k, "ES256"), do: declared(k, "ES256")
+  defp key_alg(%{"kty" => "EC", "crv" => "P-384"} = k, "ES384"), do: declared(k, "ES384")
+  defp key_alg(%{"kty" => "OKP", "crv" => "Ed25519"} = k, "EdDSA"), do: declared(k, "EdDSA")
+  defp key_alg(_, _), do: nil
 
   defp declared(%{"alg" => a}, alg) when a != alg, do: nil
   defp declared(_k, alg), do: alg
@@ -243,7 +249,7 @@ defmodule AtlasAuth.Verifier do
   defp select_key(keys, kid, alg) do
     key =
       Enum.find(keys, fn k ->
-        is_map(k) and key_alg(k) == alg and (kid in [nil, ""] or k["kid"] == kid)
+        is_map(k) and key_alg(k, alg) == alg and (kid in [nil, ""] or k["kid"] == kid)
       end)
 
     case key do
@@ -252,7 +258,7 @@ defmodule AtlasAuth.Verifier do
     end
   end
 
-  # RS256 signature verification via JOSE. `verify_strict/3` pins the accepted
+  # Signature verification via JOSE. `verify_strict/3` pins the accepted
   # algorithms to our list, so the key material can never be used under a
   # different algorithm than we intend.
   defp verify_signature(key_map, alg, token) do

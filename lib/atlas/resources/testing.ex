@@ -5,7 +5,8 @@ defmodule Atlas.Testing do
 
   Every function takes an `Atlas.Client` first, then the path parameters, then
   (for operations with a request body) the body map, then a keyword list of options:
-  `:params` (query string), `:headers`, `:idempotency_key`. It returns
+  `:params` (query string), `:headers`, `:idempotency_key`. Body maps omit a key you leave out;
+  put `key: nil` to send an explicit JSON null (clears the field on a PATCH). It returns
   `{:ok, decoded_body}` or `{:error, %Atlas.Error{}}`.
   """
 
@@ -13,6 +14,9 @@ defmodule Atlas.Testing do
   Development instances only: a ready one-time URL that signs a browser in as a user. Open it in the browser under test (Playwright, Cypress, WebDriver); it redeems a one-time ticket and lands on redirect_url with a real session, through the same ticket exchange as every sign-in. redirect_url must be one of the instance's allowed origins or a localhost origin. Refused on a production instance (403 TESTING_UNAVAILABLE): use POST /v1/sessions with mode browser_ticket there. @atlasauth/testing wraps it as signInAs(page, userId). Audited as sign_in_ticket.created.
 
   `POST /v1/testing/sign_in_url`. Required scope: `sessions:write`.
+
+  Body fields: `user_id` (string, required), `redirect_url` (string, required), `expires_in_seconds` (integer).
+  Response fields: `object`, `id`, `user_id`, `ticket`, `url`, `redirect_url`, `expires_in`, `expires_at`.
   """
   def post_sign_in_url(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/testing/sign_in_url", %{}, body, opts)
