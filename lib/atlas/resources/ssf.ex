@@ -11,6 +11,109 @@ defmodule Atlas.Ssf do
   """
 
   @doc ~S"""
+  SSF transmitter configuration metadata (issuer, delivery methods, the five management endpoints).
+
+  `GET /v1/ssf/metadata`. Required scope: `pca:read`.
+
+  Response fields: `issuer`, `delivery_methods_supported`, `configuration_endpoint`, `status_endpoint`, `verification_endpoint`.
+  """
+  def get_metadata(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/ssf/metadata", %{}, nil, opts)
+
+  @doc ~S"""
+  Read one stream (?stream_id) or all of the receiver's streams (8.1.1.2). Another receiver's stream is 404.
+
+  `GET /v1/ssf/configuration`. Required scope: `pca:read`.
+
+  Query params (`params:`): `stream_id`.
+  """
+  def get_configuration(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/ssf/configuration", %{}, nil, opts)
+
+  @doc ~S"""
+  Create an event stream (OpenID SSF 1.0 8.1.1.1). Receiver-supplied members: events_requested, delivery, description. Poll delivery by default (the transmitter assigns the endpoint); push needs an https endpoint_url. One stream per receiver (a second is 409). The stream belongs to the creating API key.
+
+  `POST /v1/ssf/configuration`. Required scope: `pca:write`.
+
+  Body fields: `iss` (string), `aud` (string), `events_supported` (array), `events_delivered` (array), `min_verification_interval` (integer), `events_requested` (array), `delivery` (object), `description` (string).
+  Nested body fields: `delivery.method`, `delivery.endpoint_url`.
+  Response fields: `stream_id`, `iss`, `aud`, `events_supported`, `events_delivered`, `delivery`.
+  """
+  def post_configuration(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/configuration", %{}, body, opts)
+
+  @doc ~S"""
+  Replace a stream (8.1.1.4): a missing receiver-supplied member is deleted.
+
+  `PUT /v1/ssf/configuration`. Required scope: `pca:write`.
+
+  Body fields: `iss` (string), `aud` (string), `events_supported` (array), `events_delivered` (array), `min_verification_interval` (integer), `stream_id` (string, required), `events_requested` (array), `delivery` (object), `description` (string).
+  """
+  def put_configuration(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/ssf/configuration", %{}, body, opts)
+
+  @doc ~S"""
+  Update a stream (8.1.1.3): only the members present change; transmitter-supplied members must match; the delivery method cannot change.
+
+  `PATCH /v1/ssf/configuration`. Required scope: `pca:write`.
+
+  Body fields: `iss` (string), `aud` (string), `events_supported` (array), `events_delivered` (array), `min_verification_interval` (integer), `stream_id` (string, required), `events_requested` (array), `delivery` (object), `description` (string).
+  """
+  def update_configuration(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/ssf/configuration", %{}, body, opts)
+
+  @doc ~S"""
+  Delete a stream (?stream_id, 8.1.1.5): 204.
+
+  `DELETE /v1/ssf/configuration`. Required scope: `pca:write`.
+
+  Query params (`params:`): `stream_id`.
+  """
+  def delete_configuration(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/ssf/configuration", %{}, body, opts)
+
+  @doc ~S"""
+  Add a subject to a stream (8.1.3.2). 200, empty body.
+
+  `POST /v1/ssf/add_subject`. Required scope: `pca:write`.
+
+  Body fields: `stream_id` (string, required), `subject` (object, required), `verified` (boolean).
+  """
+  def post_add_subject(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/add_subject", %{}, body, opts)
+
+  @doc ~S"""
+  Remove a subject from a stream (8.1.3.3). 204; an unknown subject is ignored.
+
+  `POST /v1/ssf/remove_subject`. Required scope: `pca:write`.
+
+  Body fields: `stream_id` (string, required), `subject` (object, required).
+  """
+  def post_remove_subject(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/remove_subject", %{}, body, opts)
+
+  @doc ~S"""
+  Request a verification event (8.1.4.2): 204, and a signed SET carrying the optional state is delivered on the stream (pushed, or retained for polling).
+
+  `POST /v1/ssf/verification`. Required scope: `pca:write`.
+
+  Body fields: `stream_id` (string, required), `state` (string).
+  """
+  def post_verification(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/verification", %{}, body, opts)
+
+  @doc ~S"""
+  Poll a stream (RFC 8936): acknowledge with ack, report invalid SETs with setErrs, receive up to maxEvents unacknowledged SETs.
+
+  `POST /v1/ssf/streams/{streamId}/poll`. Required scope: `pca:write`.
+
+  Body fields: `ack` (array), `setErrs` (object), `maxEvents` (integer), `returnImmediately` (boolean).
+  Response fields: `sets`, `moreAvailable`.
+  """
+  def post_streams_poll(client, stream_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/ssf/streams/{streamId}/poll", %{"streamId" => stream_id}, body, opts)
+
+  @doc ~S"""
   List the Shared Signals streams this instance transmits on (push and poll), with their delivery method, requested events and status.
 
   `GET /v1/ssf/streams`. Required scope: `ssf:read`.
@@ -242,6 +345,16 @@ defmodule Atlas.Ssf do
 
   @doc false
   def __operations__, do: [
+    {:get_metadata, :get, "/v1/ssf/metadata", 0, false, false},
+    {:get_configuration, :get, "/v1/ssf/configuration", 0, false, false},
+    {:post_configuration, :post, "/v1/ssf/configuration", 0, true, false},
+    {:put_configuration, :put, "/v1/ssf/configuration", 0, true, false},
+    {:update_configuration, :patch, "/v1/ssf/configuration", 0, true, false},
+    {:delete_configuration, :delete, "/v1/ssf/configuration", 0, true, false},
+    {:post_add_subject, :post, "/v1/ssf/add_subject", 0, true, false},
+    {:post_remove_subject, :post, "/v1/ssf/remove_subject", 0, true, false},
+    {:post_verification, :post, "/v1/ssf/verification", 0, true, false},
+    {:post_streams_poll, :post, "/v1/ssf/streams/{streamId}/poll", 1, true, false},
     {:get_streams, :get, "/v1/ssf/streams", 0, false, true},
     {:post_streams, :post, "/v1/ssf/streams", 0, true, false},
     {:get_streams_by_id, :get, "/v1/ssf/streams/{id}", 1, false, false},

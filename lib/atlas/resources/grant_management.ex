@@ -16,7 +16,7 @@ defmodule Atlas.GrantManagement do
   `GET /v1/grant_management/grants`. Required scope: `grants:read`.
 
   Query params (`params:`): `user_id`, `client_id`, `status`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.user_id`, `data.organization_id`, `data.status`, `data.scopes`, `data.resource`, `data.authorization_details`, `data.revision`, `data.created_at`, `data.updated_at`, `data.revoked_at`, `data.revoked_by`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.client_id`, `data.user_id`, `data.organization_id`, `data.status`, `data.scopes`, `data.resource`, `data.authorization_details`, `data.revision`, `data.metadata`, `data.created_at`, `data.updated_at`, `data.revoked_at`, `data.revoked_by`.
   """
   def get_grants(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/grant_management/grants", %{}, nil, opts)
@@ -33,7 +33,7 @@ defmodule Atlas.GrantManagement do
 
   `GET /v1/grant_management/grants/{id}`. Required scope: `grants:read`.
 
-  Response fields: `object`, `id`, `client_id`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `created_at`, `updated_at`, `revoked_at`, `revoked_by`.
+  Response fields: `object`, `id`, `client_id`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `metadata`, `created_at`, `updated_at`, `revoked_at`, `revoked_by`.
   """
   def get_grants_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/grant_management/grants/{id}", %{"id" => id}, nil, opts)
@@ -44,17 +44,17 @@ defmodule Atlas.GrantManagement do
   `PATCH /v1/grant_management/grants/{id}`. Required scope: `grants:write`.
 
   Body fields: `scopes` (array), `authorization_details` (array).
-  Response fields: `object`, `id`, `client_id`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `created_at`, `updated_at`, `revoked_at`, `revoked_by`.
+  Response fields: `object`, `id`, `client_id`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `metadata`, `created_at`, `updated_at`, `revoked_at`, `revoked_by`.
   """
   def update_grants(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/grant_management/grants/{id}", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  Revoke a grant and everything issued under it: refresh tokens stop refreshing and access tokens that carry the `grant_id` stop validating at once. `tokens_ended` counts the refresh grants that ended with it. Revoking an already-revoked grant answers 200 with `tokens_ended: 0`.
+  Revoke a grant and everything issued under it, and the user's consent for the client with its other grants: refresh tokens stop refreshing and access tokens that carry the `grant_id` stop validating at once. `tokens_ended` counts the refresh grants that ended with it. Revoking an already-revoked grant answers 200 with `tokens_ended: 0`.
 
   `DELETE /v1/grant_management/grants/{id}`. Required scope: `grants:write`.
 
-  Response fields: `object`, `id`, `deleted`, `tokens_ended`.
+  Response fields: `object`, `id`, `deleted`, `tokens_ended`, `tokens_revoked`.
   """
   def delete_grants(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/grant_management/grants/{id}", %{"id" => id}, nil, opts)

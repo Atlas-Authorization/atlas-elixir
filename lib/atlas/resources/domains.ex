@@ -16,7 +16,7 @@ defmodule Atlas.Domains do
   `GET /v1/domains`. Required scope: `domains:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.role`, `data.host`, `data.status`, `data.action`, `data.live`, `data.cname_target`, `data.last_checked_at`, `data.last_observed_target`, `data.failure_reason`, `data.certificate_expires_at`, `data.cookie_domain`, `data.method`, `data.base_path`, `data.routing`, `data.frontend_api_url`, `data.verification`, `data.verification.method`, `data.verification.url`, `data.verification.token`, `data.verification.content`, `data.verification.instructions`, `data.instructions`, `data.dns`, `data.dns.provider`, `data.dns.token_set`, `cname_target`, `instructions`, `cookie_checks`, `cookie_checks.origin`, `cookie_checks.first_party`, `required`, `environment`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.role`, `data.host`, `data.status`, `data.action`, `data.live`, `data.cname_target`, `data.last_checked_at`, `data.last_observed_target`, `data.failure_reason`, `data.certificate_expires_at`, `data.cookie_domain`, `data.method`, `data.base_path`, `data.routing`, `data.frontend_api_url`, `data.verification`, `data.verification.method`, `data.verification.url`, `data.verification.token`, `data.verification.content`, `data.verification.instructions`, `data.verification.previous_url`, `data.verification.previous_valid_until`, `data.verification.last_observation`, `data.instructions`, `data.dns`, `data.dns.provider`, `data.dns.token_set`, `cname_target`, `instructions`, `cookie_checks`, `cookie_checks.origin`, `cookie_checks.first_party`, `required`, `environment`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/domains", %{}, nil, opts)
@@ -34,7 +34,7 @@ defmodule Atlas.Domains do
   `POST /v1/domains`. Required scope: `domains:write`.
 
   Body fields: `role` (string), `host` (string), `hostname` (string), `method` (string), `base_path` (string), `dns` (object).
-  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `instructions`, `dns`, `dns.provider`, `dns.token_set`, `note`, `verified`, `dns_result`.
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `verification.previous_url`, `verification.previous_valid_until`, `verification.last_observation`, `verification.last_observation.status`, `verification.last_observation.content_type`, `verification.last_observation.bytes`, `verification.last_observation.bytes_capped`, `verification.last_observation.body_prefix`, `verification.last_observation.final_url`, `verification.last_observation.redirect_to`, `verification.last_observation.age`, `verification.last_observation.cache_status`, `verification.last_observation.is_html`, `verification.last_observation.served_from_cache`, `verification.last_observation.checked_at`, `instructions`, `dns`, `dns.provider`, `dns.token_set`, `note`, `verified`, `dns_result`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/domains", %{}, body, opts)
@@ -44,10 +44,20 @@ defmodule Atlas.Domains do
 
   `POST /v1/domains/{id}/verify`. Required scope: `domains:write`.
 
-  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `instructions`, `dns`, `dns.provider`, `dns.token_set`, `verified`, `issuer`, `issuer_before`, `issuer_after`, `previous_issuers_kept_until`.
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `verification.previous_url`, `verification.previous_valid_until`, `verification.last_observation`, `verification.last_observation.status`, `verification.last_observation.content_type`, `verification.last_observation.bytes`, `verification.last_observation.bytes_capped`, `verification.last_observation.body_prefix`, `verification.last_observation.final_url`, `verification.last_observation.redirect_to`, `verification.last_observation.age`, `verification.last_observation.cache_status`, `verification.last_observation.is_html`, `verification.last_observation.served_from_cache`, `verification.last_observation.checked_at`, `instructions`, `dns`, `dns.provider`, `dns.token_set`, `verified`, `issuer`, `issuer_before`, `issuer_after`, `previous_issuers_kept_until`.
   """
   def post_verify(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/domains/{id}/verify", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Read one custom domain: the same object as a list item, including a path mount's verification file and what the last failed check observed.
+
+  `GET /v1/domains/{id}`. Required scope: `domains:read`.
+
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `verification.previous_url`, `verification.previous_valid_until`, `verification.last_observation`, `verification.last_observation.status`, `verification.last_observation.content_type`, `verification.last_observation.bytes`, `verification.last_observation.bytes_capped`, `verification.last_observation.body_prefix`, `verification.last_observation.final_url`, `verification.last_observation.redirect_to`, `verification.last_observation.age`, `verification.last_observation.cache_status`, `verification.last_observation.is_html`, `verification.last_observation.served_from_cache`, `verification.last_observation.checked_at`, `instructions`, `dns`, `dns.provider`, `dns.token_set`.
+  """
+  def get(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/domains/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
   Remove a custom domain. Refused for a live production fapi host, which would sign everyone out.
@@ -59,11 +69,23 @@ defmodule Atlas.Domains do
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/domains/{id}", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  Issue a new random verification token for a path-mounted domain and return the domain with the new `verification.token` and `url`. The previous token keeps verifying for 24 hours (`verification.previous_url`, `previous_valid_until`). Use it when a CDN cache has stored a wrong answer for the old URL: the new URL has never been requested, so nothing is cached for it. A CNAME domain has no token (400).
+
+  `POST /v1/domains/{id}/verification/rotate`. Required scope: `domains:write`.
+
+  Response fields: `object`, `id`, `role`, `host`, `status`, `action`, `live`, `cname_target`, `last_checked_at`, `last_observed_target`, `failure_reason`, `certificate_expires_at`, `cookie_domain`, `method`, `base_path`, `routing`, `frontend_api_url`, `verification`, `verification.method`, `verification.url`, `verification.token`, `verification.content`, `verification.instructions`, `verification.previous_url`, `verification.previous_valid_until`, `verification.last_observation`, `verification.last_observation.status`, `verification.last_observation.content_type`, `verification.last_observation.bytes`, `verification.last_observation.bytes_capped`, `verification.last_observation.body_prefix`, `verification.last_observation.final_url`, `verification.last_observation.redirect_to`, `verification.last_observation.age`, `verification.last_observation.cache_status`, `verification.last_observation.is_html`, `verification.last_observation.served_from_cache`, `verification.last_observation.checked_at`, `instructions`, `dns`, `dns.provider`, `dns.token_set`.
+  """
+  def post_verification_rotate(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/domains/{id}/verification/rotate", %{"id" => id}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/domains", 0, false, true},
     {:create, :post, "/v1/domains", 0, true, false},
     {:post_verify, :post, "/v1/domains/{id}/verify", 1, false, false},
-    {:delete, :delete, "/v1/domains/{id}", 1, false, false}
+    {:get, :get, "/v1/domains/{id}", 1, false, false},
+    {:delete, :delete, "/v1/domains/{id}", 1, false, false},
+    {:post_verification_rotate, :post, "/v1/domains/{id}/verification/rotate", 1, true, false}
   ]
 end

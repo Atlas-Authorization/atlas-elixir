@@ -15,7 +15,7 @@ defmodule Atlas.PlatformWhoami do
 
   `GET /v1/platform/whoami`.
 
-  Response fields: `object`, `key`, `key.id`, `key.type`, `key.prefix`, `key.environment`, `key.scopes`, `key.effective_scopes`, `key.owner`, `key.created_at`, `key.expires_at`, `key.last_used_at`, `key.last_used_ip`, `instance`, `instance.id`, `instance.environment`, `instance.issuer`, `account`, `account.id`, `partner`, `operator`.
+  Response fields: `object`, `key`, `key.id`, `key.type`, `key.prefix`, `key.environment`, `key.scopes`, `key.effective_scopes`, `key.preset`, `key.can_mint`, `key.can_mint.secret_keys`, `key.can_mint.scopes`, `key.can_mint.presets`, `key.resource`, `key.route_prefixes`, `key.owner`, `key.created_at`, `key.expires_at`, `key.last_used_at`, `key.last_used_ip`, `instance`, `instance.id`, `instance.environment`, `instance.issuer`, `account`, `account.id`, `partner`, `operator`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/platform/whoami", %{}, nil, opts)

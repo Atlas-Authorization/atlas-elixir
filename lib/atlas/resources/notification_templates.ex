@@ -16,7 +16,7 @@ defmodule Atlas.NotificationTemplates do
   `GET /v1/notification_templates`. Required scope: `notifications:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.subject`, `data.body`, `data.category`, `data.created_at`, `data.updated_at`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.subject`, `data.body`, `data.category`, `data.locales`, `data.created_at`, `data.updated_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/notification_templates", %{}, nil, opts)
@@ -33,8 +33,8 @@ defmodule Atlas.NotificationTemplates do
 
   `POST /v1/notification_templates`. Required scope: `notifications:write`.
 
-  Body fields: `name` (string, required), `subject` (string, required), `body` (string, required), `category` (string, required).
-  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `created_at`, `updated_at`.
+  Body fields: `name` (string, required), `subject` (string, required), `body` (string, required), `category` (string, required), `locales` (object).
+  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `locales`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/notification_templates", %{}, body, opts)
@@ -44,7 +44,7 @@ defmodule Atlas.NotificationTemplates do
 
   `GET /v1/notification_templates/{name}`. Required scope: `notifications:read`.
 
-  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `locales`, `created_at`, `updated_at`.
   """
   def get(client, name, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/notification_templates/{name}", %{"name" => name}, nil, opts)
@@ -54,8 +54,8 @@ defmodule Atlas.NotificationTemplates do
 
   `PUT /v1/notification_templates/{name}`. Required scope: `notifications:write`.
 
-  Body fields: `subject` (string, required), `body` (string, required), `category` (string, required).
-  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `created_at`, `updated_at`.
+  Body fields: `subject` (string, required), `body` (string, required), `category` (string, required), `locales` (object).
+  Response fields: `object`, `id`, `name`, `subject`, `body`, `category`, `locales`, `created_at`, `updated_at`.
   """
   def put(client, name, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/notification_templates/{name}", %{"name" => name}, body, opts)

@@ -11,15 +11,246 @@ defmodule Atlas.Pca do
   """
 
   @doc ~S"""
+  List registered grants (grant management): filter by principal, agent (holder) and status; keyset pagination.
+
+  `GET /v1/pca/grants`. Required scope: `pca:read`.
+
+  Query params (`params:`): `principal`, `agent`, `status`, `limit`, `cursor`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.grant_ref`, `data.status`, `data.principal`, `data.agent`, `data.chain_digest`, `next_cursor`.
+  """
+  def get_grants(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/grants", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_grants`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_grants(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/grants", %{}, opts)
+
+  @doc ~S"""
+  Inspect a grant: the signed chain, its content digest, remaining trust budget, revoked-capability count and the current signed revocation epoch.
+
+  `GET /v1/pca/grants/{grantRef}`. Required scope: `pca:read`.
+
+  Response fields: `object`, `grant_ref`, `status`, `grant`, `remaining_budget`, `revoked_capabilities`, `revocation_epoch`.
+  """
+  def get_grants_by_grant_ref(client, grant_ref, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/grants/{grantRef}", %{"grantRef" => grant_ref}, nil, opts)
+
+  @doc ~S"""
+  Revoke a grant (scope=grant) or every active grant of its principal and agent (scope=agent, operator only). Operator `sk_` + pca:write, or with no Authorization header the principal's signature (principal_sig) over the root revocation message. The signed revocation epoch is bumped in the same transaction.
+
+  `DELETE /v1/pca/grants/{grantRef}`. Required scope: `pca:write`.
+
+  Query params (`params:`): `scope`.
+  Body fields: `principal_sig` (string).
+  Response fields: `object`, `revoked`, `revocation_epoch`.
+  """
+  def delete_grants(client, grant_ref, body, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/grants/{grantRef}", %{"grantRef" => grant_ref}, body, opts)
+
+  @doc ~S"""
+  Enrol a grant into management: the principal signs its initial authority statement at revision 0 (the signature covers {grant, rev: 0, action: 'replace', authority digest} under the grant-amend domain). Once; afterwards use amend. Admission then enforces the statement as an extra tighten-only ceiling. Public (the signature is the authority) or `sk_` + pca:write (still principal-signed).
+
+  `PUT /v1/pca/grants/{grantRef}/authority`. Required scope: `pca:write`.
+
+  Body fields: `authority` (object, required), `sig` (string, required).
+  Nested body fields: `authority.verbs`, `authority.resources`, `authority.limits`, `authority.expires_at`.
+  Response fields: `object`, `grant_ref`, `rev`, `status`, `authority`, `authority_digest`.
+  """
+  def put_grants_authority(client, grant_ref, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/pca/grants/{grantRef}/authority", %{"grantRef" => grant_ref}, body, opts)
+
+  @doc ~S"""
+  Issue a single-use step-up challenge for a grant (valid 5 minutes). The principal signs its nonce on its own device; a widening spends one.
+
+  `POST /v1/pca/grants/{grantRef}/step-up`. Required scope: `pca:write`.
+
+  Response fields: `object`, `step_up_ref`, `nonce`, `expires_at`.
+  """
+  def post_grants_step_up(client, grant_ref, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/grants/{grantRef}/step-up", %{"grantRef" => grant_ref}, body, opts)
+
+  @doc ~S"""
+  Approve a step-up challenge with the grant principal's signature over {grant, challenge, nonce} (grant-step-up domain). Once.
+
+  `POST /v1/pca/grants/{grantRef}/step-up/{challengeId}/approve`. Required scope: `pca:write`.
+
+  Body fields: `sig` (string, required).
+  Response fields: `object`, `step_up_ref`, `approved`.
+  """
+  def post_grants_step_up_approve(client, grant_ref, challenge_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/grants/{grantRef}/step-up/{challengeId}/approve", %{"grantRef" => grant_ref, "challengeId" => challenge_id}, body, opts)
+
+  @doc ~S"""
+  Amend a grant's authority statement. `narrow`, or any change that is provably not wider, is signed by the holder or the principal and revises the grant in place (revision + 1; a signature names the revision, so it cannot be replayed). A change that widens or is incomparable needs the PRINCIPAL's signature, a spent step-up and `new_grant_ref` (a registered active grant of the same principal and agent); it creates that successor's statement (`supersedes`) and kills the old grant. Public (the signature is the authority) or `sk_` + pca:write (still signed).
+
+  `POST /v1/pca/grants/{grantRef}/amend`. Required scope: `pca:write`.
+
+  Body fields: `action` (enum, required), `authority` (object, required), `sig` (string), `signed_by` (enum), `step_up_ref` (string), `new_grant_ref` (string).
+  Nested body fields: `authority.verbs`, `authority.resources`, `authority.limits`, `authority.expires_at`.
+  Response fields: `object`, `grant_ref`, `rev`, `created`, `supersedes`, `authority`.
+  """
+  def post_grants_amend(client, grant_ref, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/grants/{grantRef}/amend", %{"grantRef" => grant_ref}, body, opts)
+
+  @doc ~S"""
+  A grant's need requests, optionally filtered by status.
+
+  `GET /v1/pca/grants/{grantRef}/needs`. Required scope: `pca:read`.
+
+  Query params (`params:`): `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`.
+  """
+  def get_grants_needs(client, grant_ref, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/grants/{grantRef}/needs", %{"grantRef" => grant_ref}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_grants_needs`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_grants_needs(client, grant_ref, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/grants/{grantRef}/needs", %{"grantRef" => grant_ref}, opts)
+
+  @doc ~S"""
+  File typed needs (incremental authorization). The grant holder signs them at the current revision (need-request domain), or the operator files them. Nothing changes until the principal approves.
+
+  `POST /v1/pca/grants/{grantRef}/needs`. Required scope: `pca:write`.
+
+  Body fields: `needs` (array, required), `sig` (string).
+  Nested body fields: `needs.verb`, `needs.resource`, `needs.limits`, `needs.adjustable`.
+  Response fields: `object`, `id`, `grant_ref`, `status`.
+  """
+  def post_grants_needs(client, grant_ref, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/grants/{grantRef}/needs", %{"grantRef" => grant_ref}, body, opts)
+
+  @doc ~S"""
+  Approve a need request. The principal signs the approved needs at the current revision (need-approve domain); the approved list must name the same verbs and resources in order, and an amount may only be lowered, and only on a need marked adjustable. Needs a spent step-up and `new_grant_ref` (the registered successor); the result is a successor grant with the merged authority.
+
+  `POST /v1/pca/needs/{needId}/approve`. Required scope: `pca:write`.
+
+  Body fields: `approved` (array, required), `sig` (string, required), `step_up_ref` (string), `new_grant_ref` (string).
+  Response fields: `object`, `grant_ref`, `supersedes`, `authority`.
+  """
+  def post_needs_approve(client, need_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/needs/{needId}/approve", %{"needId" => need_id}, body, opts)
+
+  @doc ~S"""
+  Deny a need request: the principal's signature over the empty approval of this need at the current revision, or the operator key.
+
+  `POST /v1/pca/needs/{needId}/deny`. Required scope: `pca:write`.
+
+  Body fields: `sig` (string).
+  Response fields: `object`, `id`, `status`.
+  """
+  def post_needs_deny(client, need_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/needs/{needId}/deny", %{"needId" => need_id}, body, opts)
+
+  @doc ~S"""
+  A bond account's balance (?account=<principal_pub>; also `escrow` and `atlas-treasury`).
+
+  `GET /v1/pca/bond-accounts`. Required scope: `pca:read`.
+
+  Query params (`params:`): `account`.
+  Response fields: `object`, `account`, `balance`.
+  """
+  def get_bond_accounts(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/bond-accounts", %{}, nil, opts)
+
+  @doc ~S"""
+  Credit a depositor's bond escrow balance (funds the optimistic fast path). The depositor account is the grant's principal_pub; bonds are sized from server policy exposure and debited atomically at claim open. Audited.
+
+  `POST /v1/pca/bond-accounts`. Required scope: `pca:write`.
+
+  Body fields: `account` (string, required), `amount` (number, required).
+  Response fields: `object`, `account`, `balance`.
+  """
+  def post_bond_accounts(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/bond-accounts", %{}, body, opts)
+
+  @doc ~S"""
+  Register an undo record with the hosted undo ledger. The record's receipt chain must verify against the instance's undo signer (auth_config.pca.undoSigner); 409 when none is configured. Idempotent on the record id: the same record again returns the stored one, different content under the same id is a 409. Audited.
+
+  `POST /v1/pca/undo/records`. Required scope: `pca:write`.
+
+  Body fields: `record` (object, required).
+  Response fields: `object`, `record`, `pending_veto`, `pending_veto.at`, `pending_veto.via`, `pending_veto.by`, `pending_veto.evidence`.
+  """
+  def post_undo_records(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/undo/records", %{}, body, opts)
+
+  @doc ~S"""
+  A stored undo record (without its encoded PCActn) and the veto waiting on it, if any.
+
+  `GET /v1/pca/undo/records/{id}`. Required scope: `pca:read`.
+
+  Response fields: `object`, `record`, `pending_veto`, `pending_veto.at`, `pending_veto.via`, `pending_veto.by`, `pending_veto.evidence`.
+  """
+  def get_undo_records(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/undo/records/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Replace an undo record after a transition. Accepted only when the new receipt chain verifies, the stored receipts are a prefix of it, the record identity (id, audience, grant, holder, principal, compensation, window, PCActn) is unchanged and `ver` increases. Moving to vetoed, compensated or compensation_failed settles a pending veto; finalizing while a veto is pending is a 409. Audited.
+
+  `PUT /v1/pca/undo/records/{id}`. Required scope: `pca:write`.
+
+  Body fields: `record` (object, required).
+  Response fields: `object`, `record`, `pending_veto`, `pending_veto.at`, `pending_veto.via`, `pending_veto.by`, `pending_veto.evidence`.
+  """
+  def put_undo_records(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/pca/undo/records/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Vetoes received by the instance that the resource server has not applied yet, oldest first (?limit 1..200, default 100), each with the principal's token. The resource server re-verifies the token as of the veto time, applies the veto and PUTs the signed record.
+
+  `GET /v1/pca/undo/vetoes`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.record_id`, `data.grant_ref`, `data.state`, `data.ver`, `data.window_end`, `data.veto`, `data.veto.at`, `data.veto.via`, `data.veto.by`, `data.veto.evidence`, `data.veto.token`.
+  """
+  def get_undo_vetoes(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/undo/vetoes", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_undo_vetoes`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_undo_vetoes(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/undo/vetoes", %{}, opts)
+
+  @doc ~S"""
   Revoke a capability id under a grant; any PCActn whose chain contains it is denied. Revoking the grant_ref itself revokes the whole grant.
 
   `POST /v1/pca/revocations`. Required scope: `pca:write`.
 
-  Body fields: `grant_ref` (string, required), `cap_id` (string, required).
-  Response fields: `object`, `grant_ref`, `cap_id`, `revoked`.
+  Body fields: `grant_ref` (string, required), `cap_id` (string, required), `principal_sig` (string).
+  Response fields: `object`, `grant_ref`, `cap_id`, `revoked`, `revocation_epoch`.
   """
   def post_revocations(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/pca/revocations", %{}, body, opts)
+
+  @doc ~S"""
+  Issue a guardian-signed step receipt for a step of a workflow the grant principal committed (K5). The operator reports the outcome and outputs of an executed step; the receipt chains to the earlier receipts and lets a later step be admitted.
+
+  `POST /v1/pca/workflow-receipts`. Required scope: `pca:write`.
+
+  Body fields: `grant_ref` (string, required), `workflow` (object, required), `step` (string, required), `outcome` (enum, required), `params_digest` (string, required), `outputs` (object, required), `receipts` (array).
+  Response fields: `object`, `grant_ref`, `receipt`, `receipts`.
+  """
+  def post_workflow_receipts(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/workflow-receipts", %{}, body, opts)
+
+  @doc ~S"""
+  Register the grant's CONSTITUTION: a principal-signed set of invariants (never / never_unless / cap / rate / never_after / require_prior / require_approval_over) the agent must never violate whatever its permissions say. Verified against the grant principal's key, immutable once set (a different constitution is 409), and enforced on every action inside the admission transaction with a hash-chained, server-persisted monitor state. Public (the signature is the authority) or `sk_` + pca:write (still principal-signed).
+
+  `POST /v1/pca/constitutions`. Required scope: `pca:write`.
+
+  Body fields: `grant_ref` (string, required), `constitution` (object, required).
+  Response fields: `object`, `grant_ref`, `constitution`, `constitution_id`, `registered_at`, `monitor`, `progress`.
+  """
+  def post_constitutions(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/constitutions", %{}, body, opts)
 
   @doc ~S"""
   Engage the instance-wide PCA kill switch: every PCActn is denied until it is cleared.
@@ -74,13 +305,618 @@ defmodule Atlas.Pca do
   def put_attestors(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/pca/attestors", %{}, body, opts)
 
+  @doc ~S"""
+  The instance's enrolled principals (public key, bound subject, status).
+
+  `GET /v1/pca/principals`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`.
+  """
+  def get_principals(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/principals", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_principals`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_principals(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/principals", %{}, opts)
+
+  @doc ~S"""
+  Enrol a principal public key, binding it to an Atlas identity (user, org, or machine) in this instance. A grant whose issuer is an enrolled active principal registers as the `verified` tier; an unenrolled issuer is accepted only as `unverified`. Audited.
+
+  `POST /v1/pca/principals`. Required scope: `pca:write`.
+
+  Body fields: `principal_pub` (string, required), `subject_type` (enum, required), `subject_id` (string, required).
+  Response fields: `object`, `principal_pub`, `subject_type`, `subject_id`, `status`.
+  """
+  def post_principals(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/principals", %{}, body, opts)
+
+  @doc ~S"""
+  Disable an enrolled principal. Its existing verified grants are denied at adjudication and no new verified grant can be registered under it. Audited.
+
+  `DELETE /v1/pca/principals/{principalPub}`. Required scope: `pca:write`.
+
+  Response fields: `object`, `principal_pub`, `status`.
+  """
+  def delete_principals(client, principal_pub, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/principals/{principalPub}", %{"principalPub" => principal_pub}, nil, opts)
+
+  @doc ~S"""
+  Rotate the guardian signing key: a new keypair and epoch + 1; the previous public key is retained so STHs, revocation epochs and receipts signed under it still verify. New signatures use the new epoch. Audited.
+
+  `POST /v1/pca/guardian/rotate`. Required scope: `pca:write`.
+
+  Response fields: `object`, `epoch`, `public_key`, `previous`, `previous.epoch`, `previous.public_key`, `keys`.
+  """
+  def post_guardian_rotate(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/guardian/rotate", %{}, body, opts)
+
+  @doc ~S"""
+  Issue a dead-man liveness beacon. PRINCIPAL path (no Authorization header): submit `beacon`, a v2 beacon signed with the grant principal's own key (scope = a grant_ref they issued, or '*'): the principal halts their agents just by withholding, without trusting the operator. OPERATOR path (`sk_` + `pca:write`): the server signs with the guardian key (`scope`, `validity_ms`). `seq` must strictly increase per (scope, issuer) (409 on replay); validity is hard-capped at one hour. A pure-PQ or hybrid principal beacon is accepted only under the PQ key pinned for the issuer (POST /v1/pca/pq-pins), and only after the issuer check is it charged to the per-source pqVerifyUnitsPerSourcePerMin budget (429 when exhausted) and verified, Ed25519 half first. Beacons gate adjudication only when `auth_config.pca.beacons` is enabled.
+
+  `POST /v1/pca/beacons`. Required scope: `pca:write`.
+
+  Body fields: `beacon` (object), `scope` (string), `validity_ms` (integer).
+  Response fields: `object`, `beacon`, `beacon_ref`, `issuer_kind`.
+  """
+  def post_beacons(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/beacons", %{}, body, opts)
+
+  @doc ~S"""
+  Remove an identity PQ key pin (the rotation step: delete, then the identity registers a new binding at a HIGHER epoch; the delete leaves a tombstone holding the last epoch, so the removed binding and every older one is refused). Pure-PQ and hybrid artifacts from that identity are refused until it is re-pinned. Audited.
+
+  `DELETE /v1/pca/pq-pins/{identity}`. Required scope: `pca:write`.
+
+  Response fields: `object`, `identity`, `deleted`.
+  """
+  def delete_pq_pins(client, identity, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/pq-pins/{identity}", %{"identity" => identity}, nil, opts)
+
+  @doc ~S"""
+  List the runtime observations recorded against a map, oldest first. Paginate with `after` = the previous page `next_cursor`.
+
+  `GET /v1/pca/intent/maps/{digest}/observations`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `after`, `starting_after`.
+  Response fields: `object`, `data`, `next_cursor`.
+  """
+  def get_intent_maps_observations(client, digest, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/intent/maps/{digest}/observations", %{"digest" => digest}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_intent_maps_observations`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_intent_maps_observations(client, digest, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/intent/maps/{digest}/observations", %{"digest" => digest}, opts)
+
+  @doc ~S"""
+  Anchor a site's signed action schema (Intent Layer v2, `pca-action-schema` v1 served at /.well-known/pca-actions.json). The schema is verified against the site's discovery keys (`keys`, the `intent.schema_keys` of its /.well-known/pca-configuration; the suite comes from the key entry), content-addressed (`actionSchemaDigest`) and appended to the instance's intent transparency log (kind `schema`), so a site cannot show different schemas to different users without detection. Audited. 201 anchored, 200 already anchored.
+
+  `POST /v1/pca/intent/schemas`. Required scope: `pca:write`.
+
+  Body fields: `schema` (object, required), `keys` (array, required).
+  Response fields: `object`, `digest`, `aud`, `version`, `schema`, `anchor`.
+  """
+  def post_intent_schemas(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/intent/schemas", %{}, body, opts)
+
+  @doc ~S"""
+  Create a single-use passkey enrolment link (24 hours): a new approver bound to a user / org / machine, a delegate of an existing approver, or another device of a member. Adding to an existing approver needs one of its passkeys on the enrolment page. Audited.
+
+  `POST /v1/pca/approvers/enrolments`. Required scope: `pca:write`.
+
+  Body fields: `subject_type` (enum), `subject_id` (string), `approver_id` (string), `member_id` (string), `display_name` (string), `email` (string), `phone` (string), `user_id` (string), `channels` (array).
+  Response fields: `object`, `id`, `enrolment_url`, `expires_at`, `approver_id`, `member_id`.
+  """
+  def post_approvers_enrolments(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/approvers/enrolments", %{}, body, opts)
+
+  @doc ~S"""
+  List passkey approvers with their members, devices and quorum.
+
+  `GET /v1/pca/approvers`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.principal_pub`, `data.subject_type`, `data.subject_id`, `data.display_name`, `data.quorum`, `data.status`, `data.created_at`, `data.members`, `data.members.id`, `data.members.display_name`, `data.members.user_id`, `data.members.email`, `data.members.phone`, `data.members.channels`, `data.members.status`, `data.members.created_at`, `data.credentials`, `data.credentials.id`, `data.credentials.member_id`, `data.credentials.name`, `data.credentials.transports`, `data.credentials.aaguid`, `data.credentials.status`, `data.credentials.created_at`, `data.credentials.last_used_at`, `data.credentials.revoked_at`.
+  """
+  def get_approvers(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/approvers", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_approvers`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_approvers(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/approvers", %{}, opts)
+
+  @doc ~S"""
+  One passkey approver with its members, devices and quorum.
+
+  `GET /v1/pca/approvers/{id}`. Required scope: `pca:read`.
+
+  Response fields: `object`, `id`, `principal_pub`, `subject_type`, `subject_id`, `display_name`, `quorum`, `status`, `created_at`, `members`, `members.id`, `members.display_name`, `members.user_id`, `members.email`, `members.phone`, `members.channels`, `members.status`, `members.created_at`, `credentials`, `credentials.id`, `credentials.member_id`, `credentials.name`, `credentials.transports`, `credentials.aaguid`, `credentials.status`, `credentials.created_at`, `credentials.last_used_at`, `credentials.revoked_at`.
+  """
+  def get_approvers_by_id(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/approvers/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Change an approver: quorum, display name, or disable it (a disabled approver cannot approve). Audited.
+
+  `PATCH /v1/pca/approvers/{id}`. Required scope: `pca:write`.
+
+  Body fields: `quorum` (integer), `display_name` (string|null), `status` (enum).
+  Response fields: `object`, `id`, `principal_pub`, `subject_type`, `subject_id`, `display_name`, `quorum`, `status`, `created_at`, `members`, `members.id`, `members.display_name`, `members.user_id`, `members.email`, `members.phone`, `members.channels`, `members.status`, `members.created_at`, `credentials`, `credentials.id`, `credentials.member_id`, `credentials.name`, `credentials.transports`, `credentials.aaguid`, `credentials.status`, `credentials.created_at`, `credentials.last_used_at`, `credentials.revoked_at`.
+  """
+  def update_approvers(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/pca/approvers/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Change a member's notification channels, contact details or status. Audited.
+
+  `PATCH /v1/pca/approvers/{id}/members/{memberId}`. Required scope: `pca:write`.
+
+  Body fields: `channels` (array), `email` (string|null), `phone` (string|null), `display_name` (string|null), `status` (enum).
+  Response fields: `object`, `id`, `principal_pub`, `subject_type`, `subject_id`, `display_name`, `quorum`, `status`, `created_at`, `members`, `members.id`, `members.display_name`, `members.user_id`, `members.email`, `members.phone`, `members.channels`, `members.status`, `members.created_at`, `credentials`, `credentials.id`, `credentials.member_id`, `credentials.name`, `credentials.transports`, `credentials.aaguid`, `credentials.status`, `credentials.created_at`, `credentials.last_used_at`, `credentials.revoked_at`.
+  """
+  def update_approvers_members(client, id, member_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/pca/approvers/{id}/members/{memberId}", %{"id" => id, "memberId" => member_id}, body, opts)
+
+  @doc ~S"""
+  Revoke a passkey: its wrapped principal key copy is deleted and it can no longer approve. Audited.
+
+  `DELETE /v1/pca/approvers/{id}/credentials/{credentialId}`. Required scope: `pca:write`.
+
+  Response fields: `object`, `id`, `principal_pub`, `subject_type`, `subject_id`, `display_name`, `quorum`, `status`, `created_at`, `members`, `members.id`, `members.display_name`, `members.user_id`, `members.email`, `members.phone`, `members.channels`, `members.status`, `members.created_at`, `credentials`, `credentials.id`, `credentials.member_id`, `credentials.name`, `credentials.transports`, `credentials.aaguid`, `credentials.status`, `credentials.created_at`, `credentials.last_used_at`, `credentials.revoked_at`.
+  """
+  def delete_approvers_credentials(client, id, credential_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/approvers/{id}/credentials/{credentialId}", %{"id" => id, "credentialId" => credential_id}, nil, opts)
+
+  @doc ~S"""
+  Approval channel settings of this instance (secrets are reported as set / not set, never returned).
+
+  `GET /v1/pca/approvals/settings`. Required scope: `pca:read`.
+
+  Response fields: `object`, `channels`, `channels.push`, `channels.email`, `channels.sms`, `channels.slack`, `channels.webhook`, `default_member_channels`, `ciba`, `ciba.enabled`, `ciba.mode`, `ciba.backchannel_authentication_endpoint`, `ciba.token_endpoint`, `ciba.client_id`, `ciba.login_hint`, `ciba.client_secret_set`, `slack_webhook_set`.
+  """
+  def get_approvals_settings(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/approvals/settings", %{}, nil, opts)
+
+  @doc ~S"""
+  Update the approval channels (push, email, sms, slack, webhook), default member channels, the Slack webhook and the CIBA identity provider. Omitted fields are kept; null clears. Audited.
+
+  `PUT /v1/pca/approvals/settings`. Required scope: `pca:write`.
+
+  Body fields: `channels` (object), `default_member_channels` (array), `ciba` (any), `slack_webhook_url` (string|null), `ciba_client_secret` (string|null).
+  Nested body fields: `channels.push`, `channels.email`, `channels.sms`, `channels.slack`, `channels.webhook`, `ciba.enabled`, `ciba.mode`, `ciba.backchannel_authentication_endpoint`, `ciba.token_endpoint`, `ciba.client_id`, `ciba.login_hint`.
+  Response fields: `object`, `channels`, `channels.push`, `channels.email`, `channels.sms`, `channels.slack`, `channels.webhook`, `default_member_channels`, `ciba`, `ciba.enabled`, `ciba.mode`, `ciba.backchannel_authentication_endpoint`, `ciba.token_endpoint`, `ciba.client_id`, `ciba.login_hint`, `ciba.client_secret_set`, `slack_webhook_set`.
+  """
+  def put_approvals_settings(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/pca/approvals/settings", %{}, body, opts)
+
+  @doc ~S"""
+  The action registry of the instance: namespaces with their active version and counts, publisher and reviewer keys.
+
+  `GET /v1/pca/action-registry`. Required scope: `pca:read`.
+
+  Response fields: `object`, `registry_mode`, `namespaces`, `namespaces.ns`, `namespaces.active_version`, `namespaces.digest`, `namespaces.pinned`, `namespaces.updated_at`, `namespaces.counts`, `namespaces.counts.actions`, `namespaces.counts.confirmed`, `namespaces.counts.unconfirmed`, `namespaces.counts.deprecated`, `publisher_keys`, `publisher_keys.kid`, `publisher_keys.pk`, `publisher_keys.display_name`, `publisher_keys.created_at`, `reviewer_keys`, `reviewer_keys.kid`, `reviewer_keys.pk`, `reviewer_keys.reviewer_id`, `reviewer_keys.display_name`.
+  """
+  def get_action_registry(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry", %{}, nil, opts)
+
+  @doc ~S"""
+  Pin a publisher key (kid, Ed25519 public key). Audited.
+
+  `POST /v1/pca/action-registry/publisher-keys`. Required scope: `pca:write`.
+
+  Body fields: `kid` (string, required), `pk` (string, required), `display_name` (string).
+  Response fields: `object`, `kid`, `pk`, `display_name`.
+  """
+  def post_action_registry_publisher_keys(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/publisher-keys", %{}, body, opts)
+
+  @doc ~S"""
+  Revoke a publisher key. Audited.
+
+  `DELETE /v1/pca/action-registry/publisher-keys/{kid}`. Required scope: `pca:write`.
+  """
+  def delete_action_registry_publisher_keys(client, kid, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/action-registry/publisher-keys/{kid}", %{"kid" => kid}, nil, opts)
+
+  @doc ~S"""
+  Publish a signed pack (with business rules and custom traits) as the next version of its namespace. 409 when it widens without a reviewer. Audited.
+
+  `POST /v1/pca/action-registry/packs`. Required scope: `pca:write`.
+
+  Body fields: `pack` (object, required), `rules` (object), `traits` (object).
+  Response fields: `object`, `ns`, `version`, `digest`, `prev`, `status`, `changes`, `changes.verb`, `changes.class`, `changes.reasons`, `changes.rules`, `changes.rules.class`, `changes.rules.reasons`, `changes.reviewed`, `published_drafts`.
+  """
+  def post_action_registry_packs(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/packs", %{}, body, opts)
+
+  @doc ~S"""
+  The version history of a namespace.
+
+  `GET /v1/pca/action-registry/namespaces/{ns}/versions`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `data`, `data.version`, `data.digest`, `data.prev`, `data.status`, `data.published_by`, `data.created_at`, `data.changes`, `data.changes.verb`, `data.changes.class`, `data.changes.reasons`, `data.changes.rules`, `data.changes.reviewed`.
+  """
+  def get_action_registry_namespaces_versions(client, ns, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/namespaces/{ns}/versions", %{"ns" => ns}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_action_registry_namespaces_versions`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_action_registry_namespaces_versions(client, ns, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/action-registry/namespaces/{ns}/versions", %{"ns" => ns}, opts)
+
+  @doc ~S"""
+  One stored version: pack, rules, traits, deprecated actions and changes.
+
+  `GET /v1/pca/action-registry/namespaces/{ns}/versions/{version}`. Required scope: `pca:read`.
+
+  Response fields: `object`, `version`, `digest`, `prev`, `status`, `published_by`, `created_at`, `changes`, `changes.verb`, `changes.class`, `changes.reasons`, `changes.rules`, `changes.rules.class`, `changes.rules.reasons`, `changes.reviewed`, `ns`, `pack`, `rules`, `traits`, `deprecated`.
+  """
+  def get_action_registry_namespaces_by_ns_versions_by_version(client, ns, version, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/namespaces/{ns}/versions/{version}", %{"ns" => ns, "version" => version}, nil, opts)
+
+  @doc ~S"""
+  The semantic diff between two stored versions, and whether the move needs a reviewer.
+
+  `GET /v1/pca/action-registry/namespaces/{ns}/diff`. Required scope: `pca:read`.
+
+  Query params (`params:`): `from`, `to`.
+  Response fields: `ok`, `from`, `to`, `code`, `message`, `verbs`, `changes`, `changes.verb`, `changes.class`, `changes.reasons`, `changes.rules`, `changes.rules.class`, `changes.rules.reasons`, `changes.reviewed`.
+  """
+  def get_action_registry_namespaces_diff(client, ns, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/namespaces/{ns}/diff", %{"ns" => ns}, nil, opts)
+
+  @doc ~S"""
+  Activate and pin a stored version (later publishes are staged). Audited.
+
+  `PUT /v1/pca/action-registry/namespaces/{ns}/pin`. Required scope: `pca:write`.
+
+  Body fields: `version` (string, required).
+  Response fields: `object`, `ns`, `active_version`, `pinned`, `changes`, `changes.verb`, `changes.class`, `changes.reasons`, `changes.rules`, `changes.rules.class`, `changes.rules.reasons`, `changes.reviewed`.
+  """
+  def put_action_registry_namespaces_pin(client, ns, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/pca/action-registry/namespaces/{ns}/pin", %{"ns" => ns}, body, opts)
+
+  @doc ~S"""
+  Unpin a namespace (later publishes activate again). Audited.
+
+  `DELETE /v1/pca/action-registry/namespaces/{ns}/pin`. Required scope: `pca:write`.
+
+  Response fields: `object`, `ns`, `active_version`, `pinned`, `changes`, `changes.verb`, `changes.class`, `changes.reasons`, `changes.rules`, `changes.rules.class`, `changes.rules.reasons`, `changes.reviewed`.
+  """
+  def delete_action_registry_namespaces_pin(client, ns, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/action-registry/namespaces/{ns}/pin", %{"ns" => ns}, nil, opts)
+
+  @doc ~S"""
+  Search the active actions by text, state and namespace.
+
+  `GET /v1/pca/action-registry/actions`. Required scope: `pca:read`.
+
+  Query params (`params:`): `q`, `state`, `ns`, `limit`, `starting_after`.
+  Response fields: `data`, `data.verb`, `data.ns`, `data.version`, `data.title`, `data.state`, `data.traits`, `data.risk`, `data.rules_text`.
+  """
+  def get_action_registry_actions(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/actions", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_action_registry_actions`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_action_registry_actions(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/action-registry/actions", %{}, opts)
+
+  @doc ~S"""
+  One action: policy card, effective profile, business rules and history.
+
+  `GET /v1/pca/action-registry/actions/{verb}`. Required scope: `pca:read`.
+
+  Response fields: `object`, `verb`, `ns`, `version`, `state`, `def`, `def_digest`, `card`, `card.text`, `card.lines`, `effective`, `rules`, `rules_text`, `compiled_rules`, `history`, `history.version`, `history.class`, `history.reasons`, `history.rules`, `history.rules.class`, `history.rules.reasons`.
+  """
+  def get_action_registry_actions_by_verb(client, verb, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/actions/{verb}", %{"verb" => verb}, nil, opts)
+
+  @doc ~S"""
+  Import actions from a source: a URL the server fetches (https, public addresses only, at most 8 MiB; MCP servers are read with initialize + tools/list) or pasted text. Every result is unreviewed or suggested and lands as a draft; with track, the URL is kept as a source. Audited.
+
+  `POST /v1/pca/action-registry/imports`. Required scope: `pca:write`.
+
+  Body fields: `ns` (string, required), `from` (enum, required), `url` (string), `source` (string), `verb` (string), `track` (boolean), `schedule` (enum).
+  Response fields: `object`, `imported`, `verbs`, `todo`, `todo.where`, `todo.code`, `todo.message`, `source_id`.
+  """
+  def post_action_registry_imports(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/imports", %{}, body, opts)
+
+  @doc ~S"""
+  The review queue: drafts with their review view, policy card, lint, business rules in plain sentences and the diff against the active version, the riskiest first.
+
+  `GET /v1/pca/action-registry/drafts`. Required scope: `pca:read`.
+
+  Query params (`params:`): `ns`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.verb`, `data.ns`, `data.origin`, `data.change`, `data.source_id`, `data.def`, `data.def_digest`, `data.state`, `data.review`, `data.card_text`, `data.lint`, `data.lint.rule`, `data.lint.severity`, `data.lint.verb`, `data.lint.param`, `data.lint.message`, `data.rules`, `data.rules_text`, `data.rules_lint`, `data.rules_lint.rule`, `data.rules_lint.severity`, `data.rules_lint.verb`, `data.rules_lint.param`, `data.rules_lint.message`, `data.rules_review`, `data.rules_review_needed`, `data.registry_traits`, `data.diff_vs_active`, `data.diff_vs_active.class`, `data.diff_vs_active.reasons`, `data.rules_diff_vs_active`, `data.rules_diff_vs_active.class`, `data.rules_diff_vs_active.reasons`, `data.updated_by`, `data.updated_at`.
+  """
+  def get_action_registry_drafts(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/drafts", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_action_registry_drafts`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_action_registry_drafts(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/action-registry/drafts", %{}, opts)
+
+  @doc ~S"""
+  One draft with its review view.
+
+  `GET /v1/pca/action-registry/drafts/{verb}`. Required scope: `pca:read`.
+
+  Response fields: `verb`, `ns`, `origin`, `change`, `source_id`, `def`, `def_digest`, `state`, `review`, `card_text`, `lint`, `lint.rule`, `lint.severity`, `lint.verb`, `lint.param`, `lint.message`, `rules`, `rules_text`, `rules_lint`, `rules_lint.rule`, `rules_lint.severity`, `rules_lint.verb`, `rules_lint.param`, `rules_lint.message`, `rules_review`, `rules_review_needed`, `registry_traits`, `diff_vs_active`, `diff_vs_active.class`, `diff_vs_active.reasons`, `rules_diff_vs_active`, `rules_diff_vs_active.class`, `rules_diff_vs_active.reasons`, `updated_by`, `updated_at`.
+  """
+  def get_action_registry_drafts_by_verb(client, verb, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/drafts/{verb}", %{"verb" => verb}, nil, opts)
+
+  @doc ~S"""
+  Edit a draft (title, description, effects, params, reversibility, compensates, traits, business rules). Re-validated; any edit drops a confirmation and a rules review. Audited.
+
+  `PATCH /v1/pca/action-registry/drafts/{verb}`. Required scope: `pca:write`.
+
+  Body fields: `title` (string), `description` (string|null), `effects` (array), `params` (object), `reversibility` (object), `compensates` (string|null), `traits` (array), `rules` (object|null).
+  Response fields: `verb`, `ns`, `origin`, `change`, `source_id`, `def`, `def_digest`, `state`, `review`, `card_text`, `lint`, `lint.rule`, `lint.severity`, `lint.verb`, `lint.param`, `lint.message`, `rules`, `rules_text`, `rules_lint`, `rules_lint.rule`, `rules_lint.severity`, `rules_lint.verb`, `rules_lint.param`, `rules_lint.message`, `rules_review`, `rules_review_needed`, `registry_traits`, `diff_vs_active`, `diff_vs_active.class`, `diff_vs_active.reasons`, `rules_diff_vs_active`, `rules_diff_vs_active.class`, `rules_diff_vs_active.reasons`, `updated_by`, `updated_at`.
+  """
+  def update_action_registry_drafts(client, verb, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/pca/action-registry/drafts/{verb}", %{"verb" => verb}, body, opts)
+
+  @doc ~S"""
+  Remove a draft from the review queue. Audited.
+
+  `DELETE /v1/pca/action-registry/drafts/{verb}`. Required scope: `pca:write`.
+
+  Response fields: `object`, `verb`, `deleted`.
+  """
+  def delete_action_registry_drafts(client, verb, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/action-registry/drafts/{verb}", %{"verb" => verb}, nil, opts)
+
+  @doc ~S"""
+  Open a published action for review: its active definition and business rules become a draft (409 when one already exists), so an action published unconfirmed can be confirmed. Takes no body. Audited.
+
+  `POST /v1/pca/action-registry/actions/{verb}/review`. Required scope: `pca:write`.
+
+  Response fields: `verb`, `ns`, `origin`, `change`, `source_id`, `def`, `def_digest`, `state`, `review`, `card_text`, `lint`, `lint.rule`, `lint.severity`, `lint.verb`, `lint.param`, `lint.message`, `rules`, `rules_text`, `rules_lint`, `rules_lint.rule`, `rules_lint.severity`, `rules_lint.verb`, `rules_lint.param`, `rules_lint.message`, `rules_review`, `rules_review_needed`, `registry_traits`, `diff_vs_active`, `diff_vs_active.class`, `diff_vs_active.reasons`, `rules_diff_vs_active`, `rules_diff_vs_active.class`, `rules_diff_vs_active.reasons`, `updated_by`, `updated_at`.
+  """
+  def post_action_registry_actions_review(client, verb, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/actions/{verb}/review", %{"verb" => verb}, body, opts)
+
+  @doc ~S"""
+  Confirm a draft: the reviewer's signed attestation (and, for widened rules, a signed rules review), with a passkey assertion over a challenge committing to exactly those signatures. The passkey must be an active credential of an active reviewer whose pinned reviewer key signed; a publisher key never confirms. Audited.
+
+  `POST /v1/pca/action-registry/drafts/{verb}/confirm`. Required scope: `pca:write`.
+
+  Body fields: `attestation` (object, required), `rules_review` (object), `assertion` (object, required).
+  Nested body fields: `attestation.def_digest`, `attestation.traits_digest`, `attestation.facts_digest`, `attestation.final_traits`, `attestation.dismissed`, `attestation.dismissed.trait`, `attestation.dismissed.reason`, `attestation.reviewer_kid`, `attestation.ts`, `attestation.sig`, `rules_review.verb`, `rules_review.def_digest`, `rules_review.rules_digest`, `rules_review.reviewer_kid`, `rules_review.ts`, `rules_review.sig`, `assertion.credential_id`, `assertion.authenticatorData`, `assertion.clientDataJSON`, `assertion.signature`.
+  Response fields: `verb`, `ns`, `origin`, `change`, `source_id`, `def`, `def_digest`, `state`, `review`, `card_text`, `lint`, `lint.rule`, `lint.severity`, `lint.verb`, `lint.param`, `lint.message`, `rules`, `rules_text`, `rules_lint`, `rules_lint.rule`, `rules_lint.severity`, `rules_lint.verb`, `rules_lint.param`, `rules_lint.message`, `rules_review`, `rules_review_needed`, `registry_traits`, `diff_vs_active`, `diff_vs_active.class`, `diff_vs_active.reasons`, `rules_diff_vs_active`, `rules_diff_vs_active.class`, `rules_diff_vs_active.reasons`, `updated_by`, `updated_at`.
+  """
+  def post_action_registry_drafts_confirm(client, verb, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/drafts/{verb}/confirm", %{"verb" => verb}, body, opts)
+
+  @doc ~S"""
+  Publish the drafts of a namespace as its next version: the active actions overlaid with the drafts (removal drafts deprecate their action), the business rules and rules reviews, signed with the instance's publisher key. 409 (reason_code widen_unreviewed) when an action or its rules widen without a reviewer's signature. Audited.
+
+  `POST /v1/pca/action-registry/publish`. Required scope: `pca:write`.
+
+  Body fields: `ns` (string, required), `version` (string).
+  Response fields: `object`, `ns`, `version`, `digest`, `prev`, `status`, `changes`, `changes.verb`, `changes.class`, `changes.reasons`, `changes.rules`, `changes.rules.class`, `changes.rules.reasons`, `changes.reviewed`, `published_drafts`.
+  """
+  def post_action_registry_publish(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/publish", %{}, body, opts)
+
+  @doc ~S"""
+  Create a single-use reviewer enrolment link (24 hours). The reviewer creates a passkey and a reviewer key on the hosted page; the key is pinned with the reviewer role. Audited.
+
+  `POST /v1/pca/action-registry/reviewers/enrolments`. Required scope: `pca:write`.
+
+  Body fields: `display_name` (string), `email` (string), `user_id` (string).
+  Response fields: `object`, `id`, `enrolment_url`, `expires_at`, `reviewer_id`.
+  """
+  def post_action_registry_reviewers_enrolments(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/reviewers/enrolments", %{}, body, opts)
+
+  @doc ~S"""
+  The reviewers who may confirm action definitions, with their keys and passkeys.
+
+  `GET /v1/pca/action-registry/reviewers`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kid`, `data.pk`, `data.display_name`, `data.email`, `data.user_id`, `data.status`, `data.created_at`, `data.credentials`, `data.credentials.id`, `data.credentials.name`, `data.credentials.transports`, `data.credentials.status`, `data.credentials.created_at`, `data.credentials.last_used_at`, `data.credentials.revoked_at`.
+  """
+  def get_action_registry_reviewers(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/reviewers", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_action_registry_reviewers`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_action_registry_reviewers(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/action-registry/reviewers", %{}, opts)
+
+  @doc ~S"""
+  Remove a reviewer: the reviewer key is unpinned (its confirmations stop counting) and every passkey revoked. Audited.
+
+  `DELETE /v1/pca/action-registry/reviewers/{id}`. Required scope: `pca:write`.
+
+  Response fields: `object`, `id`, `kid`, `pk`, `display_name`, `email`, `user_id`, `status`, `created_at`, `credentials`, `credentials.id`, `credentials.name`, `credentials.transports`, `credentials.status`, `credentials.created_at`, `credentials.last_used_at`, `credentials.revoked_at`.
+  """
+  def delete_action_registry_reviewers(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/action-registry/reviewers/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  The tracked import sources, with their schedule and last sync.
+
+  `GET /v1/pca/action-registry/sources`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.ns`, `data.kind`, `data.uri`, `data.verb`, `data.schedule`, `data.last_synced_at`, `data.next_run_at`, `data.last_status`, `data.last_error`, `data.failures`, `data.operations`, `data.created_at`.
+  """
+  def get_action_registry_sources(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/sources", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_action_registry_sources`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_action_registry_sources(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/action-registry/sources", %{}, opts)
+
+  @doc ~S"""
+  Track a source for manual or scheduled (hourly / daily) sync. Audited.
+
+  `POST /v1/pca/action-registry/sources`. Required scope: `pca:write`.
+
+  Body fields: `ns` (string, required), `from` (enum, required), `url` (string, required), `verb` (string), `schedule` (enum).
+  Response fields: `object`, `id`, `ns`, `kind`, `uri`, `verb`, `schedule`, `last_synced_at`, `next_run_at`, `last_status`, `last_error`, `failures`, `operations`, `created_at`.
+  """
+  def post_action_registry_sources(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/sources", %{}, body, opts)
+
+  @doc ~S"""
+  Change a source: URL, verb (jsonschema) or schedule. Audited.
+
+  `PATCH /v1/pca/action-registry/sources/{id}`. Required scope: `pca:write`.
+
+  Body fields: `url` (string), `verb` (string), `schedule` (enum).
+  Response fields: `object`, `id`, `ns`, `kind`, `uri`, `verb`, `schedule`, `last_synced_at`, `next_run_at`, `last_status`, `last_error`, `failures`, `operations`, `created_at`.
+  """
+  def update_action_registry_sources(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/pca/action-registry/sources/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Stop tracking a source (its drafts stay in the queue). Audited.
+
+  `DELETE /v1/pca/action-registry/sources/{id}`. Required scope: `pca:write`.
+
+  Response fields: `object`, `id`, `deleted`.
+  """
+  def delete_action_registry_sources(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/pca/action-registry/sources/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Sync a source now: added and changed operations become unreviewed drafts, removed ones removal drafts; unchanged ones are left as they are. Audited.
+
+  `POST /v1/pca/action-registry/sources/{id}/sync`. Required scope: `pca:write`.
+
+  Response fields: `object`, `source_id`, `ns`, `entries`, `entries.verb`, `entries.change`, `entries.diff`, `entries.diff.class`, `entries.diff.reasons`, `needs_review`, `drafted`.
+  """
+  def post_action_registry_sources_sync(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/sources/{id}/sync", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  The starter packs (e-commerce, fintech, healthcare, SaaS admin, developer tools).
+
+  `GET /v1/pca/action-registry/templates`. Required scope: `pca:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.id`, `data.title`, `data.description`, `data.ns`, `data.actions`, `data.traits`.
+  """
+  def get_action_registry_templates(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/pca/action-registry/templates", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_action_registry_templates`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_action_registry_templates(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/pca/action-registry/templates", %{}, opts)
+
+  @doc ~S"""
+  Add a starter pack's actions (with their business rules and examples) to a namespace as drafts. Never confirmed. Audited.
+
+  `POST /v1/pca/action-registry/templates/{id}/apply`. Required scope: `pca:write`.
+
+  Body fields: `ns` (string).
+  Response fields: `object`, `data`, `data.verb`, `data.ns`, `data.origin`, `data.change`, `data.source_id`, `data.def`, `data.def_digest`, `data.state`, `data.review`, `data.card_text`, `data.lint`, `data.lint.rule`, `data.lint.severity`, `data.lint.verb`, `data.lint.param`, `data.lint.message`, `data.rules`, `data.rules_text`, `data.rules_lint`, `data.rules_lint.rule`, `data.rules_lint.severity`, `data.rules_lint.verb`, `data.rules_lint.param`, `data.rules_lint.message`, `data.rules_review`, `data.rules_review_needed`, `data.registry_traits`, `data.diff_vs_active`, `data.diff_vs_active.class`, `data.diff_vs_active.reasons`, `data.rules_diff_vs_active`, `data.rules_diff_vs_active.class`, `data.rules_diff_vs_active.reasons`, `data.updated_by`, `data.updated_at`.
+  """
+  def post_action_registry_templates_apply(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/pca/action-registry/templates/{id}/apply", %{"id" => id}, body, opts)
+
   @doc false
   def __operations__, do: [
+    {:get_grants, :get, "/v1/pca/grants", 0, false, true},
+    {:get_grants_by_grant_ref, :get, "/v1/pca/grants/{grantRef}", 1, false, false},
+    {:delete_grants, :delete, "/v1/pca/grants/{grantRef}", 1, true, false},
+    {:put_grants_authority, :put, "/v1/pca/grants/{grantRef}/authority", 1, true, false},
+    {:post_grants_step_up, :post, "/v1/pca/grants/{grantRef}/step-up", 1, true, false},
+    {:post_grants_step_up_approve, :post, "/v1/pca/grants/{grantRef}/step-up/{challengeId}/approve", 2, true, false},
+    {:post_grants_amend, :post, "/v1/pca/grants/{grantRef}/amend", 1, true, false},
+    {:get_grants_needs, :get, "/v1/pca/grants/{grantRef}/needs", 1, false, true},
+    {:post_grants_needs, :post, "/v1/pca/grants/{grantRef}/needs", 1, true, false},
+    {:post_needs_approve, :post, "/v1/pca/needs/{needId}/approve", 1, true, false},
+    {:post_needs_deny, :post, "/v1/pca/needs/{needId}/deny", 1, true, false},
+    {:get_bond_accounts, :get, "/v1/pca/bond-accounts", 0, false, false},
+    {:post_bond_accounts, :post, "/v1/pca/bond-accounts", 0, true, false},
+    {:post_undo_records, :post, "/v1/pca/undo/records", 0, true, false},
+    {:get_undo_records, :get, "/v1/pca/undo/records/{id}", 1, false, false},
+    {:put_undo_records, :put, "/v1/pca/undo/records/{id}", 1, true, false},
+    {:get_undo_vetoes, :get, "/v1/pca/undo/vetoes", 0, false, true},
     {:post_revocations, :post, "/v1/pca/revocations", 0, true, false},
+    {:post_workflow_receipts, :post, "/v1/pca/workflow-receipts", 0, true, false},
+    {:post_constitutions, :post, "/v1/pca/constitutions", 0, true, false},
     {:post_freeze, :post, "/v1/pca/freeze", 0, true, false},
     {:delete_freeze, :delete, "/v1/pca/freeze", 0, false, false},
     {:post_stepups_deny, :post, "/v1/pca/stepups/{id}/deny", 1, true, false},
     {:get_attestors, :get, "/v1/pca/attestors", 0, false, false},
-    {:put_attestors, :put, "/v1/pca/attestors", 0, true, false}
+    {:put_attestors, :put, "/v1/pca/attestors", 0, true, false},
+    {:get_principals, :get, "/v1/pca/principals", 0, false, true},
+    {:post_principals, :post, "/v1/pca/principals", 0, true, false},
+    {:delete_principals, :delete, "/v1/pca/principals/{principalPub}", 1, false, false},
+    {:post_guardian_rotate, :post, "/v1/pca/guardian/rotate", 0, true, false},
+    {:post_beacons, :post, "/v1/pca/beacons", 0, true, false},
+    {:delete_pq_pins, :delete, "/v1/pca/pq-pins/{identity}", 1, false, false},
+    {:get_intent_maps_observations, :get, "/v1/pca/intent/maps/{digest}/observations", 1, false, true},
+    {:post_intent_schemas, :post, "/v1/pca/intent/schemas", 0, true, false},
+    {:post_approvers_enrolments, :post, "/v1/pca/approvers/enrolments", 0, true, false},
+    {:get_approvers, :get, "/v1/pca/approvers", 0, false, true},
+    {:get_approvers_by_id, :get, "/v1/pca/approvers/{id}", 1, false, false},
+    {:update_approvers, :patch, "/v1/pca/approvers/{id}", 1, true, false},
+    {:update_approvers_members, :patch, "/v1/pca/approvers/{id}/members/{memberId}", 2, true, false},
+    {:delete_approvers_credentials, :delete, "/v1/pca/approvers/{id}/credentials/{credentialId}", 2, false, false},
+    {:get_approvals_settings, :get, "/v1/pca/approvals/settings", 0, false, false},
+    {:put_approvals_settings, :put, "/v1/pca/approvals/settings", 0, true, false},
+    {:get_action_registry, :get, "/v1/pca/action-registry", 0, false, false},
+    {:post_action_registry_publisher_keys, :post, "/v1/pca/action-registry/publisher-keys", 0, true, false},
+    {:delete_action_registry_publisher_keys, :delete, "/v1/pca/action-registry/publisher-keys/{kid}", 1, false, false},
+    {:post_action_registry_packs, :post, "/v1/pca/action-registry/packs", 0, true, false},
+    {:get_action_registry_namespaces_versions, :get, "/v1/pca/action-registry/namespaces/{ns}/versions", 1, false, true},
+    {:get_action_registry_namespaces_by_ns_versions_by_version, :get, "/v1/pca/action-registry/namespaces/{ns}/versions/{version}", 2, false, false},
+    {:get_action_registry_namespaces_diff, :get, "/v1/pca/action-registry/namespaces/{ns}/diff", 1, false, false},
+    {:put_action_registry_namespaces_pin, :put, "/v1/pca/action-registry/namespaces/{ns}/pin", 1, true, false},
+    {:delete_action_registry_namespaces_pin, :delete, "/v1/pca/action-registry/namespaces/{ns}/pin", 1, false, false},
+    {:get_action_registry_actions, :get, "/v1/pca/action-registry/actions", 0, false, true},
+    {:get_action_registry_actions_by_verb, :get, "/v1/pca/action-registry/actions/{verb}", 1, false, false},
+    {:post_action_registry_imports, :post, "/v1/pca/action-registry/imports", 0, true, false},
+    {:get_action_registry_drafts, :get, "/v1/pca/action-registry/drafts", 0, false, true},
+    {:get_action_registry_drafts_by_verb, :get, "/v1/pca/action-registry/drafts/{verb}", 1, false, false},
+    {:update_action_registry_drafts, :patch, "/v1/pca/action-registry/drafts/{verb}", 1, true, false},
+    {:delete_action_registry_drafts, :delete, "/v1/pca/action-registry/drafts/{verb}", 1, false, false},
+    {:post_action_registry_actions_review, :post, "/v1/pca/action-registry/actions/{verb}/review", 1, true, false},
+    {:post_action_registry_drafts_confirm, :post, "/v1/pca/action-registry/drafts/{verb}/confirm", 1, true, false},
+    {:post_action_registry_publish, :post, "/v1/pca/action-registry/publish", 0, true, false},
+    {:post_action_registry_reviewers_enrolments, :post, "/v1/pca/action-registry/reviewers/enrolments", 0, true, false},
+    {:get_action_registry_reviewers, :get, "/v1/pca/action-registry/reviewers", 0, false, true},
+    {:delete_action_registry_reviewers, :delete, "/v1/pca/action-registry/reviewers/{id}", 1, false, false},
+    {:get_action_registry_sources, :get, "/v1/pca/action-registry/sources", 0, false, true},
+    {:post_action_registry_sources, :post, "/v1/pca/action-registry/sources", 0, true, false},
+    {:update_action_registry_sources, :patch, "/v1/pca/action-registry/sources/{id}", 1, true, false},
+    {:delete_action_registry_sources, :delete, "/v1/pca/action-registry/sources/{id}", 1, false, false},
+    {:post_action_registry_sources_sync, :post, "/v1/pca/action-registry/sources/{id}/sync", 1, true, false},
+    {:get_action_registry_templates, :get, "/v1/pca/action-registry/templates", 0, false, true},
+    {:post_action_registry_templates_apply, :post, "/v1/pca/action-registry/templates/{id}/apply", 1, true, false}
   ]
 end

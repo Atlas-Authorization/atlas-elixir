@@ -16,10 +16,21 @@ defmodule Atlas.OauthConsentRequests do
   `GET /v1/oauth_consent_requests`. Required scope: `oauth_clients:read`.
 
   Query params (`params:`): `consent_challenge`.
-  Response fields: `object`, `subject`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `authorization_details`, `organization_id`, `redirect_uri`, `expires_at`.
+  Response fields: `object`, `subject`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `authorization_details`, `organization_id`, `redirect_uri`, `request_url`, `prompt`, `max_age`, `expires_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_consent_requests", %{}, nil, opts)
+
+  @doc ~S"""
+  The signed-in user is not the person who should grant this application access. Returns redirect_to: the application's original authorization request restarted with prompt=login, so the visitor signs in again (as another account) and a fresh consent challenge follows. Needs request_url on the challenge. Audited.
+
+  `PUT /v1/oauth_consent_requests/switch_account`. Required scope: `oauth_clients:write`.
+
+  Query params (`params:`): `consent_challenge`.
+  Response fields: `object`, `redirect_to`.
+  """
+  def put_switch_account(client, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/oauth_consent_requests/switch_account", %{}, nil, opts)
 
   @doc ~S"""
   Accept a consent challenge, optionally narrowing the granted scopes. Following redirect_to (in the same browser that started the flow) records the consent unless remember is false, and returns the application to its redirect_uri with a code.
@@ -27,7 +38,7 @@ defmodule Atlas.OauthConsentRequests do
   `PUT /v1/oauth_consent_requests/accept`. Required scope: `oauth_clients:write`.
 
   Query params (`params:`): `consent_challenge`.
-  Body fields: `grant_scope` (array), `remember` (boolean).
+  Body fields: `grant_scope` (array), `remember` (boolean), `metadata` (object).
   Response fields: `object`, `redirect_to`.
   """
   def put_accept(client, body, opts \\ []),
@@ -48,6 +59,7 @@ defmodule Atlas.OauthConsentRequests do
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/oauth_consent_requests", 0, false, false},
+    {:put_switch_account, :put, "/v1/oauth_consent_requests/switch_account", 0, false, false},
     {:put_accept, :put, "/v1/oauth_consent_requests/accept", 0, true, false},
     {:put_reject, :put, "/v1/oauth_consent_requests/reject", 0, true, false}
   ]

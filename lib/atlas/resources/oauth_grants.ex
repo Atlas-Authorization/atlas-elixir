@@ -17,7 +17,7 @@ defmodule Atlas.OauthGrants do
 
   Body fields: `grants` (array, required).
   Nested body fields: `grants.user_id`, `grants.client_id`, `grants.scopes`, `grants.refresh_tokens`, `grants.refresh_tokens.hash`, `grants.refresh_tokens.hash_algorithm`, `grants.refresh_tokens.prefix`, `grants.refresh_tokens.expires_at`.
-  Response fields: `object`, `dry_run`, `imported`, `failed`, `refresh_tokens`, `results`, `results.index`, `results.status`, `results.client_id`, `results.user_id`, `results.refresh_tokens`, `results.message`, `errors`, `errors.index`, `errors.message`, `note`.
+  Response fields: `object`, `dry_run`, `imported`, `failed`, `refresh_tokens`, `results`, `results.index`, `results.status`, `results.client_id`, `results.user_id`, `results.refresh_tokens`, `results.message`, `data`, `data.index`, `data.status`, `errors`, `errors.index`, `errors.message`, `note`.
   """
   def post_import(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/oauth_grants/import", %{}, body, opts)

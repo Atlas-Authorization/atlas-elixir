@@ -15,7 +15,7 @@ defmodule Atlas.MessagingProviders do
 
   `GET /v1/messaging_providers`. Required scope: `messaging:read`.
 
-  Response fields: `object`, `email`, `email.object`, `email.configured`, `email.id`, `email.channel`, `email.mode`, `email.transport`, `email.from_address`, `email.status`, `email.config`, `email.secrets_set`, `email.updated_at`, `sms`, `sms.object`, `sms.configured`, `sms.id`, `sms.channel`, `sms.mode`, `sms.transport`, `sms.from_address`, `sms.status`, `sms.config`, `sms.secrets_set`, `sms.updated_at`, `push`, `push.object`, `push.configured`, `push.id`, `push.channel`, `push.mode`, `push.transport`, `push.from_address`, `push.status`, `push.config`, `push.secrets_set`, `push.updated_at`, `managed_email`, `managed_email.object`, `managed_email.from_address`, `managed_email.domain`, `managed_email.status`, `managed_email.verified`, `development_email`, `development_email.object`, `development_email.enabled`, `development_email.from_address`.
+  Response fields: `object`, `email`, `email.object`, `email.configured`, `email.id`, `email.channel`, `email.mode`, `email.transport`, `email.from_address`, `email.status`, `email.config`, `email.secrets_set`, `email.secret_fingerprints`, `email.updated_at`, `sms`, `sms.object`, `sms.configured`, `sms.id`, `sms.channel`, `sms.mode`, `sms.transport`, `sms.from_address`, `sms.status`, `sms.config`, `sms.secrets_set`, `sms.secret_fingerprints`, `sms.updated_at`, `push`, `push.object`, `push.configured`, `push.id`, `push.channel`, `push.mode`, `push.transport`, `push.from_address`, `push.status`, `push.config`, `push.secrets_set`, `push.secret_fingerprints`, `push.updated_at`, `managed_email`, `managed_email.object`, `managed_email.from_address`, `managed_email.domain`, `managed_email.status`, `managed_email.verified`, `development_email`, `development_email.object`, `development_email.enabled`, `development_email.from_address`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers", %{}, nil, opts)
@@ -25,7 +25,7 @@ defmodule Atlas.MessagingProviders do
 
   `GET /v1/messaging_providers/{channel}`. Required scope: `messaging:read`.
 
-  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`, `message`.
+  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `secret_fingerprints`, `updated_at`, `message`.
   """
   def get(client, channel, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messaging_providers/{channel}", %{"channel" => channel}, nil, opts)
@@ -47,7 +47,7 @@ defmodule Atlas.MessagingProviders do
   `PUT /v1/messaging_providers/email`. Required scope: `messaging:write`.
 
   Nested body fields: `config.api_key`, `config.region`, `config.access_key_id`, `config.secret_access_key`, `config.session_token`, `config.host`, `config.port`, `config.secure`, `config.username`, `config.password`, `config.domain`, `config.app`, `config.url`, `config.signing_secret`, `config.payload`.
-  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`.
+  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `secret_fingerprints`, `updated_at`.
   """
   def put_email(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/email", %{}, body, opts)
@@ -58,7 +58,7 @@ defmodule Atlas.MessagingProviders do
   `PUT /v1/messaging_providers/sms`. Required scope: `messaging:write`.
 
   Nested body fields: `config.account_sid`, `config.auth_token`, `config.from`, `config.messaging_service_sid`, `config.whatsapp_from`, `config.voice_from`, `config.api_key`, `config.api_secret`, `config.application_id`, `config.private_key`, `config.voice_event_url`, `config.access_key`, `config.whatsapp_channel_id`, `config.auth_id`, `config.whatsapp_template`, `config.whatsapp_template_language`, `config.whatsapp_template_otp_button`, `config.service_plan_id`, `config.api_token`, `config.region`, `config.base_url`, `config.username`, `config.account_id`, `config.password`, `config.access_key_id`, `config.secret_access_key`, `config.session_token`, `config.url`, `config.signing_secret`, `config.payload`.
-  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `updated_at`.
+  Response fields: `object`, `configured`, `id`, `channel`, `mode`, `transport`, `from_address`, `status`, `config`, `secrets_set`, `secret_fingerprints`, `updated_at`.
   """
   def put_sms(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/sms", %{}, body, opts)
@@ -74,7 +74,7 @@ defmodule Atlas.MessagingProviders do
     do: Atlas.Client.request(client, :put, "/v1/messaging_providers/push", %{}, body, opts)
 
   @doc ~S"""
-  Send a clearly-marked test message to a destination to verify the configured email, SMS or push provider delivers (for push, `to` is a device token and the response shows only its last 6 characters), without triggering a real auth flow. `channel` may also be `whatsapp` or `voice`: both ride the Twilio account of your SMS provider (`to` is an E.164 number; the voice call speaks six zeros). A test goes through the same suppression list, `pre_message_send` hook and message ledger as any send, so it appears in GET /v1/messages (template `provider_test`). Rate-limited; 422 when nothing is configured. 200 when the provider accepted the message: `ok`/`accepted` true, `provider`, `provider_message_id` (for SMTP also `provider_response`, the server reply line with its queue id). 502 INTERNAL when the provider refused it or could not be reached; the error `meta` carries `ok: false`, `accepted: false`, `failure` (provider_rejected | provider_unreachable), `provider`, `provider_message_id`, `provider_status`, `provider_reason` (the provider's own reason) and, for SMTP, `provider_response`.
+  Send a clearly-marked test message to a destination to verify the configured email, SMS or push provider delivers (for push, `to` is a device token and the response shows only its last 6 characters), without triggering a real auth flow. `channel` may also be `whatsapp` or `voice`: both ride the Twilio account of your SMS provider (`to` is an E.164 number; the voice call speaks six zeros). A test goes through the same suppression list, `pre_message_send` hook and message ledger as any send, so it appears in GET /v1/messages (template `provider_test`). Rate-limited; 422 when nothing is configured. 200 when the provider accepted the message: `ok`/`accepted` true, `provider`, `provider_message_id` (for SMTP also `provider_response`, the server reply line with its queue id). When the provider refused the message, could not be reached or did not answer within 20 seconds, Atlas still answers 200 from its own side: `ok: false`, `accepted: false`, `failure` (provider_rejected | provider_unreachable | timeout), `provider`, `status` (the provider's HTTP status when it answered, else null), `reason` (the provider's own reason) and, for SMTP, `provider_response`. It never answers with a 5xx for a provider problem, so check `ok`, not the status.
 
   `POST /v1/messaging_providers/{channel}/test`. Required scope: `messaging:write`.
 

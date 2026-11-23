@@ -15,7 +15,7 @@ defmodule Atlas.Config do
 
   `GET /v1/config/limits`. Required scope: `instance:read`.
 
-  Response fields: `object`, `limits`, `limits.resource_types`, `limits.resource_types.max_roles_per_type`, `limits.resource_types.key_pattern`, `limits.resource_types.name_max_length`, `limits.app_roles`, `limits.app_roles.max_permissions_per_role`, `limits.app_roles.max_roles_per_instance`, `limits.permissions`, `limits.permissions.max_implied_per_permission`, `limits.permissions.key_max_length`, `limits.scopes`, `limits.scopes.description_max_length`, `limits.scopes.label_max_length`.
+  Response fields: `object`, `limits`, `limits.resource_types`, `limits.resource_types.max_roles_per_type`, `limits.resource_types.key_pattern`, `limits.resource_types.name_max_length`, `limits.app_roles`, `limits.app_roles.max_permissions_per_role`, `limits.app_roles.max_roles_per_instance`, `limits.permissions`, `limits.permissions.max_implied_per_permission`, `limits.permissions.key_max_length`, `limits.permissions.max_parts`, `limits.permissions.part_max_length`, `limits.scopes`, `limits.scopes.description_max_length`, `limits.scopes.label_max_length`.
   """
   def get_limits(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/config/limits", %{}, nil, opts)

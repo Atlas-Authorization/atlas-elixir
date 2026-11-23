@@ -15,8 +15,8 @@ defmodule Atlas.Privacy do
 
   `POST /v1/privacy/lookup`. Required scope: `privacy:execute`.
 
-  Body fields: `emails` (array), `atlas` (object).
-  Nested body fields: `atlas.iss`, `atlas.sub`, `atlas.ext`, `atlas.principal`.
+  Body fields: `emails` (array), `atlas` (object), `identity` (object).
+  Nested body fields: `atlas.iss`, `atlas.sub`, `atlas.ext`, `atlas.principal`, `identity.iss`, `identity.sub`, `identity.ext`, `identity.principal`.
   Response fields: `object`, `status`, `subjectId`, `matchedBy`, `detail`, `principal`, `principalMatched`, `canary`.
   """
   def post_lookup(client, body, opts \\ []),
