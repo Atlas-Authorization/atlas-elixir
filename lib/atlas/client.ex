@@ -15,8 +15,11 @@ defmodule Atlas.Client do
 
   A `429` is retried for every method (it was not processed), honouring `Retry-After` (seconds or an HTTP
   date; a wait longer than `:max_delay_ms` is not waited out and the error carries
-  `retry_after_ms`). `500`, `502`, `503`, `504` and transport failures are retried only for
+  `retry_after_ms`). `500`, `502`, `503` and `504` are retried only for
   `GET`, `HEAD`, `PUT`, `DELETE` and calls with an `:idempotency_key`; a write without one is never retried.
+
+  A connection reset before any response (an idle pooled connection the server closed: `:closed`, `:econnreset`,
+  `:epipe`, `:econnrefused`) is retried once, after a short jittered wait, for the same calls. A timeout is never retried.
 
   Every call emits `:telemetry` events (see `AtlasAuth.Telemetry`) when `:telemetry` is installed.
   """
@@ -66,7 +69,7 @@ defmodule Atlas.Client do
 
   defp run(c, method, template, path, body, opts, attempt) do
     result =
-      case Req.request(build(c, method, path, body, opts)) do
+      case send_once(c, method, build(c, method, path, body, opts), opts) do
         {:ok, %Req.Response{status: s} = r} when s in 200..299 -> {:ok, decode(r)}
         {:ok, %Req.Response{status: s} = r} -> {:error, Atlas.Error.from_response(s, decode(r), r.headers)}
         {:error, reason} -> {:error, Atlas.Error.transport(reason)}
@@ -92,6 +95,25 @@ defmodule Atlas.Client do
     end
   end
 
+  # One request; a connection reset before any response (a pooled connection the server closed while idle) is
+  # retried once, for calls that are safe to repeat. Never a timeout.
+  defp send_once(c, method, req, opts) do
+    case Req.request(req) do
+      {:error, %{reason: reason}} = first when reason in [:closed, :econnreset, :epipe, :econnrefused] ->
+        if replayable?(method, opts) do
+          resilience(c).sleep.(25 + :rand.uniform(100))
+          Req.request(req)
+        else
+          first
+        end
+
+      other ->
+        other
+    end
+  end
+
+  defp replayable?(method, opts), do: method in [:get, :head, :put, :delete] or opts[:idempotency_key] not in [nil, ""]
+
   defp build(c, method, path, body, opts) do
     headers =
       [{"authorization", "Bearer " <> c.secret_key}, {"accept", "application/json"}] ++
@@ -105,12 +127,12 @@ defmodule Atlas.Client do
     |> put_body(body, opts[:content_type])
   end
 
-  # 429 is retried for every method (the request was refused, not processed). 500, 502, 503, 504 and transport
-  # failures only when repeating the call is safe: GET, HEAD, PUT, DELETE, or a call with an idempotency key.
+  # 429 is retried for every method (the request was refused, not processed). 500, 502, 503, 504 only when repeating
+  # the call is safe: GET, HEAD, PUT, DELETE, or a call with an idempotency key. Transport failures: see send_once/4.
   defp retryable?(%Atlas.Error{status: 429}, _method, _opts), do: true
 
-  defp retryable?(%Atlas.Error{status: s}, method, opts) when s in [500, 502, 503, 504, nil],
-    do: method in [:get, :head, :put, :delete] or opts[:idempotency_key] not in [nil, ""]
+  defp retryable?(%Atlas.Error{status: s}, method, opts) when s in [500, 502, 503, 504],
+    do: replayable?(method, opts)
 
   defp retryable?(_, _, _), do: false
 

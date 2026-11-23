@@ -2,6 +2,12 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.18.1 — 2026-11-23
+
+### Fixed
+
+- A connection reset before any response (`:closed`, `:econnreset`, `:epipe`, `:econnrefused`) is retried once, after a short jittered wait, for `GET`, `HEAD`, `PUT`, `DELETE` and calls with an `:idempotency_key`. A transport failure is no longer retried up to `:max_retries` times, and a timeout is never retried.
+
 ## 0.18.0 — 2026-11-22
 
 ### Added
