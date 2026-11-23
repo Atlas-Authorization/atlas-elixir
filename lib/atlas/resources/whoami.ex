@@ -11,11 +11,11 @@ defmodule Atlas.Whoami do
   """
 
   @doc ~S"""
-  Introspect the presented credential: a secret key, a partner link, an access token, or a publishable key (as `Authorization: Bearer pk_…` or `X-Atlas-Publishable-Key`). Returns the key's id, type, prefix, environment, scopes (and presets expanded), owner, created/expires/last-used, the instance (id, environment, issuer) and the account. No scope required.
+  Introspect the presented credential: a secret key, a partner link, an access token, or a publishable key (as `Authorization: Bearer pk_…` or `X-Atlas-Publishable-Key`). Returns the key's id, type, prefix, environment, scopes (and presets expanded), the preset it was minted with when its scopes are exactly a named preset, what it may mint (`can_mint`), owner, created/expires/last-used, the resource it is scoped to, the route prefixes it can reach, the instance (id, environment, issuer) and the account. Changes nothing. No scope required.
 
   `GET /v1/whoami`.
 
-  Response fields: `object`, `key`, `key.id`, `key.type`, `key.prefix`, `key.environment`, `key.scopes`, `key.effective_scopes`, `key.owner`, `key.created_at`, `key.expires_at`, `key.last_used_at`, `key.last_used_ip`, `instance`, `instance.id`, `instance.environment`, `instance.issuer`, `account`, `account.id`, `partner`, `operator`.
+  Response fields: `object`, `key`, `key.id`, `key.type`, `key.prefix`, `key.environment`, `key.scopes`, `key.effective_scopes`, `key.preset`, `key.can_mint`, `key.can_mint.secret_keys`, `key.can_mint.scopes`, `key.can_mint.presets`, `key.resource`, `key.route_prefixes`, `key.owner`, `key.created_at`, `key.expires_at`, `key.last_used_at`, `key.last_used_ip`, `instance`, `instance.id`, `instance.environment`, `instance.issuer`, `account`, `account.id`, `partner`, `operator`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/whoami", %{}, nil, opts)

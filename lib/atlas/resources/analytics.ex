@@ -83,6 +83,42 @@ defmodule Atlas.Analytics do
     do: Atlas.Client.stream(client, "/v1/analytics/breakdown", %{}, opts)
 
   @doc ~S"""
+  Captcha challenges per provider and flow: issued, passed, failed, refused, and the solve rate (passed over passed plus failed). No organization slice. A provider that records no issue event shows 0 issued.
+
+  `GET /v1/analytics/captcha`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `issued`, `passed`, `failed`, `blocked`, `solve_rate`, `data`, `data.provider`, `data.flow`, `data.issued`, `data.passed`, `data.failed`, `data.blocked`, `data.solve_rate`.
+  """
+  def get_captcha(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/analytics/captcha", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_captcha`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_captcha(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/analytics/captcha", %{}, opts)
+
+  @doc ~S"""
+  SMS messages by destination country: sent, delivered, failed. Atlas sends through your own provider, which bills you; pass `rate_per_message` (and optionally `currency`) to add `estimated_cost` (messages times that rate, not a billed amount). No organization slice.
+
+  `GET /v1/analytics/sms`. Required scope: `analytics:read`.
+
+  Query params (`params:`): `rate_per_message`, `currency`, `from`, `to`, `days`, `granularity`, `organization_id`, `format`, `limit`, `starting_after`.
+  Response fields: `object`, `window`, `window.from`, `window.to`, `window.granularity`, `window.organization_id`, `total`, `data`, `data.country`, `data.messages`, `data.delivered`, `data.failed`, `data.estimated_cost`.
+  """
+  def get_sms(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/analytics/sms", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_sms`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_sms(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/analytics/sms", %{}, opts)
+
+  @doc ~S"""
   Distinct active users and sign-ins per bucket, each bucket split into new users (signed up in that bucket) and returning users, plus trailing 1/7/30-day active-user counts (dau, wau, mau) ending at `to`.
 
   `GET /v1/analytics/active_users`. Required scope: `analytics:read`.
@@ -267,6 +303,8 @@ defmodule Atlas.Analytics do
     {:get_journey_funnel, :get, "/v1/analytics/journey_funnel", 0, false, true},
     {:get_failures, :get, "/v1/analytics/failures", 0, false, true},
     {:get_breakdown, :get, "/v1/analytics/breakdown", 0, false, true},
+    {:get_captcha, :get, "/v1/analytics/captcha", 0, false, true},
+    {:get_sms, :get, "/v1/analytics/sms", 0, false, true},
     {:get_active_users, :get, "/v1/analytics/active_users", 0, false, true},
     {:get_passkey_adoption, :get, "/v1/analytics/passkey_adoption", 0, false, true},
     {:get_reports_inactive_users, :get, "/v1/analytics/reports/inactive_users", 0, false, true},

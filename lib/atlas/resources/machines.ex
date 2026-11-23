@@ -11,12 +11,30 @@ defmodule Atlas.Machines do
   """
 
   @doc ~S"""
+  The machine deny feed: machines revoked and machine grants ended since a cursor (since=<iso|cursor>), oldest first, so a service that verifies machine tokens offline can deny a revoked machine within one poll. A `machine` entry denies every token with that `sub` issued before `revoked_at`; a `machine_grant` entry denies tokens with that `sub` and `aud` (the `audience`) issued before it. Readable with an sk_ bearer or a publishable key; a publishable key sees ids, audiences and times only. The revocation stream carries the same events as pushes.
+
+  `GET /v1/machines/revoked`. Required scope: `machines:read`.
+
+  Query params (`params:`): `starting_after`, `since`, `limit`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.machine_id`, `data.audience`, `data.revoked_at`, `data.revoked_reason`, `data.revoked_by`, `data.revoked_by.type`, `data.revoked_by.id`, `data.owner_user_id`, `data.organization_id`, `has_more`, `next_cursor`.
+  """
+  def get_revoked(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/machines/revoked", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_revoked`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_revoked(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/machines/revoked", %{}, opts)
+
+  @doc ~S"""
   List machine identities (device registry), filtered by lifecycle status, reported hostname, owning user, organization, and/or metadata, with keyset pagination.
 
   `GET /v1/machines`. Required scope: `machines:read`.
 
   Query params (`params:`): `status`, `hostname`, `owner_user_id`, `organization_id`, `metadata`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.organization_id`, `data.owner_user_id`, `data.status`, `data.owner_usable`, `data.effective_status`, `data.device_key`, `data.public_key_jkt`, `data.token_binding`, `data.metadata`, `data.enrolled_at`, `data.last_token_at`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.organization_id`, `data.owner_user_id`, `data.status`, `data.owner_usable`, `data.effective_status`, `data.device_key`, `data.public_key_jkt`, `data.token_binding`, `data.metadata`, `data.enrolled_at`, `data.last_token_at`, `data.revoked_reason`, `data.revoked_by`, `data.revoked_by.type`, `data.revoked_by.id`, `data.ended_at`, `data.dies_with`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/machines", %{}, nil, opts)
@@ -33,8 +51,8 @@ defmodule Atlas.Machines do
 
   `POST /v1/machines`. Required scope: `machines:write`.
 
-  Body fields: `name` (string), `owner_user_id` (string), `data` (object).
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`, `secret`.
+  Body fields: `name` (string), `owner_user_id` (string), `data` (object), `dies_with` (string|null).
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`, `secret`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines", %{}, body, opts)
@@ -44,7 +62,7 @@ defmodule Atlas.Machines do
 
   `GET /v1/machines/{id}`. Required scope: `machines:read`.
 
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/machines/{id}", %{"id" => id}, nil, opts)
@@ -55,7 +73,7 @@ defmodule Atlas.Machines do
   `PATCH /v1/machines/{id}`. Required scope: `machines:write`.
 
   Body fields: `name` (string), `token_binding` (enum).
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/machines/{id}", %{"id" => id}, body, opts)
@@ -94,7 +112,7 @@ defmodule Atlas.Machines do
   `PATCH /v1/machines/{id}/metadata`. Required scope: `machines:write`.
 
   Body fields: `metadata` (object).
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`.
   """
   def update_metadata(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/machines/{id}/metadata", %{"id" => id}, body, opts)
@@ -104,7 +122,7 @@ defmodule Atlas.Machines do
 
   `POST /v1/machines/{id}/approve`. Required scope: `machines:write`.
 
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`.
   """
   def post_approve(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines/{id}/approve", %{"id" => id}, nil, opts)
@@ -114,7 +132,7 @@ defmodule Atlas.Machines do
 
   `POST /v1/machines/{id}/revoke`. Required scope: `machines:write`.
 
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines/{id}/revoke", %{"id" => id}, nil, opts)
@@ -125,7 +143,7 @@ defmodule Atlas.Machines do
   `POST /v1/machines/{id}/rotate_secret`. Required scope: `machines:write`.
 
   Body fields: `overlap_seconds` (integer).
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`, `secret`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`, `secret`.
   """
   def post_rotate_secret(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines/{id}/rotate_secret", %{"id" => id}, body, opts)
@@ -136,18 +154,18 @@ defmodule Atlas.Machines do
   `POST /v1/machines/{id}/rotate_key`. Required scope: `machines:write`.
 
   Body fields: `public_key_pem` (string, required).
-  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `organization_id`, `owner_user_id`, `status`, `owner_usable`, `effective_status`, `device_key`, `public_key_jkt`, `token_binding`, `metadata`, `enrolled_at`, `last_token_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `ended_at`, `dies_with`, `created_at`, `updated_at`.
   """
   def post_rotate_key(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines/{id}/rotate_key", %{"id" => id}, body, opts)
 
   @doc ~S"""
-  List the resource servers a machine may obtain tokens for, and up to which scopes.
+  List the resource servers a machine may obtain tokens for, and up to which scopes. `include_ended=true` adds the grants that were ended (kept 90 days) with their end reason, actor and time.
 
   `GET /v1/machines/{id}/grants`. Required scope: `machines:read`.
 
-  Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.machine_id`, `data.resource_server_id`, `data.scopes`, `data.constraints`, `data.expires_at`, `data.expired`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Query params (`params:`): `include_ended`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.machine_id`, `data.resource_server_id`, `data.scopes`, `data.constraints`, `data.expires_at`, `data.expired`, `data.dies_with`, `data.revoked_at`, `data.ended_at`, `data.revoked_reason`, `data.revoked_by`, `data.revoked_by.type`, `data.revoked_by.id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_grants(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/machines/{id}/grants", %{"id" => id}, nil, opts)
@@ -165,7 +183,7 @@ defmodule Atlas.Machines do
   `POST /v1/machines/{id}/grants`. Required scope: `machines:write`.
 
   Body fields: `resource_server_id` (string, required), `scopes` (array), `scope_presets` (array), `constraints` (object), `expires_in_seconds` (integer), `expires_at` (any).
-  Response fields: `object`, `id`, `machine_id`, `resource_server_id`, `scopes`, `constraints`, `expires_at`, `expired`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `machine_id`, `resource_server_id`, `scopes`, `constraints`, `expires_at`, `expired`, `dies_with`, `revoked_at`, `ended_at`, `revoked_reason`, `revoked_by`, `revoked_by.type`, `revoked_by.id`, `created_at`, `updated_at`.
   """
   def post_grants(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/machines/{id}/grants", %{"id" => id}, body, opts)
@@ -181,7 +199,7 @@ defmodule Atlas.Machines do
     do: Atlas.Client.request(client, :patch, "/v1/machines/{id}/grants/{grantId}", %{"id" => id, "grantId" => grant_id}, body, opts)
 
   @doc ~S"""
-  Revoke a machine's grant. No new tokens for that resource server; a token already issued lasts until it expires.
+  Revoke a machine's grant. No new tokens for that resource server; a token already issued lasts until it expires, or until a verifier that subscribes to the revocation stream or the machine deny feed denies it. The grant stays as a record for 90 days (`revoked_at`, `revoked_reason`, `revoked_by`) and `machine_grant.revoked` fires.
 
   `DELETE /v1/machines/{id}/grants/{grantId}`. Required scope: `machines:write`.
 
@@ -192,6 +210,7 @@ defmodule Atlas.Machines do
 
   @doc false
   def __operations__, do: [
+    {:get_revoked, :get, "/v1/machines/revoked", 0, false, true},
     {:list, :get, "/v1/machines", 0, false, true},
     {:create, :post, "/v1/machines", 0, true, false},
     {:get, :get, "/v1/machines/{id}", 1, false, false},

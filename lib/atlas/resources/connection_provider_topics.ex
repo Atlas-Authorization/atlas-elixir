@@ -21,7 +21,7 @@ defmodule Atlas.ConnectionProviderTopics do
     do: Atlas.Client.request(client, :get, "/v1/connection_provider_topics", %{}, nil, opts)
 
   @doc ~S"""
-  Replace the instance's business topics: { topics: { shopify: [...], ebay: [...] } }, up to 50 per provider, spelled as the provider spells them (Shopify orders/create; eBay Trading events such as ItemSold, or Commerce Notification topic ids in UPPER_SNAKE_CASE). Connections made afterwards subscribe automatically; call POST /v1/connections/{id}/provider_subscriptions/sync for existing ones. A topic not listed here is acknowledged and ignored on delivery.
+  Replace the instance's business topics: { topics: { shopify: [...], ebay: [...], bigcommerce: [...], square: [...], etsy: [...], tiktok_shop: [...] } }, up to 50 per provider (or ["*"] to pass every topic the provider sends through as connection.provider_event with the raw payload), spelled as the provider spells them (Shopify orders/create; eBay Trading events such as ItemSold, or Commerce Notification topic ids in UPPER_SNAKE_CASE). Connections made afterwards subscribe automatically; call POST /v1/connections/{id}/provider_subscriptions/sync for existing ones. A topic not listed here is acknowledged and ignored on delivery.
 
   `PUT /v1/connection_provider_topics`. Required scope: `organizations:write`.
 

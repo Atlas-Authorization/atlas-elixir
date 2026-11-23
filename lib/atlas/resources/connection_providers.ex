@@ -11,6 +11,24 @@ defmodule Atlas.ConnectionProviders do
   """
 
   @doc ~S"""
+  List every provider that has a stored instance policy, in the shape of the single-provider read (unique_external_id, whether a webhook secret or dev id is stored, events_url). Secrets are never returned.
+
+  `GET /v1/connection_providers/policies`. Required scope: `organizations:read`.
+
+  Query params (`params:`): `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.provider`, `data.unique_external_id`, `data.has_webhook_secret`, `data.has_dev_id`, `data.events_url`, `data.updated_at`, `has_more`, `next_cursor`.
+  """
+  def get_policies(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/connection_providers/policies", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `get_policies`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_get_policies(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/connection_providers/policies", %{}, opts)
+
+  @doc ~S"""
   Read the instance policy for one provider's connections: unique_external_id, whether a webhook secret is stored, and the one ingress URL (events_url) for that provider's uninstall and revocation notices (shopify, bigcommerce, wix, square, ebay).
 
   `GET /v1/connection_providers/{provider}/policy`. Required scope: `organizations:read`.
@@ -41,6 +59,7 @@ defmodule Atlas.ConnectionProviders do
 
   @doc false
   def __operations__, do: [
+    {:get_policies, :get, "/v1/connection_providers/policies", 0, false, true},
     {:get_policy, :get, "/v1/connection_providers/{provider}/policy", 1, false, false},
     {:put_policy, :put, "/v1/connection_providers/{provider}/policy", 1, true, false},
     {:delete_policy, :delete, "/v1/connection_providers/{provider}/policy", 1, false, false}

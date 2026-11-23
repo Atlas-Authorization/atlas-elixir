@@ -311,8 +311,16 @@
   "delete_duo_secret",
   "n"
  ],
+ "DELETE /v1/instance/hooks/before_first_session": [
+  "delete_hooks_before_first_session",
+  "n"
+ ],
  "DELETE /v1/instance/hooks/before_user_create": [
   "delete_hooks_before_user_create",
+  "n"
+ ],
+ "DELETE /v1/instance/integrations/forwarding/{destination}": [
+  "delete_integrations_forwarding",
   "n"
  ],
  "DELETE /v1/instance/integrations/{product}": [
@@ -361,6 +369,10 @@
  ],
  "DELETE /v1/instance/smart_card_secret": [
   "delete_smart_card_secret",
+  "n"
+ ],
+ "DELETE /v1/instance/staging_copies/{id}": [
+  "delete_staging_copies",
   "n"
  ],
  "DELETE /v1/instance/status_dependencies/{id}": [
@@ -501,6 +513,10 @@
  ],
  "DELETE /v1/migrations/{source}/imports/{id}": [
   "delete_imports",
+  "n"
+ ],
+ "DELETE /v1/native_apps/{id}": [
+  "delete",
   "n"
  ],
  "DELETE /v1/network_acls/{id}": [
@@ -667,8 +683,48 @@
   "delete",
   "n"
  ],
+ "DELETE /v1/pca/action-registry/drafts/{verb}": [
+  "delete_action_registry_drafts",
+  "n"
+ ],
+ "DELETE /v1/pca/action-registry/namespaces/{ns}/pin": [
+  "delete_action_registry_namespaces_pin",
+  "n"
+ ],
+ "DELETE /v1/pca/action-registry/publisher-keys/{kid}": [
+  "delete_action_registry_publisher_keys",
+  "n"
+ ],
+ "DELETE /v1/pca/action-registry/reviewers/{id}": [
+  "delete_action_registry_reviewers",
+  "n"
+ ],
+ "DELETE /v1/pca/action-registry/sources/{id}": [
+  "delete_action_registry_sources",
+  "n"
+ ],
+ "DELETE /v1/pca/approvers/{id}/credentials/{credentialId}": [
+  "delete_approvers_credentials",
+  "n"
+ ],
  "DELETE /v1/pca/freeze": [
   "delete_freeze",
+  "n"
+ ],
+ "DELETE /v1/pca/grants/{grantRef}": [
+  "delete_grants",
+  "r"
+ ],
+ "DELETE /v1/pca/pq-pins/{identity}": [
+  "delete_pq_pins",
+  "n"
+ ],
+ "DELETE /v1/pca/principals/{principalPub}": [
+  "delete_principals",
+  "n"
+ ],
+ "DELETE /v1/permission_aliases/{alias}": [
+  "delete",
   "n"
  ],
  "DELETE /v1/permissions/{id}": [
@@ -803,6 +859,10 @@
   "delete",
   "n"
  ],
+ "DELETE /v1/ssf/configuration": [
+  "delete_configuration",
+  "r"
+ ],
  "DELETE /v1/ssf/receivers/{id}": [
   "delete_receivers",
   "n"
@@ -913,6 +973,10 @@
  ],
  "DELETE /v1/users/{id}/required_actions/{rid}": [
   "delete_required_actions",
+  "n"
+ ],
+ "DELETE /v1/users/{id}/risk_signals": [
+  "delete_risk_signals",
   "n"
  ],
  "DELETE /v1/users/{id}/security_questions": [
@@ -1155,6 +1219,10 @@
   "get_breakdown",
   "n"
  ],
+ "GET /v1/analytics/captcha": [
+  "get_captcha",
+  "n"
+ ],
  "GET /v1/analytics/failures": [
   "get_failures",
   "n"
@@ -1181,6 +1249,10 @@
  ],
  "GET /v1/analytics/reports/mfa_coverage": [
   "get_reports_mfa_coverage",
+  "n"
+ ],
+ "GET /v1/analytics/sms": [
+  "get_sms",
   "n"
  ],
  "GET /v1/api_keys": [
@@ -1567,11 +1639,19 @@
   "list",
   "n"
  ],
+ "GET /v1/connection_providers/policies": [
+  "get_policies",
+  "n"
+ ],
  "GET /v1/connection_providers/{provider}/policy": [
   "get_policy",
   "n"
  ],
  "GET /v1/connection_reconnect_settings": [
+  "list",
+  "n"
+ ],
+ "GET /v1/connection_templates": [
   "list",
   "n"
  ],
@@ -1811,6 +1891,10 @@
   "list",
   "n"
  ],
+ "GET /v1/domains/{id}": [
+  "get",
+  "n"
+ ],
  "GET /v1/dsr_console/requests": [
   "get_requests",
   "n"
@@ -1963,8 +2047,16 @@
   "get_grants_by_id",
   "n"
  ],
+ "GET /v1/grants": [
+  "list",
+  "n"
+ ],
  "GET /v1/grants/{grantType}/{id}/usage": [
   "get_usage",
+  "n"
+ ],
+ "GET /v1/grants/{id}": [
+  "get",
   "n"
  ],
  "GET /v1/group_rules": [
@@ -2155,6 +2247,10 @@
   "get_exports_bundle",
   "n"
  ],
+ "GET /v1/instance/hooks/before_first_session": [
+  "get_hooks_before_first_session",
+  "n"
+ ],
  "GET /v1/instance/hooks/before_user_create": [
   "get_hooks_before_user_create",
   "n"
@@ -2183,6 +2279,14 @@
   "get_integrations",
   "n"
  ],
+ "GET /v1/instance/integrations/forwarding/{destination}": [
+  "get_integrations_forwarding",
+  "n"
+ ],
+ "GET /v1/instance/integrations/health": [
+  "get_integrations_health",
+  "n"
+ ],
  "GET /v1/instance/integrations/{product}": [
   "get_integrations_by_product",
   "n"
@@ -2193,6 +2297,10 @@
  ],
  "GET /v1/instance/integrations/{product}/mints": [
   "get_integrations_mints",
+  "n"
+ ],
+ "GET /v1/instance/issuers": [
+  "get_issuers",
   "n"
  ],
  "GET /v1/instance/notices": [
@@ -2301,6 +2409,14 @@
  ],
  "GET /v1/instance/signing_keys": [
   "get_signing_keys",
+  "n"
+ ],
+ "GET /v1/instance/staging_copies": [
+  "get_staging_copies",
+  "n"
+ ],
+ "GET /v1/instance/staging_copies/{id}": [
+  "get_staging_copies_by_id",
   "n"
  ],
  "GET /v1/instance/status_dependencies": [
@@ -2479,6 +2595,10 @@
   "list",
   "n"
  ],
+ "GET /v1/machines/revoked": [
+  "get_revoked",
+  "n"
+ ],
  "GET /v1/machines/{id}": [
   "get",
   "n"
@@ -2651,6 +2771,18 @@
   "get_by_source_imports_by_id",
   "n"
  ],
+ "GET /v1/native_apps": [
+  "list",
+  "n"
+ ],
+ "GET /v1/native_apps/publishable_key": [
+  "get_publishable_key",
+  "n"
+ ],
+ "GET /v1/native_apps/{id}": [
+  "get",
+  "n"
+ ],
  "GET /v1/network_acls": [
   "list",
   "n"
@@ -2707,6 +2839,10 @@
   "get_backchannel_deliveries",
   "n"
  ],
+ "GET /v1/oauth_clients/{id}/consents": [
+  "get_consents",
+  "n"
+ ],
  "GET /v1/oauth_clients/{id}/exchange_policy": [
   "get_exchange_policy",
   "n"
@@ -2732,6 +2868,10 @@
   "n"
  ],
  "GET /v1/oauth_consent_requests": [
+  "list",
+  "n"
+ ],
+ "GET /v1/oauth_device_requests": [
   "list",
   "n"
  ],
@@ -2844,6 +2984,10 @@
   "n"
  ],
  "GET /v1/organization_connections": [
+  "list",
+  "n"
+ ],
+ "GET /v1/organization_invitations": [
   "list",
   "n"
  ],
@@ -3067,8 +3211,100 @@
   "get",
   "n"
  ],
+ "GET /v1/pca/action-registry": [
+  "get_action_registry",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/actions": [
+  "get_action_registry_actions",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/actions/{verb}": [
+  "get_action_registry_actions_by_verb",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/drafts": [
+  "get_action_registry_drafts",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/drafts/{verb}": [
+  "get_action_registry_drafts_by_verb",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/namespaces/{ns}/diff": [
+  "get_action_registry_namespaces_diff",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/namespaces/{ns}/versions": [
+  "get_action_registry_namespaces_versions",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/namespaces/{ns}/versions/{version}": [
+  "get_action_registry_namespaces_by_ns_versions_by_version",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/reviewers": [
+  "get_action_registry_reviewers",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/sources": [
+  "get_action_registry_sources",
+  "n"
+ ],
+ "GET /v1/pca/action-registry/templates": [
+  "get_action_registry_templates",
+  "n"
+ ],
+ "GET /v1/pca/approvals/settings": [
+  "get_approvals_settings",
+  "n"
+ ],
+ "GET /v1/pca/approvers": [
+  "get_approvers",
+  "n"
+ ],
+ "GET /v1/pca/approvers/{id}": [
+  "get_approvers_by_id",
+  "n"
+ ],
  "GET /v1/pca/attestors": [
   "get_attestors",
+  "n"
+ ],
+ "GET /v1/pca/bond-accounts": [
+  "get_bond_accounts",
+  "n"
+ ],
+ "GET /v1/pca/grants": [
+  "get_grants",
+  "n"
+ ],
+ "GET /v1/pca/grants/{grantRef}": [
+  "get_grants_by_grant_ref",
+  "n"
+ ],
+ "GET /v1/pca/grants/{grantRef}/needs": [
+  "get_grants_needs",
+  "n"
+ ],
+ "GET /v1/pca/intent/maps/{digest}/observations": [
+  "get_intent_maps_observations",
+  "n"
+ ],
+ "GET /v1/pca/principals": [
+  "get_principals",
+  "n"
+ ],
+ "GET /v1/pca/undo/records/{id}": [
+  "get_undo_records",
+  "n"
+ ],
+ "GET /v1/pca/undo/vetoes": [
+  "get_undo_vetoes",
+  "n"
+ ],
+ "GET /v1/permission_aliases": [
+  "list",
   "n"
  ],
  "GET /v1/permissions": [
@@ -3331,6 +3567,14 @@
   "get",
   "n"
  ],
+ "GET /v1/revocations": [
+  "list",
+  "n"
+ ],
+ "GET /v1/revocations/stream": [
+  "get_stream",
+  "n"
+ ],
  "GET /v1/risk_based_mfa": [
   "list",
   "n"
@@ -3495,6 +3739,14 @@
   "get",
   "n"
  ],
+ "GET /v1/ssf/configuration": [
+  "get_configuration",
+  "n"
+ ],
+ "GET /v1/ssf/metadata": [
+  "get_metadata",
+  "n"
+ ],
  "GET /v1/ssf/receivers": [
   "get_receivers",
   "n"
@@ -3595,6 +3847,10 @@
   "get_bulk_actions_by_id",
   "n"
  ],
+ "GET /v1/users/deleted": [
+  "get_deleted",
+  "n"
+ ],
  "GET /v1/users/search/fields": [
   "get_search_fields",
   "n"
@@ -3617,6 +3873,10 @@
  ],
  "GET /v1/users/{id}/approval_devices": [
   "get_approval_devices",
+  "n"
+ ],
+ "GET /v1/users/{id}/approval_requests": [
+  "get_by_id_approval_requests",
   "n"
  ],
  "GET /v1/users/{id}/approval_requests/{approvalId}": [
@@ -3707,6 +3967,14 @@
   "get_resolved",
   "n"
  ],
+ "GET /v1/users/{id}/risk_signals": [
+  "get_risk_signals",
+  "n"
+ ],
+ "GET /v1/users/{id}/security_summary": [
+  "get_security_summary",
+  "n"
+ ],
  "GET /v1/users/{id}/sessions": [
   "get_sessions",
   "n"
@@ -3781,6 +4049,10 @@
  ],
  "GET /v1/web_bot_auth/directories": [
   "get_directories",
+  "n"
+ ],
+ "GET /v1/webhook_dlq": [
+  "list",
   "n"
  ],
  "GET /v1/webhook_endpoints": [
@@ -4003,6 +4275,10 @@
   "update_grants",
   "d"
  ],
+ "PATCH /v1/grants/{id}": [
+  "update",
+  "d"
+ ],
  "PATCH /v1/group_rules/{id}": [
   "update",
   "r"
@@ -4031,8 +4307,16 @@
   "update",
   "r"
  ],
+ "PATCH /v1/instance/cookie_consent": [
+  "update_cookie_consent",
+  "r"
+ ],
  "PATCH /v1/instance/design": [
   "update_design",
+  "r"
+ ],
+ "PATCH /v1/instance/hooks/before_first_session": [
+  "update_hooks_before_first_session",
   "r"
  ],
  "PATCH /v1/instance/hooks/before_user_create": [
@@ -4131,6 +4415,10 @@
   "update",
   "r"
  ],
+ "PATCH /v1/native_apps/{id}": [
+  "update",
+  "r"
+ ],
  "PATCH /v1/network_acls/{id}": [
   "update",
   "d"
@@ -4217,6 +4505,22 @@
  ],
  "PATCH /v1/partner_links/{id}": [
   "update",
+  "r"
+ ],
+ "PATCH /v1/pca/action-registry/drafts/{verb}": [
+  "update_action_registry_drafts",
+  "r"
+ ],
+ "PATCH /v1/pca/action-registry/sources/{id}": [
+  "update_action_registry_sources",
+  "r"
+ ],
+ "PATCH /v1/pca/approvers/{id}": [
+  "update_approvers",
+  "r"
+ ],
+ "PATCH /v1/pca/approvers/{id}/members/{memberId}": [
+  "update_approvers_members",
   "r"
  ],
  "PATCH /v1/permissions/{id}": [
@@ -4319,6 +4623,10 @@
   "update",
   "d"
  ],
+ "PATCH /v1/ssf/configuration": [
+  "update_configuration",
+  "r"
+ ],
  "PATCH /v1/ssf/receivers/{id}": [
   "update_receivers",
   "d"
@@ -4345,6 +4653,10 @@
  ],
  "PATCH /v1/users/{id}": [
   "update",
+  "r"
+ ],
+ "PATCH /v1/users/{id}/deletion": [
+  "update_deletion",
   "r"
  ],
  "PATCH /v1/users/{id}/notes/{noteId}": [
@@ -4863,6 +5175,10 @@
   "post_oauth_clients_register",
   "r"
  ],
+ "POST /v1/connections/rehome": [
+  "post_rehome",
+  "r"
+ ],
  "POST /v1/connections/tokens/batch": [
   "post_tokens_batch",
   "r"
@@ -5070,6 +5386,10 @@
  "POST /v1/domains": [
   "create",
   "d"
+ ],
+ "POST /v1/domains/{id}/verification/rotate": [
+  "post_verification_rotate",
+  "r"
  ],
  "POST /v1/domains/{id}/verify": [
   "post_verify",
@@ -5435,6 +5755,10 @@
   "post_exports_revoke_links",
   "n"
  ],
+ "POST /v1/instance/hooks/before_first_session/test": [
+  "post_hooks_before_first_session_test",
+  "n"
+ ],
  "POST /v1/instance/hooks/before_user_create/test": [
   "post_hooks_before_user_create_test",
   "n"
@@ -5550,6 +5874,14 @@
  "POST /v1/instance/signing_keys/rotate": [
   "post_signing_keys_rotate",
   "d"
+ ],
+ "POST /v1/instance/staging_copies": [
+  "post_staging_copies",
+  "r"
+ ],
+ "POST /v1/instance/staging_copies/{id}/refresh": [
+  "post_staging_copies_refresh",
+  "r"
  ],
  "POST /v1/instance/status_dependencies": [
   "post_status_dependencies",
@@ -5723,6 +6055,14 @@
   "post_decide",
   "r"
  ],
+ "POST /v1/message_links": [
+  "create",
+  "r"
+ ],
+ "POST /v1/messages": [
+  "create",
+  "r"
+ ],
  "POST /v1/messaging/suppressions": [
   "post_suppressions",
   "d"
@@ -5783,8 +6123,16 @@
   "post_imports_finalize",
   "n"
  ],
+ "POST /v1/migrations/{source}/sessions": [
+  "post_sessions",
+  "r"
+ ],
  "POST /v1/migrations/{source}/verify": [
   "post_verify",
+  "r"
+ ],
+ "POST /v1/native_apps": [
+  "create",
   "r"
  ],
  "POST /v1/network_acls": [
@@ -5826,6 +6174,10 @@
  "POST /v1/oauth_clients/{id}/backchannel_logout/test": [
   "post_backchannel_logout_test",
   "n"
+ ],
+ "POST /v1/oauth_clients/{id}/consents/revoke": [
+  "post_consents_revoke",
+  "r"
  ],
  "POST /v1/oauth_clients/{id}/logout": [
   "post_logout",
@@ -6135,8 +6487,100 @@
   "create",
   "r"
  ],
+ "POST /v1/pca/action-registry/actions/{verb}/review": [
+  "post_action_registry_actions_review",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/drafts/{verb}/confirm": [
+  "post_action_registry_drafts_confirm",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/imports": [
+  "post_action_registry_imports",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/packs": [
+  "post_action_registry_packs",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/publish": [
+  "post_action_registry_publish",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/publisher-keys": [
+  "post_action_registry_publisher_keys",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/reviewers/enrolments": [
+  "post_action_registry_reviewers_enrolments",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/sources": [
+  "post_action_registry_sources",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/sources/{id}/sync": [
+  "post_action_registry_sources_sync",
+  "r"
+ ],
+ "POST /v1/pca/action-registry/templates/{id}/apply": [
+  "post_action_registry_templates_apply",
+  "r"
+ ],
+ "POST /v1/pca/approvers/enrolments": [
+  "post_approvers_enrolments",
+  "r"
+ ],
+ "POST /v1/pca/beacons": [
+  "post_beacons",
+  "r"
+ ],
+ "POST /v1/pca/bond-accounts": [
+  "post_bond_accounts",
+  "r"
+ ],
+ "POST /v1/pca/constitutions": [
+  "post_constitutions",
+  "r"
+ ],
  "POST /v1/pca/freeze": [
   "post_freeze",
+  "r"
+ ],
+ "POST /v1/pca/grants/{grantRef}/amend": [
+  "post_grants_amend",
+  "r"
+ ],
+ "POST /v1/pca/grants/{grantRef}/needs": [
+  "post_grants_needs",
+  "r"
+ ],
+ "POST /v1/pca/grants/{grantRef}/step-up": [
+  "post_grants_step_up",
+  "r"
+ ],
+ "POST /v1/pca/grants/{grantRef}/step-up/{challengeId}/approve": [
+  "post_grants_step_up_approve",
+  "r"
+ ],
+ "POST /v1/pca/guardian/rotate": [
+  "post_guardian_rotate",
+  "r"
+ ],
+ "POST /v1/pca/intent/schemas": [
+  "post_intent_schemas",
+  "r"
+ ],
+ "POST /v1/pca/needs/{needId}/approve": [
+  "post_needs_approve",
+  "r"
+ ],
+ "POST /v1/pca/needs/{needId}/deny": [
+  "post_needs_deny",
+  "r"
+ ],
+ "POST /v1/pca/principals": [
+  "post_principals",
   "r"
  ],
  "POST /v1/pca/revocations": [
@@ -6147,9 +6591,25 @@
   "post_stepups_deny",
   "r"
  ],
+ "POST /v1/pca/undo/records": [
+  "post_undo_records",
+  "r"
+ ],
+ "POST /v1/pca/workflow-receipts": [
+  "post_workflow_receipts",
+  "r"
+ ],
+ "POST /v1/permission_aliases": [
+  "create",
+  "r"
+ ],
  "POST /v1/permissions": [
   "create",
   "d"
+ ],
+ "POST /v1/permissions/{id}/rename": [
+  "post_rename",
+  "r"
  ],
  "POST /v1/platform/accountless_apps": [
   "create",
@@ -6191,12 +6651,20 @@
   "post_instances_clones",
   "r"
  ],
+ "POST /v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}/refresh": [
+  "post_instances_clones_refresh",
+  "r"
+ ],
  "POST /v1/platform/apps/{id}/instances/{instanceId}/rotate_secret": [
   "post_instances_rotate_secret",
   "r"
  ],
  "POST /v1/platform/apps/{id}/narrow_secret_keys": [
   "post_narrow_secret_keys",
+  "r"
+ ],
+ "POST /v1/platform/apps/{id}/provisioning_key/renew": [
+  "post_provisioning_key_renew",
   "r"
  ],
  "POST /v1/platform/apps/{id}/rotate_secret": [
@@ -6539,6 +7007,14 @@
   "post_preview",
   "d"
  ],
+ "POST /v1/ssf/add_subject": [
+  "post_add_subject",
+  "r"
+ ],
+ "POST /v1/ssf/configuration": [
+  "post_configuration",
+  "r"
+ ],
  "POST /v1/ssf/events": [
   "post_events",
   "d"
@@ -6546,6 +7022,10 @@
  "POST /v1/ssf/receivers": [
   "post_receivers",
   "d"
+ ],
+ "POST /v1/ssf/remove_subject": [
+  "post_remove_subject",
+  "r"
  ],
  "POST /v1/ssf/status": [
   "post_status",
@@ -6563,6 +7043,10 @@
   "post_streams_verify",
   "d"
  ],
+ "POST /v1/ssf/streams/{streamId}/poll": [
+  "post_streams_poll",
+  "r"
+ ],
  "POST /v1/ssf/subjects/add": [
   "post_subjects_add",
   "d"
@@ -6570,6 +7054,10 @@
  "POST /v1/ssf/subjects/remove": [
   "post_subjects_remove",
   "d"
+ ],
+ "POST /v1/ssf/verification": [
+  "post_verification",
+  "r"
  ],
  "POST /v1/ssf/verify": [
   "post_verify",
@@ -6747,6 +7235,10 @@
   "post_contain",
   "d"
  ],
+ "POST /v1/users/{id}/delegation_tokens": [
+  "post_delegation_tokens",
+  "r"
+ ],
  "POST /v1/users/{id}/deletion": [
   "post_deletion",
   "r"
@@ -6878,6 +7370,10 @@
  "POST /v1/users/{id}/reset_mfa": [
   "post_reset_mfa",
   "n"
+ ],
+ "POST /v1/users/{id}/risk_signals": [
+  "post_risk_signals",
+  "r"
  ],
  "POST /v1/users/{id}/sessions/revoke": [
   "post_sessions_revoke",
@@ -7183,6 +7679,10 @@
   "put_impersonation_policy",
   "r"
  ],
+ "PUT /v1/instance/integrations/forwarding/{destination}": [
+  "put_integrations_forwarding",
+  "r"
+ ],
  "PUT /v1/instance/integrations/{product}": [
   "put_integrations",
   "r"
@@ -7319,6 +7819,10 @@
   "put_imports_parts",
   "r"
  ],
+ "PUT /v1/native_apps/publishable_key": [
+  "put_publishable_key",
+  "r"
+ ],
  "PUT /v1/notification_categories/{key}": [
   "put",
   "r"
@@ -7358,6 +7862,18 @@
  "PUT /v1/oauth_consent_requests/reject": [
   "put_reject",
   "r"
+ ],
+ "PUT /v1/oauth_consent_requests/switch_account": [
+  "put_switch_account",
+  "n"
+ ],
+ "PUT /v1/oauth_device_requests/accept": [
+  "put_accept",
+  "n"
+ ],
+ "PUT /v1/oauth_device_requests/reject": [
+  "put_reject",
+  "n"
  ],
  "PUT /v1/oauth_login_requests/accept": [
   "put_accept",
@@ -7447,8 +7963,28 @@
   "put",
   "r"
  ],
+ "PUT /v1/pca/action-registry/namespaces/{ns}/pin": [
+  "put_action_registry_namespaces_pin",
+  "r"
+ ],
+ "PUT /v1/pca/approvals/settings": [
+  "put_approvals_settings",
+  "r"
+ ],
  "PUT /v1/pca/attestors": [
   "put_attestors",
+  "r"
+ ],
+ "PUT /v1/pca/grants/{grantRef}/authority": [
+  "put_grants_authority",
+  "r"
+ ],
+ "PUT /v1/pca/undo/records/{id}": [
+  "put_undo_records",
+  "r"
+ ],
+ "PUT /v1/permission_aliases/{alias}": [
+  "put",
   "r"
  ],
  "PUT /v1/platform/atlas_id_apps/{id}/managed_by": [
@@ -7491,8 +8027,16 @@
   "put_permissions",
   "d"
  ],
+ "PUT /v1/sessions/{id}/active_organization": [
+  "put_active_organization",
+  "r"
+ ],
  "PUT /v1/sessions/{id}/custom_data": [
   "put_custom_data",
+  "r"
+ ],
+ "PUT /v1/ssf/configuration": [
+  "put_configuration",
   "r"
  ],
  "PUT /v1/sso_onboarding_profiles/by_name/{name}": [
@@ -7501,6 +8045,10 @@
  ],
  "PUT /v1/telemetry_export": [
   "put",
+  "r"
+ ],
+ "PUT /v1/users/by_external_id/{external_id}": [
+  "put_by_external_id",
   "r"
  ],
  "PUT /v1/users/{id}/entitlements": [

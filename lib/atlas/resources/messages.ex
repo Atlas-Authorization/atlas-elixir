@@ -15,8 +15,8 @@ defmodule Atlas.Messages do
 
   `GET /v1/messages`. Required scope: `messaging:read`.
 
-  Query params (`params:`): `channel`, `status`, `template`, `provider`, `recipient`, `since`, `until`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.channel`, `data.template`, `data.recipient_masked`, `data.recipient_hash`, `data.country`, `data.status`, `data.status_detail`, `data.provider`, `data.provider_message_id`, `data.attempts`, `data.attempts.provider`, `data.attempts.ok`, `data.attempts.error`, `data.timeline`, `data.timeline.status`, `data.timeline.at`, `data.timeline.detail`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Query params (`params:`): `channel`, `status`, `template`, `category`, `provider`, `recipient`, `since`, `until`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.channel`, `data.template`, `data.recipient_masked`, `data.category`, `data.message_category`, `data.tags`, `data.recipient_hash`, `data.country`, `data.status`, `data.status_detail`, `data.provider`, `data.provider_message_id`, `data.attempts`, `data.attempts.provider`, `data.attempts.ok`, `data.attempts.error`, `data.timeline`, `data.timeline.status`, `data.timeline.at`, `data.timeline.detail`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messages", %{}, nil, opts)
@@ -27,6 +27,18 @@ defmodule Atlas.Messages do
   """
   def stream_list(client, opts \\ []),
     do: Atlas.Client.stream(client, "/v1/messages", %{}, opts)
+
+  @doc ~S"""
+  Send a transactional email from your app through your own email provider and its failover. Give `to` (one address, or up to 10, each sent separately) and either `template` (the name or id of a template from POST /v1/notification_templates, with `data` variables) or `subject` with `html` and/or `text`, sent exactly as you wrote them. The message is recorded in the ledger (GET /v1/messages) with category `transactional`, your `category` and `tags`, and your provider's delivery callbacks fill in its timeline; bounces and complaints suppress the address like sign-in mail. An address on the suppression list is not sent to: the message is recorded with status `suppressed` and returned. Returns 422 when the instance has no email provider of its own (Atlas never sends your mail from its own sender). Accepts an Idempotency-Key. One address returns the message; several return a list.
+
+  `POST /v1/messages`. Required scope: `messaging:write`.
+
+  Body fields: `to` (any, required), `template` (string), `data` (object), `subject` (string), `html` (string), `text` (string), `tags` (object), `reply_to` (any), `from` (any), `headers` (object), `unsubscribe_url` (string), `unsubscribe` (boolean), `category` (string), `locale` (string).
+  Nested body fields: `reply_to.email`, `reply_to.name`, `from.email`, `from.name`.
+  Response fields: `object`, `id`, `channel`, `template`, `recipient_masked`, `category`, `message_category`, `tags`, `recipient_hash`, `country`, `status`, `status_detail`, `provider`, `provider_message_id`, `attempts`, `attempts.provider`, `attempts.ok`, `attempts.error`, `timeline`, `timeline.status`, `timeline.at`, `timeline.detail`, `created_at`, `updated_at`, `data`, `data.object`, `data.id`, `data.channel`, `data.template`, `data.recipient_masked`, `data.category`, `data.message_category`, `data.tags`, `data.recipient_hash`, `data.country`, `data.status`, `data.status_detail`, `data.provider`, `data.provider_message_id`, `data.attempts`, `data.timeline`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  """
+  def create(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/messages", %{}, body, opts)
 
   @doc ~S"""
   How many messages are in each status over the last `hours` (default 24, up to 720).
@@ -44,7 +56,7 @@ defmodule Atlas.Messages do
 
   `GET /v1/messages/{id}`. Required scope: `messaging:read`.
 
-  Response fields: `object`, `id`, `channel`, `template`, `recipient_masked`, `recipient_hash`, `country`, `status`, `status_detail`, `provider`, `provider_message_id`, `attempts`, `attempts.provider`, `attempts.ok`, `attempts.error`, `timeline`, `timeline.status`, `timeline.at`, `timeline.detail`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `channel`, `template`, `recipient_masked`, `category`, `message_category`, `tags`, `recipient_hash`, `country`, `status`, `status_detail`, `provider`, `provider_message_id`, `attempts`, `attempts.provider`, `attempts.ok`, `attempts.error`, `timeline`, `timeline.status`, `timeline.at`, `timeline.detail`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/messages/{id}", %{"id" => id}, nil, opts)
@@ -52,6 +64,7 @@ defmodule Atlas.Messages do
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/messages", 0, false, true},
+    {:create, :post, "/v1/messages", 0, true, false},
     {:get_summary, :get, "/v1/messages/summary", 0, false, false},
     {:get, :get, "/v1/messages/{id}", 1, false, false}
   ]

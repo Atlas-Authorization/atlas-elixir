@@ -208,15 +208,27 @@ defmodule Atlas.Migrations do
     do: Atlas.Client.stream(client, "/v1/migrations/sources", %{}, opts)
 
   @doc ~S"""
-  Where the move stands: imported users by credential type (bcrypt, argon2, scrypt, pbkdf2, other, social, none; imported = has an external_id), bridged sessions, imported legacy sessions still live, failed bridge attempts by reason, daily use per source, and `safe_to_delete_old_auth` with the blockers that keep it false (recent use, live sessions, an open dual-run window, an enabled bridge, or `no_enabled_source` when no bridge or verifier was ever enabled or used, so nothing has been proven quiet). `quiet_days` (default 14, max 90) sets how long the old auth must be unused.
+  Where the move stands: imported users by credential type (bcrypt, argon2, scrypt, pbkdf2, other, social, none; imported = has an external_id), bridged sessions, imported legacy sessions still live, failed bridge attempts by reason, daily use per source, and `safe_to_delete_old_auth` with the blockers that keep it false (recent use, live sessions, an open dual-run window, an enabled bridge, `unmigrated_users` (imported users who never signed in on Atlas and hold no session; counted in `unmigrated_users` with a `unmigrated_user_sample` of ids), or `no_enabled_source` when no bridge or verifier was ever enabled or used, so nothing has been proven quiet). `quiet_days` (default 14, max 90) sets how long the old auth must be unused.
 
   `GET /v1/migrations/status`. Required scope: `legacy_auth:read`.
 
-  Query params (`params:`): `quiet_days`.
+  Query params (`params:`): `quiet_days`, `accept_unmigrated`.
   Response fields: `object`.
   """
   def get_status(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/migrations/status", %{}, nil, opts)
+
+  @doc ~S"""
+  Bulk-import live legacy sessions (up to 1000 a call) so the bridge can answer from Atlas alone (`mode: session_table`) and close early: the old system no longer has to be reachable for a person to cross over. Each row names the legacy session (`token`, or its SHA-256 hex as `token_hash`), the person (an Atlas `user_id` or your `external_id`) and `expires_at`; `mfa_verified` carries a completed second factor. Rows that cannot be linked to a person or have expired are reported in `errors` (`user_not_found`, `session_expired`, `invalid_row`, `unknown_field`, `already_exchanged`), never guessed. Re-sending a row only refreshes it, so a retry is safe. `dry_run: true` validates and counts without writing.
+
+  `POST /v1/migrations/{source}/sessions`. Required scope: `legacy_auth:write`.
+
+  Body fields: `sessions` (array, required), `dry_run` (boolean).
+  Nested body fields: `sessions.token`, `sessions.token_hash`, `sessions.user_id`, `sessions.external_id`, `sessions.expires_at`, `sessions.mfa_verified`.
+  Response fields: `object`, `source`, `dry_run`, `received`, `imported`, `failed`, `errors`, `errors.index`, `errors.code`, `errors.message`, `bridge_mode`.
+  """
+  def post_sessions(client, source, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/migrations/{source}/sessions", %{"source" => source}, body, opts)
 
   @doc ~S"""
   Read the zero-logout bridge settings for `source` (window, JWT preset / issuer / keys, claims, cookie names) and exchange counts. Never returns a shared secret.
@@ -270,6 +282,7 @@ defmodule Atlas.Migrations do
     {:delete_better_auth_bridge, :delete, "/v1/migrations/better_auth/bridge", 0, false, false},
     {:get_sources, :get, "/v1/migrations/sources", 0, false, true},
     {:get_status, :get, "/v1/migrations/status", 0, false, false},
+    {:post_sessions, :post, "/v1/migrations/{source}/sessions", 1, true, false},
     {:get_bridge, :get, "/v1/migrations/{source}/bridge", 1, false, false},
     {:put_bridge, :put, "/v1/migrations/{source}/bridge", 1, true, false},
     {:delete_bridge, :delete, "/v1/migrations/{source}/bridge", 1, false, false}

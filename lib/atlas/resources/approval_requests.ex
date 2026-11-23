@@ -16,7 +16,7 @@ defmodule Atlas.ApprovalRequests do
   `GET /v1/approval_requests`. Required scope: `approvals:read`.
 
   Query params (`params:`): `status`, `user_id`, `approver_user_id`, `reference`, `created_after`, `created_before`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.status`, `data.description`, `data.context`, `data.approved_by_device_id`, `data.created_at`, `data.expires_at`, `data.resolved_at`, `data.user_id`, `data.ttl_seconds`, `data.reference`, `data.binding`, `data.require_signature`, `data.require_trusted_device`, `data.approvers`, `data.approvers.mode`, `data.approvers.user_ids`, `data.approvers.organization_id`, `data.approvers.role`, `data.approvers.required`, `data.digest`, `data.canonical`, `data.receipt`, `data.consumed_at`, `data.approvals_received`, `data.decisions`, `data.decisions.approver_user_id`, `data.decisions.decision`, `data.decisions.method`, `data.decisions.key_id`, `data.decisions.trusted_device_id`, `data.decisions.decided_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.status`, `data.description`, `data.context`, `data.approved_by_device_id`, `data.created_at`, `data.expires_at`, `data.resolved_at`, `data.user_id`, `data.ttl_seconds`, `data.reference`, `data.binding`, `data.require_signature`, `data.require_trusted_device`, `data.exclude_requester`, `data.step_up_policy`, `data.approvers`, `data.approvers.mode`, `data.approvers.user_ids`, `data.approvers.organization_id`, `data.approvers.role`, `data.approvers.roles`, `data.approvers.group_id`, `data.approvers.required`, `data.digest`, `data.canonical`, `data.receipt`, `data.consumed_at`, `data.approvals_received`, `data.decisions`, `data.decisions.approver_user_id`, `data.decisions.decision`, `data.decisions.method`, `data.decisions.note`, `data.decisions.key_id`, `data.decisions.trusted_device_id`, `data.decisions.decided_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/approval_requests", %{}, nil, opts)
@@ -33,9 +33,9 @@ defmodule Atlas.ApprovalRequests do
 
   `POST /v1/approval_requests`. Required scope: `approvals:write`.
 
-  Body fields: `user_id` (string, required), `description` (string, required), `context` (object), `ttl_seconds` (integer), `approvers` (object), `require_signature` (boolean), `require_trusted_device` (boolean), `binding` (string), `reference` (string).
-  Nested body fields: `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`.
-  Response fields: `object`, `id`, `status`, `user_id`, `match_number`, `expires_at`, `approvers`, `require_signature`, `require_trusted_device`, `digest`, `reference`, `binding`.
+  Body fields: `user_id` (string, required), `description` (string, required), `context` (object), `ttl_seconds` (integer), `approvers` (object), `require_signature` (boolean), `exclude_requester` (boolean), `step_up_policy` (string), `require_trusted_device` (boolean), `binding` (string), `reference` (string).
+  Nested body fields: `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.roles`, `approvers.group_id`, `approvers.required`.
+  Response fields: `object`, `id`, `status`, `user_id`, `match_number`, `expires_at`, `approvers`, `require_signature`, `require_trusted_device`, `exclude_requester`, `step_up_policy`, `digest`, `reference`, `binding`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/approval_requests", %{}, body, opts)
@@ -46,7 +46,7 @@ defmodule Atlas.ApprovalRequests do
   `GET /v1/approval_requests/{id}`. Required scope: `approvals:read`.
 
   Query params (`params:`): `wait_seconds`.
-  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
+  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `exclude_requester`, `step_up_policy`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.roles`, `approvers.group_id`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.note`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/approval_requests/{id}", %{"id" => id}, nil, opts)
@@ -57,7 +57,7 @@ defmodule Atlas.ApprovalRequests do
   `POST /v1/approval_requests/{id}/consume`. Required scope: `approvals:write`.
 
   Body fields: `binding` (string).
-  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
+  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `exclude_requester`, `step_up_policy`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.roles`, `approvers.group_id`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.note`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
   """
   def post_consume(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/approval_requests/{id}/consume", %{"id" => id}, body, opts)
@@ -67,7 +67,7 @@ defmodule Atlas.ApprovalRequests do
 
   `POST /v1/approval_requests/{id}/cancel`. Required scope: `approvals:write`.
 
-  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
+  Response fields: `object`, `id`, `status`, `description`, `context`, `approved_by_device_id`, `created_at`, `expires_at`, `resolved_at`, `user_id`, `ttl_seconds`, `reference`, `binding`, `require_signature`, `require_trusted_device`, `exclude_requester`, `step_up_policy`, `approvers`, `approvers.mode`, `approvers.user_ids`, `approvers.organization_id`, `approvers.role`, `approvers.roles`, `approvers.group_id`, `approvers.required`, `digest`, `canonical`, `receipt`, `consumed_at`, `approvals_received`, `decisions`, `decisions.approver_user_id`, `decisions.decision`, `decisions.method`, `decisions.note`, `decisions.key_id`, `decisions.trusted_device_id`, `decisions.decided_at`.
   """
   def post_cancel(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/approval_requests/{id}/cancel", %{"id" => id}, nil, opts)

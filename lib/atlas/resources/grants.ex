@@ -11,11 +11,50 @@ defmodule Atlas.Grants do
   """
 
   @doc ~S"""
-  Revoke one consent grant and cascade-revoke its access/refresh grants through the standard revocation path, so the app stops working on its next request.
+  List every grant in one cursor-paged list: users' consent grants and OpenID Grant Management grants, told apart by `type`. Filter by `user_id`, `client_id` (the public client id), `type` (consent, managed, all) and `status` (active by default; revoking a consent removes it, so revoked grants are managed ones).
+
+  `GET /v1/grants`. Required scope: `grants:read`.
+
+  Query params (`params:`): `user_id`, `client_id`, `type`, `status`, `limit`, `starting_after`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.type`, `data.client_id`, `data.client_name`, `data.user_id`, `data.organization_id`, `data.status`, `data.scopes`, `data.resource`, `data.authorization_details`, `data.revision`, `data.metadata`, `data.created_at`, `data.updated_at`, `data.last_used_at`, `data.revoked_at`, `data.revoked_by`, `has_more`, `next_cursor`.
+  """
+  def list(client, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/grants", %{}, nil, opts)
+
+  @doc ~S"""
+  Lazy stream over every item of `list`, following the cursor page by page.
+  Raises `Atlas.Error` if a page request fails.
+  """
+  def stream_list(client, opts \\ []),
+    do: Atlas.Client.stream(client, "/v1/grants", %{}, opts)
+
+  @doc ~S"""
+  Read one grant of either kind, with its metadata.
+
+  `GET /v1/grants/{id}`. Required scope: `grants:read`.
+
+  Response fields: `object`, `id`, `type`, `client_id`, `client_name`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `metadata`, `created_at`, `updated_at`, `last_used_at`, `revoked_at`, `revoked_by`.
+  """
+  def get(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :get, "/v1/grants/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Change a grant's `metadata` (secret key only). The keys you send are merged into what is stored: a key sent as null is removed. The result is at most 4 KB of JSON. Audited; idempotent.
+
+  `PATCH /v1/grants/{id}`. Required scope: `grants:write`.
+
+  Body fields: `metadata` (object).
+  Response fields: `object`, `id`, `type`, `client_id`, `client_name`, `user_id`, `organization_id`, `status`, `scopes`, `resource`, `authorization_details`, `revision`, `metadata`, `created_at`, `updated_at`, `last_used_at`, `revoked_at`, `revoked_by`.
+  """
+  def update(client, id, body \\ %{}, opts \\ []),
+    do: Atlas.Client.request(client, :patch, "/v1/grants/{id}", %{"id" => id}, body, opts)
+
+  @doc ~S"""
+  Revoke one grant, a consent grant or a Grant Management grant (the id tells which). Either kind ends the consent, the Grant Management grants and every refresh grant of that client for the user through the standard revocation path, so the app stops working on its next request.
 
   `DELETE /v1/grants/{id}`. Required scope: `grants:write`.
 
-  Response fields: `object`, `id`, `deleted`, `tokens_revoked`.
+  Response fields: `object`, `id`, `type`, `deleted`, `tokens_revoked`.
   """
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/grants/{id}", %{"id" => id}, nil, opts)
@@ -65,6 +104,9 @@ defmodule Atlas.Grants do
 
   @doc false
   def __operations__, do: [
+    {:list, :get, "/v1/grants", 0, false, true},
+    {:get, :get, "/v1/grants/{id}", 1, false, false},
+    {:update, :patch, "/v1/grants/{id}", 1, true, false},
     {:delete, :delete, "/v1/grants/{id}", 1, false, false},
     {:post_consume, :post, "/v1/grants/{grantType}/{id}/consume", 2, true, false},
     {:post_refund, :post, "/v1/grants/{grantType}/{id}/refund", 2, true, false},

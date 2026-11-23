@@ -189,7 +189,8 @@ defmodule Atlas.Connections do
 
   `PUT /v1/connections/{id}/credentials`. Required scope: `organizations:write`.
 
-  Body fields: `api_key` (string), `token` (string), `username` (string), `password` (string), `value` (string), `secret` (string), `client_id` (string), `client_secret` (string), `token_url` (string), `scopes` (array), `private_key` (string), `generate_key` (boolean), `service_account_json` (string|object), `assertion` (string), `consumer_key` (string), `consumer_secret` (string), `token_secret` (string), `config` (object), `expires_at` (integer|string).
+  Body fields: `api_key` (string), `token` (string), `username` (string), `password` (string), `value` (string), `secret` (string), `client_id` (string), `client_secret` (string), `token_url` (string), `scopes` (array), `private_key` (string), `generate_key` (boolean), `service_account_json` (string|object), `assertion` (string), `consumer_key` (string), `consumer_secret` (string), `cookies` (array), `token_secret` (string), `config` (object), `expires_at` (integer|string).
+  Nested body fields: `cookies.name`, `cookies.value`, `cookies.domain`, `cookies.path`, `cookies.expires`, `cookies.secure`, `cookies.http_only`, `cookies.same_site`.
   Response fields: `object`, `id`, `owner`, `owner.type`, `owner.id`, `kind`, `provider`, `name`, `allowed_hosts`, `config`, `status`, `purpose`, `environment`, `sandbox`, `external_id`, `host_params`, `oauth_client_id`, `scopes`, `expires_at`, `refresh_expires_at`, `metadata`, `authorized_by_user_id`, `connected_at`, `last_refreshed_at`, `status_changed_at`, `last_error`, `last_error.code`, `last_error.message`, `last_error.httpStatus`, `last_error.at`, `refresh_failures`, `next_refresh_at`, `external_account_id`, `has_secret`, `secret_expires_at`, `previous_valid_until`, `allowed_methods`, `created_at`, `updated_at`.
   """
   def put_credentials(client, id, body, opts \\ []),
@@ -286,7 +287,7 @@ defmodule Atlas.Connections do
   `GET /v1/connections/oauth_clients`. Required scope: `organizations:read`.
 
   Query params (`params:`): `owner_type`, `owner_id`, `provider`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.owner`, `data.owner.type`, `data.owner.id`, `data.provider`, `data.environment`, `data.client_id`, `data.has_secret`, `data.scopes`, `data.host_params`, `data.enabled`, `data.redirect_uri`, `data.callback_url`, `data.forward_url`, `data.auth_method`, `data.key_id`, `data.key_alg`, `data.public_jwk`, `data.jwks_url`, `data.mtls_cert`, `data.registered_via`, `data.registration_client_uri`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.owner`, `data.owner.type`, `data.owner.id`, `data.provider`, `data.environment`, `data.client_id`, `data.has_secret`, `data.scopes`, `data.host_params`, `data.enabled`, `data.ru_name`, `data.redirect_uri`, `data.callback_url`, `data.forward_url`, `data.auth_method`, `data.key_id`, `data.key_alg`, `data.public_jwk`, `data.jwks_url`, `data.mtls_cert`, `data.registered_via`, `data.registration_client_uri`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_oauth_clients(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/connections/oauth_clients", %{}, nil, opts)
@@ -303,9 +304,9 @@ defmodule Atlas.Connections do
 
   `PUT /v1/connections/oauth_clients`. Required scope: `organizations:write`.
 
-  Body fields: `owner` (object), `provider` (string, required), `environment` (enum), `client_id` (string, required), `client_secret` (string), `scopes` (array), `host_params` (object), `enabled` (boolean), `auth_method` (enum), `generate_key` (boolean), `key_alg` (enum), `mtls_cert` (string), `redirect_uri` (string|null).
+  Body fields: `owner` (object), `provider` (string, required), `environment` (enum), `client_id` (string, required), `client_secret` (string), `scopes` (array), `host_params` (object), `enabled` (boolean), `ru_name` (string|null), `auth_method` (enum), `generate_key` (boolean), `key_alg` (enum), `mtls_cert` (string), `redirect_uri` (string|null).
   Nested body fields: `owner.type`, `owner.id`.
-  Response fields: `object`, `id`, `owner`, `owner.type`, `owner.id`, `provider`, `environment`, `client_id`, `has_secret`, `scopes`, `host_params`, `enabled`, `redirect_uri`, `callback_url`, `forward_url`, `auth_method`, `key_id`, `key_alg`, `public_jwk`, `jwks_url`, `mtls_cert`, `registered_via`, `registration_client_uri`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `owner`, `owner.type`, `owner.id`, `provider`, `environment`, `client_id`, `has_secret`, `scopes`, `host_params`, `enabled`, `ru_name`, `redirect_uri`, `callback_url`, `forward_url`, `auth_method`, `key_id`, `key_alg`, `public_jwk`, `jwks_url`, `mtls_cert`, `registered_via`, `registration_client_uri`, `created_at`, `updated_at`.
   """
   def put_oauth_clients(client, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/connections/oauth_clients", %{}, body, opts)
@@ -326,18 +327,31 @@ defmodule Atlas.Connections do
 
   `GET /v1/connections/oauth_clients/{id}`. Required scope: `organizations:read`.
 
-  Response fields: `object`, `id`, `owner`, `owner.type`, `owner.id`, `provider`, `environment`, `client_id`, `has_secret`, `scopes`, `host_params`, `enabled`, `redirect_uri`, `callback_url`, `forward_url`, `auth_method`, `key_id`, `key_alg`, `public_jwk`, `jwks_url`, `mtls_cert`, `registered_via`, `registration_client_uri`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `owner`, `owner.type`, `owner.id`, `provider`, `environment`, `client_id`, `has_secret`, `scopes`, `host_params`, `enabled`, `ru_name`, `redirect_uri`, `callback_url`, `forward_url`, `auth_method`, `key_id`, `key_alg`, `public_jwk`, `jwks_url`, `mtls_cert`, `registered_via`, `registration_client_uri`, `created_at`, `updated_at`.
   """
   def get_oauth_clients_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/connections/oauth_clients/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  Delete an owner OAuth client and its sealed secret. 409 while connections still hold tokens it issued (they could no longer refresh).
+  Delete an owner OAuth client and its sealed secret. 409 while connections still hold tokens it issued (they could no longer refresh), unless `rehome_to` names another client of the same provider and environment: every connection is then moved to it first (each proven with a refresh, as POST /v1/connections/rehome does) and the client is deleted only when all of them moved.
 
   `DELETE /v1/connections/oauth_clients/{id}`. Required scope: `organizations:write`.
+
+  Query params (`params:`): `rehome_to`.
   """
   def delete_oauth_clients(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/connections/oauth_clients/{id}", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Move OAuth connections from one owner client to another (a retired owner client you can now delete, two clients merged). Both clients must be the same provider and environment. When both are the same provider app (same client_id) every token stays valid and the rows simply move. Otherwise (verify, the default and the only allowed mode) one real refresh is made per connection with the TARGET client's credentials and only connections the provider accepts move; the others stay on the old client untouched and are reported failed with a reason (a failed probe changes no status). Token-family siblings move together. Dry run reports what would move without calling the provider. Never returns tokens. Idempotent on Idempotency-Key; audited as connection.rehomed (ids and counts).
+
+  `POST /v1/connections/rehome`. Required scope: `organizations:write`.
+
+  Body fields: `from_client` (string, required), `to_client` (string, required), `connection_ids` (array), `dry_run` (boolean), `verify` (boolean).
+  Response fields: `object`, `from_client`, `to_client`, `dry_run`, `same_app`, `moved`, `would_move`, `failed`, `skipped`, `data`, `data.connection_id`, `data.status`, `data.reason`.
+  """
+  def post_rehome(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/connections/rehome", %{}, body, opts)
 
   @doc ~S"""
   Make a provider API call server-side with this connection's credential, so the credential never reaches your code: Atlas injects an api_key (header or query), bearer, basic or custom header, signs with an hmac_secret or OAuth 1.0a, or sends a minted client_credentials / jwt_bearer / GitHub App installation / admin consent token. Only https calls to the connection's allowed_hosts are made, with the verbs in allowed_methods (default GET, HEAD, POST). When the connection is not connected, or the provider rejects the credential, the answer is 402 CONNECTION_REQUIRED with `meta.reason` (not_connected or needs_reauth) and, for a user-owned OAuth connection when you pass `redirect_url`, `meta.authorize_url`. The audit log records the method, host and status only. A connection with `config.signing` is signed on every call (TikTok Shop, Kaufland, Walmart Marketplace, Poizon or a generic hmac template): the relay adds the signature, so the call needs only the connection id. The response body is limited to 1 MiB by default (`truncated` is true past it) and up to 25 MiB when the instance raises it.
@@ -402,24 +416,24 @@ defmodule Atlas.Connections do
   Query params (`params:`): `verify`.
   Body fields: `connections` (array, required), `validate` (boolean), `dry_run` (boolean), `exchange_expiring` (boolean), `verify` (boolean).
   Nested body fields: `connections.kind`, `connections.credentials`, `connections.provider`, `connections.owner`, `connections.owner.type`, `connections.owner.id`, `connections.external_id`, `connections.refresh_token`, `connections.access_token`, `connections.expires_at`, `connections.scopes`, `connections.metadata`, `connections.environment`, `connections.host_params`, `connections.name`, `connections.allowed_hosts`, `connections.refresh_token_expires_at`, `connections.config`.
-  Response fields: `object`, `total`, `dry_run`, `validated`, `created`, `updated`, `would_create`, `would_update`, `failed`, `data`, `data.index`, `data.status`, `data.connection_id`, `data.check`, `data.validated`, `data.refreshed`, `data.exchanged`, `data.exchange_error`, `data.error`, `data.error.code`, `data.error.message`, `data.error.field`, `data.error.provider_error`.
+  Response fields: `object`, `total`, `dry_run`, `validated`, `created`, `updated`, `would_create`, `would_update`, `failed`, `errors`, `errors.index`, `errors.message`, `would_return`, `data`, `data.index`, `data.status`, `data.connection_id`, `data.check`, `data.validated`, `data.refreshed`, `data.exchanged`, `data.exchange_error`, `data.error`, `data.error.code`, `data.error.message`, `data.error.field`, `data.error.provider_error`.
   """
   def post_import(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connections/import", %{}, body, opts)
 
   @doc ~S"""
-  Export connections. Without include_secrets: metadata only (provider, owner, account, environment, scopes, status), scope connections:export. With include_secrets: needs scope connections:export_secrets, the header X-Atlas-Confirm: export-secrets and recipient_public_key (a public JWK: RSA of 3072 bits or more, or EC P-256/384/521). The tokens come back as one compact JWE sealed to that key that only its holder can open; Atlas keeps no plaintext. Pages hold up to 200 connections with secrets (500 without); follow next_cursor with starting_after. Every export is audited with its count, never the secrets. Opened, each connection is a valid import row.
+  Export connections. Without include_secrets: metadata only (provider, owner, account, environment, scopes, status), scope connections:export. With include_secrets: needs scope connections:export_secrets, the header X-Atlas-Confirm: export-secrets and recipient_public_key (a public JWK: RSA of 3072 bits or more, or EC P-256/384/521). The secrets (OAuth tokens, and for every other kind the entered credential: api keys, OAuth 1.0a secrets and RSA private keys, cookie jars; each as the `credentials` an import row takes, next to `kind` and `config`) come back as one compact JWE sealed to that key that only its holder can open; Atlas keeps no plaintext. Pages hold up to 200 connections with secrets (500 without); follow next_cursor with starting_after. Every export is audited with its count, never the secrets. Opened, each connection is a valid import row.
 
   `POST /v1/connections/export`. Required scope: `connections:export`.
 
-  Body fields: `owner_type` (enum), `owner_id` (string), `external_id` (string), `provider` (string), `environment` (enum), `status` (enum), `limit` (integer), `starting_after` (string), `include_secrets` (boolean), `recipient_public_key` (object).
-  Response fields: `object`, `sealed`, `count`, `has_more`, `next_cursor`, `connections`, `recipient_key_id`, `bundle`.
+  Body fields: `owner_type` (enum), `owner_id` (string), `connection_ids` (array), `external_id` (string), `provider` (string), `environment` (enum), `status` (enum), `limit` (integer), `starting_after` (string), `include_secrets` (boolean), `recipient_public_key` (object).
+  Response fields: `object`, `sealed`, `count`, `has_more`, `next_cursor`, `connections`, `connections.kind`, `connections.config`, `connections.provider`, `connections.owner`, `connections.owner.type`, `connections.owner.id`, `connections.external_id`, `connections.environment`, `connections.host_params`, `connections.scopes`, `connections.metadata`, `connections.name`, `connections.allowed_hosts`, `connections.status`, `connections.expires_at`, `connections.token_family`, `connections.refresh_token`, `connections.access_token`, `connections.credentials`, `recipient_key_id`, `bundle`.
   """
   def post_export(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/connections/export", %{}, body, opts)
 
   @doc ~S"""
-  Read the credential an api_key, bearer, basic, custom_header or hmac_secret connection stores, for your backend. Needs the dedicated connections:secret_read scope; every read is audited as connection.secret.read with the caller, connection and version (never the value) and the response is `Cache-Control: no-store`. `version` is current (default), previous (only while a rotation's overlap window is open) or a version number. A signing grant's private key is never readable: 409 `not_readable`. There is no browser or session route that reads a credential.
+  Read the credential an api_key, bearer, basic, custom_header, hmac_secret or cookie_jar connection stores (a cookie_jar returns `cookies`, the JSON list), for your backend. Needs the dedicated connections:secret_read scope; every read is audited as connection.secret.read with the caller, connection and version (never the value) and the response is `Cache-Control: no-store`. `version` is current (default), previous (only while a rotation's overlap window is open) or a version number. A signing grant's private key is never readable: 409 `not_readable`. There is no browser or session route that reads a credential.
 
   `GET /v1/connections/{id}/secret`. Required scope: `connections:secret_read`.
 
@@ -684,6 +698,7 @@ defmodule Atlas.Connections do
     {:post_oauth_complete, :post, "/v1/connections/oauth/complete", 0, true, false},
     {:get_oauth_clients_by_id, :get, "/v1/connections/oauth_clients/{id}", 1, false, false},
     {:delete_oauth_clients, :delete, "/v1/connections/oauth_clients/{id}", 1, false, false},
+    {:post_rehome, :post, "/v1/connections/rehome", 0, true, false},
     {:post_relay, :post, "/v1/connections/{id}/relay", 1, true, false},
     {:get_token, :get, "/v1/connections/{id}/token", 1, false, false},
     {:post_token_downscope, :post, "/v1/connections/{id}/token/downscope", 1, true, false},

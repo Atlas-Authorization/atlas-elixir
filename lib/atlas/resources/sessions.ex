@@ -16,7 +16,7 @@ defmodule Atlas.Sessions do
   `GET /v1/sessions`. Required scope: `sessions:read`.
 
   Query params (`params:`): `user_id`, `status`, `organization_id`, `ip`, `country`, `device`, `risk_level`, `min_risk_score`, `created_after`, `created_before`, `active`, `limit`, `cursor`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.status`, `data.last_active_organization_id`, `data.impersonated_by`, `data.last_active_at`, `data.expire_at`, `data.abandon_at`, `data.idle_expires_at`, `data.created_at`, `data.custom_data`, `data.sign_in_method`, `data.provider`, `data.amr`, `data.user_agent`, `data.ip_address`, `data.location`, `data.location.country`, `data.location.region`, `data.location.city`, `data.risk`, `data.risk.score`, `data.risk.level`, `data.risk.reasons`, `data.risk.computed_at`, `data.revoked_at`, `data.revoked_reason`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.status`, `data.last_active_organization_id`, `data.impersonated_by`, `data.last_active_at`, `data.expire_at`, `data.abandon_at`, `data.idle_expires_at`, `data.created_at`, `data.custom_data`, `data.sign_in_method`, `data.provider`, `data.native_client`, `data.native_client.kind`, `data.native_client.app_id`, `data.native_client.binding`, `data.device_label`, `data.amr`, `data.user_agent`, `data.ip_address`, `data.location`, `data.location.country`, `data.location.region`, `data.location.city`, `data.risk`, `data.risk.score`, `data.risk.level`, `data.risk.reasons`, `data.risk.computed_at`, `data.revoked_at`, `data.revoked_reason`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sessions", %{}, nil, opts)
@@ -63,7 +63,7 @@ defmodule Atlas.Sessions do
 
   `GET /v1/sessions/{id}`. Required scope: `sessions:read`.
 
-  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `native_client`, `native_client.kind`, `native_client.app_id`, `native_client.binding`, `device_label`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/sessions/{id}", %{"id" => id}, nil, opts)
@@ -94,7 +94,7 @@ defmodule Atlas.Sessions do
   `PUT /v1/sessions/{id}/custom_data`. Required scope: `sessions:write`.
 
   Body fields: `custom_data` (object|null, required).
-  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `native_client`, `native_client.kind`, `native_client.app_id`, `native_client.binding`, `device_label`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
   """
   def put_custom_data(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/sessions/{id}/custom_data", %{"id" => id}, body, opts)
@@ -105,7 +105,7 @@ defmodule Atlas.Sessions do
   `PATCH /v1/sessions/{id}/custom_data`. Required scope: `sessions:write`.
 
   Body fields: `custom_data` (object, required).
-  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `native_client`, `native_client.kind`, `native_client.app_id`, `native_client.binding`, `device_label`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
   """
   def update_custom_data(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/sessions/{id}/custom_data", %{"id" => id}, body, opts)
@@ -129,6 +129,17 @@ defmodule Atlas.Sessions do
   """
   def post_touch(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/sessions/{id}/touch", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Set (or clear, with organization_id null) the active organization of a session from your backend. The user must hold a seat in it (or in an ancestor with role inheritance on) and meet its second-factor policy, as for their own switch: an organization they are not in is 404, a policy that needs a second factor is 403 STEP_UP_REQUIRED. The next token minted for the session (refresh or getToken) carries that organization claims. An ended session is 409; an unknown id, or one of another instance, is 404. Returns the session with last_active_organization_id.
+
+  `PUT /v1/sessions/{id}/active_organization`. Required scope: `sessions:write`.
+
+  Body fields: `organization_id` (string|null, required).
+  Response fields: `object`, `id`, `user_id`, `status`, `last_active_organization_id`, `impersonated_by`, `last_active_at`, `expire_at`, `abandon_at`, `idle_expires_at`, `created_at`, `custom_data`, `sign_in_method`, `provider`, `native_client`, `native_client.kind`, `native_client.app_id`, `native_client.binding`, `device_label`, `amr`, `user_agent`, `ip_address`, `location`, `location.country`, `location.region`, `location.city`, `risk`, `risk.score`, `risk.level`, `risk.reasons`, `risk.computed_at`, `revoked_at`, `revoked_reason`.
+  """
+  def put_active_organization(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/sessions/{id}/active_organization", %{"id" => id}, body, opts)
 
   @doc ~S"""
   Mint a named JWT-template token for a session (Clerk SessionApi.getToken). Reserved `session` name refused.
@@ -292,6 +303,7 @@ defmodule Atlas.Sessions do
     {:update_custom_data, :patch, "/v1/sessions/{id}/custom_data", 1, true, false},
     {:post_revoke, :post, "/v1/sessions/{id}/revoke", 1, false, false},
     {:post_touch, :post, "/v1/sessions/{id}/touch", 1, false, false},
+    {:put_active_organization, :put, "/v1/sessions/{id}/active_organization", 1, true, false},
     {:post_tokens, :post, "/v1/sessions/{id}/tokens/{template}", 2, false, false},
     {:get_revocations, :get, "/v1/sessions/revocations", 0, false, true},
     {:get_revocations_status_list, :get, "/v1/sessions/revocations/status-list", 0, false, false},

@@ -16,7 +16,7 @@ defmodule Atlas.OauthLoginRequests do
   `GET /v1/oauth_login_requests`. Required scope: `oauth_clients:read`.
 
   Query params (`params:`): `login_challenge`.
-  Response fields: `object`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `page`, `session_subject`, `ui_locales`, `login_hint`, `expires_at`.
+  Response fields: `object`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `page`, `session_subject`, `ui_locales`, `login_hint`, `request_url`, `prompt`, `select_account`, `max_age`, `expires_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_login_requests", %{}, nil, opts)

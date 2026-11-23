@@ -60,11 +60,23 @@ defmodule Atlas.Permissions do
   def delete(client, id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/permissions/{id}", %{"id" => id}, nil, opts)
 
+  @doc ~S"""
+  Rename a custom permission. The key moves in one transaction everywhere Atlas stores it (the permission, seats, invitations, implies, aliases; role grants follow by id) and the old key becomes an alias, so code and imports that still send it keep working. Sessions minted before the rename carry the old key until they refresh. System permissions cannot be renamed. permission.updated is sent with previous_key.
+
+  `POST /v1/permissions/{id}/rename`. Required scope: `organizations:write`.
+
+  Body fields: `key` (string, required).
+  Response fields: `object`, `id`, `key`, `previous_key`, `alias`.
+  """
+  def post_rename(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/permissions/{id}/rename", %{"id" => id}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/permissions", 0, false, true},
     {:create, :post, "/v1/permissions", 0, true, false},
     {:update, :patch, "/v1/permissions/{id}", 1, true, false},
-    {:delete, :delete, "/v1/permissions/{id}", 1, false, false}
+    {:delete, :delete, "/v1/permissions/{id}", 1, false, false},
+    {:post_rename, :post, "/v1/permissions/{id}/rename", 1, true, false}
   ]
 end

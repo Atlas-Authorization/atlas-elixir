@@ -16,7 +16,7 @@ defmodule Atlas.IdentityVerifications do
   `GET /v1/identity_verifications`. Required scope: `identity_verification:read`.
 
   Query params (`params:`): `status`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.provider`, `data.status`, `data.reason`, `data.imported`, `data.verified_at`, `data.verified_attributes_status`, `data.url`, `data.decided_by`, `data.created_at`, `data.completed_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.user_id`, `data.provider`, `data.status`, `data.reason`, `data.last_error`, `data.last_error.code`, `data.last_error.reason`, `data.attempts`, `data.imported`, `data.verified_at`, `data.verified_attributes_status`, `data.url`, `data.decided_by`, `data.created_at`, `data.completed_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/identity_verifications", %{}, nil, opts)
@@ -33,7 +33,7 @@ defmodule Atlas.IdentityVerifications do
 
   `GET /v1/identity_verifications/{id}`. Required scope: `identity_verification:read`.
 
-  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `last_error`, `last_error.code`, `last_error.reason`, `attempts`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/identity_verifications/{id}", %{"id" => id}, nil, opts)
@@ -44,7 +44,7 @@ defmodule Atlas.IdentityVerifications do
   `POST /v1/identity_verifications/{id}/decide`. Required scope: `identity_verification:write`.
 
   Body fields: `decision` (enum), `reason` (string).
-  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
+  Response fields: `object`, `id`, `user_id`, `provider`, `status`, `reason`, `last_error`, `last_error.code`, `last_error.reason`, `attempts`, `imported`, `verified_at`, `verified_attributes_status`, `url`, `decided_by`, `created_at`, `completed_at`.
   """
   def post_decide(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/identity_verifications/{id}/decide", %{"id" => id}, body, opts)

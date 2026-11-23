@@ -16,7 +16,7 @@ defmodule Atlas.ServiceConnectors do
   `GET /v1/service_connectors`. Required scope: `service_connectors:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.kind`, `data.category`, `data.config`, `data.enabled`, `data.last_used_at`, `data.last_status`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.kind`, `data.category`, `data.config`, `data.enabled`, `data.last_used_at`, `data.last_status`, `data.created_at`, `data.updated_at`, `data.webhook_url`, `data.webhook_events`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/service_connectors", %{}, nil, opts)
@@ -34,7 +34,7 @@ defmodule Atlas.ServiceConnectors do
   `POST /v1/service_connectors`. Required scope: `service_connectors:write`.
 
   Body fields: `name` (string), `kind` (string), `config` (object), `credentials` (object).
-  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`, `webhook_url`, `webhook_events`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/service_connectors", %{}, body, opts)
@@ -44,7 +44,7 @@ defmodule Atlas.ServiceConnectors do
 
   `GET /v1/service_connectors/{id}`. Required scope: `service_connectors:read`.
 
-  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`, `webhook_url`, `webhook_events`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/service_connectors/{id}", %{"id" => id}, nil, opts)
@@ -55,7 +55,7 @@ defmodule Atlas.ServiceConnectors do
   `PATCH /v1/service_connectors/{id}`. Required scope: `service_connectors:write`.
 
   Body fields: `name` (string), `enabled` (boolean), `config` (object), `credentials` (object).
-  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `kind`, `category`, `config`, `enabled`, `last_used_at`, `last_status`, `created_at`, `updated_at`, `webhook_url`, `webhook_events`.
   """
   def update(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/service_connectors/{id}", %{"id" => id}, body, opts)

@@ -33,8 +33,8 @@ defmodule Atlas.PlatformApps do
 
   `POST /v1/platform/apps`. Required scope: `platform:apps:write`.
 
-  Body fields: `name` (string), `environment` (string), `allowed_origins` (array), `create_development_sibling` (boolean), `secret_key_preset` (string), `provisioning_key` (boolean), `tags` (array), `metadata` (object), `external_ref` (string).
-  Response fields: `object`, `id`, `name`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `allowed_origins`, `allowed_origin_integrations`, `tags`, `archived`, `archived_at`, `disabled`, `created_at`, `updated_at`, `secret`, `secret_key_scopes`, `onboarding_secret`, `onboarding_key_id`, `onboarding_secret_expires_at`, `warnings`, `warnings.code`, `warnings.message`, `note`, `sibling_instance`, `sibling_instance.object`, `sibling_instance.id`, `sibling_instance.name`, `sibling_instance.environment`, `sibling_instance.publishable_key`, `sibling_instance.frontend_api_host`, `sibling_instance.issuer`, `sibling_instance.discovery_url`, `sibling_instance.jwks_uri`, `sibling_instance.allowed_origins`, `sibling_instance.allowed_origin_integrations`, `sibling_instance.tags`, `sibling_instance.archived`, `sibling_instance.archived_at`, `sibling_instance.disabled`, `sibling_instance.created_at`, `sibling_instance.updated_at`, `sibling_instance.secret`, `sibling_instance.secret_key_scopes`, `sibling_instance.onboarding_secret`, `sibling_instance.onboarding_key_id`, `sibling_instance.onboarding_secret_expires_at`, `sibling_instance.warnings`, `sibling_instance.note`, `initial_secret_reveal`, `initial_secret_reveal.path`, `initial_secret_reveal.expires_at`, `secret_redacted`.
+  Body fields: `name` (string), `environment` (string), `allowed_origins` (array), `create_development_sibling` (boolean), `secret_key_preset` (string), `provisioning_key` (boolean), `secret_key_profile` (string), `tags` (array), `metadata` (object), `external_ref` (string).
+  Response fields: `object`, `id`, `name`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `allowed_origins`, `allowed_origin_integrations`, `tags`, `archived`, `archived_at`, `disabled`, `created_at`, `updated_at`, `secret`, `secret_key_scopes`, `onboarding_secret`, `onboarding_key_id`, `runtime_secret`, `runtime_key_id`, `runtime_secret_scopes`, `secret_key_label`, `secret_expires_at`, `onboarding_secret_expires_at`, `warnings`, `warnings.code`, `warnings.message`, `note`, `sibling_instance`, `sibling_instance.object`, `sibling_instance.id`, `sibling_instance.name`, `sibling_instance.environment`, `sibling_instance.publishable_key`, `sibling_instance.frontend_api_host`, `sibling_instance.issuer`, `sibling_instance.discovery_url`, `sibling_instance.jwks_uri`, `sibling_instance.allowed_origins`, `sibling_instance.allowed_origin_integrations`, `sibling_instance.tags`, `sibling_instance.archived`, `sibling_instance.archived_at`, `sibling_instance.disabled`, `sibling_instance.created_at`, `sibling_instance.updated_at`, `sibling_instance.secret`, `sibling_instance.secret_key_scopes`, `sibling_instance.onboarding_secret`, `sibling_instance.onboarding_key_id`, `sibling_instance.runtime_secret`, `sibling_instance.runtime_key_id`, `sibling_instance.runtime_secret_scopes`, `sibling_instance.secret_key_label`, `sibling_instance.secret_expires_at`, `sibling_instance.onboarding_secret_expires_at`, `sibling_instance.warnings`, `sibling_instance.note`, `initial_secret_reveal`, `initial_secret_reveal.path`, `initial_secret_reveal.expires_at`, `secret_redacted`.
   """
   def create(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/platform/apps", %{}, body, opts)
@@ -162,6 +162,17 @@ defmodule Atlas.PlatformApps do
     do: Atlas.Client.request(client, :post, "/v1/platform/apps/{id}/rotate_secret", %{"id" => id}, body, opts)
 
   @doc ~S"""
+  Extend the `provisioning` key of an app created with `secret_key_profile: "web_app"` by another 24 hours.
+
+  `POST /v1/platform/apps/{id}/provisioning_key/renew`. Required scope: `platform:secrets:write`.
+
+  Body fields: `instance_id` (string).
+  Response fields: `object`, `app_id`, `instance_id`, `renewed`, `renewed.key_id`, `renewed.prefix`, `expires_at`.
+  """
+  def post_provisioning_key_renew(client, id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/platform/apps/{id}/provisioning_key/renew", %{"id" => id}, body, opts)
+
+  @doc ~S"""
   Narrow the secret keys of an app after onboarding: a key holding every scope becomes a runtime key, with no new secret.
 
   `POST /v1/platform/apps/{id}/narrow_secret_keys`. Required scope: `platform:secrets:write`.
@@ -196,7 +207,7 @@ defmodule Atlas.PlatformApps do
   `POST /v1/platform/apps/{id}/instances`. Required scope: `platform:apps:write`.
 
   Body fields: `environment` (string), `allowed_origins` (array), `metadata` (object), `external_ref` (string), `secret_key_preset` (string), `provisioning_key` (boolean).
-  Response fields: `object`, `id`, `name`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `allowed_origins`, `allowed_origin_integrations`, `tags`, `archived`, `archived_at`, `disabled`, `created_at`, `updated_at`, `secret`, `secret_key_scopes`, `onboarding_secret`, `onboarding_key_id`, `onboarding_secret_expires_at`, `warnings`, `warnings.code`, `warnings.message`, `note`.
+  Response fields: `object`, `id`, `name`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `allowed_origins`, `allowed_origin_integrations`, `tags`, `archived`, `archived_at`, `disabled`, `created_at`, `updated_at`, `secret`, `secret_key_scopes`, `onboarding_secret`, `onboarding_key_id`, `runtime_secret`, `runtime_key_id`, `runtime_secret_scopes`, `secret_key_label`, `secret_expires_at`, `onboarding_secret_expires_at`, `warnings`, `warnings.code`, `warnings.message`, `note`.
   """
   def post_instances(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/platform/apps/{id}/instances", %{"id" => id}, body, opts)
@@ -218,7 +229,7 @@ defmodule Atlas.PlatformApps do
   `POST /v1/platform/apps/claim`. Required scope: `platform:apps:write`.
 
   Body fields: `claim_token` (string).
-  Response fields: `object`, `id`, `name`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `allowed_origins`, `allowed_origin_integrations`, `tags`, `archived`, `archived_at`, `disabled`, `created_at`, `updated_at`, `secret`, `secret_key_scopes`, `onboarding_secret`, `onboarding_key_id`, `onboarding_secret_expires_at`, `warnings`, `warnings.code`, `warnings.message`, `note`.
+  Response fields: `object`, `id`, `name`, `environment`, `publishable_key`, `frontend_api_host`, `issuer`, `discovery_url`, `jwks_uri`, `allowed_origins`, `allowed_origin_integrations`, `tags`, `archived`, `archived_at`, `disabled`, `created_at`, `updated_at`, `secret`, `secret_key_scopes`, `onboarding_secret`, `onboarding_key_id`, `runtime_secret`, `runtime_key_id`, `runtime_secret_scopes`, `secret_key_label`, `secret_expires_at`, `onboarding_secret_expires_at`, `warnings`, `warnings.code`, `warnings.message`, `note`.
   """
   def post_claim(client, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/platform/apps/claim", %{}, body, opts)
@@ -293,6 +304,18 @@ defmodule Atlas.PlatformApps do
   def delete_instances_clones(client, id, instance_id, clone_id, opts \\ []),
     do: Atlas.Client.request(client, :delete, "/v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}", %{"id" => id, "instanceId" => instance_id, "cloneId" => clone_id}, nil, opts)
 
+  @doc ~S"""
+  Bring a completed clone or preview up to date in place (same instance, keys and host); same body and rules as POST /v1/instance/staging_copies/{id}/refresh. Needs platform:apps:write.
+
+  `POST /v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}/refresh`. Required scope: `platform:apps:write`.
+
+  Body fields: `include` (array), `synthetic_users` (object), `ttl_hours` (integer).
+  Nested body fields: `synthetic_users.count`, `synthetic_users.seed`.
+  Response fields: `object`, `id`, `kind`, `name`, `ref`, `status`, `progress`, `source_instance_id`, `instance_id`, `environment`, `publishable_key`, `frontend_api_host`, `allowed_origins`, `include`, `mask_emails`, `counts`, `errors`, `expires_at`, `created_by`, `created_at`, `completed_at`, `deleted_at`.
+  """
+  def post_instances_clones_refresh(client, id, instance_id, clone_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}/refresh", %{"id" => id, "instanceId" => instance_id, "cloneId" => clone_id}, body, opts)
+
   @doc false
   def __operations__, do: [
     {:list, :get, "/v1/platform/apps", 0, false, true},
@@ -308,6 +331,7 @@ defmodule Atlas.PlatformApps do
     {:post_secret_keys, :post, "/v1/platform/apps/{id}/secret_keys", 1, true, false},
     {:post_clone_config, :post, "/v1/platform/apps/{id}/clone_config", 1, true, false},
     {:post_rotate_secret, :post, "/v1/platform/apps/{id}/rotate_secret", 1, true, false},
+    {:post_provisioning_key_renew, :post, "/v1/platform/apps/{id}/provisioning_key/renew", 1, true, false},
     {:post_narrow_secret_keys, :post, "/v1/platform/apps/{id}/narrow_secret_keys", 1, true, false},
     {:get_instances, :get, "/v1/platform/apps/{id}/instances", 1, false, true},
     {:post_instances, :post, "/v1/platform/apps/{id}/instances", 1, true, false},
@@ -318,6 +342,7 @@ defmodule Atlas.PlatformApps do
     {:get_instances_clones, :get, "/v1/platform/apps/{id}/instances/{instanceId}/clones", 2, false, true},
     {:post_instances_clones, :post, "/v1/platform/apps/{id}/instances/{instanceId}/clones", 2, true, false},
     {:get_by_id_instances_by_instance_id_clones_by_clone_id, :get, "/v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}", 3, false, false},
-    {:delete_instances_clones, :delete, "/v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}", 3, false, false}
+    {:delete_instances_clones, :delete, "/v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}", 3, false, false},
+    {:post_instances_clones_refresh, :post, "/v1/platform/apps/{id}/instances/{instanceId}/clones/{cloneId}/refresh", 3, true, false}
   ]
 end

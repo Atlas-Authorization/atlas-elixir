@@ -16,7 +16,7 @@ defmodule Atlas.StepUp do
   `GET /v1/step_up/policies`. Required scope: `step_up:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.enabled`, `data.max_age_seconds`, `data.required_acr`, `data.required_amr`, `data.required_amr_any`, `data.phishing_resistant`, `data.allowed_methods`, `data.accepted_factors`, `data.receipt_ttl_seconds`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.description`, `data.enabled`, `data.max_age_seconds`, `data.required_acr`, `data.required_amr`, `data.required_amr_any`, `data.phishing_resistant`, `data.allowed_methods`, `data.accepted_factors`, `data.accepted_factor_info`, `data.accepted_factor_info.factor`, `data.accepted_factor_info.label`, `data.accepted_factor_info.needs_input`, `data.accepted_factor_info.input_kind`, `data.receipt_ttl_seconds`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_policies(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/step_up/policies", %{}, nil, opts)
@@ -34,7 +34,7 @@ defmodule Atlas.StepUp do
   `POST /v1/step_up/policies`. Required scope: `step_up:write`.
 
   Body fields: `name` (string, required), `description` (string|null), `enabled` (boolean), `max_age_seconds` (integer), `required_acr` (array), `required_amr` (array), `required_amr_any` (array), `phishing_resistant` (boolean), `allowed_methods` (array), `receipt_ttl_seconds` (integer).
-  Response fields: `object`, `id`, `name`, `description`, `enabled`, `max_age_seconds`, `required_acr`, `required_amr`, `required_amr_any`, `phishing_resistant`, `allowed_methods`, `accepted_factors`, `receipt_ttl_seconds`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `max_age_seconds`, `required_acr`, `required_amr`, `required_amr_any`, `phishing_resistant`, `allowed_methods`, `accepted_factors`, `accepted_factor_info`, `accepted_factor_info.factor`, `accepted_factor_info.label`, `accepted_factor_info.needs_input`, `accepted_factor_info.input_kind`, `receipt_ttl_seconds`, `created_at`, `updated_at`.
   """
   def post_policies(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/step_up/policies", %{}, body, opts)
@@ -44,7 +44,7 @@ defmodule Atlas.StepUp do
 
   `GET /v1/step_up/policies/{id}`. Required scope: `step_up:read`.
 
-  Response fields: `object`, `id`, `name`, `description`, `enabled`, `max_age_seconds`, `required_acr`, `required_amr`, `required_amr_any`, `phishing_resistant`, `allowed_methods`, `accepted_factors`, `receipt_ttl_seconds`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `max_age_seconds`, `required_acr`, `required_amr`, `required_amr_any`, `phishing_resistant`, `allowed_methods`, `accepted_factors`, `accepted_factor_info`, `accepted_factor_info.factor`, `accepted_factor_info.label`, `accepted_factor_info.needs_input`, `accepted_factor_info.input_kind`, `receipt_ttl_seconds`, `created_at`, `updated_at`.
   """
   def get_policies_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/step_up/policies/{id}", %{"id" => id}, nil, opts)
@@ -55,7 +55,7 @@ defmodule Atlas.StepUp do
   `PATCH /v1/step_up/policies/{id}`. Required scope: `step_up:write`.
 
   Body fields: `name` (string), `description` (string|null), `enabled` (boolean), `max_age_seconds` (integer), `required_acr` (array), `required_amr` (array), `required_amr_any` (array), `phishing_resistant` (boolean), `allowed_methods` (array), `receipt_ttl_seconds` (integer).
-  Response fields: `object`, `id`, `name`, `description`, `enabled`, `max_age_seconds`, `required_acr`, `required_amr`, `required_amr_any`, `phishing_resistant`, `allowed_methods`, `accepted_factors`, `receipt_ttl_seconds`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `description`, `enabled`, `max_age_seconds`, `required_acr`, `required_amr`, `required_amr_any`, `phishing_resistant`, `allowed_methods`, `accepted_factors`, `accepted_factor_info`, `accepted_factor_info.factor`, `accepted_factor_info.label`, `accepted_factor_info.needs_input`, `accepted_factor_info.input_kind`, `receipt_ttl_seconds`, `created_at`, `updated_at`.
   """
   def update_policies(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/step_up/policies/{id}", %{"id" => id}, body, opts)
