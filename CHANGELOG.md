@@ -2,6 +2,12 @@
 
 All notable changes to `atlas_auth` are documented here.
 
+## 0.18.0 — 2026-11-22
+
+### Added
+
+- **Key-pair API keys.** `AtlasAuth.ApiKeyAssertion.sign(private_key_pem, key_id, audience, opts)` signs the short-lived JWT a key-pair key presents (ES256 for P-256, EdDSA for Ed25519; options `:ttl_seconds`, `:scope`, `:jti`). Send it as `token` to `Atlas.ApiKeys.post_verify/3` or as `assertion` to `Atlas.ApiKeys.post_token/3`; `Atlas.ApiKeys.create/3` takes `credential`, `audience` and `public_key`. `AtlasAuth.KeyMirror.verify_assertion/3` verifies an assertion locally with the server's refusal codes; the mirrored row carries `:credential`, `:public_key_pem`, `:audience`, `:max_token_lifetime_seconds` and `:enabled` (a disabled key is refused by `verify/3` and `verify_assertion/3`), and `apply_webhook/2` copies `enabled`. A store may implement `claim_assertion_jti/4` to share used ids between nodes.
+
 ## 0.17.0 — 2026-11-14
 
 ### Added

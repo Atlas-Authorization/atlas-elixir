@@ -7,7 +7,12 @@ defmodule AtlasAuth.KeyMirror.Store do
   A mirrored key is a map with the keys `:id`, `:hash` (sha256 of the secret, lowercase
   hex; never the secret), `:prefix`, `:subject_type`, `:subject_id`, `:name`, `:scopes`,
   `:allowed_ips`, `:expires_at` (epoch ms or nil), `:revoked_at` (epoch ms or nil),
-  `:organization_id`, `:revoked_reason`.
+  `:organization_id`, `:revoked_reason`, and (optional, absent = a secret key that is enabled) `:enabled`
+  (`false` = refused like an unknown key), `:credential` (`"secret"` or `"key_pair"`; a key-pair row has
+  no secret, its `:hash` is a placeholder nothing matches), `:public_key_pem`, `:audience`,
+  `:max_token_lifetime_seconds`.
+
+  A store may also implement `claim_assertion_jti/4` to share used assertion ids across nodes.
   """
   @type key :: map()
   @callback put(ref :: term(), key()) :: :ok
@@ -19,6 +24,9 @@ defmodule AtlasAuth.KeyMirror.Store do
   @callback set_cursor(ref :: term(), cursor :: String.t()) :: :ok
   @callback get_last_sync_at(ref :: term()) :: integer() | nil
   @callback set_last_sync_at(ref :: term(), at :: integer()) :: :ok
+  @doc "Record an assertion `jti` as used until `expires_at_ms`; `false` when it was already used (a replay)."
+  @callback claim_assertion_jti(ref :: term(), key_id :: String.t(), jti :: String.t(), expires_at_ms :: integer()) :: boolean()
+  @optional_callbacks claim_assertion_jti: 4
 end
 
 defmodule AtlasAuth.KeyMirror do
@@ -48,6 +56,10 @@ defmodule AtlasAuth.KeyMirror do
 
   `verify/3` errors: `:invalid`, `:ip_not_allowed`, `:client_ip_required`, `:membership_unresolved`,
   `{:insufficient_scope, missing}`, `{:stale, last_sync_at}`.
+
+  `verify_assertion/3` verifies a key-pair assertion (`AtlasAuth.ApiKeyAssertion.sign/4`) the same way and
+  adds the errors `:invalid_assertion`, `:assertion_expired`, `:assertion_not_yet_valid`, `:wrong_audience`,
+  `:assertion_lifetime_too_long`, `:assertion_replayed` and `{:scope_not_granted, missing}`.
   """
   import Bitwise
 
@@ -77,7 +89,7 @@ defmodule AtlasAuth.KeyMirror do
   @spec mint(t(), map(), keyword()) :: {:ok, map()} | {:error, term()}
   def mint(%__MODULE__{} = m, body, opts \\ []) do
     with {:ok, created} <- m.api.create(m.client, body, opts) do
-      :ok = call(m, :put, [to_mirrored(created, hash_secret(created["secret"]))])
+      :ok = call(m, :put, [to_mirrored(created, row_hash(created))])
       {:ok, created}
     end
   end
@@ -89,7 +101,7 @@ defmodule AtlasAuth.KeyMirror do
   @spec rotate(t(), String.t(), map(), keyword()) :: {:ok, map()} | {:error, term()}
   def rotate(%__MODULE__{} = m, id, body \\ %{}, opts \\ []) do
     with {:ok, rotated} <- m.api.post_rotate(m.client, id, body, opts) do
-      :ok = call(m, :put, [to_mirrored(rotated, hash_secret(rotated["secret"]))])
+      :ok = call(m, :put, [to_mirrored(rotated, row_hash(rotated))])
 
       if old = call(m, :get, [id]) do
         prev = rotated["previous_key"] || %{}
@@ -181,7 +193,7 @@ defmodule AtlasAuth.KeyMirror do
           (m.opts[:verify_at_atlas] && verify_remote_miss(m, secret, hash, opts))
 
       with %{} <- key,
-           true <- is_nil(key.revoked_at),
+           true <- is_nil(key.revoked_at) and Map.get(key, :enabled) != false,
            true <- is_nil(key.expires_at) or key.expires_at > m.now.(),
            :ok <- check_ip(key, opts[:client_ip]),
            {:ok, effective, org} <- bound_scopes(m, key, secret, opts) do
@@ -199,6 +211,164 @@ defmodule AtlasAuth.KeyMirror do
       end
     end
   end
+
+  @doc """
+  Verify a key-pair assertion locally with the checks Atlas verify makes: the signature with the stored
+  public key (`alg` must fit its type), `iss` = `kid`, `aud`, `iat`, `exp` and the lifetime cap, `nbf`, `scope`
+  (a subset of the key's, narrows the result), revocation, expiry, the IP allowlist, then the single-use `jti`.
+  Options: `:required_scopes`, `:client_ip`. Returns `{:ok, %{key:, effective_scopes:, organization:, stale:,
+  credential: "key_pair", jti:, exp:}}` or `{:error, code}`; a key the mirror does not hold is `{:error, :invalid}`.
+  The `jti` is claimed through the store's optional `claim_assertion_jti/4`, else in this node's memory, and only
+  after every other check passed.
+  """
+  @spec verify_assertion(t(), String.t(), keyword()) :: {:ok, map()} | {:error, term()}
+  def verify_assertion(m, token, opts \\ [])
+  def verify_assertion(_m, token, _opts) when not is_binary(token), do: {:error, :invalid_assertion}
+
+  def verify_assertion(%__MODULE__{} = m, token, opts) do
+    with {:ok, stale?} <- freshness(m),
+         {:ok, header, claims} <- parse_assertion(token),
+         kid when is_binary(kid) and kid != "" <- header["kid"] || {:error, :invalid_assertion},
+         %{} = key <- call(m, :get, [kid]) || {:error, :invalid},
+         :ok <- assertion_key_ok(key, header, claims, token, kid),
+         true <- (is_nil(key.revoked_at) and (is_nil(key.expires_at) or key.expires_at > m.now.())) || {:error, :invalid},
+         now_s = div(m.now.(), 1000),
+         :ok <- check_claims(key, claims, now_s),
+         :ok <- check_ip(key, opts[:client_ip]),
+         {:ok, effective, org} <- assertion_scopes(m, key, claims["scope"], opts),
+         :ok <- claim_jti(m, key, claims) do
+      {:ok, %{key: key, effective_scopes: effective, organization: org, stale: stale?, credential: "key_pair", jti: claims["jti"], exp: claims["exp"]}}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :invalid_assertion}
+    end
+  end
+
+  defp parse_assertion(token) do
+    with [_, _, _] <- String.split(token, "."),
+         {_, %{} = header} <- {:h, peek(fn -> JOSE.JWS.peek_protected(token) end)},
+         {_, %{} = claims} <- {:c, peek(fn -> JOSE.JWT.peek_payload(token).fields end)} do
+      {:ok, header, claims}
+    else
+      _ -> {:error, :invalid_assertion}
+    end
+  end
+
+  defp peek(fun) do
+    case fun.() do
+      json when is_binary(json) -> Jason.decode!(json)
+      %{} = map -> map
+    end
+  rescue
+    _ -> nil
+  end
+
+  # Signature (alg pinned to the stored key's type), iss = kid, then the disabled row.
+  defp assertion_key_ok(key, header, claims, token, kid) do
+    pem = Map.get(key, :public_key_pem)
+
+    with true <- Map.get(key, :credential) == "key_pair" and is_binary(pem) and pem != "",
+         alg when alg in ["ES256", "EdDSA"] <- header["alg"],
+         true <- signature_ok?(pem, alg, token),
+         true <- claims["iss"] == kid,
+         true <- Map.get(key, :enabled) != false do
+      :ok
+    else
+      _ -> {:error, :invalid_assertion}
+    end
+  end
+
+  defp signature_ok?(pem, alg, token) do
+    jwk = JOSE.JWK.from_pem(pem)
+
+    kty_ok =
+      case {alg, JOSE.JWK.to_map(jwk)} do
+        {"ES256", {_, %{"kty" => "EC", "crv" => "P-256"}}} -> true
+        {"EdDSA", {_, %{"kty" => "OKP", "crv" => "Ed25519"}}} -> true
+        _ -> false
+      end
+
+    kty_ok and match?({true, _, _}, JOSE.JWT.verify_strict(jwk, [alg], token))
+  rescue
+    _ -> false
+  end
+
+  defp check_claims(key, claims, now_s) do
+    aud = claims["aud"]
+    {iat, exp, nbf} = {claims["iat"], claims["exp"], claims["nbf"]}
+    max = min(Map.get(key, :max_token_lifetime_seconds) || 3600, 86_400)
+
+    cond do
+      not ((is_binary(aud) and aud == Map.get(key, :audience)) or (is_list(aud) and Map.get(key, :audience) in aud)) -> {:error, :wrong_audience}
+      not is_number(iat) or not is_number(exp) -> {:error, :invalid_assertion}
+      Map.has_key?(claims, "nbf") and not is_number(nbf) -> {:error, :invalid_assertion}
+      Map.has_key?(claims, "jti") and not (is_binary(claims["jti"]) and claims["jti"] != "") -> {:error, :invalid_assertion}
+      Map.has_key?(claims, "scope") and not is_binary(claims["scope"]) -> {:error, :invalid_assertion}
+      iat > now_s + 60 or (is_number(nbf) and nbf > now_s + 60) -> {:error, :assertion_not_yet_valid}
+      exp <= now_s - 30 -> {:error, :assertion_expired}
+      exp - iat > max -> {:error, :assertion_lifetime_too_long}
+      true -> :ok
+    end
+  end
+
+  defp assertion_scopes(m, key, scope, opts) do
+    effective = expand(key.scopes || [], m.implications, m.allowed)
+
+    with {:ok, effective, org} <- assertion_membership(m, key, effective),
+         {:ok, effective} <- narrow(effective, scope) do
+      missing = Enum.reject(opts[:required_scopes] || [], &(&1 in effective))
+      if missing == [], do: {:ok, effective, org}, else: {:error, {:insufficient_scope, missing}}
+    end
+  end
+
+  defp assertion_membership(m, key, effective) do
+    if key.subject_type == "user" and key.organization_id do
+      case m.opts[:membership] do
+        nil ->
+          {:error, :membership_unresolved}
+
+        fun ->
+          case fun.(key.subject_id, key.organization_id) do
+            nil -> {:error, :invalid}
+            held -> {:ok, intersect_scopes(effective, held["permissions"] || []), held}
+          end
+      end
+    else
+      {:ok, effective, nil}
+    end
+  end
+
+  defp narrow(effective, scope) when is_binary(scope) do
+    case String.split(scope) do
+      [] ->
+        {:ok, effective}
+
+      asked ->
+        case Enum.reject(asked, &(&1 in effective)) do
+          [] -> {:ok, Enum.filter(effective, &(&1 in asked))}
+          missing -> {:error, {:scope_not_granted, missing}}
+        end
+    end
+  end
+
+  defp narrow(effective, _), do: {:ok, effective}
+
+  # Last, so a refused assertion never burns its jti.
+  defp claim_jti(m, key, %{"jti" => jti, "exp" => exp}) when is_binary(jti) do
+    until = trunc(exp * 1000)
+    {mod, ref} = m.store
+
+    first? =
+      if function_exported?(mod, :claim_assertion_jti, 4) do
+        mod.claim_assertion_jti(ref, key.id, jti, until)
+      else
+        AtlasAuth.DPoP.MemoryReplayStore.claim("key_pair:" <> key.id <> "\n" <> jti, until, m.now.())
+      end
+
+    if first?, do: :ok, else: {:error, :assertion_replayed}
+  end
+
+  defp claim_jti(_m, _key, _claims), do: :ok
 
   # Returns {:ok, served_stale?} or {:error, {:stale, last_sync_at}}.
   defp freshness(%{opts: opts} = m) do
@@ -361,9 +531,18 @@ defmodule AtlasAuth.KeyMirror do
       expires_at: key["expires_at"],
       revoked_at: key["revoked_at"],
       organization_id: key["organization_id"],
-      revoked_reason: key["revoked_reason"]
+      revoked_reason: key["revoked_reason"],
+      enabled: key["enabled"],
+      credential: key["credential"] || "secret",
+      public_key_pem: key["public_key"],
+      audience: key["audience"],
+      max_token_lifetime_seconds: key["max_token_lifetime_seconds"]
     }
   end
+
+  # The secret's sha256; a key-pair key has no secret, so its row carries a placeholder nothing can match.
+  defp row_hash(%{"secret" => secret}) when is_binary(secret) and secret != "", do: hash_secret(secret)
+  defp row_hash(%{"id" => id}), do: "key_pair:" <> id
 
   @doc """
   Consume the revocation feed from the stored cursor, revoking each listed key locally. Call it on a
@@ -446,6 +625,7 @@ defmodule AtlasAuth.KeyMirror do
               allowed_ips: pick(data, "allowed_ips", held.allowed_ips),
               expires_at: pick(data, "expires_at", held.expires_at)
           }
+          |> Map.put(:enabled, pick(data, "enabled", Map.get(held, :enabled)))
         ])
 
         true

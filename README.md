@@ -134,6 +134,26 @@ queues a back-channel logout to every other app signed in through it. No browser
 `AtlasAuth.WebhookEvents.session_expired()` names the event sent once when a session idles out or reaches its
 absolute lifetime; `invitation_created()`, `invitation_accepted()` and `invitation_revoked()` cover instance invitations.
 
+## Key-pair API keys
+
+A key-pair key has no shared secret: Atlas returns a PKCS#8 private key once and keeps only the public key. Sign a short-lived assertion and present it where you would present a secret.
+
+```elixir
+{:ok, key} =
+  Atlas.ApiKeys.create(client, %{
+    "subject_type" => "user", "subject_id" => "user_123",
+    "credential" => "key_pair", "audience" => "https://api.example.com"
+  })
+
+assertion = AtlasAuth.ApiKeyAssertion.sign(key["private_key"], key["key_id"], "https://api.example.com")
+Atlas.ApiKeys.post_verify(client, %{"token" => assertion})
+Atlas.ApiKeys.post_token(client, %{"assertion" => assertion})
+```
+
+ES256 (P-256) and EdDSA (Ed25519) keys are supported.
+
+`AtlasAuth.KeyMirror.verify_assertion(mirror, assertion)` checks an assertion against the mirrored public key with no network call, with the same refusal codes Atlas answers.
+
 ## Hosted-redirect sign-in (relying party)
 
 `AtlasAuth.RP` is the server side of the hosted redirect: authorization-code flow with PKCE (S256), `state`
