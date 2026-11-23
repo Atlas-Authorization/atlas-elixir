@@ -91,4 +91,50 @@ defmodule Atlas.ClientResilienceTest do
       :telemetry.detach(id)
     end
   end
+
+  describe "a connection reset before any response" do
+    # Fails the first `fails` calls with a transport error, then answers 200.
+    defp flaky(reason, fails) do
+      {:ok, calls} = Agent.start_link(fn -> 0 end)
+      {:ok, sleeps} = Agent.start_link(fn -> [] end)
+      stub = :"flaky_#{System.unique_integer([:positive])}"
+
+      Req.Test.stub(stub, fn conn ->
+        if Agent.get_and_update(calls, &{&1 + 1, &1 + 1}) <= fails do
+          Req.Test.transport_error(conn, reason)
+        else
+          conn |> Plug.Conn.put_resp_content_type("application/json") |> Plug.Conn.send_resp(200, ~s({"id":"u1"}))
+        end
+      end)
+
+      c = Atlas.new("sk_test_x", req_options: [plug: {Req.Test, stub}], resilience: [sleep: fn ms -> Agent.update(sleeps, &[ms | &1]) end])
+      {c, calls, sleeps}
+    end
+
+    test "is retried once for a read and for a keyed write" do
+      {c, calls, sleeps} = flaky(:closed, 1)
+      assert {:ok, %{"id" => "u1"}} = Atlas.Users.get(c, "u1")
+      assert Agent.get(calls, & &1) == 2
+      assert [ms] = Agent.get(sleeps, & &1)
+      assert ms in 26..125
+
+      {k, kcalls, _} = flaky(:econnreset, 1)
+      assert {:ok, _} = Atlas.Users.create(k, %{}, idempotency_key: "k1")
+      assert Agent.get(kcalls, & &1) == 2
+    end
+
+    test "is not retried for a plain write or a timeout, and a second reset is returned" do
+      {c, calls, _} = flaky(:closed, 1)
+      assert {:error, %Atlas.Error{code: "TRANSPORT_ERROR"}} = Atlas.Users.create(c, %{})
+      assert Agent.get(calls, & &1) == 1
+
+      {t, tcalls, _} = flaky(:timeout, 1)
+      assert {:error, %Atlas.Error{code: "TRANSPORT_ERROR"}} = Atlas.Users.get(t, "u1")
+      assert Agent.get(tcalls, & &1) == 1
+
+      {d, dcalls, _} = flaky(:closed, 2)
+      assert {:error, %Atlas.Error{code: "TRANSPORT_ERROR"}} = Atlas.Users.get(d, "u1")
+      assert Agent.get(dcalls, & &1) == 2
+    end
+  end
 end

@@ -229,8 +229,8 @@ IO.puts("Open #{flow.verification_uri} and enter #{flow.user_code}")
 ## Resilience, telemetry and the doctor
 
 `Atlas.Client` retries a `429` for every method, honouring `Retry-After` (seconds or an HTTP date), and
-`500`, `502`, `503`, `504` and transport failures for `GET`, `HEAD`, `PUT`, `DELETE` and calls with an `:idempotency_key` (a write without one is never retried):
-exponential backoff with jitter, 2 retries by default.
+`500`, `502`, `503` and `504` for `GET`, `HEAD`, `PUT`, `DELETE` and calls with an `:idempotency_key` (a write without one is never retried):
+exponential backoff with jitter, 2 retries by default. A connection reset before any response (an idle pooled connection the server closed) is retried once, after a short jittered wait, for the same calls; a timeout is never retried. Keep your Finch pool idle timeout below 60 s.
 
 ```elixir
 client = Atlas.new(key, resilience: [max_retries: 4, max_delay_ms: 20_000, status_aware: true])
