@@ -29,7 +29,7 @@ defmodule Atlas.AppEvents do
     do: Atlas.Client.stream(client, "/v1/app_events", %{}, opts)
 
   @doc ~S"""
-  Publish one application event to one organization (your customer). The type must be in the catalog and data must match its schema (422 with one error per failing path). Every active app webhook endpoint of that organization subscribed to the type (or "*") gets a signed delivery (Standard Webhooks), retried on the webhook schedule, visible in its delivery log with redeliver and replay. idempotency_key (or the Idempotency-Key header) makes a repeat return the first event (200, idempotent_replay: true) for as long as the event is kept (90 days). 201 on a new event.
+  Publish one application event to one organization (your customer). Needs the `webhooks:write` scope on the secret key (a 403 `insufficient_scope` names it). The type must be in the catalog and data must match its schema (422 with one error per failing path). Every active app webhook endpoint of that organization subscribed to the type (or "*") gets a signed delivery (Standard Webhooks), retried on the webhook schedule, visible in its delivery log with redeliver and replay. idempotency_key (or the Idempotency-Key header) makes a repeat return the first event (200, idempotent_replay: true) for as long as the event is kept (90 days). 201 on a new event.
 
   `POST /v1/app_events`. Required scope: `webhooks:write`.
 

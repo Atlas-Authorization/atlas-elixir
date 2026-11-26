@@ -16,7 +16,7 @@ defmodule Atlas.Entitlements do
   `GET /v1/entitlements`. Required scope: `billing:read`.
 
   Query params (`params:`): `subject_type`, `subject_id`.
-  Response fields: `$schema`, `object`, `subject`, `subject.type`, `subject.id`, `plan`, `planSource`, `entitlements`, `entitlements.key`, `entitlements.enabled`, `entitlements.limit`, `entitlements.used`, `entitlements.source`.
+  Response fields: `$schema`, `object`, `subject`, `subject.type`, `subject.id`, `plan`, `planSource`, `version`, `entitlements`, `entitlements.key`, `entitlements.enabled`, `entitlements.limit`, `entitlements.used`, `entitlements.source`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/entitlements", %{}, nil, opts)

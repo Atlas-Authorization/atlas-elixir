@@ -130,7 +130,7 @@ defmodule Atlas.PlatformApps do
     do: Atlas.Client.stream(client, "/v1/platform/apps/{id}/secret_keys", %{"id" => id}, opts)
 
   @doc ~S"""
-  Mint an additional, named secret key for an owned app (or `instance_id`, any instance of the same app). The key gets every scope by default; `secret_key_preset: "app-runtime"` gives the app-runtime preset. The secret is in this response only. `external_ref` makes the create idempotent: a repeat returns the existing key without its secret (200, idempotent_replay: true). `metadata` tags the key; `?dry_run=true` validates and returns the plan.
+  Mint an additional, named secret key for an owned app. The path id is the app's instance id (`ins_…`, as returned when the app was created); `instance_id` in the body picks any other instance of the same app (also an `ins_…` id). The key gets every scope by default; `secret_key_preset` is `app-runtime`, `web-app`, `provisioning`, `operator`, `end-user-pools`, `oauth-apps`, `integrations` or `full`. Needs the platform scope `platform:secrets:write` (mint a platform key that holds it from the dashboard or `atlas keys create`; a key can only mint scopes it holds). The secret is in this response only. `external_ref` makes the create idempotent: a repeat returns the existing key without its secret (200, idempotent_replay: true). `metadata` tags the key; `?dry_run=true` validates and returns the plan.
 
   `POST /v1/platform/apps/{id}/secret_keys`. Required scope: `platform:secrets:write`.
 

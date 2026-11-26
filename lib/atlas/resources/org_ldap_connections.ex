@@ -16,7 +16,7 @@ defmodule Atlas.OrgLdapConnections do
   `GET /v1/org_ldap_connections`. Required scope: `sso_connections:read`.
 
   Query params (`params:`): `organization_id`, `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.status`, `data.url`, `data.bind_dn`, `data.base_dn`, `data.user_filter`, `data.start_tls`, `data.require_consent_screen`, `data.attributes`, `data.attributes.email`, `data.attributes.firstName`, `data.attributes.lastName`, `data.attributes.username`, `data.attributes.groups`, `data.group_role_mappings`, `data.group_role_mappings.group`, `data.group_role_mappings.role`, `data.has_bind_password`, `data.default_role_id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.organization_id`, `data.status`, `data.url`, `data.bind_dn`, `data.base_dn`, `data.user_filter`, `data.start_tls`, `data.require_consent_screen`, `data.account_linking`, `data.account_linking_effective`, `data.attributes`, `data.attributes.email`, `data.attributes.firstName`, `data.attributes.lastName`, `data.attributes.username`, `data.attributes.groups`, `data.group_role_mappings`, `data.group_role_mappings.group`, `data.group_role_mappings.role`, `data.has_bind_password`, `data.default_role_id`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections", %{}, nil, opts)
@@ -33,9 +33,9 @@ defmodule Atlas.OrgLdapConnections do
 
   `POST /v1/org_ldap_connections`. Required scope: `sso_connections:write`.
 
-  Body fields: `organization_id` (string), `status` (enum), `url` (string), `bind_dn` (string), `base_dn` (string), `user_filter` (string), `start_tls` (boolean), `require_consent_screen` (boolean), `attributes` (object), `group_role_mappings` (array), `bind_password` (string), `default_role_id` (string|null).
+  Body fields: `organization_id` (string), `status` (enum), `url` (string), `bind_dn` (string), `base_dn` (string), `user_filter` (string), `start_tls` (boolean), `account_linking` (enum), `require_consent_screen` (boolean), `attributes` (object), `group_role_mappings` (array), `bind_password` (string), `default_role_id` (string|null).
   Nested body fields: `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings.group`, `group_role_mappings.role`.
-  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `account_linking`, `account_linking_effective`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/org_ldap_connections", %{}, body, opts)
@@ -45,7 +45,7 @@ defmodule Atlas.OrgLdapConnections do
 
   `GET /v1/org_ldap_connections/{id}`. Required scope: `sso_connections:read`.
 
-  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `account_linking`, `account_linking_effective`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/org_ldap_connections/{id}", %{"id" => id}, nil, opts)
@@ -55,9 +55,9 @@ defmodule Atlas.OrgLdapConnections do
 
   `PATCH /v1/org_ldap_connections/{id}`. Required scope: `sso_connections:write`.
 
-  Body fields: `organization_id` (string), `status` (enum), `url` (string), `bind_dn` (string), `base_dn` (string), `user_filter` (string), `start_tls` (boolean), `require_consent_screen` (boolean), `attributes` (object), `group_role_mappings` (array), `bind_password` (string), `default_role_id` (string|null).
+  Body fields: `organization_id` (string), `status` (enum), `url` (string), `bind_dn` (string), `base_dn` (string), `user_filter` (string), `start_tls` (boolean), `account_linking` (enum), `require_consent_screen` (boolean), `attributes` (object), `group_role_mappings` (array), `bind_password` (string), `default_role_id` (string|null).
   Nested body fields: `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings.group`, `group_role_mappings.role`.
-  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `organization_id`, `status`, `url`, `bind_dn`, `base_dn`, `user_filter`, `start_tls`, `require_consent_screen`, `account_linking`, `account_linking_effective`, `attributes`, `attributes.email`, `attributes.firstName`, `attributes.lastName`, `attributes.username`, `attributes.groups`, `group_role_mappings`, `group_role_mappings.group`, `group_role_mappings.role`, `has_bind_password`, `default_role_id`, `created_at`, `updated_at`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/org_ldap_connections/{id}", %{"id" => id}, body, opts)

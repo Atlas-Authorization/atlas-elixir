@@ -273,6 +273,27 @@ defmodule Atlas.Organizations do
     do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/memberships/{userId}", %{"id" => id, "userId" => user_id}, nil, opts)
 
   @doc ~S"""
+  Seat a person by the id your own system gives them (`external_id`), before they have signed in. Same body as PUT .../memberships/{userId}. When a user with that external_id exists this is that create-or-update (201 when it adds the member, 200 when it changes it, `status: "active"`). When none exists the seat waits: 202 with `status: "pending"`, and it is attached (with `organizationMembership.created`) when a user with that external_id is created, imported or given the id. `user.created` then carries the user's `organization_memberships`. `{id}` is the organization's Atlas id or its own external_id. Repeating the call replaces the waiting seat.
+
+  `PUT /v1/organizations/{id}/memberships/by_external_id/{userExternalId}`. Required scope: `organizations:write`.
+
+  Body fields: `role` (string, required), `role_source` (string), `public_metadata` (object), `private_metadata` (object), `permissions` (array), `allowed_sign_in_methods` (array|null), `expires_at` (string|integer|null).
+  Response fields: `object`, `id`, `organization_id`, `user_id`, `role`, `role_source`, `scope`, `expires_at`, `created_at`, `status`, `user_external_id`, `unchanged`.
+  """
+  def put_memberships_by_external_id(client, id, user_external_id, body, opts \\ []),
+    do: Atlas.Client.request(client, :put, "/v1/organizations/{id}/memberships/by_external_id/{userExternalId}", %{"id" => id, "userExternalId" => user_external_id}, body, opts)
+
+  @doc ~S"""
+  Cancel a seat that is still waiting for its person. 404 when none is waiting (a seat that was already attached is removed by the user id).
+
+  `DELETE /v1/organizations/{id}/memberships/by_external_id/{userExternalId}`. Required scope: `organizations:write`.
+
+  Response fields: `object`, `organization_id`, `user_external_id`, `deleted`.
+  """
+  def delete_memberships_by_external_id(client, id, user_external_id, opts \\ []),
+    do: Atlas.Client.request(client, :delete, "/v1/organizations/{id}/memberships/by_external_id/{userExternalId}", %{"id" => id, "userExternalId" => user_external_id}, nil, opts)
+
+  @doc ~S"""
   List an organization's invitations with their roles and status.
 
   `GET /v1/organizations/{id}/invitations`. Required scope: `organizations:read`.
@@ -1368,6 +1389,8 @@ defmodule Atlas.Organizations do
     {:put_memberships, :put, "/v1/organizations/{id}/memberships/{userId}", 2, true, false},
     {:update_memberships, :patch, "/v1/organizations/{id}/memberships/{userId}", 2, true, false},
     {:delete_memberships, :delete, "/v1/organizations/{id}/memberships/{userId}", 2, false, false},
+    {:put_memberships_by_external_id, :put, "/v1/organizations/{id}/memberships/by_external_id/{userExternalId}", 2, true, false},
+    {:delete_memberships_by_external_id, :delete, "/v1/organizations/{id}/memberships/by_external_id/{userExternalId}", 2, false, false},
     {:get_invitations, :get, "/v1/organizations/{id}/invitations", 1, false, true},
     {:post_invitations, :post, "/v1/organizations/{id}/invitations", 1, true, false},
     {:post_invitations_import, :post, "/v1/organizations/{id}/invitations/import", 1, true, false},

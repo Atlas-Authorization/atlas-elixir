@@ -73,12 +73,12 @@ defmodule Atlas.ResourceServers do
     do: Atlas.Client.request(client, :delete, "/v1/resource_servers/{id}", %{"id" => id}, nil, opts)
 
   @doc ~S"""
-  The OAuth tokens revoked for this API, oldest first, for a resource server that polls this list instead of asking Atlas per request (`createAccessTokenVerifier({ revocation: true })`). Each item is a refresh-token family that ended (`family_id`, the `fid` claim of every access token minted from it: a refresh token was reused, the client called /oauth2/revoke, or an admin, the user or a logout ended the grant) or one access token revoked on its own (`jti`). Reject a token whose `fid` or `jti` is listed. Rows are kept for 48 hours (`retention_seconds`), longer than any access token can live. Page with `after` (the `next_cursor` of the previous page); `server_time` is when the answer was computed: poll again with `since` a little before it. The `oauth_tokens.revoked` webhook carries the same facts for a push.
+  The OAuth tokens revoked for this API, oldest first, for a resource server that polls this list instead of asking Atlas per request (`createAccessTokenVerifier({ revocation: true })`). Each item is a refresh-token family that ended (`family_id`, the `fid` claim of every access token minted from it: a refresh token was reused, the client called /oauth2/revoke, or an admin, the user or a logout ended the grant) or one access token revoked on its own (`jti`), or a whole client (`kind: "client"`: its `client_id`, with `revoked_at` the cut-off: reject any token whose `azp` is that client and whose `iat` is at or before it). Reject a token whose `fid` or `jti` is listed. Rows are kept for 48 hours (`retention_seconds`), longer than any access token can live. Page with `after` (the `next_cursor` of the previous page); `server_time` is when the answer was computed: poll again with `since` a little before it. The `oauth_tokens.revoked` webhook carries the same facts for a push.
 
   `GET /v1/resource_servers/{id}/revoked_tokens`. Required scope: `resource_servers:read`.
 
   Query params (`params:`): `since`, `limit`, `after`, `starting_after`.
-  Response fields: `object`, `data`, `data.family_id`, `data.jti`, `data.user_id`, `data.client_id`, `data.reason`, `data.revoked_at`, `has_more`, `next_cursor`, `server_time`, `window_start`, `retention_seconds`.
+  Response fields: `object`, `data`, `data.kind`, `data.family_id`, `data.jti`, `data.user_id`, `data.client_id`, `data.oauth_client_id`, `data.reason`, `data.revoked_at`, `has_more`, `next_cursor`, `server_time`, `window_start`, `retention_seconds`.
   """
   def get_revoked_tokens(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/resource_servers/{id}/revoked_tokens", %{"id" => id}, nil, opts)

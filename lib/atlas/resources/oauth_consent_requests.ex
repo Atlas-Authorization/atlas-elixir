@@ -16,7 +16,7 @@ defmodule Atlas.OauthConsentRequests do
   `GET /v1/oauth_consent_requests`. Required scope: `oauth_clients:read`.
 
   Query params (`params:`): `consent_challenge`.
-  Response fields: `object`, `subject`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `authorization_details`, `organization_id`, `redirect_uri`, `request_url`, `prompt`, `max_age`, `expires_at`.
+  Response fields: `object`, `subject`, `client`, `client.id`, `client.client_id`, `client.name`, `client.first_party`, `requested_scope`, `audience`, `authorization_details`, `organization_id`, `optional_scopes`, `redirect_uri`, `request_url`, `prompt`, `max_age`, `expires_at`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/oauth_consent_requests", %{}, nil, opts)
@@ -33,12 +33,12 @@ defmodule Atlas.OauthConsentRequests do
     do: Atlas.Client.request(client, :put, "/v1/oauth_consent_requests/switch_account", %{}, nil, opts)
 
   @doc ~S"""
-  Accept a consent challenge, optionally narrowing the granted scopes. Following redirect_to (in the same browser that started the flow) records the consent unless remember is false, and returns the application to its redirect_uri with a code.
+  Accept a consent challenge, optionally narrowing the granted scopes (only optional scopes may be dropped with granted_scopes) or choosing the organization. Following redirect_to (in the same browser that started the flow) records the consent (kept for revocation only when remember is false), and returns the application to its redirect_uri with a code.
 
   `PUT /v1/oauth_consent_requests/accept`. Required scope: `oauth_clients:write`.
 
   Query params (`params:`): `consent_challenge`.
-  Body fields: `grant_scope` (array), `remember` (boolean), `metadata` (object).
+  Body fields: `granted_scopes` (array), `grant_scope` (array), `organization_id` (string), `remember` (boolean), `metadata` (object).
   Response fields: `object`, `redirect_to`.
   """
   def put_accept(client, body, opts \\ []),

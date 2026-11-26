@@ -631,6 +631,10 @@
   "delete_machine_memberships",
   "n"
  ],
+ "DELETE /v1/organizations/{id}/memberships/by_external_id/{userExternalId}": [
+  "delete_memberships_by_external_id",
+  "n"
+ ],
  "DELETE /v1/organizations/{id}/memberships/{userId}": [
   "delete_memberships",
   "n"
@@ -5031,6 +5035,10 @@
   "post_check",
   "d"
  ],
+ "POST /v1/billing/checkout/sync": [
+  "post_checkout_sync",
+  "r"
+ ],
  "POST /v1/billing/connect/accounts": [
   "post_connect_accounts",
   "r"
@@ -5079,6 +5087,10 @@
   "post_store_links",
   "r"
  ],
+ "POST /v1/billing/stripe/events": [
+  "post_stripe_events",
+  "r"
+ ],
  "POST /v1/billing/subjects/{type}/{id}/sync_seats": [
   "post_subjects_sync_seats",
   "n"
@@ -5101,6 +5113,10 @@
  ],
  "POST /v1/billing/subscriptions/{id}/restore": [
   "post_subscriptions_restore",
+  "n"
+ ],
+ "POST /v1/billing/subscriptions/{id}/sync": [
+  "post_subscriptions_sync",
   "n"
  ],
  "POST /v1/billing/usage": [
@@ -5763,6 +5779,10 @@
   "post_hooks_before_user_create_test",
   "n"
  ],
+ "POST /v1/instance/hosted_method_filters": [
+  "post_hosted_method_filters",
+  "r"
+ ],
  "POST /v1/instance/imports": [
   "post_imports",
   "r"
@@ -6197,6 +6217,14 @@
  ],
  "POST /v1/oauth_clients/{id}/trusted_issuers": [
   "post_trusted_issuers",
+  "r"
+ ],
+ "POST /v1/oauth_clients/{id}/webhook/rotate_secret": [
+  "post_webhook_rotate_secret",
+  "r"
+ ],
+ "POST /v1/oauth_clients/{id}/webhook/test": [
+  "post_webhook_test",
   "r"
  ],
  "POST /v1/oauth_grants/import": [
@@ -7926,6 +7954,10 @@
  "PUT /v1/organizations/{id}/entitlements": [
   "put_entitlements",
   "d"
+ ],
+ "PUT /v1/organizations/{id}/memberships/by_external_id/{userExternalId}": [
+  "put_memberships_by_external_id",
+  "r"
  ],
  "PUT /v1/organizations/{id}/memberships/{userId}": [
   "put_memberships",

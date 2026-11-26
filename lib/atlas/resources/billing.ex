@@ -16,7 +16,7 @@ defmodule Atlas.Billing do
   `GET /v1/billing/plans`. Required scope: `billing:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.slug`, `data.stripe_price_id`, `data.free`, `data.interval`, `data.amount`, `data.currency`, `data.features`, `data.limits`, `data.audience`, `data.active`, `data.pricing_model`, `data.trial_days`, `data.promotion`, `data.stripe_meter_id`, `data.usage_unit`, `data.provider`, `data.provider_price_id`, `data.kind`, `data.seat_feature_id`, `data.description`, `data.badge`, `data.sort_order`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.name`, `data.slug`, `data.stripe_price_id`, `data.free`, `data.interval`, `data.amount`, `data.currency`, `data.features`, `data.limits`, `data.audience`, `data.active`, `data.pricing_model`, `data.trial_days`, `data.grace_days`, `data.past_due_grace_days`, `data.promotion`, `data.stripe_meter_id`, `data.usage_unit`, `data.provider`, `data.provider_price_id`, `data.kind`, `data.seat_feature_id`, `data.description`, `data.badge`, `data.sort_order`, `data.created_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_plans(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/plans", %{}, nil, opts)
@@ -33,7 +33,7 @@ defmodule Atlas.Billing do
 
   `POST /v1/billing/plans`. Required scope: `billing:write`.
 
-  Body fields: `name` (string, required), `slug` (string, required), `stripe_price_id` (string|null), `audience` (enum), `interval` (enum), `amount` (string|null), `currency` (string), `features` (array), `limits` (object), `active` (boolean), `pricing_model` (enum), `trial_days` (integer|null).
+  Body fields: `name` (string, required), `slug` (string, required), `stripe_price_id` (string|null), `audience` (enum), `interval` (enum), `amount` (string|null), `currency` (string), `features` (array), `limits` (object), `active` (boolean), `pricing_model` (enum), `trial_days` (integer|null), `past_due_grace_days` (integer|null).
   Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `audience`, `features`, `limits`, `active`.
   """
   def post_plans(client, body, opts \\ []),
@@ -44,7 +44,7 @@ defmodule Atlas.Billing do
 
   `GET /v1/billing/plans/{id}`. Required scope: `billing:read`.
 
-  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `grace_days`, `past_due_grace_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
   """
   def get_plans_by_id(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/plans/{id}", %{"id" => id}, nil, opts)
@@ -54,8 +54,8 @@ defmodule Atlas.Billing do
 
   `PATCH /v1/billing/plans/{id}`. Required scope: `billing:write`.
 
-  Body fields: `name` (string), `slug` (string), `stripe_price_id` (string), `interval` (string), `amount` (string), `currency` (string), `features` (array), `limits` (object), `audience` (string), `active` (boolean), `pricing_model` (string), `trial_days` (number|null), `grace_days` (number|null), `description` (string|null), `badge` (string|null), `sort_order` (number), `stripe_meter_id` (string|null), `usage_unit` (string|null), `provider` (enum), `provider_price_id` (string), `annual_price_id` (string|null), `annual_amount` (string|null), `kind` (enum), `seat_feature_id` (string|null), `promotion` (object).
-  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
+  Body fields: `name` (string), `slug` (string), `stripe_price_id` (string), `interval` (string), `amount` (string), `currency` (string), `features` (array), `limits` (object), `audience` (string), `active` (boolean), `pricing_model` (string), `trial_days` (number|null), `grace_days` (number|null), `past_due_grace_days` (number|null), `description` (string|null), `badge` (string|null), `sort_order` (number), `stripe_meter_id` (string|null), `usage_unit` (string|null), `provider` (enum), `provider_price_id` (string), `annual_price_id` (string|null), `annual_amount` (string|null), `kind` (enum), `seat_feature_id` (string|null), `promotion` (object).
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `grace_days`, `past_due_grace_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
   """
   def update_plans(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/billing/plans/{id}", %{"id" => id}, body, opts)
@@ -103,7 +103,7 @@ defmodule Atlas.Billing do
 
   `POST /v1/billing/plans/{id}/sync_entitlements`. Required scope: `billing:write`.
 
-  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
+  Response fields: `object`, `id`, `name`, `slug`, `stripe_price_id`, `free`, `interval`, `amount`, `currency`, `features`, `limits`, `audience`, `active`, `pricing_model`, `trial_days`, `grace_days`, `past_due_grace_days`, `promotion`, `stripe_meter_id`, `usage_unit`, `provider`, `provider_price_id`, `kind`, `seat_feature_id`, `description`, `badge`, `sort_order`, `created_at`, `updated_at`.
   """
   def post_plans_sync_entitlements(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/billing/plans/{id}/sync_entitlements", %{"id" => id}, nil, opts)
@@ -184,12 +184,44 @@ defmodule Atlas.Billing do
     do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/{id}/restore", %{"id" => id}, nil, opts)
 
   @doc ~S"""
+  Re-read one subscription from Stripe now, with your own key, and apply what Stripe reports (status, plan, period, cancellation). For an instance that syncs without a Stripe webhook, or to refresh one subscription on demand. A subscription on another account, or not Stripe, is refused.
+
+  `POST /v1/billing/subscriptions/{id}/sync`. Required scope: `billing:write`.
+
+  Response fields: `object`, `id`, `subject_type`, `subject_id`, `plan_id`, `status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `provider`, `cancel_at_period_end`, `entitlements`, `entitlements.features`, `entitlements.limits`, `subscriptions`, `created_at`, `updated_at`.
+  """
+  def post_subscriptions_sync(client, id, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/subscriptions/{id}/sync", %{"id" => id}, nil, opts)
+
+  @doc ~S"""
+  Read a Stripe Checkout Session back with your own key and record the purchase, for an instance that syncs without a Stripe webhook. The session's reference must name this instance; any other session is a 404. Idempotent. `status` is `synced`, or `pending` when Stripe has not completed the session yet.
+
+  `POST /v1/billing/checkout/sync`. Required scope: `billing:write`.
+
+  Body fields: `session_id` (string, required).
+  Response fields: `object`, `status`, `subscription`.
+  """
+  def post_checkout_sync(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/checkout/sync", %{}, body, opts)
+
+  @doc ~S"""
+  Forward a Stripe event from your own webhook endpoint, for an account that cannot add an Atlas endpoint. Post `{ id: "evt_…" }` or the whole event; only the id is read. Atlas fetches the event from Stripe with your own key and processes THAT object, never the posted body, and ignores anything that is not one of this instance's subscriptions. Safe to repeat. `outcome` is `processed` or `ignored`; both are 200.
+
+  `POST /v1/billing/stripe/events`. Required scope: `billing:write`.
+
+  Body fields: `id` (string, required).
+  Response fields: `object`, `id`, `type`, `outcome`.
+  """
+  def post_stripe_events(client, body, opts \\ []),
+    do: Atlas.Client.request(client, :post, "/v1/billing/stripe/events", %{}, body, opts)
+
+  @doc ~S"""
   The billing providers this instance has credentials for (stripe, polar, dodo, creem, chargebee, autumn, commet, paddle, lemonsqueezy, revenuecat, appstore, googleplay). End-user billing runs on the instance's OWN provider account; secrets are reported as *_set markers only, never returned. Each entry carries the webhook URL to register with the provider.
 
   `GET /v1/billing/providers`. Required scope: `billing:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.configured`, `data.provider`, `data.environment`, `data.status`, `data.config`, `data.secrets_set`, `data.webhook_url`, `data.capabilities`, `data.last_verified_at`, `data.last_webhook_at`, `data.updated_at`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.configured`, `data.provider`, `data.environment`, `data.status`, `data.config`, `data.secrets_set`, `data.webhook_url`, `data.capabilities`, `data.sync`, `data.last_verified_at`, `data.last_webhook_at`, `data.updated_at`, `has_more`, `next_cursor`.
   """
   def get_providers(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/providers", %{}, nil, opts)
@@ -206,7 +238,7 @@ defmodule Atlas.Billing do
 
   `GET /v1/billing/providers/{provider}`. Required scope: `billing:read`.
 
-  Response fields: `object`, `configured`, `provider`, `environment`, `status`, `config`, `secrets_set`, `webhook_url`, `capabilities`, `last_verified_at`, `last_webhook_at`, `updated_at`, `channel`, `message`.
+  Response fields: `object`, `configured`, `provider`, `environment`, `status`, `config`, `secrets_set`, `webhook_url`, `capabilities`, `sync`, `last_verified_at`, `last_webhook_at`, `updated_at`, `channel`, `message`.
   """
   def get_providers_by_provider(client, provider, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/billing/providers/{provider}", %{"provider" => provider}, nil, opts)
@@ -217,7 +249,7 @@ defmodule Atlas.Billing do
   `PUT /v1/billing/providers/{provider}`. Required scope: `billing:write`.
 
   Body fields: `environment` (enum), `config` (object).
-  Response fields: `object`, `configured`, `provider`, `environment`, `status`, `config`, `secrets_set`, `webhook_url`, `capabilities`, `last_verified_at`, `last_webhook_at`, `updated_at`.
+  Response fields: `object`, `configured`, `provider`, `environment`, `status`, `config`, `secrets_set`, `webhook_url`, `capabilities`, `sync`, `last_verified_at`, `last_webhook_at`, `updated_at`.
   """
   def put_providers(client, provider, body, opts \\ []),
     do: Atlas.Client.request(client, :put, "/v1/billing/providers/{provider}", %{"provider" => provider}, body, opts)
@@ -570,6 +602,9 @@ defmodule Atlas.Billing do
     {:post_subscriptions_change, :post, "/v1/billing/subscriptions/{id}/change", 1, true, false},
     {:post_subscriptions_cancel, :post, "/v1/billing/subscriptions/{id}/cancel", 1, true, false},
     {:post_subscriptions_restore, :post, "/v1/billing/subscriptions/{id}/restore", 1, false, false},
+    {:post_subscriptions_sync, :post, "/v1/billing/subscriptions/{id}/sync", 1, false, false},
+    {:post_checkout_sync, :post, "/v1/billing/checkout/sync", 0, true, false},
+    {:post_stripe_events, :post, "/v1/billing/stripe/events", 0, true, false},
     {:get_providers, :get, "/v1/billing/providers", 0, false, true},
     {:get_providers_by_provider, :get, "/v1/billing/providers/{provider}", 1, false, false},
     {:put_providers, :put, "/v1/billing/providers/{provider}", 1, true, false},

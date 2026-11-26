@@ -16,7 +16,7 @@ defmodule Atlas.SecretKeys do
   `GET /v1/secret_keys`. Required scope: `secret_keys:read`.
 
   Query params (`params:`): `limit`, `starting_after`.
-  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.format`, `data.prefix`, `data.name`, `data.owner`, `data.scopes`, `data.environment`, `data.resource`, `data.resource.type`, `data.resource.id`, `data.expires_at`, `data.expires_in_days`, `data.status`, `data.ip_allowlist`, `data.origin_allowlist`, `data.last_used_at`, `data.last_used_ip`, `data.created_at`, `data.revoked_at`, `data.allowed_ips`, `data.allowed_origins`, `data.organization_ids`, `data.rotated_from`, `data.metadata`, `data.external_ref`, `data.idempotent_replay`, `data.secret`, `has_more`, `next_cursor`.
+  Response fields: `object`, `data`, `data.object`, `data.id`, `data.kind`, `data.format`, `data.prefix`, `data.name`, `data.owner`, `data.scopes`, `data.environment`, `data.resource`, `data.resource.type`, `data.resource.id`, `data.expires_at`, `data.expires_in_days`, `data.status`, `data.ip_allowlist`, `data.origin_allowlist`, `data.last_used_at`, `data.last_used_ip`, `data.created_at`, `data.revoked_at`, `data.allowed_ips`, `data.allowed_origins`, `data.organization_ids`, `data.rotated_from`, `data.last_app_used_at`, `data.last_used_user_agent`, `data.metadata`, `data.external_ref`, `data.idempotent_replay`, `data.secret`, `has_more`, `next_cursor`.
   """
   def list(client, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/secret_keys", %{}, nil, opts)
@@ -34,7 +34,7 @@ defmodule Atlas.SecretKeys do
   `POST /v1/secret_keys`. Required scope: `secret_keys:write`.
 
   Body fields: `name` (string), `scopes` (array), `preset` (enum), `expires_at` (integer|string), `allowed_ips` (array), `ip_allowlist` (array), `allowed_origins` (array), `origin_allowlist` (array), `organization_ids` (array), `owner` (string|null), `key_format` (enum), `external_ref` (string), `metadata` (object).
-  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `last_app_used_at`, `last_used_user_agent`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def create(client, body, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/secret_keys", %{}, body, opts)
@@ -44,7 +44,7 @@ defmodule Atlas.SecretKeys do
 
   `GET /v1/secret_keys/{id}`. Required scope: `secret_keys:read`.
 
-  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `last_app_used_at`, `last_used_user_agent`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def get(client, id, opts \\ []),
     do: Atlas.Client.request(client, :get, "/v1/secret_keys/{id}", %{"id" => id}, nil, opts)
@@ -55,7 +55,7 @@ defmodule Atlas.SecretKeys do
   `PATCH /v1/secret_keys/{id}`. Required scope: `secret_keys:write`.
 
   Body fields: `name` (string|null), `owner` (string|null), `expires_at` (integer|string|null), `allowed_ips` (array), `ip_allowlist` (array), `allowed_origins` (array), `origin_allowlist` (array), `organization_ids` (array), `metadata` (object|null).
-  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `last_app_used_at`, `last_used_user_agent`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def update(client, id, body, opts \\ []),
     do: Atlas.Client.request(client, :patch, "/v1/secret_keys/{id}", %{"id" => id}, body, opts)
@@ -66,7 +66,7 @@ defmodule Atlas.SecretKeys do
   `POST /v1/secret_keys/{id}/rotate`. Required scope: `secret_keys:write`.
 
   Body fields: `overlap_seconds` (integer), `key_format` (enum), `preset` (enum).
-  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `last_app_used_at`, `last_used_user_agent`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def post_rotate(client, id, body \\ %{}, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/secret_keys/{id}/rotate", %{"id" => id}, body, opts)
@@ -76,7 +76,7 @@ defmodule Atlas.SecretKeys do
 
   `POST /v1/secret_keys/{id}/revoke`. Required scope: `secret_keys:write`.
 
-  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
+  Response fields: `object`, `id`, `kind`, `format`, `prefix`, `name`, `owner`, `scopes`, `environment`, `resource`, `resource.type`, `resource.id`, `expires_at`, `expires_in_days`, `status`, `ip_allowlist`, `origin_allowlist`, `last_used_at`, `last_used_ip`, `created_at`, `revoked_at`, `allowed_ips`, `allowed_origins`, `organization_ids`, `rotated_from`, `last_app_used_at`, `last_used_user_agent`, `metadata`, `external_ref`, `idempotent_replay`, `secret`.
   """
   def post_revoke(client, id, opts \\ []),
     do: Atlas.Client.request(client, :post, "/v1/secret_keys/{id}/revoke", %{"id" => id}, nil, opts)

@@ -156,6 +156,7 @@ DELETE /v1/organizations/{id}/audit_streams/{streamId}
 DELETE /v1/organizations/{id}/connected_apps/{grantId}
 DELETE /v1/organizations/{id}/domains/{domainId}
 DELETE /v1/organizations/{id}/machine_memberships/{machineId}
+DELETE /v1/organizations/{id}/memberships/by_external_id/{userExternalId}
 DELETE /v1/organizations/{id}/memberships/{userId}
 DELETE /v1/organizations/{id}/roles/{roleId}
 DELETE /v1/organizations/{id}/teams/{teamId}
@@ -1256,6 +1257,7 @@ POST /v1/better_auth_imports/{id}/apply
 POST /v1/better_auth_imports/{id}/dry_run
 POST /v1/better_auth_imports/{id}/finalize
 POST /v1/billing/check
+POST /v1/billing/checkout/sync
 POST /v1/billing/connect/accounts
 POST /v1/billing/connect/accounts/{id}/onboarding_link
 POST /v1/billing/connect/accounts/{id}/refresh
@@ -1268,12 +1270,14 @@ POST /v1/billing/plans
 POST /v1/billing/plans/{id}/sync_entitlements
 POST /v1/billing/providers/{provider}/test
 POST /v1/billing/store_links
+POST /v1/billing/stripe/events
 POST /v1/billing/subjects/{type}/{id}/sync_seats
 POST /v1/billing/subscriptions/import
 POST /v1/billing/subscriptions/{id}/cancel
 POST /v1/billing/subscriptions/{id}/change
 POST /v1/billing/subscriptions/{id}/extend_trial
 POST /v1/billing/subscriptions/{id}/restore
+POST /v1/billing/subscriptions/{id}/sync
 POST /v1/billing/usage
 POST /v1/billing/usage/batch
 POST /v1/blocklist_identifiers
@@ -1439,6 +1443,7 @@ POST /v1/instance/exports/{id}/download_url
 POST /v1/instance/exports/{id}/revoke_links
 POST /v1/instance/hooks/before_first_session/test
 POST /v1/instance/hooks/before_user_create/test
+POST /v1/instance/hosted_method_filters
 POST /v1/instance/imports
 POST /v1/instance/integrations/{product}/atlas_id_tokens
 POST /v1/instance/integrations/{product}/deliveries/redeliver
@@ -1548,6 +1553,8 @@ POST /v1/oauth_clients/{id}/rotate_secret
 POST /v1/oauth_clients/{id}/secret/reveal
 POST /v1/oauth_clients/{id}/token_exchange_profiles
 POST /v1/oauth_clients/{id}/trusted_issuers
+POST /v1/oauth_clients/{id}/webhook/rotate_secret
+POST /v1/oauth_clients/{id}/webhook/test
 POST /v1/oauth_grants/import
 POST /v1/oauth_initial_access_tokens
 POST /v1/oauth_providers/{provider}/enabled
@@ -1980,6 +1987,7 @@ PUT /v1/organizations/{id}/applications/{clientId}
 PUT /v1/organizations/{id}/branding
 PUT /v1/organizations/{id}/design
 PUT /v1/organizations/{id}/entitlements
+PUT /v1/organizations/{id}/memberships/by_external_id/{userExternalId}
 PUT /v1/organizations/{id}/memberships/{userId}
 PUT /v1/organizations/{id}/metadata
 PUT /v1/organizations/{id}/parent
